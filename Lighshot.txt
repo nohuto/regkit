@@ -1,4 +1,4 @@
-﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+Live Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
 
 HKCU\Software\SkillBrains\Lightshot\Locale	Length: 12
 HKCU\Software\SkillBrains\Lightshot\Locale	Type: REG_SZ, Length: 6, Data: EN
@@ -21,3 +21,4 @@ HKCU\Software\SkillBrains\Lightshot\JpegQuality	Type: REG_DWORD, Length: 4, Data
 HKCU\Software\SkillBrains\Lightshot\ProxyType	Type: REG_DWORD, Length: 4, Data: 1
 HKCU\Software\SkillBrains\Lightshot\ProxyString	Length: 12
 HKCU\Software\SkillBrains\Lightshot\ProxyString	Type: REG_SZ, Length: 4, Data: :
+
