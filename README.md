@@ -11,7 +11,7 @@ winget install Microsoft.WindowsADK
 
 | File | Path(s) |
 |------|---------|
-| [ACPI.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/ACPI.txt) | `HKLM\SYSTEM\ControlSet001\Services\ACPI \acpiex \AcpiDev \acpipagr \AcpiPmi \acpitime` |
+| [ACPI.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/ACPI.txt) | `HKLM\SYSTEM\ControlSet001\Services\ACPI`<br>`HKLM\SYSTEM\ControlSet001\Services\acpiex`<br>`HKLM\SYSTEM\ControlSet001\Services\AcpiDev`<br>`HKLM\SYSTEM\ControlSet001\Services\acpipagr`<br>`HKLM\SYSTEM\ControlSet001\Services\AcpiPmi`<br>`HKLM\SYSTEM\ControlSet001\Services\acpitime` |
 | [AFD-Parameters.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/AFD-Parameters.txt) | `HKLM\SYSTEM\ControlSet001\Services\AFD\Parameters` |
 | [Accessibility.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/Accessibility.txt) | `HKCU\Control Panel\Accessibility` |
 | [Audio.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/Audio.txt) | `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio` |
