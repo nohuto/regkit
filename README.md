@@ -78,7 +78,7 @@ winget install Microsoft.WindowsADK
 
 ## Kernel Values
 
-Since many people don't yet know which values exist and what default value they have, here's a list. I used IDA, WinDbg, WinObjEx, Windows Internals E7 P1 to create it. The values are located in (`\Machine\SYSTEM\CCS\Control\Session Manager\Kernel`).
+Since many people don't yet know which values exist and what default value they have, here's a list. I used IDA, WinDbg, WinObjEx, Windows Internals E7 P1 to create it. The values are located in `\Machine\SYSTEM\CCS\Control\Session Manager\Kernel`.
 
 - [Windows Internels E7](https://github.com/5Noxi/windows-books/releases)  
 - [WinObjEx64](https://github.com/hfiref0x/WinObjEx64)  
