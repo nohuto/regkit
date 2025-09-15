@@ -40,7 +40,7 @@ winget install Microsoft.WindowsADK
 | [Lsa.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/Lsa.txt) | `HKLM\SYSTEM\ControlSet001\Control\Lsa` |
 | [MultiMedia.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/MultiMedia.txt) | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\MultiMedia` |
 | [NDIS-Parameters.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/NDIS-Parameters.txt) | `HKLM\SYSTEM\ControlSet001\Services\NDIS\Parameters` |
-| [NIC-Intel.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/NIC-Intel.txt) | `HKLM\SYSTEM\ControlSet001\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}\00XX (Intel)` |
+| [NIC-Intel.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/NIC-Intel.txt) | `HKLM\SYSTEM\ControlSet001\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}\00XX` (Intel) |
 | [NVIDIA-0001.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/NVIDIA-0001.txt) | `HKLM\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\00XX` |
 | [NVIDIA-Corp.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/NVIDIA-Corp.txt) | `HKLM\SOFTWARE\NVIDIA Corporation` |
 | [NlaSvc.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/NlaSvc.txt) | `HKLM\SYSTEM\ControlSet001\Services\NlaSvc` |
