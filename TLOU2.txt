@@ -1,4 +1,4 @@
-﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+Live Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
 
 "HKCU\Software\Naughty Dog\The Last of Us Part II\UI\TextLanguage","Type: REG_DWORD, Length: 4, Data: "
 "HKCU\Software\Naughty Dog\The Last of Us Part II\Graphics\Monitor","Type: REG_DWORD, Length: 4, Data: "
@@ -107,3 +107,4 @@
 "HKCU\Software\Naughty Dog\The Last of Us Part II\Audio\StereoHeadphonesAzimuths","Type: REG_DWORD, Length: 4, Data: "
 "HKCU\Software\Naughty Dog\The Last of Us Part II\Audio\SurroundHeadphonesAzimuths","Type: REG_DWORD, Length: 4, Data: "
 "HKCU\Software\Naughty Dog\The Last of Us Part II\Audio\OutputMode","Type: REG_DWORD, Length: 4, Data: "
+
