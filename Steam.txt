@@ -1,4 +1,4 @@
-﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+Live Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
 
 HKCU\Software\Valve\Steam\Language
 HKCU\Software\Valve\Steam\ActiveProcess\pid
@@ -36,3 +36,4 @@ HKCU\Software\Valve\Steam\SteamInstaller
 
 "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Compatibility32\steamwebhelper","Length: 172"
 "HKCU\Software\Microsoft\Windows\CurrentVersion\Run\Steam","Length: 12"
+
