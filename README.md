@@ -82,7 +82,8 @@ Since many people don't yet know which values exist and what default value they 
 
 - [Windows Internels E7](https://github.com/5Noxi/windows-books/releases)  
 - [WinObjEx64](https://github.com/hfiref0x/WinObjEx64)  
-- [WinDbg](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/)
+- [WinDbg](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/)  
+- [Symbols Memory Dump](https://github.com/5Noxi/sym-mem-dump)  
 
 `BoostingPeriodMultiplier`  
 Default: `3`? (`KiNormalPriorityBoostingPeriodMultiplier dd 3`)  
