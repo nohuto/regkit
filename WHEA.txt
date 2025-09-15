@@ -1,0 +1,24 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : BadPageListLocation
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : BadPageListMaxSize
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : CMCPollingLimit
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : CMCThresholdCount
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : CMCThresholdSeconds
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : DisableOffline
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : DisablePrmAddressTranslation
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : EnableBatchRowOffline
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : IgnoreDummyWrite
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : MemPersistOffline
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : MemPfaDisable
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : MemPfaPageCount
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : MemPfaThreshold
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : MemPfaTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : NotifyAllOfflines
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : PendingPageListSz
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : RestoreCmciEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : RestoreCmciErrorLimit
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : RestoreCmciMaxAttempts
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : RowFailCheckEnable
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : RowFailCheckExtent
+\Registry\Machine\SYSTEM\ControlSet001\Control\WHEA\Policy : RowFailCheckThreshold

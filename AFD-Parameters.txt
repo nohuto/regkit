@@ -1,0 +1,31 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : BufferAlignment
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : DefaultPacketElementCount
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : DefaultReceiveWindow
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : DefaultSendWindow
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : DisableChainedReceive
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : DisableDirectAcceptEx
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : DisableRawSecurity
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : DoNotHoldNICBuffers
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : DynamicSendBufferDisable
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : FastSendDatagramThreshold
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : HugeBufferSize
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : IgnoreOrderlyRelease
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : IgnorePushBitOnReceives
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : IrpStackSize
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : LargeBufferSize
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : MaxFastCopyTransmit
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : MaxFastTransmit
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : MediumBufferSize
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : PacketFragmentCopyThreshold
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : PnpAsyncNewDevices
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : PriorityBoost
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : SmallBufferSize
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : StandardAddressLength
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : TcpReceiveWindowMax
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : TransmitIoLength
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : TransmitWorker
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : UseTdiSendAndDisconnect
+\Registry\Machine\SYSTEM\ControlSet001\Services\AFD\Parameters : VolatileParameters
+

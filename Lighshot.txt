@@ -1,0 +1,23 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+HKCU\Software\SkillBrains\Lightshot\Locale	Length: 12
+HKCU\Software\SkillBrains\Lightshot\Locale	Type: REG_SZ, Length: 6, Data: EN
+HKCU\Software\SkillBrains\Lightshot\AutoClose	Type: REG_DWORD, Length: 4, Data: 0
+HKCU\Software\SkillBrains\Lightshot\AutoCopy	Type: REG_DWORD, Length: 4, Data: 0
+HKCU\Software\SkillBrains\Lightshot\ShowBubbles	Type: REG_DWORD, Length: 4, Data: 0
+HKCU\Software\SkillBrains\Lightshot\KeepSelection	Type: REG_DWORD, Length: 4, Data: 0
+HKCU\Software\SkillBrains\Lightshot\CaptureCursor	Type: REG_DWORD, Length: 4, Data: 0
+HKCU\Software\SkillBrains\Lightshot\Hotkey_main_enabled	Type: REG_DWORD, Length: 4, Data: 1
+HKCU\Software\SkillBrains\Lightshot\Hotkey_main_mod	Type: REG_DWORD, Length: 4, Data: 0
+HKCU\Software\SkillBrains\Lightshot\Hotkey_main_vk	Type: REG_DWORD, Length: 4, Data: 112
+HKCU\Software\SkillBrains\Lightshot\Hotkey_savefull_enabled	Type: REG_DWORD, Length: 4, Data: 0
+HKCU\Software\SkillBrains\Lightshot\Hotkey_savefull_mod	Length: 16
+HKCU\Software\SkillBrains\Lightshot\Hotkey_savefull_vk	Length: 16
+HKCU\Software\SkillBrains\Lightshot\Hotkey_uploadfull_enabled	Type: REG_DWORD, Length: 4, Data: 0
+HKCU\Software\SkillBrains\Lightshot\Hotkey_uploadfull_mod	Length: 16
+HKCU\Software\SkillBrains\Lightshot\Hotkey_uploadfull_vk	Length: 16
+HKCU\Software\SkillBrains\Lightshot\UploadFormat	Type: REG_DWORD, Length: 4, Data: 1
+HKCU\Software\SkillBrains\Lightshot\JpegQuality	Type: REG_DWORD, Length: 4, Data: 100
+HKCU\Software\SkillBrains\Lightshot\ProxyType	Type: REG_DWORD, Length: 4, Data: 1
+HKCU\Software\SkillBrains\Lightshot\ProxyString	Length: 12
+HKCU\Software\SkillBrains\Lightshot\ProxyString	Type: REG_SZ, Length: 4, Data: :

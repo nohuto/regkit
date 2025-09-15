@@ -1,0 +1,32 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid : ImagePath
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid : ObjectName
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid : OriginalServiceName
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid : PnpFlags
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid : Start
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid : Type
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Enum : 0
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Enum : 1
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Enum : Count
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Parameters : BreakOnSysRq
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Parameters : CrashOnCtrlScroll
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Parameters : DisableAutoRepeat
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Parameters : ForceLogsInMiniDump
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Parameters : LogPages
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Parameters : PnpAsyncNewDevices
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Parameters : VerboseOn
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Parameters : WppRecorder_PerBufferMaxBytes
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Parameters : WppRecorder_PerBufferMinBytes
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Parameters : WppRecorder_PreciseTimeStamp
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Parameters : WppRecorder_ReplayEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Parameters : WppRecorder_RetainLastNDeletedLogs
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid\Parameters : WppRecorder_UseTimeStamp
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid : DelayedAutostart
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid : DeleteFlag
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid : DependOnGroup
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid : DependOnService
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid : ErrorControl
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid : Group
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdhid : Tag
+

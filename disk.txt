@@ -1,0 +1,19 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : DependOnGroup
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : Group
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : IdleClassSupported
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : ImagePath
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : ObjectName
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : PnpFlags
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : Start
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : Type
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk\Enum : Count
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk\Parameters : PnpAsyncNewDevices
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : DelayedAutostart
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : DeleteFlag
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : DependOnService
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : ErrorControl
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : OriginalServiceName
+\Registry\Machine\SYSTEM\ControlSet001\Services\disk : Tag
+

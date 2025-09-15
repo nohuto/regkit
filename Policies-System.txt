@@ -1,0 +1,34 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : DenyUsersFromMachGP
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : DisableAOACProcessing
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : EnableLogonOptimization
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : EnableLogonScriptDelay
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : GpSvcDebugLevel
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : ResetDfsClientInfoDuringRefreshPolicy
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : RsopLogging
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : CopyFileBufferedSynchronousIo
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : BlockDomainPicturePassword
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : BlockUserFromShowingAccountDetailsOnSignin
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : DefaultCredentialProvider
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : DisableAcrylicBackgroundOnLogon
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : DisableLogonBackgroundImage
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : DontDisplayNetworkSelectionUI
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : SlowLinkUIEnabled
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : AllowBlockingAppsAtShutdown
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : CopyFileChunkSize
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : CopyFileOverlappedCount
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : EnableActivityFeed
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : EnableCdp
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : EnableMmx
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : PublishUserActivities
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : UploadUserActivities
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : AllowCustomSSPsAPs
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : AllowClipboardHistory
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : AllowCrossDeviceClipboard
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : CleanupProfiles
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : HomeDir
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : MachineProfilePath
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : EnableFontProviders
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : RunAsPPL
+\Registry\Machine\SOFTWARE\Policies\Microsoft\WINDOWS\SYSTEM : EnableSmartScreen

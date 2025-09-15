@@ -1,0 +1,32 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : ConstraintModelTest
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : AudioHealthMonitorLimit
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : AudioSrvWatchDogTimerInMs
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : DevApiIsRunningInVM
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : DisableSpatialAudioGlobal
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : DisableSpatialAudioVssFeature
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : DisableSpatialOnLowLatency
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : DisableTopologyCache
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : EnableCaptureMonitor
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : GlobalDisableThirdPartyEnhancements
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : InboxAECPolicy
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : InboxAECPolicyCommsTmp
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : MaxBluetoothDevices
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : OverrideHmdMode
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : PerformStrictConnectorMatchOnMatchFormat
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : RenderStreamVolumeTaperPower
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : SpatialAudioHrtfOnByDefault
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : TimeoutRevertAudioPumpFormatAndPeriodInMs
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : UnrestrictedPerProcessLoopback
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : UseSoftwareLoopbackOnMatchFormat
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : AEBSlowStart
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : BluetoothEndpointUnificationTimeoutInSecond
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : SkipAEBVersionCheck
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : VolumeAccelThreshold
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : VolumeDownTransitionTime
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : VolumeRepeatWindow
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : VolumeUpTransitionTime
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : EnableLogonHIDControls
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio : UseLegacyPlaySoundCodePath
+

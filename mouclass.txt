@@ -1,0 +1,33 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass : ImagePath
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass : ObjectName
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass : OriginalServiceName
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass : PnpFlags
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass : Start
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass : Type
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Enum : 0
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Enum : 1
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Enum : 2
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Enum : Count
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Parameters : ForceLogsInMiniDump
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Parameters : LogPages
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Parameters : MaximumPortsServiced
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Parameters : MouseDataQueueSize
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Parameters : PnpAsyncNewDevices
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Parameters : PointerDeviceBaseName
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Parameters : VerboseOn
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Parameters : WppRecorder_PerBufferMaxBytes
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Parameters : WppRecorder_PerBufferMinBytes
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Parameters : WppRecorder_PreciseTimeStamp
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Parameters : WppRecorder_ReplayEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Parameters : WppRecorder_RetainLastNDeletedLogs
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass\Parameters : WppRecorder_UseTimeStamp
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass : DelayedAutostart
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass : DeleteFlag
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass : DependOnGroup
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass : DependOnService
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass : ErrorControl
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass : Group
+\Registry\Machine\SYSTEM\ControlSet001\Services\mouclass : Tag
+

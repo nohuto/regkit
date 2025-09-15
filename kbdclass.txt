@@ -1,0 +1,38 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Enum
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : ImagePath
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : ObjectName
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : OriginalServiceName
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : PnpFlags
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : Start
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : Type
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Enum : 0
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Enum : 1
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Enum : Count
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : AllowDisable
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : ConnectMultiplePorts
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : ForceLogsInMiniDump
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : KeyboardDataQueueSize
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : KeyboardDeviceBaseName
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : LogPages
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : MaximumPortsServiced
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : PnpAsyncNewDevices
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : SendOutputToAllPorts
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : VerboseOn
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : WppRecorder_PerBufferMaxBytes
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : WppRecorder_PerBufferMinBytes
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : WppRecorder_PreciseTimeStamp
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : WppRecorder_ReplayEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : WppRecorder_RetainLastNDeletedLogs
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Parameters : WppRecorder_UseTimeStamp
+
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : DelayedAutostart
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : DeleteFlag
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : DependOnGroup
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : DependOnService
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : ErrorControl
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : Group
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : OriginalServiceName
+\Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : Tag
+
