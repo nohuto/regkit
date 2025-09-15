@@ -1,4 +1,6 @@
-﻿\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\SYSTEM : EnableCursorSuppression
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\SYSTEM : EnableCursorSuppression
 \Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\SYSTEM : ConsentPromptBehaviorAdmin
 \Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\SYSTEM : ConsentPromptBehaviorEnhancedAdmin
 \Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\SYSTEM : ConsentPromptBehaviorUser
@@ -116,3 +118,4 @@
 \Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\SYSTEM : DisableRemoteShutdownRPCInterface
 \Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\SYSTEM : DisableShutdownNamedPipe
 \Registry\Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\SYSTEM : RunLogonScriptSync
+
