@@ -9,7 +9,8 @@ Start with configuring the filter (`CTRL` + `L`):
 `Operation` `is` `RegDeleteValue`
 
 You can disable the other activity monitoring:
-![]()
+
+![](https://github.com/5Noxi/wpr-reg-records/blob/main/images/monitoring.png)
 
 If you want to trace all `Reg...` activity, which would use:
 ```c
@@ -37,7 +38,8 @@ Now you'll see all kind of registry activity, what you want to look for is the p
 `Path` `contains` `\Software\Naughty Dog\The Last of Us Part II`
 
 Save the content using `.csv`, afterwards you can remove specific parts of the file, if you want to.
-![]()
+
+![](https://github.com/5Noxi/wpr-reg-records/blob/main/images/pmsave.png)
 
 `CTRL` + `H` (Regular expression):
 `"Reg\w*"` - Removes the operations
