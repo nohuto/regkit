@@ -2,11 +2,11 @@
 
 Requirements are [process monitor](https://learn.microsoft.com/en-us/sysinternals/downloads/procmon) and the program you want to trace. I'll trace the activity of the game `The Last Of Us Part II`.
 
-Start with configuring the filter (`CTRL` + `L`):
-`Process Name` `contains` `tlou`
-`Operation` `is` `RegSetValue` - Registry writes
-`Operation` `is` `RegQueryValue` - Registry reads
-`Operation` `is` `RegDeleteValue`
+Start with configuring the filter (`CTRL` + `L`):  
+`Process Name` `contains` `tlou`  
+`Operation` `is` `RegSetValue` - Registry writes  
+`Operation` `is` `RegQueryValue` - Registry reads  
+`Operation` `is` `RegDeleteValue`  
 
 You can disable the other activity monitoring:
 
@@ -41,9 +41,9 @@ Save the content using `.csv`, afterwards you can remove specific parts of the f
 
 ![](https://github.com/5Noxi/wpr-reg-records/blob/main/images/pmsave.png)
 
-`CTRL` + `H` (Regular expression):
-`"Reg\w*"` - Removes the operations
-`"process.exe"` - Replace `process`
+`CTRL` + `H` (Regular expression):  
+`"Reg\w*"` - Removes the operations  
+`"process.exe"` - Replace `process`  
 
 The result should look similar to: [TLOU2.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/TLOU2.txt)/[StartAllBack.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/StartAllBack.txt)/[Lighshot](https://github.com/5Noxi/wpr-reg-records/blob/main/Lighshot.txt). This can be used to trace specific program/path registry activity, there's obviously much more you can do with procmon.
 
