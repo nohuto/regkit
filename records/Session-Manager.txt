@@ -1,0 +1,119 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : CMCPollingLimit
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : CMCThresholdCount
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : CMCThresholdSeconds
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : PowerPolicySimulate
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : PowerSimulateHiberBugcheck
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\AppCompatCache : AppCompatCache
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\AppCompatCache : CacheMainSdb
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\AppCompatCache : Citm
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\AppCompatCache : Rate
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\AppCompatCache : SdbTime
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Configuration Manager : AllowContainerNesting
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Executive : UuidSequenceNumber
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\I/O System : PassiveIntForceCriticalWorker
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\I/O System : PassiveIntRealTimeWorkerCount
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\I/O System : PassiveIntRealTimeWorkerPriority
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Kernel : BoostingPeriodMultiplier
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Kernel : DefaultDynamicHeteroCpuPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Kernel : DefaultHeteroCpuPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Kernel : DynamicHeteroCpuPolicyExpectedRuntime
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Kernel : DynamicHeteroCpuPolicyImportant
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Kernel : DynamicHeteroCpuPolicyImportantPriority
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Kernel : DynamicHeteroCpuPolicyImportantShort
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Kernel : DynamicHeteroCpuPolicyMask
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Kernel : ReadyTimeTicks
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Kernel : ReservedCpuSets
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Kernel : ScanLatencyTicks
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Kernel : ThreadReadyCount
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : DisableCacheTelemetry
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : EnableAsyncLazywrite
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : EnableAsyncLazywriteMulti
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : ExistingPageFiles
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : LargeWriteSize
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : LazyWriterPercentageOfNumProcs
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : MaxLazyWritePages
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : PeriodicTelemetryEventFrequency
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : PeriodicTelemetryReportFrequency
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : PeriodicTelemetrySampleFrequency
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : SoftThrottleDelayInMs
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : SoftThrottleLargeWriteAtPct
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : TopBottomDPTEqual
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management\PrefetchParameters : BaseTime
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management\PrefetchParameters : FIBlockDbgBreak
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management\PrefetchParameters : FIDbgStream2ndAttempt
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management\PrefetchParameters : FIDbgStreamFailurePercent
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management\PrefetchParameters : FIDbgVolume2ndAttempt
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management\PrefetchParameters : FIDbgVolumeFailurePercent
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management\PrefetchParameters : FIForcedNameTracking
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management\PrefetchParameters : FIFSOpMaxBlockTimeMs
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management\PrefetchParameters : FIMaxQueryWorkers
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management\PrefetchParameters : FIPrefetchDelayMs
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management\PrefetchParameters : SfTracingState
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Power : ProcessorThrottleLogInterval
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Power : ShutdownOccurred
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Power : SystemPowerPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : NumberOfInitialSessions
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : ProtectionMode
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : RaiseExceptionOnPossibleDeadlock
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : ResourcePolicies
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : SafeDllSearchMode
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : SmtDelayBaseYield
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : SmtDelayMaxYield
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : SmtDelaySleepLoopWindowSize
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : SmtDelaySpinCountThreshold
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : SmtFactorYield
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : HotPatchRestrictions
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\NamespaceSeparation : AppcontainerUserSeparation
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\NamespaceSeparation : InteractiveUserSeparation
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Power : SleepStudyBufferSizeInMB
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Power : SleepStudyTraceDirectory
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Segment Heap : Enabled
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : SkipRegistryInit
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Environment : DataDrive
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Environment : OSDataDrive
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Environment : TemporaryDrive
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Kernel : SeAllowSessionImpersonationCapability
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\NamespaceSeparation : DefaultAccountSeparation
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : SystemUpdateOnBoot
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : FeatureSettings
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : PagingFiles
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : SafeProcessSearchMode
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : AllowProtectedRenames
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : BackgroundLoadKnownDlls
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : BootExecute
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : BootExecuteNoPnpSync
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : ClearTempFiles
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : DisableWpbtExecution
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : ExcludeFromKnownDlls
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : Execute
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : ObjectDirectories
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : PendingFileRenameOperations
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : PendingFileRenameOperations2
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : PlatformExecute
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : S0InitialCommand
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : SetupExecute
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : SetupExecuteNoPnpSync
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : TempFileDirectory
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : DedicatedMemoryPagefileSizeMB
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : DisableDedicatedMemoryCaching
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : PagefileHybridPriority
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : PagefileOnOsVolume
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : PagefileUsage
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : SwapFile
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : SwapfileControl
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : WaitForPagingFiles
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\SubSystems : Optional
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\SubSystems : Required
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager : ProcessorControl
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Quota System : DfssGenerationLengthMS
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Quota System : DfssLongTermFraction1024
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Quota System : DfssLongTermSharingMS
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Quota System : DfssResolutionMS
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Quota System : DfssShortTermSharingMS
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Quota System : EnableCpuQuota
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\SubSystems : Windows
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Memory Management : TempPageFile
+\Registry\Machine\SYSTEM\ControlSet001\Control\Session Manager\Environment : SAFEBOOT_OPTION
+

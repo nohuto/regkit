@@ -1,0 +1,46 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SOFTWARE\Microsoft\Wisp\MultiTouch : MultiTouchEnabled
+\Registry\Machine\SOFTWARE\Microsoft\Wisp\Touch : PanningDisabled
+\Registry\Machine\SOFTWARE\Microsoft\Wisp\Touch : TapThreshold
+\Registry\Machine\SOFTWARE\Microsoft\Wisp\Touch : TouchGate
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : DblDist
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : DblTime
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : EraseEnable
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : FlickMode
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : FlickTolerance
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : HoldMode
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : HoldTime
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : MouseInputFrequency
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : MouseInputResolutionX
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : MouseInputResolutionY
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : RightMaskEnable
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : SguiMode
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : Splash
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : TapTime
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters : WaitTime
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters\FlickCommands : Down
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters\FlickCommands : DownLeft
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters\FlickCommands : DownRight
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters\FlickCommands : Left
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters\FlickCommands : Right
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters\FlickCommands : Up
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters\FlickCommands : UpLeft
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Pen\SysEventParameters\FlickCommands : UpRight
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\MultiTouch : MultiTouchEnabled
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : Bouncing
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : Friction
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : Inertia
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : Left_Edgy_Enabled
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : Minimum_Velocity
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : Mobile_Inertia_Enabled
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : PanningDisabled
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : Right_Edgy_Enabled
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : Thumb_Flick_Enabled
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : TouchGate
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : TouchMode_hold
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : TouchModeN_DtapDist
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : TouchModeN_DtapTime
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : TouchModeN_HoldTime_Animation
+\Registry\User\S-ID\SOFTWARE\Microsoft\Wisp\Touch : TouchModeN_HoldTime_BeforeAnimation
+

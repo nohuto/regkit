@@ -1,0 +1,8 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SYSTEM\ControlSet001\Control\Classpnp : DisableForwardedIO
+\Registry\Machine\SYSTEM\ControlSet001\Control\Classpnp : DisableOptimalIOAlignment
+\Registry\Machine\SYSTEM\ControlSet001\Control\Classpnp : DisablePagefileCRC
+\Registry\Machine\SYSTEM\ControlSet001\Control\Classpnp : MaxNumberOfIoRetries
+\Registry\Machine\SYSTEM\ControlSet001\Control\Classpnp : NVMeDisablePerfThrottling
+\Registry\Machine\SYSTEM\ControlSet001\Control\Classpnp : ProcessZoneCommandAsync

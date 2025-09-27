@@ -1,0 +1,1121 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Device Parameters : HardResetCount
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Device Parameters : HubFWUpdateProtocol
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Device Parameters : OvercurrentDetected
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Device Parameters : Usb4HostName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Device Parameters : WakeSystemOnConnect
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Device Parameters\Wdf : IdleInWorkingState
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Device Parameters\Wdf : WdfDefaultIdleInWorkingState
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Device Parameters\Wdf : WdfDirectedPowerTransitionChildrenOptional
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Device Parameters\Wdf : WdfDirectedPowerTransitionEnable
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Device Parameters\Wdf : WdfUseWdfTimerForPofx
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\001A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Device Parameters : HardResetCount
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Device Parameters : HubFWUpdateProtocol
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Device Parameters : OvercurrentDetected
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Device Parameters : Usb4HostName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Device Parameters : WakeSystemOnConnect
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Device Parameters\Wdf : IdleInWorkingState
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Device Parameters\Wdf : WdfDefaultIdleInWorkingState
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Device Parameters\Wdf : WdfDirectedPowerTransitionChildrenOptional
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Device Parameters\Wdf : WdfDirectedPowerTransitionEnable
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Device Parameters\Wdf : WdfUseWdfTimerForPofx
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\001A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : Driver
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Device Parameters : KsDFxSupportEnable
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Device Parameters : SelSuspCancelBehavior
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Device Parameters\e5b3b5ac-9725-4f78-963f-03dfb1d828c7 : D3ColdSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\BlueVoiceCapture : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\BlueVoiceCapture : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\BlueVoiceCapture : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\BlueVoiceCapture : Description
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\BlueVoiceCapture : HardwareIds
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\BlueVoiceCapture : LocationInfo
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\BlueVoiceCapture : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\HX2ERender : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\HX2ERender : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\HX2ERender : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\HX2ERender : Description
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\HX2ERender : HardwareIds
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\HX2ERender : LocationInfo
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\devices\HX2ERender : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0067 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{a8b865dd-2e3d-4094-ad97-e593a70c75d6}\0005 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : CollectionReenumerateSelfInterfaceEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : ComboHardwareIdV2Enabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : DeviceResetNotificationEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : EnhancedPowerManagementEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : FullPowerDownOnTransientDx
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : RetainWWIrpWhenDeviceAbsent
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : SelectiveSuspendEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : SelectiveSuspendOn
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : SelectiveSuspendTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : SelSuspCancelBehavior
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : SuppressInputInCS
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : SystemInputSuppressionEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : TestIdleMonitorDim
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : TestIdleTimeoutNoHandles
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : TestIdleTimeoutNoHandlesInitial
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : WakeScreenOnInputSupport
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters : WriteReportExSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Device Parameters\e5b3b5ac-9725-4f78-963f-03dfb1d828c7 : D3ColdSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0067 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : Driver
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Device Parameters : D3ColdReconnectTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Device Parameters : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Device Parameters : IdleTimeoutPeriodInMilliSec
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Device Parameters : OriginalConfigurationValue
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Device Parameters : UsbccgpCapabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Device Parameters\Ceip : DeviceInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0009 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\001A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0067 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0003 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0005 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\000D : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\000F : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0010 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : CollectionReenumerateSelfInterfaceEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : ComboHardwareIdV2Enabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : DeviceResetNotificationEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : EnhancedPowerManagementEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : FullPowerDownOnTransientDx
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : RetainWWIrpWhenDeviceAbsent
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : SelectiveSuspendEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : SelectiveSuspendOn
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : SelectiveSuspendTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : SelSuspCancelBehavior
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : SuppressInputInCS
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : SystemInputSuppressionEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : TestIdleMonitorDim
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : TestIdleTimeoutNoHandles
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : TestIdleTimeoutNoHandlesInitial
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : WakeScreenOnInputSupport
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters : WriteReportExSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Device Parameters\e5b3b5ac-9725-4f78-963f-03dfb1d828c7 : D3ColdSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0067 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : CollectionReenumerateSelfInterfaceEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : ComboHardwareIdV2Enabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : DeviceResetNotificationEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : EnhancedPowerManagementEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : FullPowerDownOnTransientDx
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : RetainWWIrpWhenDeviceAbsent
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : SelectiveSuspendEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : SelectiveSuspendOn
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : SelectiveSuspendTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : SelSuspCancelBehavior
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : SuppressInputInCS
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : SystemInputSuppressionEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : TestIdleMonitorDim
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : TestIdleTimeoutNoHandles
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : TestIdleTimeoutNoHandlesInitial
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : WakeScreenOnInputSupport
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters : WriteReportExSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Device Parameters\e5b3b5ac-9725-4f78-963f-03dfb1d828c7 : D3ColdSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0067 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : CollectionReenumerateSelfInterfaceEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : ComboHardwareIdV2Enabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : DeviceResetNotificationEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : EnhancedPowerManagementEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : FullPowerDownOnTransientDx
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : RetainWWIrpWhenDeviceAbsent
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : SelectiveSuspendEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : SelectiveSuspendOn
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : SelectiveSuspendTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : SelSuspCancelBehavior
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : SuppressInputInCS
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : SystemInputSuppressionEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : TestIdleMonitorDim
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : TestIdleTimeoutNoHandles
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : TestIdleTimeoutNoHandlesInitial
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : WakeScreenOnInputSupport
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters : WriteReportExSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Device Parameters\e5b3b5ac-9725-4f78-963f-03dfb1d828c7 : D3ColdSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0067 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : Driver
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : D3ColdReconnectTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : FunctionDriverOptIn
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : IdleSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : IdleTimeoutPeriodInMilliSec
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : NumberOfPairingSlots
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : OriginalConfigurationValue
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : UsbccgpCapabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters : VhfMode
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Device Parameters\Ceip : DeviceInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0009 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\001A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0003 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0005 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\000D : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\000F : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0010 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547\6&c1a2e2f&0&3\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters : D3ColdReconnectTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters : HardResetCount
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters : HubFWUpdateProtocol
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters : OvercurrentDetected
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters : Usb4HostName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters : WakeSystemOnConnect
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters\Ceip : DeviceInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters\Wdf : IdleInWorkingState
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Device Parameters\Wdf : WdfDefaultIdleInWorkingState
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\001A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0009 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0003 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0005 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0008 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0009 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\000D : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\000E : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\000F : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0010 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : CyclePortEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : DefaultIdleState
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : DefaultIdleTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : DeviceIdleEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : DeviceIdleIgnoreWakeEnable
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : DeviceInterfaceGUID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : DeviceInterfaceGUIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : DevicePowerUpOnS0Entry
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : ResetPortEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : SelSuspCancelBehavior
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : SystemWakeEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : UserSetDeviceIdleEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : WinRtInterfaceRestrictionLevel
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : WinusbIsochUsed
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters : WinUsbPowerPolicyOwnershipDisabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Device Parameters\e5b3b5ac-9725-4f78-963f-03dfb1d828c7 : D3ColdSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : CollectionReenumerateSelfInterfaceEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : ComboHardwareIdV2Enabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : DeviceResetNotificationEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : EnhancedPowerManagementEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : FullPowerDownOnTransientDx
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : RetainWWIrpWhenDeviceAbsent
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : SelectiveSuspendEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : SelectiveSuspendOn
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : SelectiveSuspendTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : SelSuspCancelBehavior
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : SuppressInputInCS
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : SystemInputSuppressionEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : TestIdleMonitorDim
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : TestIdleTimeoutNoHandles
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : TestIdleTimeoutNoHandlesInitial
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : WakeScreenOnInputSupport
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters : WriteReportExSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Device Parameters\e5b3b5ac-9725-4f78-963f-03dfb1d828c7 : D3ColdSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : Driver
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Device Parameters : D3ColdReconnectTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Device Parameters : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Device Parameters : IdleTimeoutPeriodInMilliSec
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Device Parameters : OriginalConfigurationValue
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Device Parameters : UsbccgpCapabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Device Parameters\Ceip : DeviceInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0009 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\001A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0003 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0005 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0008 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0009 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\000D : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\000E : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\000F : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0010 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : CollectionReenumerateSelfInterfaceEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : ComboHardwareIdV2Enabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : DeviceResetNotificationEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : EnhancedPowerManagementEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : FullPowerDownOnTransientDx
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : RetainWWIrpWhenDeviceAbsent
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : SelectiveSuspendEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : SelectiveSuspendOn
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : SelectiveSuspendTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : SelSuspCancelBehavior
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : SuppressInputInCS
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : SystemInputSuppressionEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : TestIdleMonitorDim
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : TestIdleTimeoutNoHandles
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : TestIdleTimeoutNoHandlesInitial
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : WakeScreenOnInputSupport
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters : WriteReportExSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Device Parameters\e5b3b5ac-9725-4f78-963f-03dfb1d828c7 : D3ColdSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0067 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : CollectionReenumerateSelfInterfaceEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : ComboHardwareIdV2Enabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : DeviceResetNotificationEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : EnhancedPowerManagementEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : FullPowerDownOnTransientDx
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : RetainWWIrpWhenDeviceAbsent
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : SelectiveSuspendEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : SelectiveSuspendOn
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : SelectiveSuspendTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : SelSuspCancelBehavior
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : SuppressInputInCS
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : SystemInputSuppressionEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : TestIdleMonitorDim
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : TestIdleTimeoutNoHandles
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : TestIdleTimeoutNoHandlesInitial
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : WakeScreenOnInputSupport
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters : WriteReportExSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Device Parameters\e5b3b5ac-9725-4f78-963f-03dfb1d828c7 : D3ColdSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0067 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : CollectionReenumerateSelfInterfaceEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : ComboHardwareIdV2Enabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : DeviceResetNotificationEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : EnhancedPowerManagementEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : FullPowerDownOnTransientDx
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : RetainWWIrpWhenDeviceAbsent
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : SelectiveSuspendEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : SelectiveSuspendOn
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : SelectiveSuspendTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : SelSuspCancelBehavior
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : SuppressInputInCS
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : SystemInputSuppressionEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : TestIdleMonitorDim
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : TestIdleTimeoutNoHandles
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : TestIdleTimeoutNoHandlesInitial
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : WakeScreenOnInputSupport
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters : WriteReportExSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Device Parameters\e5b3b5ac-9725-4f78-963f-03dfb1d828c7 : D3ColdSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0067 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : CollectionReenumerateSelfInterfaceEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : ComboHardwareIdV2Enabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : DeviceResetNotificationEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : EnhancedPowerManagementEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : FullPowerDownOnTransientDx
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : RetainWWIrpWhenDeviceAbsent
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : SelectiveSuspendEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : SelectiveSuspendOn
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : SelectiveSuspendTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : SelSuspCancelBehavior
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : SuppressInputInCS
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : SystemInputSuppressionEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : TestIdleMonitorDim
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : TestIdleTimeoutNoHandles
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : TestIdleTimeoutNoHandlesInitial
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : WakeScreenOnInputSupport
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters : WriteReportExSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Device Parameters\e5b3b5ac-9725-4f78-963f-03dfb1d828c7 : D3ColdSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0067 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : CollectionReenumerateSelfInterfaceEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : ComboHardwareIdV2Enabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : DeviceResetNotificationEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : EnhancedPowerManagementEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : FullPowerDownOnTransientDx
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : RetainWWIrpWhenDeviceAbsent
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : SelectiveSuspendEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : SelectiveSuspendOn
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : SelectiveSuspendTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : SelSuspCancelBehavior
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : SuppressInputInCS
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : SystemInputSuppressionEnabled
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : TestIdleMonitorDim
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : TestIdleTimeoutNoHandles
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : TestIdleTimeoutNoHandlesInitial
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : WakeScreenOnInputSupport
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters : WriteReportExSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Device Parameters\e5b3b5ac-9725-4f78-963f-03dfb1d828c7 : D3ColdSupported
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0067 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : Address
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : ConfigFlags
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : ContainerID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : DeviceCharacteristics
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : DeviceType
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : Driver
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : Exclusive
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : LocationInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : LowerFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : ParentIdPrefix
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : RemovalPolicy
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : SECURITY
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : Service
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : UINumber
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : UniqueParentID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : UpperFilters
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Device Parameters : AllowIdleIrpInD3
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Device Parameters : D3ColdReconnectTimeout
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Device Parameters : DeviceSelectiveSuspended
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Device Parameters : EndpointPriorities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Device Parameters : ExtPropDescSemaphore
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Device Parameters : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Device Parameters : IdleTimeoutPeriodInMilliSec
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Device Parameters : OriginalConfigurationValue
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Device Parameters : RevisionId
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Device Parameters : UsbccgpCapabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Device Parameters : VendorRevision
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Device Parameters\Ceip : DeviceInformation
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\0009 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{540b947e-8b40-45bc-a8a2-6a0b894cbda2}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{80497100-8c73-48b9-aad9-ce387e19c56e}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\000A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\001A : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0066 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0067 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0003 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0004 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0005 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\000D : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\000F : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{8dbc9c86-97a9-4bff-9bc6-bfe95d3e6dad}\0010 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4\Properties\{a45c254e-df1c-4efd-8020-67d146a850e0}\0025 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0000&PID_0002\6&c1a2e2f&0&2 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_045E&PID_02FF&IG_00\00&00&0000EDC69982ED7E : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_045E&PID_0B00\3032363330303031343236303433 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_045E&PID_0B02&IG_00\00&01&0000EFC69982ED7E : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0003 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0009 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{83da6326-97a6-4088-9453-a1923f573b29}\0064 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{a8b865dd-2e3d-4094-ad97-e593a70c75d6}\0002 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{a8b865dd-2e3d-4094-ad97-e593a70c75d6}\0003 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{a8b865dd-2e3d-4094-ad97-e593a70c75d6}\0006 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{a8b865dd-2e3d-4094-ad97-e593a70c75d6}\0008 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{b3f8fa53-0004-438e-9003-51a46e139bfc}\0007 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_00\7&41505d0&0&0000\Properties\{d1885396-39d8-4777-bcff-5e3241483416}\0000 : (Default)
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0951&PID_1666\E0D55EA574ADF3B069420FE1 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USBSTOR\Disk&Ven_Kingston&Prod_DataTraveler_3.0&Rev_\E0D55EA574ADF3B069420FE1&0 : CompatibleIDs
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0000&PID_0002\6&c1a2e2f&0&2 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0000&PID_0002\6&c1a2e2f&0&2 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_045E&PID_02FF&IG_00\00&00&0000EDC69982ED7E : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_045E&PID_02FF&IG_00\00&00&0000EDC69982ED7E : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_045E&PID_0B00\3032363330303031343236303433 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_045E&PID_0B00\3032363330303031343236303433 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_045E&PID_0B02&IG_00\00&01&0000EFC69982ED7E : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_045E&PID_0B02&IG_00\00&01&0000EFC69982ED7E : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0951&PID_1666\E0D55EA574ADF3B069420FE1 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0951&PID_1666\E0D55EA574ADF3B069420FE1 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USBSTOR\Disk&Ven_Kingston&Prod_DataTraveler_3.0&Rev_\E0D55EA574ADF3B069420FE1&0 : Capabilities
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USBSTOR\Disk&Ven_Kingston&Prod_DataTraveler_3.0&Rev_\E0D55EA574ADF3B069420FE1&0 : HardwareID
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2bce96aa&0&0 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\ROOT_HUB30\5&2c35141&0&0 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA&MI_03\7&41505d0&0&0003 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_0ABA\6&c1a2e2f&0&2 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot00 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot01 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot02 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot03 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot04 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot05 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&LAMPARRAY\7&1fc2034b&0&3_Slot06 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_00\7&1fc2034b&0&0000 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_01\7&1fc2034b&0&0001 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_046D&PID_C547&MI_02\7&1fc2034b&0&0002 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_05E3&PID_0610\6&3365fbaf&0&11 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0B05&PID_1939\9876543210 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : DeviceDesc
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_00\8&7b0cf2a&0&0000 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102&MI_01\8&7b0cf2a&0&0001 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_0CF2&PID_A102\6243168001 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_00\7&a6e656e&0&0000 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_01\7&a6e656e&0&0001 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_02\7&a6e656e&0&0002 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_03\7&a6e656e&0&0003 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E&MI_04\7&a6e656e&0&0004 : FriendlyName
+\Registry\Machine\SYSTEM\ControlSet001\Enum\USB\VID_1038&PID_161E\6&c1a2e2f&0&4 : FriendlyName
+

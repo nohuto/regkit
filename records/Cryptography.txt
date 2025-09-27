@@ -1,0 +1,147 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography : MachineGuid
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Defaults\Provider Types\Type 001 : Name
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\Microsoft Strong Cryptographic Provider : Image Path
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\Microsoft Strong Cryptographic Provider : Type
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\CatalogDB : DontRemoveCatalogsDuringSync
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\CatalogDB : EnablePerformanceCounters
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\CatalogDB : JetOpenAfterBootMilliseconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\CatalogDB : MaxEnumJetOpenMilliseconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\CatalogDB : MaxFreezeJetOpenMilliseconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\CatalogDB : SyncIgnoreCatalogTimeChangesOnce
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetDefaultFlushExemptSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchAfterCurrentTimePreFetchPeriodSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchAfterPublishPreFetchDivisor
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchBeforeNextUpdatePreFetchDivisor
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchEnable
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchMaxAfterNextUpdatePreFetchPeriodSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchMaxMaxAgeSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchMinAfterNextUpdatePreFetchPeriodSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchMinBeforeNextUpdatePreFetchSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchMinMaxAgeSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchMinOcspValidityPeriodSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchRetrievalTimeoutSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchScanAfterTriggerDelaySeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchValidityPeriodAfterNextUpdatePreFetchDivisor
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : HpkpDisable
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : HpkpMaxDomainCount
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : HpkpMaxMaxAgeSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : HpkpMaxPendingCount
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : HpkpMinDeltaUpdateSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : HpkpMinMaxAgeSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : MaxUrlRetrievalByteCount
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\Microsoft Enhanced RSA and AES Cryptographic Provider : Image Path
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\Microsoft Enhanced RSA and AES Cryptographic Provider : Type
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : AutoFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : AutoFlushFirstDeltaSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : AutoFlushNextDeltaSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : ChainCacheResyncFiletime
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetPreFetchTriggerPeriodSeconds
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : DisableAutoFlushProcessNameList
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : DisableCANameConstraints
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : DisableMandatoryBasicConstraints
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : DisableUnsupportedCriticalExtensions
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : EnableStrictChecksFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : EnableWeakSignatureFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : MaxAIAUrlCountInCert
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : MaxAIAUrlRetrievalByteCount
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : MaxAIAUrlRetrievalCertCount
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : MaxAIAUrlRetrievalCountPerChain
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : MaxIssuerDepth
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : MaxPathCountPerChain
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : MaxVerifySignatureCountPerChain
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : MinRsaPubKeyBitLength
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : MinTelemetryRsaPubKeyBitLength
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : MinWeakRsaPubKeyBitLength
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakDSAAllFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakDSAThirdPartyFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakECDSAAllFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakECDSAAllSha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakECDSAThirdPartyFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakECDSAThirdPartySha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakMD5AllFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakMD5AllSha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakMD5ThirdPartyFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakMD5ThirdPartySha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakRSAAllFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakRSAAllSha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakRsaPubKeyTime
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakRSAThirdPartyFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakRSAThirdPartySha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakSHA1AllFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakSHA1AllSha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakSHA1ThirdPartyFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : WeakSHA1ThirdPartySha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakDSAAllFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakDSAThirdPartyFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakECDSAAllFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakECDSAAllSha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakECDSAThirdPartyAfterTime
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakECDSAThirdPartyFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakECDSAThirdPartyMinBitLength
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakECDSAThirdPartySha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakMD5AllFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakMD5AllSha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakMD5ThirdPartyAfterTime
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakMD5ThirdPartyFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakMD5ThirdPartySha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakRSAAllFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakRSAAllSha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakRSAThirdPartyFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakRSAThirdPartySha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakSHA1AllFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakSHA1AllSha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakSHA1ThirdPartyAfterTime
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakSHA1ThirdPartyFlags
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config\DEFAULT : WeakSHA1ThirdPartySha256Allow
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CryptDllFindOIDInfo\ : Name
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CryptDllFindOIDInfo\ : Name
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CryptDllFindOIDInfo\ : Name
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CryptDllFindOIDInfo\ : Name
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CryptDllFindOIDInfo\ : Name
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CryptDllFindOIDInfo\ : Name
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CryptDllFindOIDInfo\ : Name
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CryptDllFindOIDInfo\ : Name
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\CertCheck\{} : $DLL
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\CertCheck\{} : $Function
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\CERTIFICATE\{} : $DLL
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\CERTIFICATE\{} : $Function
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\Cleanup\{} : $DLL
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\Cleanup\{} : $Function
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\FinalPolicy\{} : $DLL
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\FinalPolicy\{} : $Function
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\Initialization\{} : $DLL
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\Initialization\{} : $Function
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\Message\{} : $DLL
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\Message\{} : $Function
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\Signature\{} : $DLL
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Providers\Trust\Signature\{} : $Function
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetCachedOcspSwitchToCrlCount
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : CryptnetMaxCachedOcspPerCrlCount
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : DisableSerialChain
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : SerialChainLogFileName
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Defaults\Provider Types\Type 018 : Name
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Defaults\Provider Types\Type 024 : Name
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\Microsoft DH SChannel Cryptographic Provider : Image Path
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\Microsoft DH SChannel Cryptographic Provider : Type
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : DisableSyncWithSslTime
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : MaxSslTimeUpdatedEventCount
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : PinRules
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : PinRulesLogDir
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CertDllCreateCertificateChainEngine\config : SslHandshakeLogFileName
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Protect\Providers\ : Disable DC Recovery
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Protect\Providers\ : DistributeBackupKey
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Protect\Providers\ : EnableWeakCryptography
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Protect\Providers\ : Encr Alg
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Protect\Providers\ : Encr Alg Key Size
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Protect\Providers\ : MAC Alg
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Protect\Providers\ : MAC Alg Key Size
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Protect\Providers\ : MasterKeyIterationCount
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Protect\Providers\ : MasterKeyLegacyCompliance
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Protect\Providers\ : MasterKeyLegacyNt4Domain
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Protect\Providers\ : ProtectionPolicy
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\Protect\Providers\ : Recovery Version
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\AutoEnrollment : AEEventLogLevel
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\AutoEnrollment : debug
+\Registry\Machine\SOFTWARE\Microsoft\Cryptography\AutoEnrollment : LogLevel

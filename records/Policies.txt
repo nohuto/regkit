@@ -1,0 +1,31 @@
+﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+
+\Registry\Machine\SYSTEM\ControlSet001\Policies : AllowHardLinkWithNoAccess
+\Registry\Machine\SYSTEM\ControlSet001\Policies : AllowOverAllocateOnVirtualMount
+\Registry\Machine\SYSTEM\ControlSet001\Policies : DisableDeleteNotification
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsAllowUsnMinSize1Mb
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsBypassSpotCorruptionHandlingOnCritical
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsCachedRunsBinMaxLengthInBytes
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsDefaultTier
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsDisable8dot3NameCreation
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsDisableCompression
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsDisableCompressionDelayedAllocation
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsDisableCompressionLimit
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsDisableEncryption
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsDisableFileMetadataOptimization
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsDisableIoPerf
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsDisableLastAccessUpdate
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsDisableSpotCorruptionHandling
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsEnableTxfDeprecatedFunctionality
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsForceNonPagedPoolAllocation
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsKsrVersion
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsLimitPhysicalSectorSize
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsLockSystemFilePages
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsMaxAcceptableLatency
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsMinLengthForAZeroWorker
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsParallelFlushThreshold
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsParallelFlushWorkers
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsParallelZeroWorkers
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsUsnMinuteTimer
+\Registry\Machine\SYSTEM\ControlSet001\Policies : NtfsUsnTimeOutCount
+
