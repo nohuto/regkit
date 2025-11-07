@@ -92,7 +92,7 @@ Since many people don't yet know which values exist and what default value they 
 
 ## DXG Kernel Values
 
-These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c]() for pseudocode snippets I used / [records/Graphics-Drivers.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/Graphics-Drivers.txt) for all values that get read on boot.
+These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://github.com/5Noxi/wpr-reg-records/blob/main/dxgkrnl.c) for pseudocode snippets I used / [records/Graphics-Drivers.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/Graphics-Drivers.txt) for all values that get read on boot.
 
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers"
