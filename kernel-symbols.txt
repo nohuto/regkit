@@ -30,6 +30,7 @@ KiDynamicHeteroCpuPolicyImportantPriority   0000000a
 KiEnableClockTimerPerCpuTickScheduling   00000000
 KiEnableTickAccumulationFromAccountingPeriods   00000000
 KiForceBugcheckForDpcWatchdog   00000000
+KiForceParkingConfiguration   00000001
 KiForceIdleGracePeriodInSec   00000005
 KiGlobalTimerResolutionRequests   00000000
 KiHeteroSchedulerOptions   00000000
