@@ -79,14 +79,273 @@ Guide on how to trace registry activity for a specific app - [procmon.md](https:
 | [usbhub.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/usbhub.txt) | `HKLM\SYSTEM\ControlSet001\Services\usbhub` |
 | [wbem.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/wbem.txt) | `HKLM\SOFTWARE\Microsoft\wbem` |
 
-## Kernel Values
+# Kernel / DXG Kernel Values
 
-Since many people don't yet know which values exist and what default value they have, here's a list. I used IDA, WinDbg, WinObjEx, Windows Internals E7 P1 to create it. The values are located in `\Machine\SYSTEM\CCS\Control\Session Manager\Kernel`.
+Since many people don't yet know which values exist and what default value they have, here's a list. I used IDA, WinDbg, WinObjEx, Windows Internals E7 P1 to create it.
 
 - [Windows Internels E7](https://github.com/5Noxi/windows-books/releases)  
 - [WinObjEx64](https://github.com/hfiref0x/WinObjEx64)  
 - [WinDbg](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/)  
 - [Symbols Memory Dump](https://github.com/5Noxi/sym-mem-dump)  
+
+---
+
+## DXG Kernel Values
+
+These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c]() for pseudocode snippets I used / [records/Graphics-Drivers.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/Graphics-Drivers.txt) for all values that get read on boot.
+
+```c
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers"
+    "MiracastUseIhvDriver"; v3 = 2;
+    "MiracastForceDisable"; v2 = 2;
+
+    "ForceDirectFlip"; v66 = 0
+    "DisableOverlays"; v67 = 0
+    "EnableOfferReclaimOnDriver"; v37 = 1
+    "LeanMemoryLimit"; v123 = 16
+    "LeanMemoryLimit"; v122 = 1395864371
+    "ForceEnableDxgMms2"; v39 = 0
+    "ContextNoPatchMode"; v38 = 0
+    "Force32BitFences"; v68 = 0
+    "InitialPagingQueueFenceValue"; v45 = 7000
+    "ForceInitPagingProcessVaSpace"; v40 = 0
+    "DisableGdiContextGpuVa"; v41 = 0
+    "DisablePagingContextGpuVa"; v42 = 0
+    "DisableMonitoredFenceGpuVa"; v43 = 0
+    "ForceExplicitResidencyNotification"; v44 = 0
+    "DriverManagesResidencyOverride"; v46 = 1
+    "GdiPhysicalAdapterIndex"; v74 = 0
+    "ForceReplicateGdiContent"; v47 = 0
+    "EnableTimedCalls"; v49 = 0
+    "CreateGdiPrimaryOnSlaveGpu"; v48 = 0
+    "ForceSurpriseRemovalSupport"; v75 = 0
+    "EnableDecodeMPO"; v69 = 1
+    "DisableBadDriverCheckForHwProtection"; v70 = 0
+    "ForceSecondaryMPOSupport"; v97 = 0
+    "ForceSecondaryIFlipSupport"; v72 = 0
+    "EnablePanelFitterSupport"; v100 = 0
+    "EnableMultiPlaneOverlay3DDIs"; v73 = 0
+    "DisableSecondaryIFlipSupport"; v71 = 0
+    "EnableWDDM23Synchronization"; v50 = 0
+    "IoMmuFlags"; v51 = 0
+    "DisableMultiSourceMPOCheck"; v76 = 0
+    "DriverStoreCopyMode"; v33 = 1
+    "ForceVariableRefresh"; v52 = 0
+    "DeadlockTimeout"; v53 = 30000
+    "DeadlockPulse"; v54 = 5000
+    "DeadlockPulseTolerance"; v55 = 500
+    "DisableIndependentVidPnVSync"; v56 = 0
+    "NumVirtualFunctions"; v65 = 0
+    "CrtcPhaseFrames"; v57 = 2
+    "EnableFbrValidation"; v58 = 1
+    "DisableBoostedVSyncVirtualization"; v59 = 0
+    "EnableBasicRenderGpuPv"; v60 = 0
+    "KnownProcessBoostMode"; v61 = 1
+    "SmallQuantumMode"; v62 = 1
+    "HighPriorityCompletionMode"; v63 = 1
+    "GpuPriorityChangeMode"; v64 = 1
+
+    "EnableRuntimePowerManagement"; v178 = 1;
+    "DisableDevicePowerRequired"; v179 = 0;
+    "DefaultLatencyToleranceOther"; v175 = -1;
+    "DefaultExpectedResidency"; v176 = 2000;
+    "DefaultLatencyToleranceIdle0"; v184 = 80;
+    "DefaultLatencyToleranceIdle1"; v185 = 15000;
+    "DefaultLatencyToleranceNoContext"; v186 = 35000;
+    "DefaultLatencyToleranceIdle0MonitorOff"; v188 = 2000;
+    "DefaultLatencyToleranceIdle1MonitorOff"; v189 = 50000;
+    "DefaultLatencyToleranceNoContextMonitorOff"; v190 = 100000;
+    "DefaultLatencyToleranceTimerPeriod"; v183 = 200;
+    "DefaultIdleThresholdIdle0"; v187 = 200;
+    "DefaultIdleThresholdIdle0MonitorOff"; v222 = 100;
+    "MonitorLatencyTolerance"; v208 = 300000;
+    "MonitorRefreshLatencyTolerance"; v207 = 17000;
+    "DefaultPowerNotRequiredTimeout"; v209 = 25000;
+    "DefaultActiveIdleThreshold"; v191 = 2000;
+    "ulow"; v170 = 300;
+    "uhigh"; v169 = 700;
+    "uglitch"; v168 = 900;
+    "uideal"; v167 = 500;
+    "lowdebounce"; v182 = 3;
+    "EnablePODebounce"; v180 = 0;
+    "DisablePStateManagement"; v181 = 0;
+    "DefaultD3TransitionLatencyActivelyUsed"; v192 = 80;
+    "DefaultD3TransitionLatencyIdleShortTime"; v194 = 80000;
+    "DefaultD3TransitionLatencyIdleLongTime"; v196 = 140000;
+    "DefaultD3TransitionLatencyIdleVeryLongTime"; v198 = 200000;
+    "DefaultD3TransitionLatencyIdleNoContext"; v199 = 250000;
+    "DefaultD3TransitionLatencyIdleMonitorOff"; v200 = 250000;
+    "DefaultD3TransitionIdleShortTimeThreshold"; v193 = 10000;
+    "DefaultD3TransitionIdleLongTimeThreshold"; v195 = 60000;
+    "DefaultD3TransitionIdleVeryLongTimeThreshold"; v197 = 60000;
+    "DefaultLatencyToleranceMemory"; v201 = 15000;
+    "DefaultLatencyToleranceMemoryNoContext"; v202 = 30000;
+    "DefaultMemoryRefreshLatencyToleranceActivelyUsed"; v203 = 80;
+    "DefaultMemoryRefreshLatencyToleranceIdleShortTime"; v204 = 15000;
+    "DefaultMemoryRefreshLatencyToleranceNoContext"; v205 = 30000;
+    "DefaultMemoryRefreshLatencyToleranceMonitorOff"; v206 = 80000;
+
+    "TerminationListSizeLimit"; v62 = 67108864;
+    "ValidateWDDMCaps"; v63 = 0;
+    "WDDM2LockManagement"; v61 = 1;
+    "MaximumAdapterCount"; v60 = 32;
+    "InvestigationDebugParameter"; v65 = 0;
+    "EnableIgnoreWin32ProcessStatus"; v66 = 0;
+    "EnableHMDTestMode"; v67 = 0;
+    "PreserveFirmwareMode"; v68 = 0;
+    "PreventFullscreenWireFormatChange"; v69 = 0;
+    "EnableFuzzing"; v64 = 0;
+    "InternalDiagnosticsBufferSize"; v55 = 65536;
+    "InternalDiagnosticsBufferMultiplier"; v57 = 2;
+    "ExternalDiagnosticsBufferSize"; v56 = 16384;
+    "ExternalDiagnosticsBufferMultiplier"; v59 = 1;
+    "DiagnosticsBufferExpansionTime"; v58 = 300;
+    "RapidHpdTimeoutInMilliseconds"; v70 = 0;
+    "RapidHpdMaxChainInMilliseconds"; v71 = 0;
+    "ForceUsb4MonitorSupport"; g_bDbgForceUsb4MonitorSupport = 0;
+    "Usb4MonitorTargetId"; g_DbgUsb4MonitorTargetId = 0;
+    "Usb4MonitorDpcdUSB4_Driver_ID"; g_DbgUsb4MonitorDpcdUSB4_Driver_ID = 0;
+    "Usb4MonitorDpcdDP_IN_Adapter_Number"; g_DbgUsb4MonitorDpcdDP_IN_Adapter_Number = 0;
+    "Usb4MonitorPowerOnDelayInSeconds"; g_DbgUsb4MonitorPowerOnDelayInSeconds = 0;
+    "TreatUsb4MonitorAsNormal"; g_bDbgTreatUsb4MonitorAsNormal = 0;
+    "AllowAdvancedEtwLogging"; v72 = 0;
+    "NodeUsageTelemetryTimerInterval"; v73 = v73; // ?
+
+    "GpuVirtualizationFlags"; v50 = (g_VgpuReplaceWarp ? 0x8 : 0x0); // bit0: CreatePVGpu=0, bit2: ForceSvm=0, bit3: ReplaceWarp=default from g_VgpuReplaceWarp ?
+    "DisableVaBackedVm"; g_VgpuDisableVaBackedVm = 0;
+    "VirtualGpuOnly"; g_VirtualGpuOnly = 0;
+    "LimitNumberOfVfs"; g_LimitNumberOfVfs = 0;
+    "DisableVersionMismatchCheck"; v52 = 0;
+
+    "MiracastDefaultRtspPort"; dword_1C0153F64 = 7236;
+    "PlatformSupportMiracast"; v26 = 0;
+    "SuspendAdapterTimerPeriod"; v27 = 500000;
+    "SupportMultipleIntegratedDisplays"; v28 = 0;
+    "HwSchMode"; v29 = 0;
+    "HwSchOverrideBlockList"; v31 = 1;
+    "HwSchTreatExperimentalAsStable"; v30 = 0;
+    "ForceBddFallbackOnly"; v35 = 0;
+
+    "RapidHPDTime"; v16 = 1000;
+    "RapidHPDThresholdCount"; *(_DWORD*)((char*)this + 544) = 5;
+    "EnableExperimentalRefreshRates"; v22 = 0;
+
+    "TdrLevel"; v13 = 3;
+    "TdrDelay"; v8 = 2;
+    "TdrDodPresentDelay"; v9 = 2;
+    "TdrDodVSyncDelay"; v10 = 2;
+    "TdrDdiDelay"; v11 = 5;
+    "TdrLimitCount"; v14 = 5;
+    "TdrLimitTime"; v15 = 60;
+    "TdrDebugMode"; v12 = 2;
+
+    "TdrTestMode"; v14 = 0
+
+    "UnsupportedMonitorModesAllowed"; v5 = 0;
+
+    "ForceEnableDWMClone"; v82 = 0
+
+    "MultiMonSupport"; v39 = 1;
+
+    "HybridInternalPanelOverrideEnable"; v13 = 0
+
+    "OutputDuplicationSessionApplicationLimit"; v14 = 4
+
+    "IsInternalRelease"; v44 = 0
+
+    "DRTTestEnable"; v14 = 0; // 1484026436 = Enabled ?
+
+    "EnableAcmSupportDeveloperPreview"; v7 = 0;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\Power";
+    "UseSelfRefreshVRAMInS3"; v166 = 1;
+
+"<PnPDeviceKey>\\DxgkSettings";
+    "UseSelfRefreshVRAMInS3"; v166 = 1;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\BasicDisplay";
+    "BasicDisplayUserNotified"; v2 = 0;
+
+    "EnableBasicDisplayFallback"; v32 = -1;
+    "DisableBasicDisplayFallback"; v33 = -1;
+    "ForcePreserveBootDisplay"; v34 = 0;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\Smm";
+    "ForceEnableIommu"; v3 = 0;
+    "EnablePageTracking"; v8 = 0;
+    "LogicalAddressMode"; v4 = 0;
+    "PreferHighLogicalAddresses"; v10 = 0;
+    "DebugMode"; v11 = 0;
+    "IdentityMappedPassthrough"; v7 = 0;
+    "ForceDmaRemapping"; v9 = 0;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\DMM";
+    "BadMonitorModeDiag"; v17 = 2;
+    "AssertOnDdiViolation"; g_DmmAssertOnDdiViolation = 0;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\DMM";
+    "ModeListCaching"; v81 = 1;
+    "SetTimingsFlags"; *((_DWORD*)this + 130) = 0;
+    "ShortLinkTrainingTimeout"; *((_DWORD*)this + 131) = 200;
+    "LongLinkTrainingTimeout"; *((_DWORD*)this + 132) = 1000;
+    "HPDFilterLimit"; *((_DWORD*)this + 133) = 20000000;
+    "EnableVirtualRefreshRateOnExternalMonitor"; *((_DWORD*)this + 134) = 0;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\Validation";
+    "Level"; v7 = 0
+    "FailEscapeDDI"; v8 = 0
+    "FailRenderDDI"; v9 = 0
+    "FailReserveGPUVA"; v10 = 0
+    "ReportVirtualMachine"; v11 = 0
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\MonitorDataStore\\MONITOR-ID"
+    "HDREnabled"; v2 = 0;
+    "AdvancedColorEnabled"; v3 = 0;
+    "EnableIntegratedPanelHdrByDefault"; v4 = 0;
+    "MicrosoftApprovedAcmSupport"; v5 = 0;
+    "EnableIntegratedPanelAcmByDefault"; v6 = 0;
+    "AutoColorManagementEnabled"; v8 = 0;
+
+"<AdapterPnpKey>";
+    "EnableVirtualTopologySupport"; v84 = 0;
+    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : EnableVirtualTopologySupport
+    "NeedToSuspendVidSchBeforeSetGammaRamp"; v83 = (AdapterBuild < 8704 ? 1 : 0)
+    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : NeedToSuspendVidSchBeforeSetGammaRamp
+    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : NeedToSuspendVidSchBeforeSetGammaRamp
+
+    "DisableNonPOSTDevice"; v40 = 0;
+    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : DisableNonPOSTDevice
+    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicRender : DisableNonPOSTDevice
+
+    "Device PnP";
+    "ACGSupported"; v165 = 0
+    // Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : ACGSupported
+    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicRender : ACGSupported
+    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : ACGSupported
+    "DxgkGpuVaIommuRequired"; v166 = 0
+    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : DxgkGpuVaIommuRequired
+    "DxgkGpuVaIommuGlobalSupported"; v167 = 0
+    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : DxgkGpuVaIommuGlobalSupported
+
+    "AllowUnspecifiedVSync"; v18 = 0;
+    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : AllowUnspecifiedHSync
+    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : AllowUnspecifiedHSync
+    "AllowUnspecifiedHSync"; v19 = 0;
+    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : AllowUnspecifiedHSync
+    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : AllowUnspecifiedHSync
+    "AllowUnspecifiedPixelRate"; v20 = 0;
+    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : AllowUnspecifiedPixelRate
+    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : AllowUnspecifiedPixelRate
+    "ForceDualViewBehavior"; v21 = 0;
+    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : ForceDualViewBehavior
+    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : ForceDualViewBehavior
+```
+
+---
+
+## Kernel Values
+
+The values are located in `\Machine\SYSTEM\CCS\Control\Session Manager\Kernel`.
 
 `BoostingPeriodMultiplier`  
 Default: `3`? (`KiNormalPriorityBoostingPeriodMultiplier dd 3`)  
@@ -852,4 +1111,4 @@ Default: `1` (`PspIdealNodeRandomized dd 1`)
 dq offset aSessionManager_0 ; "Session Manager\\Kernel\\RNG"  
 dq offset aRngauxiliaryse ; "RNGAuxiliarySeed"  
 dq offset ExpRNGAuxiliarySeed  
-```  
+```
