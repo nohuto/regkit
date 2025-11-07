@@ -345,7 +345,7 @@ These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://githu
 
 ## Kernel Values
 
-See [Kernel-Symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/kernel-values.txt) for reference.
+See [kernel-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/kernel-values.txt) for reference.
 
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel";
