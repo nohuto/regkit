@@ -252,9 +252,6 @@ These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://githu
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\Power";
     "UseSelfRefreshVRAMInS3"; v166 = 1;
 
-"<PnPDeviceKey>\\DxgkSettings";
-    "UseSelfRefreshVRAMInS3"; v166 = 1;
-
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\BasicDisplay";
     "BasicDisplayUserNotified"; v2 = 0;
 
@@ -309,7 +306,6 @@ These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://githu
     // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : DisableNonPOSTDevice
     // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicRender : DisableNonPOSTDevice
 
-    "Device PnP";
     "ACGSupported"; v165 = 0
     // Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : ACGSupported
     // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicRender : ACGSupported
@@ -331,6 +327,9 @@ These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://githu
     "ForceDualViewBehavior"; v21 = 0;
     // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : ForceDualViewBehavior
     // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : ForceDualViewBehavior
+
+"<AdapterPnpKey>\\DxgkSettings";
+    "UseSelfRefreshVRAMInS3"; v166 = 1;
 ```
 
 ---
