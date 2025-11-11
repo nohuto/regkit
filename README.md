@@ -450,7 +450,7 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel\\RNG";
     "RNGAuxiliarySeed"; = ; // ExpRNGAuxiliarySeed = 742978275?
 
-"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager";
     "ProtectionMode"; = 1; // ObpProtectionMode 
     "ObjectSecurityMode"; = 1; // ObpObjectSecurityMode 
     "GlobalFlag"; = 1885405292; // CmNtGlobalFlag (0x7061006c) 
@@ -474,12 +474,12 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "MultiUsersInSessionSupported"; = 0; // RtlpMultiUsersInSessionSupported 
     "DisableIFEOCaching"; = 0; // RtlpDisableIFEOCaching 
 
-"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Quota System";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Quota System";
     "JobTimeLimitsPeriodSeconds"; = 7; // PspJobTimeLimitsPeriodSeconds 
     "ApplicationBlockedMessageLimit"; = 50; // PspJobNoWakeChargeLimit (0x32) 
     "SystemBlockedMessageLimit"; = 200; // PspSystemNoWakeChargeLimit (0xC8) 
 
-"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management";
     "PagedPoolQuota"; = ?; // unk_140FD7DE4
     "NonPagedPoolQuota"; = 4294967295; // PspDefaultResourceLimits (0xFFFFFFFF) 
     "PagingFileQuota"; = ?; // unk_140FD7DE8
@@ -565,7 +565,7 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "SpecialPurposeMemoryStartPageValueSize"; = 4294967295; // MmSpecialPurposeMemoryStartPageValueSize (0xFFFFFFFF) 
     "SpecialPurposeMemoryPages"; = 0; // MmSpecialPurposeMemoryPages 
 
-"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Executive";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Executive";
     "AdditionalCriticalWorkerThreads"; = 0; // ExpAdditionalCriticalWorkerThreads 
     "AdditionalDelayedWorkerThreads"; = 0; // ExpAdditionalDelayedWorkerThreads 
     "MaximumKernelWorkerThreads"; = 4096; // ExpMaximumKernelWorkerThreads (0x1000) 
@@ -576,7 +576,7 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "ForceEnableMutantAutoboost"; = 0; // ExpForceEnableMutantAutoboost 
     "MaxTimeSeparationBeforeCorrect"; = 60; // ExpMaxTimeSeperationBeforeCorrect (0x3C) 
 
-"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Power";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power";
     "SleepStudyDisabled"; = 0; // PopSleepStudyDisabled 
     "SleepStudyDeviceAccountingLevel"; = 4; // PopSleepStudyDeviceAccountingLevel 
     "WatchdogSleepTimeout"; = 300; // PopWatchdogSleepTimeout (0x12C) 
@@ -586,19 +586,19 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "Win32CalloutWatchdogBugcheckEnabled"; = 0; // PopWin32CalloutWatchdogBugcheckEnabled 
     "SkipTickOverride"; = 1; // PopSkipTickPolicy 
 
-"HKLM\SYSTEM\CurrentControlSet\Control\LSA";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\LSA";
     "AuditBaseDirectories"; = 0; // ObpAuditBaseDirectories 
     "AuditBaseObjects"; = 0; // ObpAuditBaseObjects 
 
-"HKLM\SYSTEM\CurrentControlSet\Control\LSA\audit";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\LSA\\audit";
     "ProcessAccessesToAudit"; = 0; // SepProcessAccessesToAudit 
 
-"HKLM\SYSTEM\CurrentControlSet\Control\TimeZoneInformation";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation";
     "ActiveTimeBias"; = ?; // dword_140FCE974
     "Bias"; = 480; // ExpAltTimeZoneBias (0x000001e0) 
     "RealTimeIsUniversal"; = 0; // ExpRealTimeIsUniversal 
 
-"HKLM\SYSTEM\CurrentControlSet\Control\I/O System";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\I/O System";
     "LargeIrpStackLocations"; = 14; // IopLargeIrpStackLocations (0x0E) 
     "MediumIrpStackLocations"; = 2; // IopMediumIrpStackLocations 
     "IoBlockLegacyFsFilters"; = 0; // IopBlockLegacyFsFilters 
@@ -611,7 +611,7 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "IoKeepAliveTimeMs"; = 5000; // IopKeepAliveTimeMs (0x1388) 
     "DisableDiskCounters"; = 0; // PsDisableDiskCounters 
 
-"HKLM\SYSTEM\CurrentControlSet\Control\Configuration Manager";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Configuration Manager";
     "FastBoot"; = 1; // CmFastBoot 
     "SelfHealingEnabled"; = 1; // CmSelfHeal 
     "RegistryLazyFlushInterval"; = 60; // CmpLazyFlushIntervalInSeconds (0x3C) 
@@ -633,12 +633,12 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "CallbackMemoryFromPool"; = 0; // CmpAllocateCallbackMemoryFromPool 
     "CallbackMemoryFromPerProcLookaside"; = 1; // CmpAllocateCallbackMemoryFromPerProcLookaside 
 
-"HKLM\SYSTEM\CurrentControlSet\Control\StateSeparation\Policy";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\StateSeparation\\Policy";
     "Enabled"; = 0; // CmStateSeparationEnabled 
     "DevelopmentMode"; = 0; // CmStateSeparationDevMode 
     "AllHivesVolatile"; = 0; // CmStateSeparationAllHivesVolatile 
 
-"HKLM\SYSTEM\CurrentControlSet\Control\ValidationRunlevels";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\ValidationRunlevels";
     "Global"; = 1210938368; // CmGlobalValidationRunlevel (0x482d7400) 
 ```
 
@@ -647,7 +647,7 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
 See [kernel-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/power-symbols.txt) for reference.
 
 ```c
-"HKLM\SYSTEM\CurrentControlSet\Control\Power";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power";
     "MaximumFrequencyOverride"; = 0; // PpmFrequencyOverride 
     "HibernateEnabledDefault"; = 1; // PopHiberEnabledDefaultReg 
     "HiberbootEnabled"; = 0; // PopHiberbootEnabledReg 
@@ -764,11 +764,11 @@ See [kernel-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/power-sy
     "HibernateBootOptimizationEnabled"; = 0; // PopHiberBootOptimizationEnabledReg 
     "HiberFileTypeDefault"; = 4294967295; // PopHiberFileTypeDefaultReg (0xFFFFFFFF) 
 
-"HKLM\SYSTEM\CurrentControlSet\Control\Power\ForceHibernateDisabled";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\Power\\ForceHibernateDisabled";
     "Policy"; = 0; // PopHiberForceDisabledReg 
     "GuardedHost"; = ?; // unk_140FC5234
 
-"HKLM\SYSTEM\CurrentControlSet\Control\Power\HiberFileBucket";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\HiberFileBucket";
     "Percent1GBFull"; = ?; // unk_140FC3670
     "Percent1GBReduced"; = ?; // unk_140FC366C
     "Percent2GBFull"; = ?; // unk_140FC3688
@@ -784,10 +784,10 @@ See [kernel-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/power-sy
     "PercentUnlimitedFull"; = ?; // unk_140FC3700
     "PercentUnlimitedReduced"; = ?; // unk_140FC36FC
 
-"HKLM\SYSTEM\CurrentControlSet\Control\Power\ModernSleep";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\ModernSleep";
     "EnabledActions"; = 0; // PopAggressiveStandbyActionsRegValue 
     "EnableDsNetRefresh"; = 0; // PopEnableDsNetRefresh 
 
-"HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling";
     "PowerThrottlingOff"; = 0; // PpmPerfQosGroupPolicyDisable 
 ```
