@@ -607,6 +607,10 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     // PpmInitIllegalThrottleLogging
     "ProcessorThrottleLogInterval"; = 10000; // REG_DWORD, milliseconds, range: 0-10000 (values >10000 are clamped to 10000)
 
+"HKLM\\System\\CurrentControlSet\\Control\\Session Manager\\Throttle";
+    "PerfEnablePackageIdle"; = 0; // Type: DWORD
+
+// Miscellaneous values
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\LSA";
     "AuditBaseDirectories"; = 0; // ObpAuditBaseDirectories 
@@ -662,6 +666,13 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\ValidationRunlevels";
     "Global"; = 1210938368; // CmGlobalValidationRunlevel (0x482d7400) 
+
+"HKLM\\System\\CurrentControlSet\\Control\\Processor";
+    "AllowGuestPerfStates"; = 0; // Type: DWORD
+    "AllowPepPerfStates"; = 0; // Type: DWORD
+    "Capabilities"; = 4294967288; // Type: DWORD, Fallback of 0 ?
+    "DisableAsserts"; = 0; // Type: DWORD
+    "Overrides"; = 0; // Type: DWORD
 ```
 
 ## Power Values
