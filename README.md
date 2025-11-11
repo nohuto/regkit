@@ -667,7 +667,7 @@ See [kernel-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/p
     "ActiveIdleThreshold"; = 5000000; // PopFxActiveIdleThreshold (0x004C4B40) 
     "ActiveIdleTimeout"; = 1000; // PopFxActiveIdleTimeout (0x000003E8) 
     "AllowAudioToEnableExecutionRequiredPowerRequests"; = 1; // PopPowerRequestActiveAudioEnablesExecutionRequired 
-    "AllowHibernate"; = 4294967295 // PopAllowHibernateReg (0xFFFFFFFF)
+    "AllowHibernate"; = 4294967295; // PopAllowHibernateReg (0xFFFFFFFF) 
     "AllowSystemRequiredPowerRequests"; = 1; // PopPowerRequestConvertSystemToExecution 
     "AlwaysComputeQosHints"; = 0; // PpmPerfAlwaysComputeQosEnabled 
     "BootHeteroPolicyOverride"; = 0; // PpmPerfBootHeteroPolicyOverrideEnabled 
