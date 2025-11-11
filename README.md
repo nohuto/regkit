@@ -479,6 +479,13 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "JobTimeLimitsPeriodSeconds"; = 7; // PspJobTimeLimitsPeriodSeconds 
     "SystemBlockedMessageLimit"; = 200; // PspSystemNoWakeChargeLimit (0xC8) 
 
+    "DfssGenerationLengthMS"; = 600; // PsDfssGenerationLengthMS dd 258
+    "DfssLongTermFraction1024"; = 512; // sDfssLongTermFraction1024 dd 200
+    "DfssLongTermSharingMS"; = 15; // PsDfssLongTermSharingMS dd 0F
+    "DfssResolutionMS"; = 4294967295; // PsDfssDesiredTimerResolutionMs dd 0FFFFFFFF
+    "DfssShortTermSharingMS"; = 30; // PsDfssShortTermSharingMS dd 1E
+    "EnableCpuQuota"; = 0;
+
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management";
     "AllocationPreference"; = 0; // dword_140FC3200 dd 0
     "AllowUserHotPatchWithoutVbs"; = 0; // dword_140FC3250 dd 0
