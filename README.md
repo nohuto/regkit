@@ -644,7 +644,7 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
 
 ## Power Values
 
-See [kernel-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/power-symbols.txt) for reference.
+See [kernel-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/power-symbols.txt) for reference. The list doesn't include all existing values yet, but the listed ones do exist.
 
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power";
