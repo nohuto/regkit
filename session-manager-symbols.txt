@@ -1,240 +1,236 @@
-AlpcpMessageLogEnabled   00000000
-AlpcpWakePolicyDefault   00000001
-CarTipTag   00000000
-CarXdvOptions   00000000
-CcAzure_LargeWriteSize   00000000
-CcAzure_LazyWriterPercentageOfNumProcs   00000000
-CcAzure_SoftThrottleDelayInMs   00000000
-CcAzure_SoftThrottleLargeWriteAtPct   00000000
-CcAzure_TopBottomDPTEqual   00000000
-CcClientDTPDenominator   00000008
-CcDisableTelemetryRegKeyAtInit   00000002
-CcEnableAsyncLazywriteMultiOverride   00000002
-CcEnableAsyncLazywriteOverride   00000002
-CcEnablePerVolumeLazyWriterOverride   00000002
-CcMaxLazyWritePagesOverride   00000000
-CcRemoteFileDPInlineFlushThreshold   00140000
-CcUnmapBehindLength   00800000
-CmBugcheckRecoveryEnabled   00000000
-CmFastBoot   00000001
-CmFreezeThawTimeoutInSeconds   0000003c
-CmGlobalValidationRunlevel   008824ac
-CmNtGlobalFlag   8b48ff55
-CmNtGlobalFlag2   536ae8da
-CmNtSkipRegistryInit   00000000
-CmSelfHeal   00000001
-CmStateSeparationAllHivesVolatile   00000000
-CmStateSeparationDevMode   00000000
-CmStateSeparationEnabled   00000000
-CmSystemHiveLimitSize   60000000
-CmVEEnabled   00000001
-CmpAllocateCallbackMemoryFromPerProcLookaside   00000001
-CmpAllocateCallbackMemoryFromPool   00000000
-CmpDelayedCloseSize   00000800
-CmpDoIdleProcessing   00000000
-CmpEnableLazyFlushBootDelayInterval   0000003c
-CmpGlobalFlushControlFlags   00000000
-CmpLKGEnabled   00000000
-CmpLazyFlushIntervalInSeconds   0000003c
-CmpLazyLocalizeIntervalInSeconds   0000003c
-CmpLazyReconcileIntervalInSeconds   00000e10
-CmpLogFileSizeCap   00000000
-CmpReorganizeDelayDays   00000007
-CmpReorganizeLimit   00100000
-CmpVolatileBoot   00000000
-DbgkEnableWerUserReporting   00000001
-DifPluginConfigData   d0e9ffff
-DifPluginConfigDataLength   54415541
-DifiPluginControlDenominator   00000000
-DifiPluginControlNumerator   00000000
-DifiPluginControlSparseness   00000000
-DifpPoolTags   00000000
-DifpPoolTagsSizeBytes   ffffffff
-ExResourceCheckFlags   00000003
-ExResourceTimeoutCount   0000002d
-ExpAdditionalCriticalWorkerThreads   00000000
-ExpAdditionalDelayedWorkerThreads   00000000
-ExpAltTimeZoneBias   ffffffc4
-ExpForceEnableMutantAutoboost   00000000
-ExpMaxTimeSeperationBeforeCorrect   0000003c
-ExpMaximumKernelWorkerThreads   00001000
-ExpRNGAuxiliarySeed   2c48f2e3
-ExpRealTimeIsUniversal   00000000
-ExpResourceEnforceOwnerTransfer   00000000
-ExpWorkerFactoryThreadCreationTimeoutInSeconds   0000000a
-ExpWorkerFactoryThreadIdleTimeoutInSeconds   00000043
-ExpWorkerQueueTestFlags   00000000
-ExpWorkerThreadTimeoutInSeconds   00000258
-HvlVpStartDisabled   00000000
-InitConsoleFlags   00000000
-IopAllowLoadCrashDumpDriver   00000000
-IopBlockLegacyFsFilters   00000000
-IopCaseInsensitive   00000001
-IopFailZeroAccessCreate   00000001
-IopIrpCompletionTimeoutInSeconds   0000012c
-IopKeepAliveTimeMs   00001388
-IopLargeIrpStackLocations   0000000f
-IopMediumIrpStackLocations   00000002
-IopRequireDeviceAccessCheck   00000001
-IopSessionZeroAccessCheckEnabled   00000000
-IovIrpTracesLength   00004000
-KdpContext   00000014
-KeDisableLowQosTimerResolution   002f0101
-KeDpcCumulativeSoftTimeoutMs   0001d4c0
-KeDpcSoftTimeoutMs   00004e20
-KeDpcTimeoutMs   00004e20
-KeDpcWatchdogPeriodMs   0001d4c0
-KeDpcWatchdogProfileBufferSizeBytes   00041000
-KeDpcWatchdogProfileCumulativeDpcThresholdMs   0001adb0
-KeDpcWatchdogProfileOffsetMs   00002710
-KeDpcWatchdogProfileSingleDpcThresholdMs   0000479d
-KeHotpatchTestMode   00000000
-KeThreadDpcEnable   00000001
-KeTimerCheckFlags   00000001
-KeVerifierDpcScalingFactor   00000001
-KiAdjustDpcThreshold   00000014
-KiAmdTprLowerInterruptDelayConfig   00000000
-KiBugCheckUnexpectedInterrupts   00000000
-KiCacheAwareScheduling   0000002f
-KiCacheIsoBitmap   00000000
-KiDebugPollInterval   000007d0
-KiDebuggerIsStallOwner   00000000
-KiDefaultHeteroCpuPolicy   00000005
-KiDisableLightWeightSuspend   00000000
-KiDisablePointerParameterAlignmentValidation   00000000
-KiDisableTsx   00000000
-KiDynamicHeteroCpuPolicyExpectedRuntime   00000064
-KiDynamicHeteroCpuPolicyImportantPriority   0000000a
-KiEnableClockTimerPerCpuTickScheduling   00000000
-KiEnableTickAccumulationFromAccountingPeriods   00000000
-KiForceBugcheckForDpcWatchdog   00000000
-KiForceIdleGracePeriodInSec   00000005
-KiForceParkingConfiguration   00000001
-KiGlobalTimerResolutionRequests   00000000
-KiHeteroSchedulerOptions   00000000
-KiHeteroSchedulerOptionsMask   00000000
-KiIdealDpcRate   00000014
-KiInterruptSteeringFlags   00000000
-KiLongDpcQueueThreshold   00000003
-KiLongDpcRuntimeThreshold   00000064
-KiLongDpcRuntimeThresholdCycles   0005a550
-KiMaxDynamicTickDuration   ccd22b25
-KiMaxDynamicTickDurationSize   ffffffff
-KiMaximumCooperativeIdleSearchWidth   00000010
-KiMaximumDpcQueueDepth   00000004
-KiMaximumSharedReadyQueueSize   00000104
-KiMinimumDpcRate   00000003
-KiNormalPriorityBoostMaximumThreadReadyCount   00000001
-KiNormalPriorityBoostReadyTimeTicks   00000006
-KiNormalPriorityBoostScanLatencyTicks   00000007
-KiNormalPriorityBoostingPeriodMultiplier   00000003
-KiPassiveWatchdogTimeout   0000012c
-KiPerfIsoEnabled   00000000
-KiPowerOffFrozenProcessors   00000001
-KiRebalanceMinPriority   00000001
-KiReservedCpuSets   00000000
-KiSchedulerAssistThreadFlagOverride   00000000
-KiSchedulerForegroundBoostDecayPolicy   00000000
-KiSerializeTimerExpiration   00000001
-KiSplitLargeCaches   00000000
-KiTLBCOverride   00000000
-KiVpThreadSystemWorkPriority   0000001e
-KiXStateContextLookasidePerProcMaxDepth   00000000
-MmPageValidationAction   00000000
-MmPageValidationFrequency   00000000
-MmProtectFreedNonPagedPool   00000000
-MmRegistryState   00000001
-MmSpecialPoolCatchOverruns   00000001
-MmSpecialPoolTag   00000000
-MmSpecialPurposeMemoryPages   00000000
-MmSpecialPurposeMemoryStartPage   00000000
-MmSpecialPurposeMemoryStartPageValueSize   ffffffff
-MmTrackLockedPages   00000000
-MmVerifyDriverBuffer   23706b3d
-MmVerifyDriverBufferLength   56415741
-MmVerifyDriverLevel   ffffffff
-ObpAuditBaseDirectories   00000000
-ObpAuditBaseObjects   00000000
-ObpCaseInsensitive   00000001
-ObpDriveRemappingMitigation   00000001
-ObpObjectSecurityInheritance   00000000
-ObpObjectSecurityMode   00000001
-ObpProtectionMode   00000001
-ObpTracePermanent   00000000
-ObpTracePoolTagsBuffer   00000000
-ObpTracePoolTagsLength   ffffffff
-ObpTraceProcessNameBuffer   00000000
-ObpTraceProcessNameLength   ffffffff
-ObpUnsecureGlobalNamesBuffer   0065006e
-ObpUnsecureGlobalNamesLength   000000b4
-PoolForceFullDecommit   00000000
-PoolTrackTableSize   00001001
-PopFlushPolicy   00000000
-PopIdleScanInterval   0000001e
-PopShutdownCleanly   00000000
-PopSimulate   00000000
-PopSkipTickPolicy   00000001
-PopSleepStudyDeviceAccountingLevel   00000000
-PopSleepStudyDisabled   00000001
-PopWatchdogResumeTimeout   00000078
-PopWatchdogSleepTimeout   0000012c
-PopWin32CalloutWatchdogBugcheckEnabled   00000000
-PpmHeteroFavoredCoreFallback   00000000
-PpmPerfQosTransitionHysteresisOverride   ffffffff
-PpmWpsSimulationOverride   00000000
-PpmWpsSimulationOverrideSize   ffffffff
-PsDisableDiskCounters   00000000
-PspAlwaysTrackIoBoosting   00000000
-PspCurDirDevicesSkippedForDlls   00000000
-PspDefaultResourceLimits   ffffffff
-PspDisableControlFlowGuardExportSuppression   00000000
-PspIdealNodeRandomized   00000001
-PspJobNoWakeChargeLimit   00000032
-PspJobTimeLimitsPeriodSeconds   00000007
-PspOutSwapSharedPages   00000000
-PspSehValidationPolicy   00000002
-PspSystemMitigationAuditOptions   00000000
-PspSystemMitigationAuditOptionsLength   00000018
-PspSystemMitigationOptions   00000000
-PspSystemMitigationOptionsLength   00000018
-PspSystemNoWakeChargeLimit   000000c8
-RtlpDisableIFEOCaching   00000000
-RtlpMultiUsersInSessionSupported   00000000
-SeCompatFlags   00000000
-SeDeviceOwnerProtectionDowngradeAllowed   00000000
-SeLpacEnableWatsonReporting   00000000
-SeLpacEnableWatsonThrottling   00000001
-SeTokenDoesNotTrackSessionObject   00000000
-SeTokenLeakTracking   00000000
-SepAllowAllApplicationAceRemoval   00000000
-SepAllowSessionImpersonationCap   00000000
-SepProcessAccessesToAudit   00000000
-SepTokenSingletonAttributesConfig   00000003
-VerifierFaultApplicationsBuffer   00000000
-VerifierFaultApplicationsBufferSize   ffffffff
-VerifierFaultTagsBuffer   00000000
-VerifierFaultTagsBufferSize   ffffffff
-VerifierNewRuleWorkaround   00000000
-VerifierTipDisable   00000000
-VfFaultInjectionBootMinutes   00000008
-VfFaultInjectionProbability   00000258
-VfFlightOptions   00000000
-VfHandleTracingEntries   00004000
-VfOptionFlags   00000000
-VfPoolTracesLength   00000000
-VfRandomVerifiedDrivers   00000000
-VfRuleClasses   00000000
-VfRuleClassesSize   ffffffff
-VfTriageContext   00000000
-VfVerifyMode   00000004
-VfWdIrpTimeoutMsec   00000000
-VfXdvSuppressDriversBuffer   18e8abe8
-VfXdvSuppressDriversBufferLength   48535756
-ViImageExecutionOptions   00000000
-ViRecursionDepthLimitFromRegistry   00000000
-ViSearchedNodesLimitFromRegistry   00000000
-ViVerifyBTSBufferSize   00000000
-ViVerifyTriage   ffffffff
-ViVerifyTriageRules   00000000
-ViVerifyTriageRulesSize   ffffffff
-VmPauseOutswapSizeCapMB   00000200
+AlpcpMessageLogEnabled <> 00000000
+AlpcpWakePolicyDefault <> 00000001
+CarTipTag <> 00000000
+CarXdvOptions <> 00000000
+CcAzure_LargeWriteSize <> 00000000
+CcAzure_LazyWriterPercentageOfNumProcs <> 00000000
+CcAzure_SoftThrottleDelayInMs <> 00000000
+CcAzure_SoftThrottleLargeWriteAtPct <> 00000000
+CcAzure_TopBottomDPTEqual <> 00000000
+CcClientDTPDenominator <> 00000008
+CcDisableTelemetryRegKeyAtInit <> 00000002
+CcEnableAsyncLazywriteMultiOverride <> 00000002
+CcEnableAsyncLazywriteOverride <> 00000002
+CcEnablePerVolumeLazyWriterOverride <> 00000002
+CcMaxLazyWritePagesOverride <> 00000000
+CcRemoteFileDPInlineFlushThreshold <> 00140000
+CcUnmapBehindLength <> 00800000
+CmBugcheckRecoveryEnabled <> 00000000
+CmFastBoot <> 00000001
+CmFreezeThawTimeoutInSeconds <> 0000003c
+CmGlobalValidationRunlevel <> 482d7400
+CmNtGlobalFlag <> 7061006c
+CmNtGlobalFlag2 <> 6c642e30
+CmNtSkipRegistryInit <> 00000000
+CmSelfHeal <> 00000001
+CmStateSeparationAllHivesVolatile <> 00000000
+CmStateSeparationDevMode <> 00000000
+CmStateSeparationEnabled <> 00000000
+CmSystemHiveLimitSize <> 60000000
+CmVEEnabled <> 00000001
+CmpAllocateCallbackMemoryFromPerProcLookaside <> 00000001
+CmpAllocateCallbackMemoryFromPool <> 00000000
+CmpDelayedCloseSize <> 00000800
+CmpDoIdleProcessing <> 00000000
+CmpEnableLazyFlushBootDelayInterval <> 0000003c
+CmpGlobalFlushControlFlags <> 00000000
+CmpLKGEnabled <> 00000000
+CmpLazyFlushIntervalInSeconds <> 0000003c
+CmpLazyLocalizeIntervalInSeconds <> 0000003c
+CmpLazyReconcileIntervalInSeconds <> 00000e10
+CmpLogFileSizeCap <> 00000000
+CmpReorganizeDelayDays <> 00000007
+CmpReorganizeLimit <> 00100000
+CmpVolatileBoot <> 00000000
+DbgkEnableWerUserReporting <> 00000001
+DifPluginConfigData <> 25e8007f
+DifPluginConfigDataLength <> 4c084b8d
+DifiPluginControlDenominator <> 00000000
+DifiPluginControlNumerator <> 00000000
+DifiPluginControlSparseness <> 00000000
+DifpPoolTags <> 00000000
+DifpPoolTagsSizeBytes <> ffffffff
+ExResourceCheckFlags <> 00000003
+ExResourceTimeoutCount <> 0000002d
+ExpAdditionalCriticalWorkerThreads <> 00000000
+ExpAdditionalDelayedWorkerThreads <> 00000000
+ExpAltTimeZoneBias <> 000001e0
+ExpForceEnableMutantAutoboost <> 00000000
+ExpMaxTimeSeperationBeforeCorrect <> 0000003c
+ExpMaximumKernelWorkerThreads <> 00001000
+ExpRNGAuxiliarySeed <> 7cae8356
+ExpRealTimeIsUniversal <> 00000000
+ExpResourceEnforceOwnerTransfer <> 00000000
+ExpWorkerFactoryThreadCreationTimeoutInSeconds <> 0000000a
+ExpWorkerFactoryThreadIdleTimeoutInSeconds <> 00000043
+ExpWorkerQueueTestFlags <> 00000000
+ExpWorkerThreadTimeoutInSeconds <> 00000258
+HvlVpStartDisabled <> 00000000
+InitConsoleFlags <> 00000000
+IopAllowLoadCrashDumpDriver <> 00000000
+IopBlockLegacyFsFilters <> 00000000
+IopCaseInsensitive <> 00000001
+IopFailZeroAccessCreate <> 00000001
+IopIrpCompletionTimeoutInSeconds <> 0000012c
+IopKeepAliveTimeMs <> 00001388
+IopLargeIrpStackLocations <> 0000000e
+IopMediumIrpStackLocations <> 00000002
+IopRequireDeviceAccessCheck <> 00000001
+IopSessionZeroAccessCheckEnabled <> 00000000
+IovIrpTracesLength <> 00004000
+KdpContext <> 00000014
+KeDisableLowQosTimerResolution <> 002f0001
+KeDpcCumulativeSoftTimeoutMs <> 00000000
+KeDpcSoftTimeoutMs <> 00000000
+KeDpcTimeoutMs <> 00000000
+KeDpcWatchdogPeriodMs <> 00000000
+KeDpcWatchdogProfileBufferSizeBytes <> 00000000
+KeDpcWatchdogProfileCumulativeDpcThresholdMs <> 00000000
+KeDpcWatchdogProfileOffsetMs <> 00002710
+KeDpcWatchdogProfileSingleDpcThresholdMs <> 00000000
+KeHotpatchTestMode <> 00000000
+KeThreadDpcEnable <> 00000001
+KeTimerCheckFlags <> 00000001
+KeVerifierDpcScalingFactor <> 00000001
+KiAdjustDpcThreshold <> 00000014
+KiAmdTprLowerInterruptDelayConfig <> 00000000
+KiBugCheckUnexpectedInterrupts <> 00000000
+KiCacheAwareScheduling <> 0000002f
+KiCacheIsoBitmap <> 00000000
+KiDebugPollInterval <> 000007d0
+KiDebuggerIsStallOwner <> 00000000
+KiDefaultHeteroCpuPolicy <> 00000005
+KiDisableLightWeightSuspend <> 00000000
+KiDisablePointerParameterAlignmentValidation <> 00000000
+KiDisableTsx <> 00000000
+KiDynamicHeteroCpuPolicyExpectedRuntime <> 00000064
+KiDynamicHeteroCpuPolicyImportantPriority <> 0000000a
+KiEnableClockTimerPerCpuTickScheduling <> 00000000
+KiEnableTickAccumulationFromAccountingPeriods <> 00000000
+KiForceBugcheckForDpcWatchdog <> 00000000
+KiForceIdleGracePeriodInSec <> 00000005
+KiForceParkingConfiguration <> 00000001
+KiGlobalTimerResolutionRequests <> 00000000
+KiHeteroSchedulerOptions <> 00000000
+KiHeteroSchedulerOptionsMask <> 00000000
+KiIdealDpcRate <> 00000014
+KiInterruptSteeringFlags <> 00000000
+KiLongDpcQueueThreshold <> 00000003
+KiLongDpcRuntimeThreshold <> 00000064
+KiMaxDynamicTickDurationSize <> ffffffff
+KiMaximumCooperativeIdleSearchWidth <> 00000010
+KiMaximumDpcQueueDepth <> 00000004
+KiMaximumSharedReadyQueueSize <> 00000104
+KiMinimumDpcRate <> 00000003
+KiNormalPriorityBoostMaximumThreadReadyCount <> 00000001
+KiNormalPriorityBoostReadyTimeTicks <> 00000006
+KiNormalPriorityBoostScanLatencyTicks <> 00000007
+KiNormalPriorityBoostingPeriodMultiplier <> 00000003
+KiPassiveWatchdogTimeout <> 0000012c
+KiPerfIsoEnabled <> 00000000
+KiPowerOffFrozenProcessors <> 00000001
+KiRebalanceMinPriority <> 00000001
+KiReservedCpuSets <> 00000000
+KiSchedulerAssistThreadFlagOverride <> 00000000
+KiSchedulerForegroundBoostDecayPolicy <> 00000000
+KiSerializeTimerExpiration <> 00000001
+KiSplitLargeCaches <> 00000000
+KiTLBCOverride <> 00000000
+KiVpThreadSystemWorkPriority <> 0000001e
+KiXStateContextLookasidePerProcMaxDepth <> 00000000
+MmPageValidationAction <> 00000000
+MmPageValidationFrequency <> 00000000
+MmProtectFreedNonPagedPool <> 00000000
+MmRegistryState <> 00000001
+MmSpecialPoolCatchOverruns <> 00000001
+MmSpecialPoolTag <> 00000000
+MmSpecialPurposeMemoryPages <> 00000000
+MmSpecialPurposeMemoryStartPage <> 00000000
+MmSpecialPurposeMemoryStartPageValueSize <> ffffffff
+MmTrackLockedPages <> 00000000
+MmVerifyDriverBuffer <> e8c38b48
+MmVerifyDriverBufferLength <> 48002283
+MmVerifyDriverLevel <> ffffffff
+ObpAuditBaseDirectories <> 00000000
+ObpAuditBaseObjects <> 00000000
+ObpCaseInsensitive <> 00000001
+ObpDriveRemappingMitigation <> 00000001
+ObpObjectSecurityInheritance <> 00000000
+ObpObjectSecurityMode <> 00000001
+ObpProtectionMode <> 00000001
+ObpTracePermanent <> 00000000
+ObpTracePoolTagsBuffer <> 00000000
+ObpTracePoolTagsLength <> ffffffff
+ObpTraceProcessNameBuffer <> 00000000
+ObpTraceProcessNameLength <> ffffffff
+ObpUnsecureGlobalNamesBuffer <> 0065006e
+ObpUnsecureGlobalNamesLength <> 000000b4
+PoolForceFullDecommit <> 00000000
+PoolTrackTableSize <> 00001001
+PopFlushPolicy <> 00000000
+PopIdleScanInterval <> 0000001e
+PopShutdownCleanly <> 00000000
+PopSimulate <> 00000000
+PopSkipTickPolicy <> 00000001
+PopSleepStudyDeviceAccountingLevel <> 00000004
+PopSleepStudyDisabled <> 00000000
+PopWatchdogResumeTimeout <> 00000078
+PopWatchdogSleepTimeout <> 0000012c
+PopWin32CalloutWatchdogBugcheckEnabled <> 00000000
+PpmHeteroFavoredCoreFallback <> 00000000
+PpmPerfQosTransitionHysteresisOverride <> ffffffff
+PpmWpsSimulationOverride <> 00000000
+PpmWpsSimulationOverrideSize <> ffffffff
+PsDisableDiskCounters <> 00000000
+PspAlwaysTrackIoBoosting <> 00000000
+PspCurDirDevicesSkippedForDlls <> 00000000
+PspDefaultResourceLimits <> ffffffff
+PspDisableControlFlowGuardExportSuppression <> 00000000
+PspIdealNodeRandomized <> 00000001
+PspJobNoWakeChargeLimit <> 00000032
+PspJobTimeLimitsPeriodSeconds <> 00000007
+PspOutSwapSharedPages <> 00000000
+PspSehValidationPolicy <> 00000002
+PspSystemMitigationAuditOptions <> 00000000
+PspSystemMitigationOptions <> 00000000
+PspSystemNoWakeChargeLimit <> 000000c8
+RtlpDisableIFEOCaching <> 00000000
+RtlpMultiUsersInSessionSupported <> 00000000
+SeCompatFlags <> 00000000
+SeDeviceOwnerProtectionDowngradeAllowed <> 00000000
+SeLpacEnableWatsonReporting <> 00000000
+SeLpacEnableWatsonThrottling <> 00000001
+SeTokenDoesNotTrackSessionObject <> 00000000
+SeTokenLeakTracking <> 00000000
+SepAllowAllApplicationAceRemoval <> 00000000
+SepAllowSessionImpersonationCap <> 00000000
+SepProcessAccessesToAudit <> 00000000
+SepTokenSingletonAttributesConfig <> 00000003
+VerifierFaultApplicationsBuffer <> 00000000
+VerifierFaultApplicationsBufferSize <> ffffffff
+VerifierFaultTagsBuffer <> 00000000
+VerifierFaultTagsBufferSize <> ffffffff
+VerifierNewRuleWorkaround <> 00000000
+VerifierTipDisable <> 00000000
+VfFaultInjectionBootMinutes <> 00000008
+VfFaultInjectionProbability <> 00000258
+VfFlightOptions <> 00000000
+VfHandleTracingEntries <> 00004000
+VfOptionFlags <> 00000000
+VfPoolTracesLength <> 00000000
+VfRandomVerifiedDrivers <> 00000000
+VfRuleClasses <> 00000000
+VfRuleClassesSize <> ffffffff
+VfTriageContext <> 00000000
+VfVerifyMode <> 00000004
+VfWdIrpTimeoutMsec <> 00000000
+VfXdvSuppressDriversBuffer <> 10758b48
+VfXdvSuppressDriversBufferLength <> cf8b4800
+ViImageExecutionOptions <> 00000000
+ViRecursionDepthLimitFromRegistry <> 00000000
+ViSearchedNodesLimitFromRegistry <> 00000000
+ViVerifyBTSBufferSize <> 00000000
+ViVerifyTriage <> ffffffff
+ViVerifyTriageRules <> 00000000
+ViVerifyTriageRulesSize <> ffffffff
+VmPauseOutswapSizeCapMB <> 00000200
