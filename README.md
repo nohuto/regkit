@@ -334,9 +334,9 @@ These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://githu
 
 ---
 
-## Kernel Values
+## Session Manager Values
 
-See [kernel-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/kernel-symbols.txt) for reference.
+See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/session-manager-symbols.txt) for reference.
 
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel";
@@ -449,6 +449,200 @@ See [kernel-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/kernel-s
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel\\RNG";
     "RNGAuxiliarySeed"; = ; // ExpRNGAuxiliarySeed = 742978275?
+
+"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager";
+    "ProtectionMode"; = 1; // ObpProtectionMode 
+    "ObjectSecurityMode"; = 1; // ObpObjectSecurityMode 
+    "GlobalFlag"; = 2336816981; // CmNtGlobalFlag 
+    "GlobalFlag2"; = 1399515354; // CmNtGlobalFlag2 
+    "SkipRegistryInit"; = 0; // CmNtSkipRegistryInit 
+    "CWDIllegalInDLLSearch"; = 0; // PspCurDirDevicesSkippedForDlls 
+    "ResourceTimeoutCount"; = 45; // ExResourceTimeoutCount 
+    "ResourceCheckFlags"; = 3; // ExResourceCheckFlags 
+    "ResourceEnforceOwnerTransfer"; = 0; // ExpResourceEnforceOwnerTransfer 
+    "CriticalSectionTimeout"; = ?; // dword_140FC3204
+    "HeapSegmentReserve"; = ?; // qword_140FC3228
+    "HeapSegmentCommit"; = ?; // qword_140FC3220
+    "HeapDeCommitTotalFreeThreshold"; = ?; // qword_140FC3218
+    "HeapDeCommitFreeBlockThreshold"; = ?; // qword_140FC3210
+    "PowerPolicySimulate"; = 0; // PopSimulate 
+    "Debugger Retries"; = 20; // KdpContext 
+    "AlpcMessageLog"; = 0; // AlpcpMessageLogEnabled 
+    "AlpcWakePolicy"; = 1; // AlpcpWakePolicyDefault 
+    "ImageExecutionOptions"; = 0; // ViImageExecutionOptions 
+    "InitConsoleFlags"; = 0; // InitConsoleFlags 
+    "MultiUsersInSessionSupported"; = 0; // RtlpMultiUsersInSessionSupported 
+    "DisableIFEOCaching"; = 0; // RtlpDisableIFEOCaching 
+
+"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Quota System";
+    "JobTimeLimitsPeriodSeconds"; = 7; // PspJobTimeLimitsPeriodSeconds 
+    "ApplicationBlockedMessageLimit"; = 50; // PspJobNoWakeChargeLimit 
+    "SystemBlockedMessageLimit"; = 200; // PspSystemNoWakeChargeLimit 
+
+"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management";
+    "PagedPoolQuota"; = ?; // unk_140FD7DE4
+    "NonPagedPoolQuota"; = 4294967295; // PspDefaultResourceLimits (0xFFFFFFFF) 
+    "PagingFileQuota"; = ?; // unk_140FD7DE8
+    "WorkingSetPagesQuota"; = ?; // unk_140FD7DEC
+    "AllocationPreference"; = ?; // dword_140FC3200
+    "Mirroring"; = ?; // dword_140FC31F4
+    "MoveImages"; = 1; // MmRegistryState 
+    "LowMemoryThreshold"; = ?; // qword_140FC3230
+    "HighMemoryThreshold"; = ?; // qword_140FC3238
+    "DisablePageCombining"; = ?; // dword_140FC31E8
+    "DisablePagingExecutive"; = ?; // dword_140FC31E4
+    "EnableCooling"; = ?; // dword_140FC31F8
+    "ModifiedWriteMaximum"; = ?; // dword_140FC31FC
+    "PoolTagSmallTableSize"; = 4097; // PoolTrackTableSize 
+    "PoolForceFullDecommit"; = 0; // PoolForceFullDecommit 
+    "PoolTag"; = 0; // MmSpecialPoolTag 
+    "PoolTagOverruns"; = 1; // MmSpecialPoolCatchOverruns 
+    "ProtectNonPagedPool"; = 0; // MmProtectFreedNonPagedPool 
+    "TrackLockedPages"; = 0; // MmTrackLockedPages 
+    "TrackPtes"; = ?; // dword_140FC31EC
+    "PageValidationAction"; = 0; // MmPageValidationAction 
+    "PageValidationFrequency"; = 0; // MmPageValidationFrequency 
+    "ForceValidateIo"; = ?; // dword_140FC31F0
+    "PhysicalMemoryMapperEnforcementMode"; = ?; // dword_140FC324C
+    "VerifierOptions"; = 0; // VfOptionFlags 
+    "VerifierTipDisable"; = 0; // VerifierTipDisable 
+    "VerifierNewRuleWorkaround"; = 0; // VerifierNewRuleWorkaround 
+    "VerifierIrpStackTraces"; = 16384; // IovIrpTracesLength 
+    "VerifierHandleTraces"; = 16384; // VfHandleTracingEntries 
+    "VerifierIrpTimeout"; = 0; // VfWdIrpTimeoutMsec 
+    "VerifyDriverLevel"; = 4294967295; // MmVerifyDriverLevel (0xFFFFFFFF) 
+    "VerifyDrivers"; = 594044221; // MmVerifyDriverBuffer (0x23706B3D) 
+    "VerifyDriversLength"; = 1447310913; // MmVerifyDriverBufferLength (0x56415741) 
+    "VerifierSettingState"; = 0; // VfRuleClasses 
+    "VerifierSettingStateSize"; = 4294967295; // VfRuleClassesSize (0xFFFFFFFF) 
+    "XdvVerifierOptions"; = 0; // VfFlightOptions 
+    "VerifyMode"; = 4; // VfVerifyMode 
+    "VerifyTriage"; = 4294967295; // ViVerifyTriage (0xFFFFFFFF) 
+    "VerifyTriageRules"; = 0; // ViVerifyTriageRules 
+    "VerifyTriageRulesSize"; = 4294967295; // ViVerifyTriageRulesSize (0xFFFFFFFF) 
+    "DifPluginConfigData"; = 3506164991; // DifPluginConfigData (0xD0E9FFFF) 
+    "DifPluginConfigDataLength"; = 1413828185; // DifPluginConfigDataLength (0x54415541) 
+    "VerifierFaultProbability"; = 600; // VfFaultInjectionProbability (0x00000258) 
+    "VerifierFaultBootMinutes"; = 8; // VfFaultInjectionBootMinutes 
+    "VerifierFaultApplications"; = 0; // VerifierFaultApplicationsBuffer 
+    "VerifierFaultApplicationsSize"; = 4294967295; // VerifierFaultApplicationsBufferSize (0xFFFFFFFF) 
+    "VerifierFaultTags"; = 0; // VerifierFaultTagsBuffer 
+    "VerifierFaultTagsSize"; = 4294967295; // VerifierFaultTagsBufferSize (0xFFFFFFFF) 
+    "VerifierDifPoolTags"; = 0; // DifpPoolTags 
+    "VerifierDifPoolTagsSizeBytes"; = 4294967295; // DifpPoolTagsSizeBytes (0xFFFFFFFF) 
+    "VerifierRandomTargets"; = 0; // VfRandomVerifiedDrivers 
+    "VerifierTipLimitDenominator"; = 0; // DifiPluginControlDenominator 
+    "VerifierTipLimitNumerator"; = 0; // DifiPluginControlNumerator 
+    "VerifierTipSparseness"; = 0; // DifiPluginControlSparseness 
+    "VerifierTriageContext"; = 0; // VfTriageContext 
+    "XdvTipTag"; = 0; // CarTipTag 
+    "XdvVerifierOptions"; = 0; // CarXdvOptions 
+    "VerifyBTSBufferSize"; = 0; // ViVerifyBTSBufferSize 
+    "VerifyDriversSuppress"; = 418795416; // VfXdvSuppressDriversBuffer (0x18E8ABE8) 
+    "VerifyDriversSuppressLength"; = 1212432054; // VfXdvSuppressDriversBufferLength (0x48535756) 
+    "DeadlockRecursionDepthLimit"; = 0; // ViRecursionDepthLimitFromRegistry 
+    "DeadlockSearchNodesLimit"; = 0; // ViSearchedNodesLimitFromRegistry 
+    "MinimumStackCommitInBytes"; = ?; // dword_140FC3208
+    "WorkingSetSwapSharedPages"; = 0; // PspOutSwapSharedPages 
+    "VmPauseOutswapSizeCapMB"; = 512; // VmPauseOutswapSizeCapMB 
+    "RemoteFileDirtyPageThreshold"; = 1310720; // CcRemoteFileDPInlineFlushThreshold (0x00140000) 
+    "MaxLazyWritePages"; = 0; // CcMaxLazyWritePagesOverride 
+    "EnablePerVolumeLazyWriter"; = 2; // CcEnablePerVolumeLazyWriterOverride 
+    "EnableAsyncLazywrite"; = 2; // CcEnableAsyncLazywriteOverride 
+    "EnableAsyncLazywriteMulti"; = 2; // CcEnableAsyncLazywriteMultiOverride 
+    "CacheUnmapBehindLengthInMB"; = 8388608; // CcUnmapBehindLength (0x00800000) 
+    "DisableCacheTelemetry"; = 2; // CcDisableTelemetryRegKeyAtInit 
+    "TopBottomDPTEqual"; = 0; // CcAzure_TopBottomDPTEqual 
+    "LazyWriterPercentageOfNumProcs"; = 0; // CcAzure_LazyWriterPercentageOfNumProcs 
+    "LargeWriteSize"; = 0; // CcAzure_LargeWriteSize 
+    "SoftThrottleLargeWriteAtPct"; = 0; // CcAzure_SoftThrottleLargeWriteAtPct 
+    "SoftThrottleDelayInMs"; = 0; // CcAzure_SoftThrottleDelayInMs 
+    "CustomDTPDenominator"; = 8; // CcClientDTPDenominator 
+    "SimulateCommitSavings"; = ?; // dword_140FC3240
+    "KernelPadSectionsOverride"; = ?; // dword_140FC3248
+    "AllowUserHotPatchWithoutVbs"; = ?; // dword_140FC3250
+    "SpecialPurposeMemoryStartPage"; = 0; // MmSpecialPurposeMemoryStartPage 
+    "SpecialPurposeMemoryStartPageValueSize"; = 4294967295; // MmSpecialPurposeMemoryStartPageValueSize (0xFFFFFFFF) 
+    "SpecialPurposeMemoryPages"; = 0; // MmSpecialPurposeMemoryPages 
+
+"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Executive";
+    "AdditionalCriticalWorkerThreads"; = 0; // ExpAdditionalCriticalWorkerThreads 
+    "AdditionalDelayedWorkerThreads"; = 0; // ExpAdditionalDelayedWorkerThreads 
+    "MaximumKernelWorkerThreads"; = 4096; // ExpMaximumKernelWorkerThreads 
+    "WorkerThreadTimeoutInSeconds"; = 600; // ExpWorkerThreadTimeoutInSeconds (0x00000258) 
+    "KernelWorkerTestFlags"; = 0; // ExpWorkerQueueTestFlags 
+    "WorkerFactoryThreadCreationTimeout"; = 10; // ExpWorkerFactoryThreadCreationTimeoutInSeconds 
+    "WorkerFactoryThreadIdleTimeout"; = 67; // ExpWorkerFactoryThreadIdleTimeoutInSeconds 
+    "ForceEnableMutantAutoboost"; = 0; // ExpForceEnableMutantAutoboost 
+    "MaxTimeSeparationBeforeCorrect"; = 60; // ExpMaxTimeSeperationBeforeCorrect 
+
+"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Power";
+    "SleepStudyDisabled"; = 1; // PopSleepStudyDisabled 
+    "SleepStudyDeviceAccountingLevel"; = 0; // PopSleepStudyDeviceAccountingLevel 
+    "WatchdogSleepTimeout"; = 300; // PopWatchdogSleepTimeout (0x0000012C) 
+    "WatchdogResumeTimeout"; = 120; // PopWatchdogResumeTimeout (0x00000078) 
+    "IdleScanInterval"; = 30; // PopIdleScanInterval 
+    "FlushPolicy"; = 0; // PopFlushPolicy 
+    "Win32CalloutWatchdogBugcheckEnabled"; = 0; // PopWin32CalloutWatchdogBugcheckEnabled 
+    "SkipTickOverride"; = 1; // PopSkipTickPolicy 
+
+// Miscellaneous values
+
+"HKLM\SYSTEM\CurrentControlSet\Control\LSA";
+    "AuditBaseDirectories"; = 0; // ObpAuditBaseDirectories 
+    "AuditBaseObjects"; = 0; // ObpAuditBaseObjects 
+
+"HKLM\SYSTEM\CurrentControlSet\Control\LSA\audit";
+    "ProcessAccessesToAudit"; = 0; // SepProcessAccessesToAudit 
+
+"HKLM\SYSTEM\CurrentControlSet\Control\TimeZoneInformation";
+    "ActiveTimeBias"; = ?; // dword_140FCE974
+    "Bias"; = -60; // ExpAltTimeZoneBias (0xFFFFFFC4) 
+    "RealTimeIsUniversal"; = 0; // ExpRealTimeIsUniversal 
+
+"HKLM\SYSTEM\CurrentControlSet\Control\I/O System";
+    "LargeIrpStackLocations"; = 15; // IopLargeIrpStackLocations 
+    "MediumIrpStackLocations"; = 2; // IopMediumIrpStackLocations 
+    "IoBlockLegacyFsFilters"; = 0; // IopBlockLegacyFsFilters 
+    "IoCaseInsensitive"; = 1; // IopCaseInsensitive 
+    "RequireDeviceAccessCheck"; = 1; // IopRequireDeviceAccessCheck 
+    "IoFailZeroAccessCreate"; = 1; // IopFailZeroAccessCreate 
+    "IoEnableSessionZeroAccessCheck"; = 0; // IopSessionZeroAccessCheckEnabled 
+    "IoAllowLoadCrashDumpDriver"; = 0; // IopAllowLoadCrashDumpDriver 
+    "IoIrpCompletionTimeoutInSeconds"; = 300; // IopIrpCompletionTimeoutInSeconds (0x0000012C) 
+    "IoKeepAliveTimeMs"; = 5000; // IopKeepAliveTimeMs (0x00001388) 
+    "DisableDiskCounters"; = 0; // PsDisableDiskCounters 
+
+"HKLM\SYSTEM\CurrentControlSet\Control\Configuration Manager";
+    "FastBoot"; = 1; // CmFastBoot 
+    "SelfHealingEnabled"; = 1; // CmSelfHeal 
+    "RegistryLazyFlushInterval"; = 60; // CmpLazyFlushIntervalInSeconds 
+    "RegistryLazyReconcileInterval"; = 3600; // CmpLazyReconcileIntervalInSeconds (0x00000E10) 
+    "RegistryLazyLocalizeInterval"; = 60; // CmpLazyLocalizeIntervalInSeconds 
+    "RegistryLazyFlushBootDelay"; = 60; // CmpEnableLazyFlushBootDelayInterval 
+    "RegistryLogFileSizeCap"; = 0; // CmpLogFileSizeCap 
+    "RegistryReorganizationLimit"; = 1048576; // CmpReorganizeLimit (0x00100000) 
+    "RegistryReorganizationLimitDays"; = 7; // CmpReorganizeDelayDays 
+    "RegistryFlushGlobalFlags"; = 0; // CmpGlobalFlushControlFlags 
+    "VirtualizationEnabled"; = 1; // CmVEEnabled 
+    "DelayCloseSize"; = 2048; // CmpDelayedCloseSize (0x00000800) 
+    "FreezeThawTimeoutInSeconds"; = 60; // CmFreezeThawTimeoutInSeconds 
+    "SystemHiveLimitSize"; = 1610612736; // CmSystemHiveLimitSize (0x60000000) 
+    "EnablePeriodicBackup"; = 0; // CmpDoIdleProcessing 
+    "VolatileBoot"; = 0; // CmpVolatileBoot 
+    "BugcheckRecoveryEnabled"; = 0; // CmBugcheckRecoveryEnabled 
+    "Enabled"; = 0; // CmpLKGEnabled 
+    "CallbackMemoryFromPool"; = 0; // CmpAllocateCallbackMemoryFromPool 
+    "CallbackMemoryFromPerProcLookaside"; = 1; // CmpAllocateCallbackMemoryFromPerProcLookaside 
+
+"HKLM\SYSTEM\CurrentControlSet\Control\StateSeparation\Policy";
+    "Enabled"; = 0; // CmStateSeparationEnabled 
+    "DevelopmentMode"; = 0; // CmStateSeparationDevMode 
+    "AllHivesVolatile"; = 0; // CmStateSeparationAllHivesVolatile 
+
+"HKLM\SYSTEM\CurrentControlSet\Control\ValidationRunlevels";
+    "Global"; = 89274380; // CmGlobalValidationRunlevel (0x008824AC) 
+
 ```
 
 ## Power Values
