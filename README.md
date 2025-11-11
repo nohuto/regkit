@@ -453,16 +453,16 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager";
     "AlpcMessageLog"; = 0; // AlpcpMessageLogEnabled 
     "AlpcWakePolicy"; = 1; // AlpcpWakePolicyDefault 
-    "CriticalSectionTimeout"; = ?; // dword_140FC3204
+    "CriticalSectionTimeout"; = 2592000; // dword_140FC3204 dd 278D00
     "CWDIllegalInDLLSearch"; = 0; // PspCurDirDevicesSkippedForDlls 
     "Debugger Retries"; = 20; // KdpContext (0x14) 
     "DisableIFEOCaching"; = 0; // RtlpDisableIFEOCaching 
     "GlobalFlag"; = 1885405292; // CmNtGlobalFlag (0x7061006c) 
     "GlobalFlag2"; = 1818504752; // CmNtGlobalFlag2 (0x6c642e30) 
-    "HeapDeCommitFreeBlockThreshold"; = ?; // qword_140FC3210
-    "HeapDeCommitTotalFreeThreshold"; = ?; // qword_140FC3218
-    "HeapSegmentCommit"; = ?; // qword_140FC3220
-    "HeapSegmentReserve"; = ?; // qword_140FC3228
+    "HeapDeCommitFreeBlockThreshold"; = 4096; // qword_140FC3210 dq 1000
+    "HeapDeCommitTotalFreeThreshold"; = 65536; // qword_140FC3218 dq 10000
+    "HeapSegmentCommit"; = 8192; // qword_140FC3220 dq 2000
+    "HeapSegmentReserve"; = 1048576; // qword_140FC3228 dq 100000
     "ImageExecutionOptions"; = 0; // ViImageExecutionOptions 
     "InitConsoleFlags"; = 0; // InitConsoleFlags 
     "MultiUsersInSessionSupported"; = 0; // RtlpMultiUsersInSessionSupported 
@@ -480,8 +480,8 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "SystemBlockedMessageLimit"; = 200; // PspSystemNoWakeChargeLimit (0xC8) 
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management";
-    "AllocationPreference"; = ?; // dword_140FC3200
-    "AllowUserHotPatchWithoutVbs"; = ?; // dword_140FC3250
+    "AllocationPreference"; = 0; // dword_140FC3200 dd 0
+    "AllowUserHotPatchWithoutVbs"; = 0; // dword_140FC3250 dd 0
     "CacheUnmapBehindLengthInMB"; = 8388608; // CcUnmapBehindLength (0x00800000) 
     "CustomDTPDenominator"; = 8; // CcClientDTPDenominator (0x8) 
     "DeadlockRecursionDepthLimit"; = 0; // ViRecursionDepthLimitFromRegistry 
@@ -489,21 +489,21 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "DifPluginConfigData"; = 635710207; // DifPluginConfigData (0x25e8007f) 
     "DifPluginConfigDataLength"; = 1276097421; // DifPluginConfigDataLength (0x4c084b8d) 
     "DisableCacheTelemetry"; = 2; // CcDisableTelemetryRegKeyAtInit 
-    "DisablePageCombining"; = ?; // dword_140FC31E8
-    "DisablePagingExecutive"; = ?; // dword_140FC31E4
+    "DisablePageCombining"; = 0; // dword_140FC31E8 dd 0
+    "DisablePagingExecutive"; = 0; // dword_140FC31E4 dd 0
     "EnableAsyncLazywrite"; = 2; // CcEnableAsyncLazywriteOverride 
     "EnableAsyncLazywriteMulti"; = 2; // CcEnableAsyncLazywriteMultiOverride 
-    "EnableCooling"; = ?; // dword_140FC31F8
+    "EnableCooling"; = 0; // dword_140FC31F8 dd 0
     "EnablePerVolumeLazyWriter"; = 2; // CcEnablePerVolumeLazyWriterOverride 
-    "ForceValidateIo"; = ?; // dword_140FC31F0
-    "HighMemoryThreshold"; = ?; // qword_140FC3238
-    "KernelPadSectionsOverride"; = ?; // dword_140FC3248
+    "ForceValidateIo"; = 0; // dword_140FC31F0 dd 0
+    "HighMemoryThreshold"; = 0; // qword_140FC3238 dq 0
+    "KernelPadSectionsOverride"; = 0; // dword_140FC3248 dd 0
     "LargeWriteSize"; = 0; // CcAzure_LargeWriteSize 
     "LazyWriterPercentageOfNumProcs"; = 0; // CcAzure_LazyWriterPercentageOfNumProcs 
-    "LowMemoryThreshold"; = ?; // qword_140FC3230
+    "LowMemoryThreshold"; = 0; // qword_140FC3230 dq 0
     "MaxLazyWritePages"; = 0; // CcMaxLazyWritePagesOverride 
-    "MinimumStackCommitInBytes"; = ?; // dword_140FC3208
-    "Mirroring"; = ?; // dword_140FC31F4
+    "MinimumStackCommitInBytes"; = 0; // dword_140FC3208 dd 0
+    "Mirroring"; = 0; // dword_140FC31F4 dd 0
     "ModifiedWriteMaximum"; = ?; // dword_140FC31FC
     "MoveImages"; = 1; // MmRegistryState 
     "NonPagedPoolQuota"; = 4294967295; // PspDefaultResourceLimits (0xFFFFFFFF) 
@@ -511,14 +511,14 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "PageValidationAction"; = 0; // MmPageValidationAction 
     "PageValidationFrequency"; = 0; // MmPageValidationFrequency 
     "PagingFileQuota"; = ?; // unk_140FD7DE8
-    "PhysicalMemoryMapperEnforcementMode"; = ?; // dword_140FC324C
+    "PhysicalMemoryMapperEnforcementMode"; = 0; // dword_140FC324C dd 0
     "PoolForceFullDecommit"; = 0; // PoolForceFullDecommit 
     "PoolTag"; = 0; // MmSpecialPoolTag 
     "PoolTagOverruns"; = 1; // MmSpecialPoolCatchOverruns 
     "PoolTagSmallTableSize"; = 4097; // PoolTrackTableSize (0x1001) 
     "ProtectNonPagedPool"; = 0; // MmProtectFreedNonPagedPool 
     "RemoteFileDirtyPageThreshold"; = 1310720; // CcRemoteFileDPInlineFlushThreshold (0x00140000) 
-    "SimulateCommitSavings"; = ?; // dword_140FC3240
+    "SimulateCommitSavings"; = 0; // dword_140FC3240 dd 0
     "SoftThrottleDelayInMs"; = 0; // CcAzure_SoftThrottleDelayInMs 
     "SoftThrottleLargeWriteAtPct"; = 0; // CcAzure_SoftThrottleLargeWriteAtPct 
     "SpecialPurposeMemoryPages"; = 0; // MmSpecialPurposeMemoryPages 
@@ -526,7 +526,7 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "SpecialPurposeMemoryStartPageValueSize"; = 4294967295; // MmSpecialPurposeMemoryStartPageValueSize (0xFFFFFFFF) 
     "TopBottomDPTEqual"; = 0; // CcAzure_TopBottomDPTEqual 
     "TrackLockedPages"; = 0; // MmTrackLockedPages 
-    "TrackPtes"; = ?; // dword_140FC31EC
+    "TrackPtes"; = 0; // dword_140FC31EC dd 0
     "VerifierDifPoolTags"; = 0; // DifpPoolTags 
     "VerifierDifPoolTagsSizeBytes"; = 4294967295; // DifpPoolTagsSizeBytes (0xFFFFFFFF) 
     "VerifierFaultApplications"; = 0; // VerifierFaultApplicationsBuffer 
@@ -735,11 +735,11 @@ See [kernel-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/p
     "IgnoreLidStateForInputSuppression"; = 4294967295; // PopLidStateForInputSuppressionOverride (0xFFFFFFFF) 
     "IpiLastClockOwnerDisable"; = 0; // PpmIpiLastClockOwnerDisable 
     "LatencyToleranceDefault"; = 100000; // PpmLatencyToleranceLimit (0x000186A0) 
-    "LatencyToleranceFSVP"; = ?; // dword_140FC3428
-    "LatencyToleranceIdleResiliency"; = ?; // dword_140FC342C
+    "LatencyToleranceFSVP"; = 20000; // dword_140FC3428 dd 4E20
+    "LatencyToleranceIdleResiliency"; = 1500000; // dword_140FC342C dd 16E360
     "LatencyToleranceParked"; = 0; // PpmIdleParkedLatencyLimit 
     "LatencyToleranceSoftParked"; = 0; // PpmIdleSoftParkedLatencyLimit 
-    "LatencyToleranceVSyncEnabled"; = ?; // dword_140FC3424
+    "LatencyToleranceVSyncEnabled"; = 13001; // dword_140FC3424 dd 32C9
     "LidReliabilityState"; = 1; // REG_DWORD, range: 0-1
     "ManualDimTimeout"; = 0; // PopAdaptiveManualDimTimeout 
     "MaximumFrequencyOverride"; = 0; // PpmFrequencyOverride 
@@ -788,20 +788,20 @@ See [kernel-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/p
     "Policy"; = 0; // PopHiberForceDisabledReg 
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\HiberFileBucket";
-    "Percent16GBFull"; = ?; // unk_140FC36D0
-    "Percent16GBReduced"; = ?; // unk_140FC36CC
-    "Percent1GBFull"; = ?; // unk_140FC3670
-    "Percent1GBReduced"; = ?; // unk_140FC366C
-    "Percent2GBFull"; = ?; // unk_140FC3688
-    "Percent2GBReduced"; = ?; // unk_140FC3684
-    "Percent32GBFull"; = ?; // unk_140FC36E8
-    "Percent32GBReduced"; = ?; // unk_140FC36E4
-    "Percent4GBFull"; = ?; // unk_140FC36A0
-    "Percent4GBReduced"; = ?; // unk_140FC369C
-    "Percent8GBFull"; = ?; // unk_140FC36B8
-    "Percent8GBReduced"; = ?; // unk_140FC36B4
-    "PercentUnlimitedFull"; = ?; // unk_140FC3700
-    "PercentUnlimitedReduced"; = ?; // unk_140FC36FC
+    "Percent16GBFull"; = ?; // unk_140FC36D0 - 28Hex/40Dec?
+    "Percent16GBReduced"; = ?; // unk_140FC36CC - 14Hex/20Dec?
+    "Percent1GBFull"; = ?; // unk_140FC3670 - 28Hex/40Dec?
+    "Percent1GBReduced"; = ?; // unk_140FC366C - 14Hex/20Dec?
+    "Percent2GBFull"; = ?; // unk_140FC3688 - 28Hex/40Dec?
+    "Percent2GBReduced"; = ?; // unk_140FC3684 - 14Hex/20Dec?
+    "Percent32GBFull"; = ?; // unk_140FC36E8 - 28Hex/40Dec?
+    "Percent32GBReduced"; = ?; // unk_140FC36E4 - 14Hex/20Dec?
+    "Percent4GBFull"; = ?; // unk_140FC36A0 - 28Hex/40Dec?
+    "Percent4GBReduced"; = ?; // unk_140FC369C - 14Hex/20Dec?
+    "Percent8GBFull"; = ?; // unk_140FC36B8 - 28Hex/40Dec?
+    "Percent8GBReduced"; = ?; // unk_140FC36B4 - 14Hex/20Dec?
+    "PercentUnlimitedFull"; = ?; // unk_140FC3700 - 28Hex/40Dec?
+    "PercentUnlimitedReduced"; = ?; // unk_140FC36FC - 14Hex/20Dec?
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\ModernSleep";
     "EnabledActions"; = 0; // PopAggressiveStandbyActionsRegValue 
