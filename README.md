@@ -448,7 +448,7 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "XStateContextLookasidePerProcMaxDepth"; = 0; // KiXStateContextLookasidePerProcMaxDepth
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel\\RNG";
-    "RNGAuxiliarySeed"; = ; // ExpRNGAuxiliarySeed = 742978275?
+    "RNGAuxiliarySeed"; = ; // ExpRNGAuxiliarySeed?
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager";
     "AlpcMessageLog"; = 0; // AlpcpMessageLogEnabled 
@@ -457,8 +457,8 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "CWDIllegalInDLLSearch"; = 0; // PspCurDirDevicesSkippedForDlls 
     "Debugger Retries"; = 20; // KdpContext (0x14) 
     "DisableIFEOCaching"; = 0; // RtlpDisableIFEOCaching 
-    "GlobalFlag"; = 1885405292; // CmNtGlobalFlag (0x7061006c) 
-    "GlobalFlag2"; = 1818504752; // CmNtGlobalFlag2 (0x6c642e30) 
+    "GlobalFlag"; = 0; // CmNtGlobalFlag <> 0x7061006c ?
+    "GlobalFlag2"; = 0; // CmNtGlobalFlag2 <> 0x6c642e30 ?
     "HeapDeCommitFreeBlockThreshold"; = 4096; // qword_140FC3210 dq 1000
     "HeapDeCommitTotalFreeThreshold"; = 65536; // qword_140FC3218 dq 10000
     "HeapSegmentCommit"; = 8192; // qword_140FC3220 dq 2000
@@ -596,13 +596,15 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     // PopOpenPowerKey
     "AwayModeEnabled"; = 0; // REG_DWORD, range: 0-1
     "HiberbootEnabled"; = 0; // REG_DWORD, range: 0-1
-    "HiberIoCpuTime"; = 0; // REG_DWORD, milliseconds, range: 0-0xFFFFFFFF
-    "HybridBootAnimationTime"; = 1601; // REG_DWORD, milliseconds, range: 0-0xFFFFFFFF
     "KernelResumeIoCpuTime"; = 0; // REG_DWORD, milliseconds, range: 0-0xFFFFFFFF
     "MaxHuffRatio"; = 1; // REG_DWORD, range: 1-98
     "MultiPhaseResumeDisabled"; = 0; // REG_DWORD, range: 0-1
-    "ResumeCompleteTimestamp"; = 0; // REG_QWORD, range: 0-0xFFFFFFFFFFFFFFFF
     "SystemPowerPolicy"; = "<STRUCT 232 BYTES>"; // REG_BINARY, Size=232
+
+    // HybridBootAnimationTime records the boot animation duration during fast boot, HiberIoCpuTime is CPU time spent on hibernation I/O during resume, ResumeCompleteTimestamp is the system timestamp when resume from hibernation completed. So all of them are just counters and chaning their data won't affect the boot.
+    "HiberIoCpuTime"; = 0; // REG_DWORD, milliseconds, range: 0-0xFFFFFFFF
+    "HybridBootAnimationTime"; = 1601; // REG_DWORD, milliseconds, range: 0-0xFFFFFFFF
+    "ResumeCompleteTimestamp"; = 0; // REG_QWORD, range: 0-0xFFFFFFFFFFFFFFFF
 
     // PpmInitIllegalThrottleLogging
     "ProcessorThrottleLogInterval"; = 10000; // REG_DWORD, milliseconds, range: 0-10000 (values >10000 are clamped to 10000)
@@ -677,7 +679,7 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
 
 ## Power Values
 
-See [kernel-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/power-symbols.txt) for reference. The list doesn't include all existing values yet, but the listed ones do exist. [PopOpenPowerKey-all](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/PopOpenPowerKey-all.c) shows the pseudocode for several `Session Manager\\Power` values.
+See [power-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/power-symbols.txt) for reference. The list doesn't include all existing values yet, but the listed ones do exist. [PopOpenPowerKey-all](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/PopOpenPowerKey-all.c) shows the pseudocode for several `Session Manager\\Power` values.
 
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power";
@@ -801,7 +803,7 @@ See [kernel-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/p
     "WatchdogWorkOrderTimeout"; = 300000; // PopFxWatchdogWorkOrderTimeout (0x000493E0) 
     "Win32kCalloutWatchdogTimeoutSeconds"; = 30; // PopWin32kCalloutWatchdogTimeoutSeconds (0x0000001E) 
 
-"HKLM\\SYSTEM\\CurrentControlSet\\Control\Power\\ForceHibernateDisabled";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\ForceHibernateDisabled";
     "GuardedHost"; = ?; // unk_140FC5234
     "Policy"; = 0; // PopHiberForceDisabledReg 
 
