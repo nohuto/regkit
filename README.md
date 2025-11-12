@@ -739,7 +739,7 @@ See [power-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/po
     "HeteroWpsContainmentEnumOverride"; = 0; // PpmHeteroWpsContainmentEnumOverride 
     "HeteroWpsWorkloadProminenceCutoff"; = 35; // PpmHeteroWpsWorkloadProminenceCutoff (0x23) 
     "HiberbootEnabled"; = 0; // PopHiberbootEnabledReg 
-    "HiberFileSizePercent"; = 100; // PopHiberFileSizePercent dd 64h (IDA), but set to 0 by default on LTSC IoT Enterprise 2024
+    "HiberFileSizePercent"; = 100; // PopHiberFileSizePercent dd 64h (IDA), but set to 0 by default on LTSC IoT Enterprise 2024 since hibernation is unsupported by default
     "HiberFileType"; = 4294967295; // PopHiberFileTypeReg (0xFFFFFFFF)
     "HiberFileTypeDefault"; = 4294967295; // PopHiberFileTypeDefaultReg (0xFFFFFFFF)
     "HibernateBootOptimizationEnabled"; = 0; // PopHiberBootOptimizationEnabledReg 
