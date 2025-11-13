@@ -1,4 +1,4 @@
-# WPR / [Procmon](https://github.com/5Noxi/wpr-reg-records/blob/main/promon/tracing.md) Registry Activity Records
+﻿# WPR / [Procmon](https://github.com/5Noxi/wpr-reg-records/blob/main/promon/tracing.md) Registry Activity Records
 
 Records were made while using `24H2` / `IoT Enterprise LTSC 2024`- Subkeys are always included. Most activities were recorded during boot, there are some others, such as `Steam.txt`, `TLOU2.txt`, `StartAllBack.txt`, and `Lighshot.txt`, that were traced using Procmon during use. WPR is included in WADK:
 ```ps
@@ -8,6 +8,15 @@ winget install Microsoft.WindowsADK
 - [Process Monitor](https://learn.microsoft.com/en-us/sysinternals/downloads/procmon) ([*](https://live.sysinternals.com/))
 
 Guide on how to trace registry activity for a specific app - [procmon.md](https://github.com/5Noxi/wpr-reg-records/blob/main/promon/tracing.md).
+
+## ToC
+
+- [Records Table](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#records-table)
+- [Registry Values Research](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#registry-values-research)
+  - [DXG Kernel Values](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#dxg-kernel-values)
+  - [Kernel Values](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#kernel-values)
+  - [Power Values](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#power-values)
+  - [DWM Values](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#dwm-values)
 
 ## Records Table
 
@@ -79,7 +88,7 @@ Guide on how to trace registry activity for a specific app - [procmon.md](https:
 | [usbhub.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/usbhub.txt) | `HKLM\SYSTEM\ControlSet001\Services\usbhub` |
 | [wbem.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/wbem.txt) | `HKLM\SOFTWARE\Microsoft\wbem` |
 
-# Kernel / DXG Kernel Values
+# Registry Values Research
 
 Since many people don't yet know which values exist and what default value they have, here's a list. I used IDA, WinDbg, WinObjEx, Windows Internals E7 P1 to create it.
 
@@ -610,7 +619,7 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "ProcessorThrottleLogInterval"; = 10000; // REG_DWORD, milliseconds, range: 0-10000 (values >10000 are clamped to 10000)
 
 "HKLM\\System\\CurrentControlSet\\Control\\Session Manager\\Throttle";
-    "PerfEnablePackageIdle"; = 0; // Type: DWORD
+    "PerfEnablePackageIdle"; = 0;
 
 // Miscellaneous values
 
@@ -670,11 +679,11 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "Global"; = 1210938368; // CmGlobalValidationRunlevel (0x482d7400) 
 
 "HKLM\\System\\CurrentControlSet\\Control\\Processor";
-    "AllowGuestPerfStates"; = 0; // Type: DWORD
-    "AllowPepPerfStates"; = 0; // Type: DWORD
-    "Capabilities"; = 4294967288; // Type: DWORD, Fallback of 0 ?
-    "DisableAsserts"; = 0; // Type: DWORD
-    "Overrides"; = 0; // Type: DWORD
+    "AllowGuestPerfStates"; = 0;
+    "AllowPepPerfStates"; = 0;
+    "Capabilities"; = 4294967288;, Fallback of 0 ?
+    "DisableAsserts"; = 0;
+    "Overrides"; = 0;
 ```
 
 ## Power Values
@@ -829,4 +838,105 @@ See [power-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/po
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling";
     "PowerThrottlingOff"; = 0; // PpmPerfQosGroupPolicyDisable 
+```
+
+## DWM Values
+
+See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for used snippets (taken from `dwmcore.dll`, `win32full.sys`, `dwm.exe`).
+
+```c
+"HKLM\\Software\\Microsoft\\Windows\\Dwm";
+    "BlackOutAllReadback"; = 0;
+    "ConfigureInput"; = 1;
+    "CpuClipAASinkEnableIntermediates"; = 1;
+    "CpuClipAASinkEnableOcclusion"; = 1;
+    "CpuClipAASinkEnableRender"; = 1;
+    "CpuClipAreaThreshold"; = 20000;
+    "CpuClipWarpPartitionThreshold"; = 1024;
+    "DisableDrawListCaching"; = 0;
+    "DisableProjectedShadows"; = 0;
+    "DisplayChangeTimeoutMs"; = 1000;
+    "EnableBackdropBlurCaching"; = 1;
+    "EnableCommonSuperSets"; = 1;
+    "EnableCpuClipping"; = 1;
+    "EnableEffectCaching"; = 1;
+    "EnableFrontBufferRenderChecks"; = 1;
+    "EnableMegaRects"; = 1;
+    "EnablePrimitiveReordering"; = 1;
+    "ForceFullDirtyRendering"; = 0;
+    "GammaBlendPencil"; = 1;
+    "GammaBlendWithFP16"; = 1;
+    "InkGPUAccelOverrideVendorWhitelist"; = 0;
+    "LayerClippingMode"; = 2;
+    "LogExpressionPerfStats"; = 0;
+    "MajorityScreenTest_MinArea"; = 80;
+    "MajorityScreenTest_MinLength"; = 80;
+    "MaxD3DFeatureLevel"; = 0;
+    "MegaRectSearchCount"; = 100;
+    "MegaRectSize"; = 100000;
+    "MousewheelAnimationDurationMs"; = 250;
+    "MousewheelScrollingMode"; = 0;
+    "OptimizeForDirtyExpressions"; = 1;
+    "OverlayMinFPS"; = 15;
+    "RenderThreadTimeoutMilliseconds"; = 5000;
+    "SuperWetExtensionTimeMicroseconds"; = 1000;
+    "TelemetryFramesReportPeriodMilliseconds"; = 300000;
+    "TelemetryFramesSequenceIdleIntervalMilliseconds"; = 1000;
+    "TelemetryFramesSequenceMaximumPeriodMilliseconds"; = 1000;
+    "UniformSpaceDpiMode"; = 1;
+    "UseFastestMonitorAsPrimary"; = 0;
+    "vBlankWaitTimeoutMonitorOffMs"; = 250;
+    "WarpEnableDebugColor"; = 0;
+
+    "BackdropBlurCachingThrottleMs"; = 25; // 25ms if missing, clamped to <=1000ms when present
+    "CompositorClockPolicy"; = 1; // range: 0-1
+    "CpuClipFlatteningTolerance"; = 0; // scaled /1000
+    "CustomRefreshRateMode"; = 0; // range: 0-2
+    "DisableAdvancedDirectFlip"; = 0;
+    "DisableIndependentFlip"; = 0;
+    "DisableProjectedShadowsRendering"; = 0;
+    "FlattenVirtualSurfaceEffectInput"; = 0;
+    "ForceEffectMode"; = 0; // range: 0-2
+    "FrameCounterPosition"; = 0;
+    "InteractionOutputPredictionDisabled"; = 0;
+    "OverlayTestMode"; = 0; // 5 = MPO disabled
+    "ParallelModePolicy"; = 1; // >=3 coerced to 1
+    "ParallelModeRateThreshold"; = 119; // divisor for g_qpcFrequency, missing key defaults to 119 Hz (units: Hz)? 0 disables
+    "ResampleInLinearSpace"; = 0;
+    "ResampleModeOverride"; = 0;
+    "SDRBoostPercentOverride"; = 0; // scaled /100
+    "ShowDirtyRegions"; = 0;
+
+    "UseDPIScaling"; = 1;
+    "AnimationsShiftKey"; = 0;
+    "DisableLockingMemory"; = 0;
+    "ModeChangeCurtainUseDebugColor"; = 0;
+
+    "ChildWindowDpiIsolation"; = 1; // range: 0-1
+    "EnableResizeOptimization"; = 0; // range: 0-1
+    "ResizeTimeoutGdi"; = 0; // range: 0-0xFFFFFFFF (ms)
+    "ResizeTimeoutModern"; = 0; // range: 0-0xFFFFFFFF (ms)
+    "DisableDeviceBitmaps"; = 0; // range: 0-1
+
+    "DisallowAnimations"; = 0;
+    "DisallowColorizationColorChanges"; = 0;
+    "DefaultColorizationColorState"; = 0;
+
+
+"HKLM\\Software\\Microsoft\\Windows\\Dwm\\Scene";
+    "EnableBloom"; = 0;
+    "EnableDrawToBackbuffer"; = 1;
+    "EnableImageProcessing"; = 1;
+    "ImageProcessingResizeGrowth"; = 200;
+    "MsaaQualityMode"; = 2;
+    "SceneVisualCutoffCountOfConsecutiveIncidentsAllowed"; = 5;
+    "SceneVisualCutoffThresholdInMS"; = 1000;
+
+    "ForceNonPrimaryDisplayAdapter"; = 0;
+    "ImageProcessingResizeThreshold"; = 0; // scaled /100
+
+"HKLM\\Software\\Microsoft\\Windows\\Dwm\\GpuAccelInkTiming";
+    "ExtensionTimeMicroseconds"; = 1000;
+    "PeriodicFenceMinDifferenceMicroseconds"; = 500;
+    "RefreshRatePercentage"; = 10;
 ```
