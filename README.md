@@ -842,7 +842,7 @@ See [power-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/po
 
 ## DWM Values
 
-See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for used snippets (taken from `dwmcore.dll`, `win32full.sys`, `dwm.exe`, `dwminit.dll`).
+See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for used snippets (taken from `dwmcore.dll`, `win32full.sys`, `dwm.exe`, `dwminit.dll`, `uDWM.dll`).
 
 ```c
 "HKLM\\Software\\Microsoft\\Windows\\Dwm";
@@ -926,6 +926,9 @@ See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for
     "DisableSessionTermination"; = 0; // range: 0–1
     "ForceBasicDisplayAdapterOnDWMRestart"; = 0; // range: 0–1
     "OneCoreNoBootDWM"; = 0; // range: 0–1
+
+    "DisableHologramCompositor"; = 0; // range: 0–1
+
 
 "HKLM\\Software\\Microsoft\\Windows\\Dwm\\Scene";
     "EnableBloom"; = 0;
