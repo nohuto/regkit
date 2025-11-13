@@ -842,7 +842,7 @@ See [power-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/po
 
 ## DWM Values
 
-See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for used snippets (taken from `dwmcore.dll`, `win32full.sys`, `dwm.exe`).
+See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for used snippets (taken from `dwmcore.dll`, `win32full.sys`, `dwm.exe`, `dwminit.dll`).
 
 ```c
 "HKLM\\Software\\Microsoft\\Windows\\Dwm";
@@ -859,6 +859,7 @@ See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for
     "EnableBackdropBlurCaching"; = 1;
     "EnableCommonSuperSets"; = 1;
     "EnableCpuClipping"; = 1;
+    "EnableDDisplayScanoutCaching"; = 1;
     "EnableEffectCaching"; = 1;
     "EnableFrontBufferRenderChecks"; = 1;
     "EnableMegaRects"; = 1;
@@ -877,7 +878,7 @@ See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for
     "MousewheelAnimationDurationMs"; = 250;
     "MousewheelScrollingMode"; = 0;
     "OptimizeForDirtyExpressions"; = 1;
-    "OverlayMinFPS"; = 15;
+    "OverlayMinFPS"; = 15; // If this value is present and set to zero, the Desktop Window Manager disables its minimum frame rate requirement for assigning DirectX swap chains to overlay planes in hardware that supports overlays. This makes it more likely that a low frame rate swap chain will get assigned and stay assigned to an overlay plane, if available. (https://github.com/MicrosoftDocs/win32/blob/docs/desktop-src/dwm/registry-values.md)
     "RenderThreadTimeoutMilliseconds"; = 5000;
     "SuperWetExtensionTimeMicroseconds"; = 1000;
     "TelemetryFramesReportPeriodMilliseconds"; = 300000;
@@ -888,7 +889,7 @@ See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for
     "vBlankWaitTimeoutMonitorOffMs"; = 250;
     "WarpEnableDebugColor"; = 0;
 
-    "BackdropBlurCachingThrottleMs"; = 25; // 25ms if missing, clamped to <=1000ms when present
+    "BackdropBlurCachingThrottleMs"; = 25; // 25ms if missing, clamped to <=1000ms when present?
     "CompositorClockPolicy"; = 1; // range: 0-1
     "CpuClipFlatteningTolerance"; = 0; // scaled /1000
     "CustomRefreshRateMode"; = 0; // range: 0-2
@@ -907,21 +908,24 @@ See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for
     "SDRBoostPercentOverride"; = 0; // scaled /100
     "ShowDirtyRegions"; = 0;
 
-    "UseDPIScaling"; = 1;
     "AnimationsShiftKey"; = 0;
     "DisableLockingMemory"; = 0;
     "ModeChangeCurtainUseDebugColor"; = 0;
+    "UseDPIScaling"; = 1;
 
     "ChildWindowDpiIsolation"; = 1; // range: 0-1
+    "DisableDeviceBitmaps"; = 0; // range: 0-1
     "EnableResizeOptimization"; = 0; // range: 0-1
     "ResizeTimeoutGdi"; = 0; // range: 0-0xFFFFFFFF (ms)
     "ResizeTimeoutModern"; = 0; // range: 0-0xFFFFFFFF (ms)
-    "DisableDeviceBitmaps"; = 0; // range: 0-1
 
+    "DefaultColorizationColorState"; = 0;
     "DisallowAnimations"; = 0;
     "DisallowColorizationColorChanges"; = 0;
-    "DefaultColorizationColorState"; = 0;
 
+    "DisableSessionTermination"; = 0; // range: 0–1
+    "ForceBasicDisplayAdapterOnDWMRestart"; = 0; // range: 0–1
+    "OneCoreNoBootDWM"; = 0; // range: 0–1
 
 "HKLM\\Software\\Microsoft\\Windows\\Dwm\\Scene";
     "EnableBloom"; = 0;
