@@ -812,6 +812,14 @@ See [power-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/po
     "WatchdogWorkOrderTimeout"; = 300000; // PopFxWatchdogWorkOrderTimeout (0x000493E0) 
     "Win32kCalloutWatchdogTimeoutSeconds"; = 30; // PopWin32kCalloutWatchdogTimeoutSeconds (0x0000001E) 
 
+    // InitializePowerWatchdogTimeoutDefaults
+    "PowerWatchdogDrvSetMonitorTimeoutMsec"; = 10000;
+    "PowerWatchdogDwmSyncFlushTimeoutMsec"; = 30000;
+    "PowerWatchdogPoCalloutTimeoutMsec"; = 10000;
+    "PowerWatchdogPowerOnGdiTimeoutMsec"; = 30000;
+    "PowerWatchdogRequestQueueTimeoutMsec"; = 30000;
+
+
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\ForceHibernateDisabled";
     "GuardedHost"; = ?; // unk_140FC5234
     "Policy"; = 0; // PopHiberForceDisabledReg 
@@ -845,7 +853,7 @@ See [power-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/po
 See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for used snippets (taken from `dwmcore.dll`, `win32full.sys`, `dwm.exe`, `dwminit.dll`, `uDWM.dll`).
 
 ```c
-"HKLM\\Software\\Microsoft\\Windows\\Dwm";
+"HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm";
     "BlackOutAllReadback"; = 0;
     "ConfigureInput"; = 1;
     "CpuClipAASinkEnableIntermediates"; = 1;
@@ -930,7 +938,7 @@ See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for
     "DisableHologramCompositor"; = 0; // range: 0–1
 
 
-"HKLM\\Software\\Microsoft\\Windows\\Dwm\\Scene";
+"HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm\\Scene";
     "EnableBloom"; = 0;
     "EnableDrawToBackbuffer"; = 1;
     "EnableImageProcessing"; = 1;
@@ -942,7 +950,7 @@ See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for
     "ForceNonPrimaryDisplayAdapter"; = 0;
     "ImageProcessingResizeThreshold"; = 0; // scaled /100
 
-"HKLM\\Software\\Microsoft\\Windows\\Dwm\\GpuAccelInkTiming";
+"HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm\\GpuAccelInkTiming";
     "ExtensionTimeMicroseconds"; = 1000;
     "PeriodicFenceMinDifferenceMicroseconds"; = 500;
     "RefreshRatePercentage"; = 10;
