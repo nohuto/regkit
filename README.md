@@ -14,7 +14,7 @@ Guide on how to trace registry activity for a specific app - [procmon.md](https:
 - [Records Table](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#records-table)
 - [Registry Values Research](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#registry-values-research)
   - [DXG Kernel Values](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#dxg-kernel-values)
-  - [Kernel Values](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#kernel-values)
+  - [Session Manager Values](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#session-manager-values)
   - [Power Values](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#power-values)
   - [DWM Values](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#dwm-values)
 
@@ -590,7 +590,8 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
     "MaxTimeSeparationBeforeCorrect"; = 60; // ExpMaxTimeSeperationBeforeCorrect (0x3C) 
     "WorkerFactoryThreadCreationTimeout"; = 10; // ExpWorkerFactoryThreadCreationTimeoutInSeconds (0x0A) 
     "WorkerFactoryThreadIdleTimeout"; = 67; // ExpWorkerFactoryThreadIdleTimeoutInSeconds (0x43) 
-    "WorkerThreadTimeoutInSeconds"; = 600; // ExpWorkerThreadTimeoutInSeconds (0x258) 
+    "WorkerThreadTimeoutInSeconds"; = 600; // ExpWorkerThreadTimeoutInSeconds (0x258)
+    "TickcountRolloverDelay"; = 0; // ? (InitTickRolloverDelay dd 0) - InitTickRolloverDelay <> 24848b00, InitTickRolloverDelayLength <> 5e4130c4, InitTickRolloverDelayType <> e2894460
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power";
     "FlushPolicy"; = 0; // PopFlushPolicy 
@@ -620,6 +621,14 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
 
 "HKLM\\System\\CurrentControlSet\\Control\\Session Manager\\Throttle";
     "PerfEnablePackageIdle"; = 0;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Segment Heap";
+    "Enabled"; = 0; // if present with DataLength==4 and nonzero type:
+                    //    RtlpLowFragHeapGlobalFlags |= 0x10;  // global segment heap enable
+                    //    if (value & 0x2)                      // low byte, bit 1
+                    //        RtlpLowFragHeapGlobalFlags |= 0x20; // extra option ?
+                    // if the value exists but is stored as REG_NONE (type==0):
+                    //    RtlpLowFragHeapGlobalFlags |= 0x8;   // global "disable/override"
 
 // Miscellaneous values
 
@@ -813,12 +822,11 @@ See [power-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/po
     "Win32kCalloutWatchdogTimeoutSeconds"; = 30; // PopWin32kCalloutWatchdogTimeoutSeconds (0x0000001E) 
 
     // InitializePowerWatchdogTimeoutDefaults
-    "PowerWatchdogDrvSetMonitorTimeoutMsec"; = 10000;
-    "PowerWatchdogDwmSyncFlushTimeoutMsec"; = 30000;
+    "PowerWatchdogDrvSetMonitorTimeoutMsec"; = 10000; // v10[13]
+    "PowerWatchdogDwmSyncFlushTimeoutMsec"; = 30000; // v10[10]
     "PowerWatchdogPoCalloutTimeoutMsec"; = 10000;
     "PowerWatchdogPowerOnGdiTimeoutMsec"; = 30000;
     "PowerWatchdogRequestQueueTimeoutMsec"; = 30000;
-
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\ForceHibernateDisabled";
     "GuardedHost"; = ?; // unk_140FC5234
