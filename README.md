@@ -821,6 +821,9 @@ See [power-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/po
     "WatchdogWorkOrderTimeout"; = 300000; // PopFxWatchdogWorkOrderTimeout (0x000493E0) 
     "Win32kCalloutWatchdogTimeoutSeconds"; = 30; // PopWin32kCalloutWatchdogTimeoutSeconds (0x0000001E) 
 
+    // UmpoRestoreEsOverrideState
+    "EnergySaverState"; = 2; // 1 = override state (more power savings)? if != 1 no override? (WNF_PO_ENERGY_SAVER_OVERRIDE/WNF_SEB_ENERGY_SAVER_STATE_V2)
+
     // InitializePowerWatchdogTimeoutDefaults
     "PowerWatchdogDrvSetMonitorTimeoutMsec"; = 10000; // v10[13]
     "PowerWatchdogDwmSyncFlushTimeoutMsec"; = 30000; // v10[10]
