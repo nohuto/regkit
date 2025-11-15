@@ -90,18 +90,20 @@ Guide on how to trace registry activity for a specific app - [procmon.md](https:
 
 # Registry Values Research
 
-Since many people don't yet know which values exist and what default value they have, here's a list. I used IDA, WinDbg, WinObjEx, Windows Internals E7 P1 to create it.
+Since many values/keys are unknown, I took some time to create several lists showing their default values, used keys, and additional notes. I created them using IDA, WinDbg ([Symbols Memory Dump](https://github.com/5Noxi/sym-mem-dump)), WinObjEx, and Windows Internals E7 P1. See the `assets` folder for references.
 
-- [Windows Internels E7](https://github.com/5Noxi/windows-books/releases)  
-- [WinObjEx64](https://github.com/hfiref0x/WinObjEx64)  
-- [WinDbg](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/)  
-- [Symbols Memory Dump](https://github.com/5Noxi/sym-mem-dump)  
+> [Windows Internels E7](https://github.com/5Noxi/windows-books/releases)  
+> [WinObjEx64](https://github.com/hfiref0x/WinObjEx64)  
+> [WinDbg](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/)  
+> [Symbols Memory Dump](https://github.com/5Noxi/sym-mem-dump)  
 
 ---
 
 ## DXG Kernel Values
 
 These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dxgkrnl.c) for pseudocode snippets I used / [records/Graphics-Drivers.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/Graphics-Drivers.txt) for all values that get read on boot.
+
+Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
 
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers"
@@ -346,6 +348,8 @@ These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://githu
 ## Session Manager Values
 
 See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/session-manager-symbols.txt) for reference.
+
+Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
 
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel";
@@ -699,6 +703,8 @@ See [session-manager-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main
 
 See [power-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/power-symbols.txt) for reference. The list doesn't include all existing values yet, but the listed ones do exist. [PopOpenPowerKey-all](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/PopOpenPowerKey-all.c) shows the pseudocode for several `Session Manager\\Power` values.
 
+Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
+
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power";
     "ActiveIdleLevel"; = 1; // PopFxActiveIdleLevel 
@@ -862,6 +868,8 @@ See [power-symbols](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/po
 ## DWM Values
 
 See [dwm.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/dwm.c) for used snippets (taken from `dwmcore.dll`, `win32full.sys`, `dwm.exe`, `dwminit.dll`, `uDWM.dll`).
+
+Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
 
 ```c
 "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm";
