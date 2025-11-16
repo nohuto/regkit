@@ -694,7 +694,7 @@ Everything listed below is based on personal research. Mistakes may exist, but I
 "HKLM\\System\\CurrentControlSet\\Control\\Processor";
     "AllowGuestPerfStates"; = 0;
     "AllowPepPerfStates"; = 0;
-    "Capabilities"; = 4294967288;, Fallback of 0 ?
+    "Capabilities"; = 4294967288; // Fallback of 0 ?
     "DisableAsserts"; = 0;
     "Overrides"; = 0;
 ```
@@ -754,7 +754,7 @@ Everything listed below is based on personal research. Mistakes may exist, but I
     "ExperimentalClusterIdleMitigation"; = 0; // PpmIdleClusterIdleMitigation 
     "ForceMinimalHiberFile"; = 0; // PopForceMinimalHiberFile 
     "FxAccountingTelemetryDisabled"; = 0; // PopDiagFxAccountingTelemetryDisabled 
-    "FxRuntimeLogNumberEntries"; = 64; // PopFxRuntimeLogNumberEntries (0x40) 
+    "FxRuntimeLogNumberEntries"; = 64; // PopFxRuntimeLogNumberEntries (0x40) - Changing it to 0 will end up with a BSoD
     "HeteroFavoredCoreRotationTimeoutMs"; = 30000; // PpmHeteroFavoredCoreRotationTimeoutMs (0x00007530) 
     "HeteroHgsEePerfHintsIndependentEnabled"; = 0; // PpmHeteroHgsEePerfHintsIndependentEnabled 
     "HeteroHgsPlusDisabled"; = 0; // PpmHeteroHgsThreadDisabled 
