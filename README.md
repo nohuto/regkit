@@ -17,6 +17,7 @@ Guide on how to trace registry activity for a specific app - [procmon.md](https:
   - [Session Manager Values](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#session-manager-values)
   - [Power Values](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#power-values)
   - [DWM Values](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#dwm-values)
+  - [Intel NIC Values](https://github.com/5Noxi/wpr-reg-records?tab=readme-ov-file#intel-nic-values)
 
 ## Records Table
 
