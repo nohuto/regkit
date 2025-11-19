@@ -53,6 +53,7 @@ Guide on how to trace registry activity for a specific app - [procmon.md](https:
 | [NDIS-Parameters.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NDIS-Parameters.txt) | `HKLM\SYSTEM\ControlSet001\Services\NDIS\Parameters` |
 | [NetBT.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NetBT.txt) | `HKLM\SYSTEM\ControlSet001\Services\NetBT` |
 | [NIC-Intel.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NIC-Intel.txt) | `HKLM\SYSTEM\ControlSet001\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}\00XX` (Intel) |
+| [NIC-Intel-IDA.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NIC-Intel.txt) | Same path as above, but values were found via decompiling (some may not get read) |
 | [NVIDIA-DispGUID.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NVIDIA-DispGUID.txt) | `HKLM\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\00XX` |
 | [NVIDIA-Corp.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NVIDIA-Corp.txt) | `HKLM\SOFTWARE\NVIDIA Corporation` |
 | [NlaSvc.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NlaSvc.txt) | `HKLM\SYSTEM\ControlSet001\Services\NlaSvc` |
@@ -973,4 +974,88 @@ Everything listed below is based on personal research. Mistakes may exist, but I
     "ExtensionTimeMicroseconds"; = 1000;
     "PeriodicFenceMinDifferenceMicroseconds"; = 500;
     "RefreshRatePercentage"; = 10;
+```
+
+# Intel NIC Values
+
+See [intelnet6x.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/intelnet6x.c) for reference, most of them were found via xrefs of `REGISTRY::RegReadRegTable`. Defaults depends on the adapter/driver, these were found on "Intel(R) Ethernet Controller I225-V". Many of them aren't read ([NIC-Intel.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NIC-Intel.txt)).
+
+Many parts aren't structered as they should be after decompiling via IDA, which made it impossible to get their data. See [NIC-Intel-IDA.txt]() for a list of values which I found in IDA (within a single driver). The list below shows values which included their data.
+
+Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
+
+```c
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002bE10318}\\00XX";
+    "*DeviceSleepOnDisconnect" = 0; // range 0-1
+    "*EnableDynamicPowerGating" = 1; // range 0-1
+    "*EncapsulatedPacketTaskOffloadVxlan" = 0; // range 0-1
+    "*FlowControl" = 4; // range 0-4
+    "*HeaderDataSplit" = 0; // range 0-1
+    "*PMARPOffload" = 0; // range 0-1
+    "*PMNSOffload" = 0; // range 0-1
+    "*ReceiveBuffers" = 512; // range 128-4096
+    "*RSCIPv4" = 0; // range 0-1
+    "*RSCIPv6" = 0; // range 0-1
+    "*RssOrVmqPreference" = 0; // range 0-1
+    "*SpeedDuplex" = 0; // range 0-50000
+    "*Sriov" = 0; // range 0-1
+    "*SriovPreferred" = 0; // range 0-1
+    "*VMQ" = 0; // range 0-1
+    "*VMQLookaheadSplit" = 0; // range 0-1
+    "*VMQVlanFiltering" = 1; // range 0-1
+    "*VxlanUDPPortNumber" = 4789; // range 1-65535
+    "*WakeOnMagicPacket" = 1; // range 0-1
+    "*WakeOnPattern" = 1; // range 0-1
+    "AdaptiveQHysteresis" = 64; // range 16-1024
+    "AdaptiveQSize" = 128; // range 64-8192
+    "AdaptiveQWorkSet" = 96; // range 32-8192
+    "CheckForHangTime" = 2; // range 0-60
+    "DisableIntelRST" = 1; // range 0-1
+    "DisableReset" = 0; // range 0-1
+    "DMACoalescing" = 0; // range 0-10240
+    "EnableAdaptiveQueuing" = 1; // range 0-1
+    "EnableDisconnectedStandby" = 0; // range 0-1
+    "EnableHWAutonomous" = 0; // range 0-1
+    "EnableModernStandby" = 0; // range 0-1
+    "EnablePME" = 0; // range 0-1
+    "EnablePowerManagement" = 1; // range 0-1
+    "EnableRxDescriptorChaining" = 1; // range 0-1
+    "FecMode" = 0; // range 0-3
+    "ForceHostExitUlp" = 0; // range 0-1
+    "ForceLtrValue" = 65535; // range 0-65535
+    "ForceRscEnabled" = 0; // range 0-1
+    "HDSplitAlways" = 0; // range 0-1
+    "HDSplitBufferPad" = 2; // range 0-2
+    "HDSplitLocation" = 2; // range 0-3
+    "HDSplitSize" = 128; // range 128-960
+    "I218DisablePLLShut" = 0; // range 0-1
+    "I218DisablePLLShutGiga" = 0; // range 0-1
+    "I219DisableK1Off" = 0; // range 0-1
+    "MaxPacketCountPerDPC" = 256; // range 8-65535
+    "MaxPacketCountPerIndicate" = 64; // range 1-65535
+    "MinHardwareOwnedPacketCount" = 32; // range 8-4096
+    "PadReceiveBuffer" = 0; // range 0-1
+    "ReceiveBuffersOverride" = 1; // range 0-1
+    "RegForceRxPathSerialization" = 0; // range 0-1
+    "ResetTest" = 0; // range 0-1
+    "ResetTestTime" = 300; // range 20-604800
+    "RscMode" = 1; // range 0-2
+    "RxBufferPad" = 10; // range 0-63
+    "RxDescriptorCountPerTailWrite" = 8; // range 4-4096
+    "SidebandUngateOverride" = 0; // range 0-1
+    "StoreBadPackets" = 0; // range 0-1
+    "ULPMode" = 1; // range 0-1
+    "VMQSupported" = 0; // range 0-1
+    "WakeFromS5" = 2; // range 0-65535
+    "WakeOn" = 0; // range 0-4
+    "WakeOnLink" = 0; // range 0-2
+
+    "*IPChecksumOffloadIPv4" = 3; // range 0-3
+    "*LsoV1IPv4" = 1; // range 0-1
+    "*LsoV2IPv4" = 1; // range 0-1
+    "*LsoV2IPv6" = 1; // range 0-1
+    "*TCPChecksumOffloadIPv4" = 3; // range 0-3
+    "*TCPChecksumOffloadIPv6" = 3; // range 0-3
+    "*UDPChecksumOffloadIPv4" = 3; // range 0-3
+    "*UDPChecksumOffloadIPv6" = 3; // range 0-3
 ```
