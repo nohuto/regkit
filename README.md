@@ -54,7 +54,7 @@ Guide on how to trace registry activity for a specific app - [procmon.md](https:
 | [NDIS-Parameters.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NDIS-Parameters.txt) | `HKLM\SYSTEM\ControlSet001\Services\NDIS\Parameters` |
 | [NetBT.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NetBT.txt) | `HKLM\SYSTEM\ControlSet001\Services\NetBT` |
 | [NIC-Intel.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NIC-Intel.txt) | `HKLM\SYSTEM\ControlSet001\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}\00XX` (Intel) |
-| [NIC-Intel-IDA.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NIC-Intel.txt) | Same path as above, but values were found via decompiling (some may not get read) |
+| [NIC-Intel-IDA.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NIC-Intel-IDA.txt) | Same path as above, but values were found via decompiling (some may not get read) |
 | [NVIDIA-DispGUID.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NVIDIA-DispGUID.txt) | `HKLM\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\00XX` |
 | [NVIDIA-Corp.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NVIDIA-Corp.txt) | `HKLM\SOFTWARE\NVIDIA Corporation` |
 | [NlaSvc.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NlaSvc.txt) | `HKLM\SYSTEM\ControlSet001\Services\NlaSvc` |
@@ -981,7 +981,7 @@ Everything listed below is based on personal research. Mistakes may exist, but I
 
 See [intelnet6x.c](https://github.com/5Noxi/wpr-reg-records/blob/main/assets/intelnet6x.c) for reference, most of them were found via xrefs of `REGISTRY::RegReadRegTable`. Defaults depends on the adapter/driver, these were found on "Intel(R) Ethernet Controller I225-V". Many of them aren't read ([NIC-Intel.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NIC-Intel.txt)).
 
-Many parts aren't structered as they should be after decompiling via IDA, which made it impossible to get their data. See [NIC-Intel-IDA.txt]() for a list of values which I found in IDA (within a single driver). The list below shows values which included their data.
+Many parts aren't structered as they should be after decompiling via IDA, which made it impossible to get their data. See [NIC-Intel-IDA.txt](https://github.com/5Noxi/wpr-reg-records/blob/main/records/NIC-Intel-IDA.txt) for a list of values which I found in IDA (within a single driver). The list below shows values which included their data.
 
 Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
 
