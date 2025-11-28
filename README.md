@@ -722,7 +722,7 @@ Everything listed below is based on personal research. Mistakes may exist, but I
     "CheckPowerSourceAfterRtcWakeTime"; = 30; // PopCheckPowerSourceAfterRtcWakeTime (0x1E) 
     "Class1InitialUnparkCount"; = 64; // PpmParkInitialClass1UnParkCount (0x40) 
     "CoalescingFlushInterval"; = 60; // PopCoalescingFlushInterval (0x0000003C) 
-    "CoalescingTimerInterval"; = 1500; // PopCoalescingTimerInterval (0x000005DC) 
+    "CoalescingTimerInterval"; = 1500; // PopCoalescingTimerInterval (0x000005DC) - Units: seconds (multiplies value by -10,000,000, one second in 100 ns units, so the default corresponds to a 25min cadence)
     "DeepIoCoalescingEnabled"; = 0; // PopDeepIoCoalescingEnabled 
     "DirectedDripsAction"; = 3; // PopDirectedDripsAction 
     "DirectedDripsDebounceInterval"; = 120; // PopDirectedDripsDebounceInterval (0x78) 
