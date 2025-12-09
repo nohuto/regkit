@@ -958,6 +958,10 @@ Everything listed below is based on personal research. Mistakes may exist, but I
 
     "DisableHologramCompositor"; = 0; // range: 0–1
 
+    // Haven't looked into them yet
+    "ForceUDwmSoftwareDevice"; = ?
+    "ForceDisableModeChangeAnimation"; = ?
+
 
 "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm\\Scene";
     "EnableBloom"; = 0;
