@@ -1,4 +1,4 @@
-Live Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/5Noxi/wpr-reg-records
+Live Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/nohuto/wpr-reg-records
 
 HKCU\Software\SkillBrains\Lightshot\Locale	Length: 12
 HKCU\Software\SkillBrains\Lightshot\Locale	Type: REG_SZ, Length: 6, Data: EN
