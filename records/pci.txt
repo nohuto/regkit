@@ -1,4 +1,4 @@
-﻿Boot Record | Authored by Nohuxi | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/nohuto/wpr-reg-records
+Boot Record | Authored by Nohuto | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/nohuto/wpr-reg-records
 
 \Registry\Machine\SYSTEM\ControlSet001\Enum\pci\VEN_1022&DEV_1440&SUBSYS_00000000&REV_00\3&11583659&0&C0 : Address
 \Registry\Machine\SYSTEM\ControlSet001\Enum\pci\VEN_1022&DEV_1440&SUBSYS_00000000&REV_00\3&11583659&0&C0 : Capabilities

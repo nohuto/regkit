@@ -1,4 +1,4 @@
-﻿Values from several drivers, gathered via decompiling | Authored by Nohuxi | discord.gg/E2ybG4j9jU | github.com/nohuto/wpr-reg-records
+Values from several drivers, gathered via decompiling | Authored by Nohuto | discord.gg/E2ybG4j9jU | github.com/nohuto/wpr-reg-records
 
 \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}\00XX : *DataLinkLayerType
 \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}\00XX : *DeviceSleepOnDisconnect

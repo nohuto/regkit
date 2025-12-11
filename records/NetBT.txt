@@ -1,4 +1,4 @@
-﻿\Registry\Machine\SYSTEM\ControlSet001\Services\NetBT : DependOnGroup
+\Registry\Machine\SYSTEM\ControlSet001\Services\NetBT : DependOnGroup
 \Registry\Machine\SYSTEM\ControlSet001\Services\NetBT : Group
 \Registry\Machine\SYSTEM\ControlSet001\Services\NetBT : ImagePath
 \Registry\Machine\SYSTEM\ControlSet001\Services\NetBT : ObjectName
