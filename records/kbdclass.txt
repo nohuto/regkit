@@ -1,4 +1,4 @@
-Boot Record | Authored by Nohuto | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/nohuto/wpr-reg-records
+Boot Record | Authored by Nohuto | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/nohuto/win-registry
 
 \Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass\Enum
 \Registry\Machine\SYSTEM\ControlSet001\Services\kbdclass : ImagePath

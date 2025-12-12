@@ -10,7 +10,7 @@ Start with configuring the filter (`CTRL` + `L`):
 
 You can disable the other activity monitoring:
 
-![](https://github.com/nohuto/wpr-reg-records/blob/main/images/monitoring.png)
+![](https://github.com/nohuto/win-registrys/blob/main/images/monitoring.png)
 
 If you want to trace all `Reg...` activity, which would use:
 ```c
@@ -39,13 +39,13 @@ Now you'll see all kind of registry activity, what you want to look for is the p
 
 Save the content using `.csv`, afterwards you can remove specific parts of the file, if you want to.
 
-![](https://github.com/nohuto/wpr-reg-records/blob/main/images/pmsave.png)
+![](https://github.com/nohuto/win-registrys/blob/main/images/pmsave.png)
 
 `CTRL` + `H` (Regular expression):  
 `"Reg\w*"` - Removes the operations  
 `"process.exe"` - Replace `process`  
 
-The result should look similar to: [TLOU2.txt](https://github.com/nohuto/wpr-reg-records/blob/main/TLOU2.txt)/[StartAllBack.txt](https://github.com/nohuto/wpr-reg-records/blob/main/StartAllBack.txt)/[Lighshot](https://github.com/nohuto/wpr-reg-records/blob/main/Lighshot.txt). This can be used to trace specific program/path registry activity, there's obviously much more you can do with procmon.
+The result should look similar to: [TLOU2.txt](https://github.com/nohuto/win-registrys/blob/main/TLOU2.txt)/[StartAllBack.txt](https://github.com/nohuto/win-registrys/blob/main/StartAllBack.txt)/[Lighshot](https://github.com/nohuto/win-registrys/blob/main/Lighshot.txt). This can be used to trace specific program/path registry activity, there's obviously much more you can do with procmon.
 
 Operations which can be used:
 ```

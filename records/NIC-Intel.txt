@@ -1,4 +1,4 @@
-Boot Record | Authored by Nohuto | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/nohuto/wpr-reg-records
+Boot Record | Authored by Nohuto | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/nohuto/win-registry
 
 \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}\0002 : *DataLinkLayerType
 \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}\0002 : *DeviceSleepOnDisconnect
