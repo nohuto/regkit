@@ -1064,3 +1064,21 @@ Everything listed below is based on personal research. Mistakes may exist, but I
     "*UDPChecksumOffloadIPv4" = 3; // range 0-3
     "*UDPChecksumOffloadIPv6" = 3; // range 0-3
 ```
+
+# MMCSS Values
+
+All values are read via `CiConfigReadDWORD()`, so the type is DWORD for all listed ones. CiConfigInitializeFromRegistry probably handles the `\Tasks\` values.
+
+See [mmcss-CiConfigInitialize.c](https://github.com/nohuto/win-registry/blob/main/assets//mmcss-CiConfigInitialize.c) for notes and [system/desc.md#mmcss-values](https://github.com/nohuto/win-config/blob/main/system/desc.md#mmcss-values) for details on SystemResponsiveness.
+```c
+"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\multimedia\\systemprofile";
+    "SystemResponsiveness" = 100; // addr 0x1C0011090LL
+    "NetworkThrottlingIndex" = 10; // addr 0x1C00110A0LL, 0 = 1, 1..70 keep, 71..0xFFFFFFFE -> 70, 0xFFFFFFFF keep
+    "NoLazyMode" = 0; // addr 0x1C0011080LL, non-zero = true, see below for more
+    "IdleDetectionCycles" = 2; // addr 0x1C00110B0LL, valid 1..31 else -> 2
+    "LazyModeTimeout" = 1000000; // addr 0x1C00110C0LL, 0 -> 1000000
+    "SchedulerTimerResolution" = 10000; // addr 0x1C00110D0LL, >10000 -> 10000
+    "SchedulerPeriod" = 100000; // addr 0x1C00110E0LL, valid 50000..1000000 else -> 100000
+    "MaxThreadsPerProcess" = 32; // addr 0x1C00110F0LL, valid 8..128 else -> 32
+    "MaxThreadsTotal" = 256; // addr 0x1C0011100LL, valid 64..65535 else -> 256
+```
