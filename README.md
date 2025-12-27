@@ -1073,7 +1073,7 @@ See [mmcss-CiConfigInitialize.c](https://github.com/nohuto/win-registry/blob/mai
 ```c
 "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\multimedia\\systemprofile";
     "SystemResponsiveness" = 100; // addr 0x1C0011090LL
-    "NetworkThrottlingIndex" = 10; // addr 0x1C00110A0LL, 0 = 1, 1..70 keep, 71..0xFFFFFFFE -> 70, 0xFFFFFFFF keep
+    "NetworkThrottlingIndex" = 10; // addr 0x1C00110A0LL, 0 = 1, 1..70 keep, 71..0xFFFFFFFE -> 70, 0xFFFFFFFF (CsInitialize skips CiNdisThrottleWorkItem allocation and CiNdisOpenDevice) keep
     "NoLazyMode" = 0; // addr 0x1C0011080LL, non-zero = true, see below for more
     "IdleDetectionCycles" = 2; // addr 0x1C00110B0LL, valid 1..31 else -> 2
     "LazyModeTimeout" = 1000000; // addr 0x1C00110C0LL, 0 -> 1000000
