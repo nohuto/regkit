@@ -11,13 +11,14 @@ Guide on how to trace registry activity for a specific app - [procmon.md](https:
 
 ## ToC
 
-- [Records Table](https://github.com/nohuto/win-registrys?tab=readme-ov-file#records-table)
-- [Registry Values Research](https://github.com/nohuto/win-registrys?tab=readme-ov-file#registry-values-research)
-  - [DXG Kernel Values](https://github.com/nohuto/win-registrys?tab=readme-ov-file#dxg-kernel-values)
-  - [Session Manager Values](https://github.com/nohuto/win-registrys?tab=readme-ov-file#session-manager-values)
-  - [Power Values](https://github.com/nohuto/win-registrys?tab=readme-ov-file#power-values)
-  - [DWM Values](https://github.com/nohuto/win-registrys?tab=readme-ov-file#dwm-values)
-  - [Intel NIC Values](https://github.com/nohuto/win-registrys?tab=readme-ov-file#intel-nic-values)
+- [Records Table](https://github.com/nohuto/win-registry?tab=readme-ov-file#records-table)
+- [Registry Values Research](https://github.com/nohuto/win-registry?tab=readme-ov-file#registry-values-research)
+  - [DXG Kernel Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#dxg-kernel-values)
+  - [Session Manager Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#session-manager-values)
+  - [Power Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#power-values)
+  - [DWM Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#dwm-values)
+  - [Intel NIC Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#intel-nic-values)
+  - [MMCSS Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#mmcss-values)
 
 ## Records Table
 
