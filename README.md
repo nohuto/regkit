@@ -97,7 +97,7 @@ Guide on how to trace registry activity for a specific app - [procmon.md](https:
 
 Since many values/keys are unknown, I took some time to create several lists showing their default values, used keys, and additional notes. I created them using IDA, WinDbg ([Symbols Memory Dump](https://github.com/nohuto/sym-mem-dump)), WinObjEx, and Windows Internals E7 P1. See the `assets` folder for references.
 
-> [Windows Internels E7](https://github.com/nohuto/windows-books/releases)  
+> [Windows Internals E7](https://github.com/nohuto/windows-books/releases)  
 > [WinObjEx64](https://github.com/hfiref0x/WinObjEx64)  
 > [WinDbg](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/)  
 > [Symbols Memory Dump](https://github.com/nohuto/sym-mem-dump)  
