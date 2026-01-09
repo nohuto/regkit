@@ -20,6 +20,7 @@ Guide on how to trace registry activity for a specific app - [procmon.md](https:
   - [BCD Edits](https://github.com/nohuto/win-registry#bcd-edits)
   - [Intel NIC Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#intel-nic-values)
   - [MMCSS Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#mmcss-values)
+  - [StorNVMe Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#stornvme-values)
   - [Miscellaneous Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#miscellaneous-values)
 
 ## Records Table
@@ -1367,7 +1368,7 @@ Many parts aren't structered as they should be after decompiling via IDA, which 
 
 All values are read via `CiConfigReadDWORD()`, so the type is DWORD for all listed ones. CiConfigInitializeFromRegistry probably handles the `\Tasks\` values.
 
-See [mmcss-CiConfigInitialize.c](https://github.com/nohuto/win-registry/blob/main/assets//mmcss-CiConfigInitialize.c) for notes and [system/desc.md#mmcss-values](https://github.com/nohuto/win-config/blob/main/system/desc.md#mmcss-values) for details on SystemResponsiveness.
+See [mmcss-CiConfigInitialize.c](https://github.com/nohuto/win-registry/blob/main/assets/mmcss-CiConfigInitialize.c) for notes and [system/desc.md#mmcss-values](https://github.com/nohuto/win-config/blob/main/system/desc.md#mmcss-values) for details on SystemResponsiveness.
 ```c
 "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\multimedia\\systemprofile";
     "SystemResponsiveness" = 100; // addr 0x1C0011090LL
@@ -1379,6 +1380,107 @@ See [mmcss-CiConfigInitialize.c](https://github.com/nohuto/win-registry/blob/mai
     "SchedulerPeriod" = 100000; // addr 0x1C00110E0LL, valid 50000..1000000 else -> 100000
     "MaxThreadsPerProcess" = 32; // addr 0x1C00110F0LL, valid 8..128 else -> 32
     "MaxThreadsTotal" = 256; // addr 0x1C0011100LL, valid 64..65535 else -> 256
+```
+
+## StorNVMe Values
+
+Most values are read via `ReadMultiSzRegistryValueAndCompareId` using the device id match string `VEN_vvvv&DEV_dddd&REV_rr`, so I currently assume that their type is REG_MULTI_SZ. Several values are set to 0 which sometimes also means "ignore" for example. Note that the information in this list is based on `stornvme.sys` only (if value has comment).
+
+([Database-engine/database-file-operations](https://learn.microsoft.com/en-us/troubleshoot/sql/database-engine/database-file-operations/troubleshoot-os-4kb-disk-sector-size?tabs=registry-editor#resolution-steps-for-disk-sector-size-errors-in-sql-server)) validates that `ForcedPhysicalSectorSizeInBytes` is a Multi-String value, which confirms a part of my assumption, but I'm still not 100% sure about the rest. Feel free to correct me.
+
+See [stornvme-GetRegistrySettings23H2.c](https://github.com/nohuto/win-registry/blob/main/assets/stornvme-GetRegistrySettings23H2.c) & [stornvme-GetRegistrySettings24H2.c](https://github.com/nohuto/win-registry/blob/main/assets/stornvme-GetRegistrySettings24H2.c) for details.
+
+> [!WARNING]
+> Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
+
+```c
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device";
+    "MaxTransferSize"; = 0; // REG_MULTI_SZ, range 1..2048, clamp to 2048 (value << 10) 0 = ignore
+    "IoQueueDepth"; = 0; // REG_MULTI_SZ
+    "IoSubmissionQueueCount"; = 0; // REG_MULTI_SZ
+    "IoCompletionQueueCount"; = 0; // REG_MULTI_SZ
+    "InterruptCoalescingTime"; = 0; // REG_MULTI_SZ
+    "InterruptCoalescingEntry"; = 0; // REG_MULTI_SZ
+    "ArbitrationBurst"; = 255; // REG_MULTI_SZ
+    "ContiguousMemoryFromAnyNode"; = ?; // REG_MULTI_SZ
+    "ShutdownTimeout"; = 0; // REG_MULTI_SZ, >0xFF coerced to 0xFF, 0 ignored
+    "DeallocateMaxLbaCount"; = 0; // REG_MULTI_SZ
+    "DisableDeallocate"; = ?; // REG_MULTI_SZ
+    "ControllerBasicInit"; = ?; // REG_MULTI_SZ
+    "AsyncEventMask"; = 1823; // REG_MULTI_SZ, override masked to 0x1F, 0 ignored
+    "IdlePowerMode"; = 0; // REG_MULTI_SZ, applied only if <=6, skipped when StorPortExtendedFunction(97) sets mode=2
+    "DiagnosticFlags"; = 0; // REG_MULTI_SZ, bit 1 (0x2) forces LogSize default to 0x100000 bytes
+    "LogSize"; = 0; // REG_MULTI_SZ, stored as bytes (value << 10) 0 ignored (unless DiagnosticFlags set)
+    "IoStripeAlignment"; = 0; // REG_MULTI_SZ, applied only if value << 10
+    "MedPowerFxIdleTimeout"; = 0xFFFFFFFF; // REG_MULTI_SZ
+    "LowestPowerFxIdleTimeout"; = 50; // REG_MULTI_SZ
+    "MedPowerD3IdleTimeout"; = 3000; // REG_MULTI_SZ
+    "LowestPowerD3IdleTimeout"; = 1000; // REG_MULTI_SZ
+    "MedPowerResumeLatency"; = 0xFFFFFFFF; // REG_MULTI_SZ
+    "LowestPowerResumeLatency"; = 0xFFFFFFFF; // REG_MULTI_SZ
+    "HostMemoryBufferBytes"; = 0xFFFFFFFF; // REG_MULTI_SZ
+    "BypassSgl"; = ?; // REG_MULTI_SZ
+    "TestMdlDataBufferOffsetInBytes"; = 0; // REG_MULTI_SZ
+    "UseDumpPointers"; = ?; // REG_MULTI_SZ, presence enables?
+    "ReservedQueuePairCount"; = 0; // REG_MULTI_SZ, valid 1..65535 (check v69-1 <= 0xFFFE)
+    "NvmeTestSwitch"; = 1; // REG_MULTI_SZ
+    "IoQueuePercentageInPollingMode"; = 0; // REG_MULTI_SZ, >100 coerced to 100
+    "IoPollingInterval"; = 0; // REG_MULTI_SZ, >100000 coerced to 100000
+    "IoCompletionCapInDPC"; = 100; // REG_MULTI_SZ, if nonzero clamp to 128
+    "IoPollingSize"; = 0x4000; // REG_MULTI_SZ
+    "ErrorEtwThrottleInterval"; = 0xD693A400; // REG_MULTI_SZ, if nonzero clamp to max 0xD693A400
+    "ResetEnableMask"; = ?; // REG_MULTI_SZ
+    "ReliabilityDegraded"; = ?; // REG_MULTI_SZ
+    "ReadOnly"; = ?; // REG_MULTI_SZ
+    "VolatileMemoryBackupDeviceFailed"; = ?; // REG_MULTI_SZ
+    "AvailableSpare"; = 0; // REG_MULTI_SZ
+    "AvailableSpareThreshold"; = 0; // REG_MULTI_SZ
+    "HostIdentifier"; = ?; // REG_BINARY, length 1..16
+    "ForcedPhysicalSectorSizeInBytes"; = 0; // REG_MULTI_SZ
+    "RetainAsyncEventControlMask"; = 0; // REG_MULTI_SZ
+    "ShutdownTimeoutForSurpriseRemove"; = 0; // REG_MULTI_SZ, >0xFF coerced to 0xFF, 0 ignored
+    "MaxIoCountLimit"; = 0; // REG_MULTI_SZ, if nonzero clamp to 128
+    "SubmissionQueueAssignmentPolicy"; = 0; // REG_MULTI_SZ
+    "DisableMFNDCCDuringRemoval"; = ?; // REG_MULTI_SZ
+    "EnableSingleDpcForIoCompletion"; = ?; // REG_MULTI_SZ
+    "DisableNamespacePreferredValueCheck"; = ?; // REG_MULTI_SZ
+    "IgnoreNamespacePreferredValues"; = ?; // REG_MULTI_SZ0
+    "DisableBypassIO"; = ?; // REG_MULTI_SZ
+    "DisableGetActiveNSIDList"; = ?; // REG_MULTI_SZ
+    "ForceCryptoEraseToUseFormatNVM"; = ?; // REG_MULTI_SZ
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device";
+    "ControllerResetWaitTimeCushion"; = 20000; // REG_MULTI_SZ, dynamic read in GetDynamicRegistrySettings, applied even if 0?
+    "DisableActivateFWWithoutReset"; = 0; // REG_MULTI_SZ, read in GetRegistrySettingsForSpecificKey and returned directly
+
+// these don't exist in the driver on 23H2, but do exist in for example 24H2
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device";
+    "DisableDSTThrottle"; = ?; // REG_MULTI_SZ
+    "DisableF0TimestampSync"; = ?; // REG_MULTI_SZ
+    "DisableForwardedIO"; = ?; // REG_MULTI_SZ
+    "EnableIntelTSESplitIOWorkaround"; = ?; // REG_MULTI_SZ
+    "EnforceActiveNamespaceIdentification"; = ?; // REG_MULTI_SZ
+    "SupportZeroActiveNamespace"; = ?; // REG_MULTI_SZ
+    "WeightedRoundRobinEnabled"; = ?; // REG_MULTI_SZ
+
+// didn't search for them yet
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters";
+    "BusType"; = ?;
+    "BusyPauseTimeInMs"; = ?;
+    "BusyRetryCount"; = ?;
+    "IoLatencyCap"; = ?;
+    "IoTimeoutValue"; = ?;
+    "PnpAsyncNewDevices"; = ?;
+
+// these seem to exist but not on my current 23H2 nor in the 10.0.26100.7309 version
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device";
+    "DriverParameter"; = ?;
+    "LinkTimeout"; = ?;
+    "MaximumLogicalUnit"; = ?;
+    "MaximumUCXAddress"; = ?;
+    "MinimumUCXAddress"; = ?;
+    "NumberOfRequests"; = ?;
+    "UncachedExtAlignment"; = ?;
 ```
 
 ## Miscellaneous Values
