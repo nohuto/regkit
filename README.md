@@ -962,6 +962,7 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
     "DisableSessionTermination"; = 0; // range: 0–1
     "ForceBasicDisplayAdapterOnDWMRestart"; = 0; // range: 0–1
     "OneCoreNoBootDWM"; = 0; // range: 0–1
+    "OneCoreNoDWMRawGameController"; = ? // didn't look into it yet, but it's related to OneCoreNoBootDWM
 
     "DisableHologramCompositor"; = 0; // range: 0–1
 
