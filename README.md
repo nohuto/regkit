@@ -17,6 +17,7 @@ Guide on how to trace registry activity for a specific app - [procmon.md](https:
   - [Session Manager Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#session-manager-values)
   - [Power Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#power-values)
   - [DWM Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#dwm-values)
+  - [USBFLAGS/USBHUB/USB Values](https://github.com/nohuto/win-registry#usbusbhubusbflags-values)
   - [BCD Edits](https://github.com/nohuto/win-registry#bcd-edits)
   - [Intel NIC Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#intel-nic-values)
   - [MMCSS Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#mmcss-values)
