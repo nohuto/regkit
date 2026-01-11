@@ -990,6 +990,151 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
     "RefreshRatePercentage"; = 10;
 ```
 
+## USB/USBHUB/USBFLAGS Values
+
+For entries described as "any nonzero", the code treats the DWORD as a boolean, means any nonzero value is equivalent to `1`. Default data is unknown for most values as the driver code only reads the registry and handles fallbacks, note that this is currently based on USBHUB3.sys only, means it's not complete (USBXHCI.sys was used for DisableHCS0Idle & TestRunEsmInWorkItem, Ucx01000.sys for Allow64KLowOrFullSpeedControlTransfers).
+
+This documentation doesn't include all details, since the repo is used for showing registry values, their default data, ranges and miscellaneous information. See [desc.md#usbflags-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usbflags-values), [desc.md#usb-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usb-values), [desc.md#usbhub-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usbhub-values) for more details. The USBHUB3.sys included some values located in the device hardware key like `DeviceIdleEnabled`, `DefaultIdleState`, `DeviceIdleIgnoreWakeEnable`, I didn't add them here since it lacks on details, see [desc.md#disable-device-powersavings](https://github.com/nohuto/win-config/blob/main/power/desc.md#disable-device-powersavings).
+
+`HUBDSM_QueryingRegistryValuesForDevice` -> `HUBMISC_QueryAndCacheRegistryValuesForDevice` -> `HUBREG_QueryUsbflagsValuesForDevice`
+
+```c
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\usbflags";
+    "IgnoreHWSerNum<vvvvpppp>"; = ?; // REG_DWORD, dynamic name, seems to use vvvvpppp (vendor, product) see documentation below
+    "Allow64KLowOrFullSpeedControlTransfers"; ? = // REG_DWORD (bool), if 1 sets g_Allow64KLowOrFullSpeedControlTransfersFlag true, other values leave it false, missing/read failure leaves the global unchanged - "When enabled, low/full-speed control endpoints use 64KB max transfer size, otherwise table defaults apply. Query failures are non-fatal."
+    "DisableHCS0Idle"; = 0; // REG_DWORD (bool), any nonzero disables S0 idle, missing/read failure treated as 0 - probably means "Disable Host Controller S0 Idle" (S = System)
+    "GenericCompositeUSBDeviceString"; = // haven't looked into it yet
+    "SetMultiTTBitDuringConfigureEndpoint"; = ? // REG_DWORD, if 1 sets flag 0x2000000000000000 at a1+336? if 0 clears it, missing/read failure leaves flags unchanged
+    "TestRunEsmInWorkItem"; = 0; // REG_DWORD, if 1 sets bit 0 at a1+876? if 0 clears it, missing/read failure leaves bit cleared
+
+// these are built by HUBREG_OpenCreateUsbflagsDeviceKey
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\usbflags\\<vvvvpppprrrr";
+    "IgnoreHWSerNum"; = ?; // REG_DWORD, any nonzero value sets flag 0x1
+    "UseWin8DescriptorValidation"; = ?; // REG_DWORD, any nonzero value sets flag 0x200000
+    "ResetOnResume"; = ?; // REG_DWORD, any nonzero value sets flag 0x4
+    "DisableOnSoftRemove"; = ?; // REG_DWORD, if zero clears flag 0x8, any nonzero leaves it set, many inf files set it to 1 so I guess that the default is 1
+    "RequestConfigDescOnReset"; = ?; // REG_DWORD, any nonzero value sets flag 0x10. When set, device hack flag causes config descriptor request after reset
+    "DisableRecoveryFromPowerDrain"; = ?; // REG_DWORD, any nonzero value sets flag 0x800000
+    "SkipContainerIdQuery"; = ?; // REG_BINARY, any nonzero value sets flag 0x20 (1 means skip container ID query)
+    "DisableLPM"; = ?; // REG_DWORD (bool), any nonzero value sets flag 0x80 - When set, disables low power link states for the device = the driver skips enabling U2 and forces U1/U2 timeouts to 0 so link power management stays off. Also disabled when a parent hub indicates LPM should be off for all downstream devices. (this is how I understood it while reading through the W10 source code)
+                      // "A link enters a low power state (consuming less power than the working state) only when the downstream device enters the suspended state through the selective suspend mechanism", "After remaining idle for a certain period of time, link partners progressively enter U1 (standby with fast exit) and then U2 (standby with slower exit)"
+                      // https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/usb-3-0-lpm-mechanism- https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/u1-and-u2-transitions
+    "SkipBOSDescriptorQuery"; = ?; // REG_DWORD, any nonzero value sets flag 0x8000
+    "MsOs20DescriptorSetInfo"; = ?; // REG_BINARY/REG_QWORD (8 bytes)??, on success stores QWORD and sets internal flag 0x4 for the descriptor info
+    "osvc"; = ?; // REG_BINARY, see documentation below (written by HUBMISC_StoreDeviceMSOSVendorCodeInRegsitry)
+
+    "AlternateSettingFilter"; // ?
+```
+
+> [peripheral/assets | usbflags-HUBDSM_QueryingRegistryValuesForDevice.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-HUBDSM_QueryingRegistryValuesForDevice.c)  
+> [peripheral/assets | usbflags-HUBMISC_QueryAndCacheRegistryValuesForDevice.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-HUBMISC_QueryAndCacheRegistryValuesForDevice.c)  
+> [peripheral/assets | usbflags-HUBREG_OpenCreateUsbflagsDeviceKey.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-HUBREG_OpenCreateUsbflagsDeviceKey.c)  
+> [peripheral/assets | usbflags-HUBREG_QueryUsbflagsValuesForDevice.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-HUBREG_QueryUsbflagsValuesForDevice.c)  
+> [peripheral/assets | usbflags-Controller_IsRegKeySetToDisableS0Idle.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-Controller_IsRegKeySetToDisableS0Idle.c)  
+> [peripheral/assets | usbflags-Controller_PopulateRegistryOverrideForSetMultiTTBitFlag.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-Controller_PopulateRegistryOverrideForSetMultiTTBitFlag.c)  
+> [peripheral/assets | usbflags-Controller_PopulateTestRegistrySettings.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-Controller_PopulateTestRegistrySettings.c)  
+> [peripheral/assets | usbflags-Registry_InitializeAllow64KLowOrFullSpeedControlTransfersFlag.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-Registry_InitializeAllow64KLowOrFullSpeedControlTransfersFlag.c)
+
+```c
+// HUBREG_QueryGlobalUsb20HardwareLpmSettings
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\Usb20HardwareLpm"; // g_Usb20HardwareLpmKeyName (aRegistryMachin_8)
+    "Usb20HardwareLpmOverride"; = ?; // REG_DWORD, any nonzero keeps global flag 0x8000 set, zero clears it
+    "Usb20HardwareLpmTimeout"; = 2; // REG_DWORD, if value == 0xFF, byte a1+72 set to 0xFF, didn't find other handles
+
+// HUBREG_OpenQueryAttemptRecoveryFromUsbPowerDrainValue
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\AutomaticSurpriseRemoval"; // g_UsbAutomaticSurpriseRemovalKeyName (aRegistryMachin_6)
+    "AttemptRecoveryFromUsbPowerDrain"; = ?; // REG_DWORD, queried directly and via persisted state fallback under Control\usb
+
+// HUBREG_QueryUsbHardwareVerifierValue
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\HardwareVerifier"; // g_HwVerifierKeyName (aRegistryMachin_7)
+    "<VID><PID><REV>\\usbUpto20|usb2X|usb30\\device"; = ?; // REG_DWORD, subkey chosen from bcdUSB, value name is g_HwVerifierDeviceName
+    "<VID><PID>\\usbUpto20|usb2X|usb30\\device"; = ?; // REG_DWORD, fallback if VID/PID/REV key missing
+    "global\\usbUpto20|usb2X|usb30\\device"; = ?; // REG_DWORD, final fallback if no device specific key
+
+// HUBREG_QueryGlobalUsbLtmSettings
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\UsbLtm"; // g_UsbLtmKeyName (aRegistryMachin_4)
+    "UsbLtmEnable"; = 0; // REG_DWORD, any nonzero value sets global flag 0x40000, zero clears it
+
+// these are taken from the W10 source, they seem to exist on latest builds (they do exist in usbport.sys on 23H2)
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\usb";
+    "debuglevel"; = 0; // REG_DWORD, default to 1/2 when DEBUG1/DEBUG2 builds. Trace verbosity, higher numbers enable more logs
+    "debuglogmask"; = 0xFFFFFFFE; // REG_DWORD, Bitmask for log categories
+    "debuglogenable"; = 1; // REG_DWORD (bool), enables debug log output
+    "debugcatc"; = 0; // REG_DWORD (bool), enables CATC analyzer trigger
+    "DisableSelectiveSuspend"; = 0; // REG_DWORD (bool), global disable for selective suspend
+    "DisableCcDetect"; = 0; // REG_DWORD (bool), global disable for CC detection
+    "EnPMDebug"; = 0; // REG_DWORD (bool), for debugging power management
+    "ForceHcD3NoWakeArm"; = 0 // REG_DWORD (bool), prevents wake-arming when forcing HC to D3
+    "EnableDCA"; = 0 // REG_DWORD (bool), enables direct controller access (HCT diagnostics)
+    "ForcePortsHighSpeed"; = 0; // REG_DWORD (bool), forces ports to remain under EHCI (HCT compatibility)
+
+// "This class is reserved for USB host controllers and USB hubs", I'll add them here as they're also in usbport.sys and also taken from the W10 source
+"HKLM\\System\\CurrentControlSet\\Control\\Class\\{36FC9E60-C465-11CF-8056-444553540000}\\<instance>"
+    "HcFlavor"; = // REG_DWORD, auto detect. Values are USB_CONTROLLER_FLAVOR enum (definition external)
+    "TotalBusBandwidth"; = // REG_DWORD, computed from miniport registration (bits/ms). Overrides bus bandwidth accounting
+    "HcDisableAllSelectiveSuspend"; = 0 (non-IA64), 1 (IA64); // REG_DWORD, non-zero disables selective suspend
+    "CommonBuffer2GBLimit"; = 0; // REG_DWORD, when non-zero, forces common buffers below 2GB ("Limit common buffer allocations for the miniport to the physical address range below 2GB.  Only bits 0 through 30 of the physical address can be set.  Bit 31 of the physical address cannot be set.")
+    "ForceHCResetOnResume"; = 0; // REG_DWORD, forces controller reset on resume
+    "FastResumeEnable"; = 0; // REG_DWORD, enables fast S0 resume
+```
+
+> [peripheral/assets | usb-GetPersistedKeyPath.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usb-GetPersistedKeyPath.c)  
+> [peripheral/assets | usb-HUBREG_OpenQueryAttemptRecoveryFromUsbPowerDrainValue.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usb-HUBREG_OpenQueryAttemptRecoveryFromUsbPowerDrainValue.c)  
+> [peripheral/assets | usb-HUBREG_QueryGlobalUsb20HardwareLpmSettings.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usb-HUBREG_QueryGlobalUsb20HardwareLpmSettings.c)  
+> [peripheral/assets | usb-HUBREG_QueryGlobalUsbLtmSettings.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usb-HUBREG_QueryGlobalUsbLtmSettings.c)  
+> [peripheral/assets | usb-HUBREG_QueryUsbHardwareVerifierValue.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usb-HUBREG_QueryUsbHardwareVerifierValue.c)  
+> [peripheral/assets | usb-ReadManifestAssignedValue.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usb-ReadManifestAssignedValue.c)
+
+```c
+// HUBREG_QueryGlobalHubValues
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBHUB\\hubg"; // g_HubGlobalKeyName (aRegistryMachin_10)
+    "DisableSelectiveSuspendUI"; = ?; // REG_DWORD, any nonzero value sets global flag 0x2
+    "MsOsDescriptorMode"; = ?; // REG_DWORD, stored to a1+8 when 0..3, out of range values are logged, MsOsDescriptorMode == 1 will force a MS OS descriptor query for all devices, regardless of USB version number. MsOsDescriptorMode == 2 will disable all MS OS descriptor queries. (there may exist a value named "DontSkipMsOsDescriptor" in this key)
+    "EnableDiagnosticMode"; = ?; // REG_DWORD, any nonzero value sets global flag 0x8
+    "DisableOnSoftRemove"; = ?; // REG_DWORD, if zero clears global flag 0x80 (default on) any nonzero leaves it set
+    "DisableUxdSupport"; = ?; // REG_DWORD, any nonzero value sets global flag 0x10
+    "EnableExtendedValidation"; = ?; // REG_DWORD bitmask, any nonzero value sets global flag 0x20, bit 0x8 sets 0x2000, bit 0x4 sets 0x4000
+    "WakeOnConnectUI"; = ?; // REG_DWORD, any nonzero value sets global flag 0x40 - This controls the UI check box 'Allow this device to wake the system'.  Essentially this is control for the wake on connect feature.
+    "PreventDebounceTimeForSuperSpeedDevices"; = ?; // REG_DWORD, any nonzero value sets global flag 0x10000 - Checks if we need to give extra time to SuperSpeed devices before talking to them
+
+// HUBREG_QueryGlobalUxdSettings (the defaults were taken from the W10 source)
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\usbhub\\uxd_control\\policy"; // g_UxdGlobalSettingsKey (aRegistryMachin_12)
+    "UxdGlobalDeleteOnShutdown"; = 0; // REG_DWORD (bool), any nonzero value sets global flag 0x100, global delete-on-shutdown policy
+    "UxdGlobalDeleteOnReload"; = 0; // REG_DWORD (bool), any nonzero value sets global flag 0x200, global policy to delete UXD keys on disable/reload events
+    "UxdGlobalDeleteOnDisconnect"; = 0; // REG_DWORD (bool), any nonzero value sets global flag 0x400, global policy to delete UXD keys on device disconnect
+    "UxdGlobalEnable"; = 0; // REG_DWORD (bool), any nonzero value sets global flag 0x800, "main" enable = if 0, UXD settings are ignored
+
+// HUBREG_QueryUxdDeviceKey / HUBREG_DeleteUxdDeviceKey
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\usbhub\\uxd_control\\devices"; // g_UxdDeviceSettingsKey (aRegistryMachin_5)
+    "%04X%04X%04X"; = ?; // value name from VID/PID/REV
+
+// HUBREG_GetUxdPnpValue
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\usbhub\\uxd_control\\pnp"; // g_UxdGuidSettingsKey (aRegistryMachin_3)
+    "{GUID}"; = ?; // value name from RtlStringFromGUID, data queried via WDF
+```
+
+> [peripheral/assets | usbhub-HUBREG_QueryUxdDeviceKey.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbhub-HUBREG_QueryUxdDeviceKey.c)  
+> [peripheral/assets | usbhub-HUBREG_DeleteUxdDeviceKey.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbhub-HUBREG_DeleteUxdDeviceKey.c)  
+> [peripheral/assets | usbhub-HUBREG_QueryGlobalUxdSettings.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbhub-HUBREG_QueryGlobalUxdSettings.c)  
+> [peripheral/assets | usbhub-HUBREG_QueryGlobalHubValues.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbhub-HUBREG_QueryGlobalHubValues.c)  
+> [peripheral/assets | usbhub-HUBREG_GetUxdPnpValue.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbhub-HUBREG_GetUxdPnpValue.c)  
+
+```c
+aRegistryMachin_1 = "HKLM\\SYSTEM\\CurrentControlSet\\Control\\USBFN";
+aRegistryMachin_2 = // doesn't exist
+aRegistryMachin_3 = "HKLM\\SYSTEM\\CurrentControlSet\\Services\\usbhub\\uxd_control\\pnp";
+aRegistryMachin_4 = "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\UsbLtm";
+aRegistryMachin_5 = "HKLM\\SYSTEM\\CurrentControlSet\\Services\\usbhub\\uxd_control\\devices";
+aRegistryMachin_6 = "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\AutomaticSurpriseRemoval";
+aRegistryMachin_7 = "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\HardwareVerifier";
+aRegistryMachin_8 = "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\Usb20HardwareLpm";
+aRegistryMachin_9 = "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usbflags";
+aRegistryMachin_10 = "HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBHUB\\hubg";
+aRegistryMachin_11 = "HKLM\\SYSTEM\\CurrentControlSet\\Control\\USB";
+aRegistryMachin_12 = "HKLM\\SYSTEM\\CurrentControlSet\\Services\\usbhub\\uxd_control\\policy";
+aRegistryMachin_13 = "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb";
+```
+
 ## BCD Edits
 
 See details about BCDEdit, used resources, related pseudocode etc. here [win-config/system/bcd-edits](https://github.com/nohuto/win-config/blob/main/system/desc.md#bcd-edits).
