@@ -124,10 +124,10 @@ These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://githu
     "DeadlockPulse"; v54 = 5000
     "DeadlockPulseTolerance"; v55 = 500
     "DeadlockTimeout"; v53 = 30000
-    "DisableBadDriverCheckForHwProtection"; v70 = 0
-    "DisableBoostedVSyncVirtualization"; v59 = 0
+    "DisableBadDriverCheckForHwProtection"; v70 = 0 // DWORD
+    "DisableBoostedVSyncVirtualization"; v59 = 0 // DWORD
     "DisableGdiContextGpuVa"; v41 = 0
-    "DisableIndependentVidPnVSync"; v56 = 0
+    "DisableIndependentVidPnVSync"; v56 = 0 // DWORD
     "DisableMonitoredFenceGpuVa"; v43 = 0
     "DisableMultiSourceMPOCheck"; v76 = 0
     "DisableOverlays"; v67 = 0
@@ -146,7 +146,7 @@ These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://githu
     "Force32BitFences"; v68 = 0
     "ForceDirectFlip"; v66 = 0
     "ForceEnableDxgMms2"; v39 = 0
-    "ForceExplicitResidencyNotification"; v44 = 0
+    "ForceExplicitResidencyNotification"; v44 = 0 // DWORD
     "ForceInitPagingProcessVaSpace"; v40 = 0
     "ForceReplicateGdiContent"; v47 = 0
     "ForceSecondaryIFlipSupport"; v72 = 0
@@ -470,7 +470,7 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     "XStateContextLookasidePerProcMaxDepth" = 0; // KiXStateContextLookasidePerProcMaxDepth
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel\\RNG";
-    "RNGAuxiliarySeed" = ; // ExpRNGAuxiliarySeed?
+    "RNGAuxiliarySeed" = ; // ExpRNGAuxiliarySeed - REG_DWORD, default of 1807947291? ("HKLM\System\CurrentControlSet\Control\Session Manager\kernel\RNG\RNGAuxiliarySeed","Type: REG_DWORD, Length: 4, Data: 1807947291", procmon boot trace)
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager";
     "AlpcMessageLog" = 0; // AlpcpMessageLogEnabled 
@@ -490,11 +490,29 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     "MultiUsersInSessionSupported" = 0; // RtlpMultiUsersInSessionSupported 
     "ObjectSecurityMode" = 1; // ObpObjectSecurityMode 
     "PowerPolicySimulate" = 0; // PopSimulate 
-    "ProtectionMode" = 1; // ObpProtectionMode 
+    "ProtectionMode" = 1; // ObpProtectionMode , DWORD
     "ResourceCheckFlags" = 3; // ExResourceCheckFlags 
     "ResourceEnforceOwnerTransfer" = 0; // ExpResourceEnforceOwnerTransfer 
     "ResourceTimeoutCount" = 45; // ExResourceTimeoutCount (0x2d) 
     "SkipRegistryInit" = 0; // CmNtSkipRegistryInit 
+
+    // procmon boot trace
+    "ObjectDirectories" = \Windows, \RPC Control; // ? - REG_MULTI_SZ
+    "BootExecute" = ?; // REG_SZ
+    "BootExecuteNoPnpSync" = ?; // Length: 4,094
+    "PlatformExecute" = ?; // Length: 4,094
+    "SetupExecute" = ?; // Length: 4,094
+    "SetupExecuteNoPnpSync" = ?; // Length: 4,094
+    "S0InitialCommand" = ?; // Length: 4,094
+    "NumberOfInitialSessions" = 2; // ? - REG_DWORD
+    "PendingFileRenameOperations" = ?; // Length: 4,094
+    "PendingFileRenameOperations2" = ?; // Length: 4,094
+    "AllowProtectedRenames" = ?; // Length: 4,094
+    "ClearTempFiles" = ?; // Length: 4,094
+    "TempFileDirectory" = ?; // Length: 4,094
+    "ExcludeFromKnownDlls" = ?; // REG_MULTI_SZ
+    "BackgroundLoadKnownDlls" = ?; // Length: 4,094
+    "DisableWpbtExecution" = ?; // REG_DWORD
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Quota System";
     "ApplicationBlockedMessageLimit" = 50; // PspJobNoWakeChargeLimit (0x32) 
@@ -506,7 +524,7 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     "DfssLongTermSharingMS" = 15; // PsDfssLongTermSharingMS dd 0F
     "DfssResolutionMS" = 4294967295; // PsDfssDesiredTimerResolutionMs dd 0FFFFFFFF
     "DfssShortTermSharingMS" = 30; // PsDfssShortTermSharingMS dd 1E
-    "EnableCpuQuota" = 0;
+    "EnableCpuQuota" = 0; // Length: 20?
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management";
     "AllocationPreference" = 0; // dword_140FC3200 dd 0
@@ -592,7 +610,20 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     "WorkingSetSwapSharedPages" = 0; // PspOutSwapSharedPages 
     "XdvTipTag" = 0; // CarTipTag 
     "XdvVerifierOptions" = 0; // CarXdvOptions 
-    "XdvVerifierOptions" = 0; // VfFlightOptions 
+    "XdvVerifierOptions" = 0; // VfFlightOptions
+
+    // procmon boot trace
+    "PagingFiles" = C:\pagefile.sys <int> <int> // REG_MULTI_SZ
+    "PagefileOnOsVolume" = ?; // 4,094
+    "WaitForPagingFiles" = ?; // 4,094
+    "ExistingPageFiles" = \??\C:\pagefile.sys; // REG_MULTI_SZ
+    "DisableDedicatedMemoryCaching" = ?; // Length: 16
+    "DedicatedMemoryPagefileSizeMB" = ? // Length: 16
+    "PagefileHybridPriority" = ?; // Length: 36
+    "SwapfileControl" = ?; // Length: 16
+    "SwapFile" = ?; // Length: 52
+    "TempPageFile" = ?;
+    "FeatureSettings" = ? // DWORD
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Executive";
     "AdditionalCriticalWorkerThreads" = 0; // ExpAdditionalCriticalWorkerThreads 
@@ -631,6 +662,9 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
 
     // PpmInitIllegalThrottleLogging
     "ProcessorThrottleLogInterval" = 10000; // REG_DWORD, milliseconds, range: 0-10000 (values >10000 are clamped to 10000)
+
+    // procmon boot trace
+    "SleepStudyBufferSizeInMB" = ? // Length: 16
 
 "HKLM\\System\\CurrentControlSet\\Control\\Session Manager\\Throttle";
     "PerfEnablePackageIdle" = 0;
@@ -721,7 +755,7 @@ See [power-symbols](https://github.com/nohuto/win-registry/blob/main/assets/powe
     "ActiveIdleThreshold" = 5000000; // PopFxActiveIdleThreshold (0x004C4B40) 
     "ActiveIdleTimeout" = 1000; // PopFxActiveIdleTimeout (0x000003E8) 
     "AllowAudioToEnableExecutionRequiredPowerRequests" = 1; // PopPowerRequestActiveAudioEnablesExecutionRequired 
-    "AllowHibernate" = 4294967295; // PopAllowHibernateReg (0xFFFFFFFF) 
+    "AllowHibernate" = 4294967295; // PopAllowHibernateReg (0xFFFFFFFF) - REG_DWORD
     "AllowSystemRequiredPowerRequests" = 1; // PopPowerRequestConvertSystemToExecution 
     "AlwaysComputeQosHints" = 0; // PpmPerfAlwaysComputeQosEnabled 
     "BootHeteroPolicyOverride" = 0; // PpmPerfBootHeteroPolicyOverrideEnabled 
@@ -773,12 +807,12 @@ See [power-symbols](https://github.com/nohuto/win-registry/blob/main/assets/powe
     "HeteroWpsContainmentEnumOverride" = 0; // PpmHeteroWpsContainmentEnumOverride 
     "HeteroWpsWorkloadProminenceCutoff" = 35; // PpmHeteroWpsWorkloadProminenceCutoff (0x23) 
     "HiberbootEnabled" = 0; // PopHiberbootEnabledReg 
-    "HiberFileSizePercent" = 100; // PopHiberFileSizePercent dd 64h (IDA), but set to 0 by default on LTSC IoT Enterprise 2024 since hibernation is unsupported by default
+    "HiberFileSizePercent" = 100; // PopHiberFileSizePercent dd 64h (IDA), but set to 0 by default on LTSC IoT Enterprise 2024 since hibernation is unsupported by default - REG_DWORD
     "HiberFileType" = 4294967295; // PopHiberFileTypeReg (0xFFFFFFFF)
     "HiberFileTypeDefault" = 4294967295; // PopHiberFileTypeDefaultReg (0xFFFFFFFF)
     "HibernateBootOptimizationEnabled" = 0; // PopHiberBootOptimizationEnabledReg 
     "HibernateChecksummingEnabled" = 1; // PopHiberChecksummingEnabledReg 
-    "HibernateEnabledDefault" = 1; // PopHiberEnabledDefaultReg 
+    "HibernateEnabledDefault" = 1; // PopHiberEnabledDefaultReg - REG_DWORD
     "HighPerfDurationBoot" = 90000; // PpmHighPerfDuration (0x00015F90) 
     "HighPerfDurationCSExit" = ?; // unk_140FC337C
     "HighPerfDurationSxExit" = ?; // unk_140FC3380
@@ -891,14 +925,14 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
     "CpuClipAASinkEnableRender" = 1;
     "CpuClipAreaThreshold" = 20000;
     "CpuClipWarpPartitionThreshold" = 1024;
-    "DisableDrawListCaching" = 0;
+    "DisableDrawListCaching" = 0; // REG_DWORD
     "DisableProjectedShadows" = 0;
     "DisplayChangeTimeoutMs" = 1000;
-    "EnableBackdropBlurCaching" = 1;
+    "EnableBackdropBlurCaching" = 1; // REG_DWORD
     "EnableCommonSuperSets" = 1;
     "EnableCpuClipping" = 1;
     "EnableDDisplayScanoutCaching" = 1;
-    "EnableEffectCaching" = 1;
+    "EnableEffectCaching" = 1; // REG_DWORD
     "EnableFrontBufferRenderChecks" = 1;
     "EnableMegaRects" = 1;
     "EnablePrimitiveReordering" = 1;
@@ -907,15 +941,15 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
     "GammaBlendWithFP16" = 1;
     "InkGPUAccelOverrideVendorWhitelist" = 0;
     "LayerClippingMode" = 2;
-    "LogExpressionPerfStats" = 0;
+    "LogExpressionPerfStats" = 0; // REG_DWORD
     "MajorityScreenTest_MinArea" = 80;
     "MajorityScreenTest_MinLength" = 80;
     "MaxD3DFeatureLevel" = 0;
     "MegaRectSearchCount" = 100;
     "MegaRectSize" = 100000;
     "MousewheelAnimationDurationMs" = 250;
-    "MousewheelScrollingMode" = 0;
-    "OptimizeForDirtyExpressions" = 1;
+    "MousewheelScrollingMode" = 0; // REG_DWORD
+    "OptimizeForDirtyExpressions" = 1; // REG_DWORD
     "OverlayMinFPS" = 15; // If this value is present and set to zero, the Desktop Window Manager disables its minimum frame rate requirement for assigning DirectX swap chains to overlay planes in hardware that supports overlays. This makes it more likely that a low frame rate swap chain will get assigned and stay assigned to an overlay plane, if available. (https://github.com/MicrosoftDocs/win32/blob/docs/desktop-src/dwm/registry-values.md)
     "RenderThreadTimeoutMilliseconds" = 5000;
     "SuperWetExtensionTimeMicroseconds" = 1000;
@@ -931,14 +965,14 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
     "CompositorClockPolicy" = 1; // range: 0-1
     "CpuClipFlatteningTolerance" = 0; // scaled /1000
     "CustomRefreshRateMode" = 0; // range: 0-2
-    "DisableAdvancedDirectFlip" = 0;
+    "DisableAdvancedDirectFlip" = 0; // REG_DWORD
     "DisableIndependentFlip" = 0;
     "DisableProjectedShadowsRendering" = 0;
     "FlattenVirtualSurfaceEffectInput" = 0;
-    "ForceEffectMode" = 0; // range: 0-2
+    "ForceEffectMode" = 0; // range: 0-2, REG_DWORD
     "FrameCounterPosition" = 0;
     "InteractionOutputPredictionDisabled" = 0;
-    "OverlayTestMode" = 0; // 5 = MPO disabled
+    "OverlayTestMode" = 0; // 5 = MPO disabled, REG_DWORD
     "ParallelModePolicy" = 1; // >=3 coerced to 1
     "ParallelModeRateThreshold" = 119; // divisor for g_qpcFrequency, missing key defaults to 119 Hz (units: Hz)? 0 disables
     "ResampleInLinearSpace" = 0;
@@ -953,7 +987,7 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
 
     "ChildWindowDpiIsolation" = 1; // range: 0-1
     "DisableDeviceBitmaps" = 0; // range: 0-1
-    "EnableResizeOptimization" = 0; // range: 0-1
+    "EnableResizeOptimization" = 0; // range: 0-1, REG_DWORD
     "ResizeTimeoutGdi" = 0; // range: 0-0xFFFFFFFF (ms)
     "ResizeTimeoutModern" = 0; // range: 0-0xFFFFFFFF (ms)
 
@@ -963,26 +997,46 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
 
     "DisableSessionTermination" = 0; // range: 0–1
     "ForceBasicDisplayAdapterOnDWMRestart" = 0; // range: 0–1
-    "OneCoreNoBootDWM" = 0; // range: 0–1
+    "OneCoreNoBootDWM" = 0; // range: 0–1, REG_DWORD
     "OneCoreNoDWMRawGameController" = ? // didn't look into it yet, but it's related to OneCoreNoBootDWM
 
     "DisableHologramCompositor" = 0; // range: 0–1
 
     // Haven't looked into them yet
-    "ForceUDwmSoftwareDevice" = ?
-    "ForceDisableModeChangeAnimation" = ?
+    "ForceUDwmSoftwareDevice" = ?;
+    "ForceDisableModeChangeAnimation" = ?; // REG_DWORD
+
+    // procmon boot trace
+    "DwmInitSessionActivityId_00000001" = ?; // a ID, REG_SZ
+    "DebugFailFast" = ?;
+    "ForceDesktopTreeFullDirty" = ?;
+    "UseHWDrawListEntriesOnWARP" = ?;
+    "CpuClipAASinkForceEnable" = ?;
+    "CpuClipAASinkEnableDebugColors" = ?;
+    "SuperWetEnabled" = ?;
+    "MajorityScreenTest_MaxCoverage" = ?;
+    "EnableRenderPathTestMode" = ?;
+    "MarshalAllDebugInfo" = ?;
+    "AnimationAttributionEnabled" = 1; // REG_DWORD
+    "AnimationAttributionHashingEnabled" = 1; // REG_DWORD
+    "MPCInputRouterWaitForDebugger" = ?;
+    "DisableDeviceBitmapsForMultiAdapter" = ?;
+    "EnableDesktopOverlays" = ?;
+    "ColorPrevalence" = ?;
+    "ShaderLinkingGPUBlacklist" = ?; // REG_SZ
+    "EnableMPCPerfCounter" = ?;
 
 
 "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm\\Scene";
-    "EnableBloom" = 0;
-    "EnableDrawToBackbuffer" = 1;
-    "EnableImageProcessing" = 1;
+    "EnableBloom" = 0; // REG_DWORD
+    "EnableDrawToBackbuffer" = 1; // REG_DWORD
+    "EnableImageProcessing" = 1; // REG_DWORD
     "ImageProcessingResizeGrowth" = 200;
     "MsaaQualityMode" = 2;
     "SceneVisualCutoffCountOfConsecutiveIncidentsAllowed" = 5;
     "SceneVisualCutoffThresholdInMS" = 1000;
 
-    "ForceNonPrimaryDisplayAdapter" = 0;
+    "ForceNonPrimaryDisplayAdapter" = 0; // REG_DWORD
     "ImageProcessingResizeThreshold" = 0; // scaled /100
 
 "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm\\GpuAccelInkTiming";
@@ -1009,7 +1063,7 @@ This documentation doesn't include all details, since the repo is used for showi
     "TestRunEsmInWorkItem" = 0; // REG_DWORD, if 1 sets bit 0 at a1+876? if 0 clears it, missing/read failure leaves bit cleared
 
 // these are built by HUBREG_OpenCreateUsbflagsDeviceKey
-"HKLM\\SYSTEM\\CurrentControlSet\\Control\\usbflags\\<vvvvpppprrrr";
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\usbflags\\<vvvvpppprrrr>";
     "IgnoreHWSerNum" = ?; // REG_DWORD, any nonzero value sets flag 0x1
     "UseWin8DescriptorValidation" = ?; // REG_DWORD, any nonzero value sets flag 0x200000
     "ResetOnResume" = ?; // REG_DWORD, any nonzero value sets flag 0x4
