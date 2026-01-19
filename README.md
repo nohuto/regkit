@@ -309,10 +309,18 @@ These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://githu
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\MonitorDataStore\\MONITOR-ID"
     "AdvancedColorEnabled"; v3 = 0;
     "AutoColorManagementEnabled"; v8 = 0;
+    "AutoColorManagementSupported"; = ? // REG_DWORD, bool?
     "EnableIntegratedPanelAcmByDefault"; v6 = 0;
     "EnableIntegratedPanelHdrByDefault"; v4 = 0;
     "HDREnabled"; v2 = 0;
     "MicrosoftApprovedAcmSupport"; v5 = 0;
+    "DockedOrientation" = ?;
+    "EnableBoostRefreshRateByDefault" = ?;
+    "MonitorOrientation" = ?;
+    "OverrideWCGCapabilities" = ?;
+    "PreferredScaleFactor" = ?;
+    "SDRWhiteLevel" = ?;
+    "VMSDisabled" = ?;
 
 "AdapterPnpKey";
     "EnableVirtualTopologySupport"; v84 = 0;
@@ -880,6 +888,13 @@ See [power-symbols](https://github.com/nohuto/win-registry/blob/main/assets/powe
     "PowerWatchdogPoCalloutTimeoutMsec" = 10000;
     "PowerWatchdogPowerOnGdiTimeoutMsec" = 30000;
     "PowerWatchdogRequestQueueTimeoutMsec" = 30000;
+
+    // from procmon boot trace
+    "DisableHotKeyWhenConsoleOff" = ?;
+    "EmiPollingInterval" = ?;
+    "EmiTelemetryActivePollingInterval" = ?;
+    "EmiTelemetryCsPollingInterval" = ?;
+    "LidNotifyReliable" = ?;
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\ForceHibernateDisabled";
     "GuardedHost" = ?; // unk_140FC5234
