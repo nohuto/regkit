@@ -268,6 +268,15 @@ These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://githu
     "TdrTestMode"; v14 = 0
     "UnsupportedMonitorModesAllowed"; v5 = 0;
 
+    // from procmon boot trace
+    "DisableCABC" = ?;
+    "ForceAccessedPhysically" = ?;
+    "ForceToMapGpuVa" = ?;
+    "PageFaultDebugMode" = ?;
+    "WarpOverrideWDDMVersion" = ?;
+    "WarpSupportHybridDiscrete" = = ?;
+    "WarpSupportsResourceResidency" = ?;
+
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\Power";
     "UseSelfRefreshVRAMInS3"; v166 = 1;
 
@@ -310,17 +319,58 @@ These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://githu
     "AdvancedColorEnabled"; v3 = 0;
     "AutoColorManagementEnabled"; v8 = 0;
     "AutoColorManagementSupported"; = ? // REG_DWORD, bool?
+    "DockedOrientation" = ?;
+    "EnableBoostRefreshRateByDefault" = ?;
     "EnableIntegratedPanelAcmByDefault"; v6 = 0;
     "EnableIntegratedPanelHdrByDefault"; v4 = 0;
     "HDREnabled"; v2 = 0;
     "MicrosoftApprovedAcmSupport"; v5 = 0;
-    "DockedOrientation" = ?;
-    "EnableBoostRefreshRateByDefault" = ?;
     "MonitorOrientation" = ?;
     "OverrideWCGCapabilities" = ?;
     "PreferredScaleFactor" = ?;
     "SDRWhiteLevel" = ?;
     "VMSDisabled" = ?;
+
+// the 3 keys below are based on a testing system monitor, therefore the defaults will be different for you
+"HKLM\\System\\CurrentControlSet\\Control\\GraphicsDrivers\\Configuration\\<CONFIG_ID>";
+    "SetId" = "MSBDD_MSI3CB01222_2E_07E4_FF_10DE_2482_00000007_00000000_0"; // REG_SZ
+    "Timestamp" = = ?; // REG_QWORD
+
+"HKLM\\System\\CurrentControlSet\\Control\\GraphicsDrivers\\Configuration\\<CONFIG_ID>\\00\\00";
+    "ActiveSize.cx" = 2560; // REG_DWORD, horizontal pixels
+    "ActiveSize.cy" = 1440; // REG_DWORD, vertical lines
+    "BoostRefreshRateMultiplier" = 1; // REG_DWORD
+    "ColorBasis" = 2; // REG_DWORD
+    "DwmClipBox.bottom" = 1440; // REG_DWORD
+    "DwmClipBox.left" = 0; // REG_DWORD
+    "DwmClipBox.right" = 2560; // REG_DWORD
+    "DwmClipBox.top" = 0; // REG_DWORD
+    "Flags" = 25365391; // REG_DWORD
+    "HSyncFreq.Denominator" = 2640; // REG_DWORD
+    "HSyncFreq.Numerator" = 640000000; // REG_DWORD
+    "PixelFormat" = 21; // REG_DWORD
+    "PixelRate" = 640000000; // REG_DWORD
+    "PrimSurfSize.cx" = 2560; // REG_DWORD
+    "PrimSurfSize.cy" = 1440; // REG_DWORD
+    "Rotation" = 1; // REG_DWORD
+    "Scaling" = 4; // REG_DWORD
+    "ScanlineOrdering" = 1; // REG_DWORD
+    "Stride" = 10240; // REG_DWORD
+    "VSyncFreq.Denominator" = 1000; // REG_DWORD
+    "VSyncFreq.Numerator" = 164802; // REG_DWORD, refresh rate
+    "VideoStandard" = 255; // REG_DWORD
+    "VirtualRefreshRate.Denominator" = 1000; // REG_DWORD
+    "VirtualRefreshRate.Numerator" = 164802; // REG_DWORD
+
+"HKLM\\System\\CurrentControlSet\\Control\\GraphicsDrivers\\Configuration\\<CONFIG_ID>\\00";
+    "CcdDbVersion" = 4; // REG_DWORD
+    "ColorBasis" = 2; // REG_DWORD
+    "PixelFormat" = 21; // REG_DWORD
+    "Position.cx" = 0; // REG_DWORD
+    "Position.cy" = 0; // REG_DWORD
+    "PrimSurfSize.cx" = 2560; // REG_DWORD
+    "PrimSurfSize.cy" = 1440; // REG_DWORD
+    "Stride" = 10240; // REG_DWORD
 
 "AdapterPnpKey";
     "EnableVirtualTopologySupport"; v84 = 0;
@@ -478,7 +528,7 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     "XStateContextLookasidePerProcMaxDepth" = 0; // KiXStateContextLookasidePerProcMaxDepth
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel\\RNG";
-    "RNGAuxiliarySeed" = ; // ExpRNGAuxiliarySeed - REG_DWORD, default of 1807947291? ("HKLM\System\CurrentControlSet\Control\Session Manager\kernel\RNG\RNGAuxiliarySeed","Type: REG_DWORD, Length: 4, Data: 1807947291", procmon boot trace)
+    "RNGAuxiliarySeed" = ; // ExpRNGAuxiliarySeed - REG_DWORD, default of 1807947291? ("HKLM\System\CurrentControlSet\Control\Session Manager\kernel\RNG\RNGAuxiliarySeed","Type: REG_DWORD, Data: 1807947291", procmon boot trace)
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager";
     "AlpcMessageLog" = 0; // AlpcpMessageLogEnabled 
@@ -507,20 +557,30 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     // procmon boot trace
     "ObjectDirectories" = \Windows, \RPC Control; // ? - REG_MULTI_SZ
     "BootExecute" = ?; // REG_SZ
-    "BootExecuteNoPnpSync" = ?; // Length: 4,094
-    "PlatformExecute" = ?; // Length: 4,094
-    "SetupExecute" = ?; // Length: 4,094
-    "SetupExecuteNoPnpSync" = ?; // Length: 4,094
-    "S0InitialCommand" = ?; // Length: 4,094
+    "BootExecuteNoPnpSync" = ?;
+    "PlatformExecute" = ?;
+    "SetupExecute" = ?;
+    "SetupExecuteNoPnpSync" = ?;
+    "S0InitialCommand" = ?;
     "NumberOfInitialSessions" = 2; // ? - REG_DWORD
-    "PendingFileRenameOperations" = ?; // Length: 4,094
-    "PendingFileRenameOperations2" = ?; // Length: 4,094
-    "AllowProtectedRenames" = ?; // Length: 4,094
-    "ClearTempFiles" = ?; // Length: 4,094
-    "TempFileDirectory" = ?; // Length: 4,094
+    "PendingFileRenameOperations" = ?;
+    "PendingFileRenameOperations2" = ?;
+    "AllowProtectedRenames" = ?;
+    "ClearTempFiles" = ?;
+    "TempFileDirectory" = ?;
     "ExcludeFromKnownDlls" = ?; // REG_MULTI_SZ
-    "BackgroundLoadKnownDlls" = ?; // Length: 4,094
+    "BackgroundLoadKnownDlls" = ?;
     "DisableWpbtExecution" = ?; // REG_DWORD
+    "RaiseExceptionOnPossibleDeadlock" = ?;
+    "ResourcePolicies" = ?;
+    "SafeDllSearchMode" = ?;
+    "SafeProcessSearchMode" = ?;
+    "SmtDelayBaseYield" = ?;
+    "SmtDelayMaxYield" = ?;
+    "SmtDelaySleepLoopWindowSize" = ?;
+    "SmtDelaySpinCountThreshold" = ?;
+    "SmtFactorYield" = ?;
+    "SystemUpdateOnBoot" = ?;
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Quota System";
     "ApplicationBlockedMessageLimit" = 50; // PspJobNoWakeChargeLimit (0x32) 
@@ -532,7 +592,7 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     "DfssLongTermSharingMS" = 15; // PsDfssLongTermSharingMS dd 0F
     "DfssResolutionMS" = 4294967295; // PsDfssDesiredTimerResolutionMs dd 0FFFFFFFF
     "DfssShortTermSharingMS" = 30; // PsDfssShortTermSharingMS dd 1E
-    "EnableCpuQuota" = 0; // Length: 20?
+    "EnableCpuQuota" = 0;
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management";
     "AllocationPreference" = 0; // dword_140FC3200 dd 0
@@ -625,11 +685,11 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     "PagefileOnOsVolume" = ?; // 4,094
     "WaitForPagingFiles" = ?; // 4,094
     "ExistingPageFiles" = \??\C:\pagefile.sys; // REG_MULTI_SZ
-    "DisableDedicatedMemoryCaching" = ?; // Length: 16
-    "DedicatedMemoryPagefileSizeMB" = ? // Length: 16
-    "PagefileHybridPriority" = ?; // Length: 36
-    "SwapfileControl" = ?; // Length: 16
-    "SwapFile" = ?; // Length: 52
+    "DisableDedicatedMemoryCaching" = ?;
+    "DedicatedMemoryPagefileSizeMB" = ?
+    "PagefileHybridPriority" = ?;
+    "SwapfileControl" = ?;
+    "SwapFile" = ?;
     "TempPageFile" = ?;
     "FeatureSettings" = ? // DWORD
 
@@ -672,7 +732,10 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     "ProcessorThrottleLogInterval" = 10000; // REG_DWORD, milliseconds, range: 0-10000 (values >10000 are clamped to 10000)
 
     // procmon boot trace
-    "SleepStudyBufferSizeInMB" = ? // Length: 16
+    "SleepStudyBufferSizeInMB" = ?;
+    "SleepStudyHistoryDays" = ?;
+    "SleepStudyPerfTrackDripsThresholdPercentage" = ?;
+    "SleepStudyTraceDirectory" = ?;
 
 "HKLM\\System\\CurrentControlSet\\Control\\Session Manager\\Throttle";
     "PerfEnablePackageIdle" = 0;
@@ -932,7 +995,7 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
 > Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
 
 ```c
-"HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm";
+"HKLM\\SOFTWARE\\Microsoft\\Windows\\DwmMicrosoft\\Windows\\Dwm";
     "BlackOutAllReadback" = 0;
     "ConfigureInput" = 1;
     "CpuClipAASinkEnableIntermediates" = 1;
@@ -1022,24 +1085,26 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
     "ForceDisableModeChangeAnimation" = ?; // REG_DWORD
 
     // procmon boot trace
-    "DwmInitSessionActivityId_00000001" = ?; // a ID, REG_SZ
-    "DebugFailFast" = ?;
-    "ForceDesktopTreeFullDirty" = ?;
-    "UseHWDrawListEntriesOnWARP" = ?;
-    "CpuClipAASinkForceEnable" = ?;
-    "CpuClipAASinkEnableDebugColors" = ?;
-    "SuperWetEnabled" = ?;
-    "MajorityScreenTest_MaxCoverage" = ?;
-    "EnableRenderPathTestMode" = ?;
-    "MarshalAllDebugInfo" = ?;
+    "AccentColorInactive" = ?;
     "AnimationAttributionEnabled" = 1; // REG_DWORD
     "AnimationAttributionHashingEnabled" = 1; // REG_DWORD
-    "MPCInputRouterWaitForDebugger" = ?;
-    "DisableDeviceBitmapsForMultiAdapter" = ?;
-    "EnableDesktopOverlays" = ?;
     "ColorPrevalence" = ?;
-    "ShaderLinkingGPUBlacklist" = ?; // REG_SZ
+    "CpuClipAASinkEnableDebugColors" = ?;
+    "CpuClipAASinkForceEnable" = ?;
+    "DebugFailFast" = ?;
+    "DisableDeviceBitmapsForMultiAdapter" = ?;
+    "DwmInitSessionActivityId_00000001" = ?; // a ID, REG_SZ
+    "EnableDesktopOverlays" = ?;
     "EnableMPCPerfCounter" = ?;
+    "EnableRenderPathTestMode" = ?;
+    "EnableWindowColorization" = ?;
+    "ForceDesktopTreeFullDirty" = ?;
+    "MajorityScreenTest_MaxCoverage" = ?;
+    "MarshalAllDebugInfo" = ?;
+    "MPCInputRouterWaitForDebugger" = ?;
+    "ShaderLinkingGPUBlacklist" = ?; // REG_SZ
+    "SuperWetEnabled" = ?;
+    "UseHWDrawListEntriesOnWARP" = ?;
 
 
 "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm\\Scene";
