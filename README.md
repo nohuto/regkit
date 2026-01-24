@@ -2,6 +2,23 @@
 
 RegKit is a native Windows Registry editor written in C++ using the Win32 API and common controls (comctl32) for performance reasons. It exposes both registry views, the standard hives and the REGISTRY root.
 
+## Table of Content
+
+- [Differences to Default RegEdit](https://github.com/nohuto/regkit#differences-to-default-regedit)
+- [Standard hives & REGISTRY Comparison](https://github.com/nohuto/regkit#standard-hives--registry-comparison)
+- [Registry fundamentals](https://github.com/nohuto/regkit#registry-fundamentals)
+  - [Keys, values, and naming](https://github.com/nohuto/regkit#keys-values-and-naming)
+  - [Registry value types](https://github.com/nohuto/regkit#registry-value-types)
+  - [Root keys and logical structure](https://github.com/nohuto/regkit#root-keys-and-logical-structure)
+  - [Hives and on-disk files](https://github.com/nohuto/regkit#hives-and-on-disk-files)
+- [REGISTRY only Keys](https://github.com/nohuto/regkit#registry-only-keys)
+- [Icons Meaning](https://github.com/nohuto/regkit#icons-meaning)
+  - [Symlink Icon](https://github.com/nohuto/regkit#symlink-icon)
+  - [Database Icon](https://github.com/nohuto/regkit#database-icon)
+- [Trace Menu](https://github.com/nohuto/regkit#trace-menu)
+- [Credits/References](https://github.com/nohuto/regkit#creditsreferences)
+
+
 ## Differences to Default RegEdit
 
 RegKit adds functionality that standard RegEdit doesn't support/expose:
@@ -59,7 +76,7 @@ Most values are `REG_DWORD`, `REG_BINARY`, or `REG_SZ`, but the registry support
 There are nine root keys, their names start with `HKEY` as they represent handles (H) to keys (KEY), some are links or merged views.
 
 | Root key | Abbreviation | Description | Link |
-| --- | --- | --- |
+| --- | --- | --- | --- |
 | `HKEY_CURRENT_USER` | `HKCU` | Per-user preferences (current logged-on user) | `HKEY_USERS\<SID>` (SID of current logged-on user) |
 | `HKEY_CURRENT_USER_LOCAL_SETTINGS` | `HKCULS` | Per-user settings local to the machine | `HKCU\Software\Classes\Local Settings` |
 | `HKEY_USERS` | `HKU` | All loaded user profiles (including `.DEFAULT` for the system account) | - |
@@ -127,7 +144,7 @@ Examples:
 RegKit marks keys that map to hive files listed under HKLM\SYSTEM\CurrentControlSet\Control\Hivelist (see
 [A true hive is stored in a file.](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/)).
 
-These hive-backed keys can be opened directly via "Open Hive File" (View menu or context menu). See [Hives and on-disk files]() for hive file paths.
+These hive-backed keys can be opened directly via "Open Hive File" (View menu or context menu). See [Hives and on-disk files](https://github.com/nohuto/regkit#hives-and-on-disk-files) for hive file paths.
 
 ## Trace Menu
 
