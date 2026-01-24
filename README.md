@@ -71,6 +71,9 @@ Most values are `REG_DWORD`, `REG_BINARY`, or `REG_SZ`, but the registry support
 | `REG_FULL_RESOURCE_DESCRIPTOR` | Hardware resource description |
 | `REG_RESOURCE_REQUIREMENTS_LIST` | Resource requirements |
 
+`REG_DWORD_LITTLE_ENDIAN` = A 32-bit number in [little-endian](https://learn.microsoft.com/en-us/windows/win32/sysinfo/registry-value-types#byte-formats) format. Windows is designed to run on little-endian computer architectures. Therefore, this value is defined as `REG_DWORD` in the Windows header files.
+`REG_QWORD_LITTLE_ENDIAN` = A 64-bit number in little-endian format. Windows is designed to run on little-endian computer architectures. Therefore, this value is defined as `REG_QWORD` in the Windows header files.
+
 ### Root keys and logical structure
 
 There are nine root keys, their names start with `HKEY` as they represent handles (H) to keys (KEY), some are links or merged views.
