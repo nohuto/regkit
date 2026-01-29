@@ -26,7 +26,7 @@ Memory mode: Records logging data to circular buffers in memory, it's typically 
 
 Number of iterations = `1`.
 
-![](WPRUI.png?raw=true)
+![](https://github.com/nohuto/win-registry/blob/main/guide/images/WPRUI.png?raw=true)
 
 ## Analyzing the Event Trace Log (ETL)
 
@@ -36,6 +36,6 @@ Filter the operations to `QueryValue` by either right clicking on the operation 
 
 Move the `Entire Key (Base+Remainder)` column to the far left so it doesn't export the same queried values but from different processes. Press `CTRL+A` to select the entire data table, right click on any row in the `Entire Key (Base+Remainder)` column, `Copy Other` - `Copy Column Selection`.
 
-![](WPA.png?raw=true)
+![](https://github.com/nohuto/win-registry/blob/main/guide/images/WPA.png?raw=true)
 
 Create a new `.txt` file anywhere, paste the content into it (preferably use notepad++ here for performance reasons), `Edit` - `Line Operations` - `Sort Lines Lexicographically Ascending` & `Remove Empty Lines`. You can now use the `.txt` via RegKit.

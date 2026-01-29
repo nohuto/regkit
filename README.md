@@ -7,10 +7,9 @@ winget install Microsoft.WindowsADK
 - [Windows Performance Recorder](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-recorder)  
 - [Process Monitor](https://learn.microsoft.com/en-us/sysinternals/downloads/procmon) ([*](https://live.sysinternals.com/))
 
-Guide on how to trace registry activity for a specific app - [procmon.md](https://github.com/nohuto/win-registry/blob/main/guide/procmon.md).
-
 ## ToC
 
+- [Guides](https://github.com/nohuto/win-registry?tab=readme-ov-file#guides)
 - [Records Table](https://github.com/nohuto/win-registry?tab=readme-ov-file#records-table)
 - [Registry Values Research](https://github.com/nohuto/win-registry?tab=readme-ov-file#registry-values-research)
   - [DXG Kernel Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#dxg-kernel-values)
@@ -23,6 +22,11 @@ Guide on how to trace registry activity for a specific app - [procmon.md](https:
   - [MMCSS Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#mmcss-values)
   - [StorNVMe Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#stornvme-values)
   - [Miscellaneous Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#miscellaneous-values)
+
+## Guides
+
+- [procmon.md](https://github.com/nohuto/win-registry/blob/main/guide/procmon.md) - Guide on how to trace registry activity for a specific app.
+- [wpr-wpa.md](https://github.com/nohuto/win-registry/blob/main/guide/wpr-wpa.md) - Guide on how to create a boot registry activity trace and how to format it so [regkit](https://github.com/nohuto/regkit) can use it.
 
 ## Records Table
 
