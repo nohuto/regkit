@@ -1,6 +1,7 @@
 ﻿# WPR / [Procmon](https://github.com/nohuto/win-registry/blob/main/guide/procmon.md) Registry Activity Records
 
-Records were made while using `24H2` / `IoT Enterprise LTSC 2024`- Subkeys are always included. Most activities were recorded during boot, there are some others, such as `Steam.txt`, `TLOU2.txt`, `StartAllBack.txt`, and `Lighshot.txt`, that were traced using Procmon during use. WPR is included in WADK:
+Records were made while using `24H2` / `IoT Enterprise LTSC 2024`- Subkeys are always included. Most activities were recorded during boot, there are some others, such as `Steam.txt`, `TLOU2.txt`, `StartAllBack.txt`, and `Lighshot.txt`, that were traced using Procmon during use. You can get the Windowos Performance Toolkit from [ADK](https://go.microsoft.com/fwlink/?linkid=2337875), or install it via `winget`, but this will install more than the Performance Toolkit.
+
 ```powershell
 winget install Microsoft.WindowsADK
 ```
