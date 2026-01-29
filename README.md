@@ -1,4 +1,4 @@
-﻿# WPR / [Procmon](https://github.com/nohuto/win-registry/blob/main/promon/tracing.md) Registry Activity Records
+﻿# WPR / [Procmon](https://github.com/nohuto/win-registry/blob/main/guide/procmon.md) Registry Activity Records
 
 Records were made while using `24H2` / `IoT Enterprise LTSC 2024`- Subkeys are always included. Most activities were recorded during boot, there are some others, such as `Steam.txt`, `TLOU2.txt`, `StartAllBack.txt`, and `Lighshot.txt`, that were traced using Procmon during use. WPR is included in WADK:
 ```powershell
@@ -7,7 +7,7 @@ winget install Microsoft.WindowsADK
 - [Windows Performance Recorder](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-recorder)  
 - [Process Monitor](https://learn.microsoft.com/en-us/sysinternals/downloads/procmon) ([*](https://live.sysinternals.com/))
 
-Guide on how to trace registry activity for a specific app - [procmon.md](https://github.com/nohuto/win-registry/blob/main/promon/tracing.md).
+Guide on how to trace registry activity for a specific app - [procmon.md](https://github.com/nohuto/win-registry/blob/main/guide/procmon.md).
 
 ## ToC
 
@@ -1214,6 +1214,10 @@ This documentation doesn't include all details, since the repo is used for showi
     "CommonBuffer2GBLimit" = 0; // REG_DWORD, when non-zero, forces common buffers below 2GB ("Limit common buffer allocations for the miniport to the physical address range below 2GB.  Only bits 0 through 30 of the physical address can be set.  Bit 31 of the physical address cannot be set.")
     "ForceHCResetOnResume" = 0; // REG_DWORD, forces controller reset on resume
     "FastResumeEnable" = 0; // REG_DWORD, enables fast S0 resume
+
+// miscellaneous note for future reference
+"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Usb\\Ceip" // UsbhUpdateRegSurpriseRemovalCount
+    "BootPathSurpriseRemovalCount" = ?;
 ```
 
 > [peripheral/assets | usb-GetPersistedKeyPath.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usb-GetPersistedKeyPath.c)  
