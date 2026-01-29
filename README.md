@@ -71,9 +71,6 @@ Most values are `REG_DWORD`, `REG_BINARY`, or `REG_SZ`, but the registry support
 | `REG_FULL_RESOURCE_DESCRIPTOR` | Hardware resource description |
 | `REG_RESOURCE_REQUIREMENTS_LIST` | Resource requirements |
 
-`REG_DWORD_LITTLE_ENDIAN` = A 32-bit number in [little-endian](https://learn.microsoft.com/en-us/windows/win32/sysinfo/registry-value-types#byte-formats) format. Windows is designed to run on little-endian computer architectures. Therefore, this value is defined as `REG_DWORD` in the Windows header files.
-`REG_QWORD_LITTLE_ENDIAN` = A 64-bit number in little-endian format. Windows is designed to run on little-endian computer architectures. Therefore, this value is defined as `REG_QWORD` in the Windows header files.
-
 ### Root keys and logical structure
 
 There are nine root keys, their names start with `HKEY` as they represent handles (H) to keys (KEY), some are links or merged views.
@@ -157,6 +154,8 @@ There are three trace files which are quite similar, 23H2/24H2/25H2. I've done a
 - `\\Registry\\User\\<SID>\\...` (I've replaced my SID with a <CURRENT_USER_SID> placeholder)
 
 It also normalizes those paths into standard hive paths (HKLM, HKU, HKCU), you can either use them for pure informational purposes or modify them. Note that WPR doesn't pass the type/data so you'll have to find that out on your own. Several ones are documented on my own in the [win-registry](https://github.com/nohuto/win-registry) repository (see 'Research' menu).
+
+It's recommended that you create your own trace, as the templates are based on my system and IDs such as those for the disk won't be correct for your system. Follow the [wpr-wpa.md](https://github.com/nohuto/win-registry/blob/main/guide/wpr-wpa.md) guide to create a trace which regkit can use.
 
 ## Credits/References
 
