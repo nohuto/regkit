@@ -47,7 +47,7 @@ RegKit adds functionality that standard RegEdit doesn't support/expose:
 
 ## Standard hives & REGISTRY Comparison
 
-RegEdit shows five common hives: `HKEY_LOCAL_MACHINE`, `HKEY_USERS`, `HKEY_CURRENT_USER`, `HKEY_CLASSES_ROOT`, and `HKEY_CURRENT_CONFIG`. Internally, all registry keys are rooted at a single object named `\REGISTRY` in the Object Manager namespace. Native APIs (NtOpenKey / ZwOpenKey) can access paths under `\REGISTRY` directly. The registry actually exposes nine root keys (including performance and local-settings roots) but most tools only shows the common five.
+RegEdit shows five common hives: `HKEY_LOCAL_MACHINE`, `HKEY_USERS`, `HKEY_CURRENT_USER`, `HKEY_CLASSES_ROOT`, and `HKEY_CURRENT_CONFIG`. Internally, all registry keys are rooted at a single object named `\REGISTRY` in the Object Manager namespace. Native APIs (NtOpenKey / ZwOpenKey) can access paths under `\REGISTRY` directly. The registry actually exposes nine root keys (including performance and local-settings roots) but most tools only show the common five.
 
 ## Registry fundamentals
 
@@ -135,7 +135,7 @@ Keys that exist in the real REGISTRY view but are not reachable from standard hi
 
 ### Symlink Icon
 
-![]()
+![](https://github.com/nohuto/regkit/blob/main/assets/icons/light/symlink.ico?raw=true)
 
 Symbolic link keys let the Configuration Manager redirect lookups to another key. They are created by passing `REG_CREATE_LINK` to `RegCreateKey` / `RegCreateKeyEx`. Internally, the link is stored as a `REG_LINK` value named `SymbolicLinkValue` that holds the target path. This value is nomrmally not visible in regedit.
 
@@ -148,7 +148,7 @@ Examples:
 
 ### Database Icon
 
-![]()
+![](https://github.com/nohuto/regkit/blob/main/assets/icons/light/database.ico?raw=true)
 
 RegKit marks keys that map to hive files listed under HKLM\SYSTEM\CurrentControlSet\Control\Hivelist (see
 [A true hive is stored in a file.](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/)).
@@ -157,7 +157,7 @@ These hive-backed keys can be opened directly via "Open Hive File" (View menu or
 
 ### Simulated Key Icon
 
-![]()
+![](https://github.com/nohuto/regkit/blob/main/assets/icons/light/folder-sim.ico?raw=true)
 
 Keys marked as simulated are virtual entries created from trace files when a key exists in a trace but not in the actual hive view. They're displayed with the folder-sim icon so you can differ them from real keys. Creating or modifying a value in a simulated key will create the key path on demand.
 
