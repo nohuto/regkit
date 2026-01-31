@@ -38,14 +38,16 @@ RegKit adds functionality that standard RegEdit doesn't support/expose:
 - Undo/redo, copy/paste (entire keys), replace, performant 'Find'
 - Find can target Standard Hives, the real REGISTRY root, and Trace values independently
 - Tab control
+- Filter bar (value list filter)
 - History view
 - Option to save/forget previous key tree state
+- Simulated keys toggle (from traces)
 - Research menu (redirections to [win-registry](https://github.com/nohuto/win-registry))
 - Miscellaneous common functionalities
 
 ## Standard hives & REGISTRY Comparison
 
-RegEdit shows five common hives: `HKEY_LOCAL_MACHINE`, `HKEY_USERS`, `HKEY_CURRENT_USER`, `HKEY_CLASSES_ROOT`, and `HKEY_CURRENT_CONFIG`. Internally, all registry keys are rooted at a single object named `\REGISTRY` in the Object Manager namespace. Native APIs (NtOpenKey / ZwOpenKey) can access paths under `\REGISTRY` directly. The registry actually exposes nine root keys (including performance and local-settings roots) but most tools only surface the common five.
+RegEdit shows five common hives: `HKEY_LOCAL_MACHINE`, `HKEY_USERS`, `HKEY_CURRENT_USER`, `HKEY_CLASSES_ROOT`, and `HKEY_CURRENT_CONFIG`. Internally, all registry keys are rooted at a single object named `\REGISTRY` in the Object Manager namespace. Native APIs (NtOpenKey / ZwOpenKey) can access paths under `\REGISTRY` directly. The registry actually exposes nine root keys (including performance and local-settings roots) but most tools only shows the common five.
 
 ## Registry fundamentals
 
@@ -57,7 +59,7 @@ The registry is a database that looks a lot like a filesystem, keys are like dir
 
 Most values are `REG_DWORD`, `REG_BINARY`, or `REG_SZ`, but the registry supports 12 value types.
 
-Some values are stored with extra flag bits in the upper 16 bits (e.g. `0x20000`, `0x40000`). These are not new base types, the actual base type is `type & 0xFFFF`, and regkit displays them as `REG_* (0xXXXX)` (for example `0x20001` is `REG_SZ` with a flag, `0x20004` is `REG_DWORD`, and `0x40007` is `REG_MULTI_SZ`). These flagged types are included in the Find > Data Types filter. `RegQueryValueEx` returns a `DWORD` type, and in multiple cases the high 16 bits were non-zero while the low 16 bits matched a documented `REG_*` constant. Masking with `0xFFFF` consistently produced a known base type, and the returned data layout matched that base type (e.g., UTF-16 multi-strings for `REG_MULTI_SZ`, 32-bit integers for `REG_DWORD`). Note that this behavior was determined based on observed values and isn't validated by official Microsoft documentation, it's just a personal assumption.
+Some values are stored with extra flag bits in the upper 16 bits (e.g. `0x20000`, `0x40000`). These aren't new base types, the actual base type is `type & 0xFFFF`, and regkit displays them as `REG_* (0xXXXX)` (for example `0x20001` is `REG_SZ` with a flag, `0x20004` is `REG_DWORD`, and `0x40007` is `REG_MULTI_SZ`). These flagged types are included in the Find > Data Types filter. `RegQueryValueEx` returns a `DWORD` type, and in multiple cases the high 16 bits were non-zero while the low 16 bits matched a documented `REG_*` constant. Masking with `0xFFFF` consistently produced a known base type, and the returned data layout matched that base type (e.g., UTF-16 multi-strings for `REG_MULTI_SZ`, 32-bit integers for `REG_DWORD`). Note that this behavior was determined based on observed values and isn't validated by official Microsoft documentation, it's just a personal assumption.
 
 | Type | Description |
 | --- | --- |
@@ -92,8 +94,8 @@ There are nine root keys, their names start with `HKEY` as they represent handle
 
 Notes:
 - `HKEY_CURRENT_USER` maps to the logged-on user hive (`Ntuser.dat`) and is created per-user at logon.
-- `HKEY_CLASSES_ROOT` also contains UAC VirtualStore data, it is not a simple link.
-- `HKEY_PERFORMANCE_*` keys aren't stored in hive files and are not visible in Regedit. They are provided by Perflib through registry APIs like `RegQueryValueEx`.
+- `HKEY_CLASSES_ROOT` also contains UAC VirtualStore data, it isn't a simple link.
+- `HKEY_PERFORMANCE_*` keys aren't stored in hive files and aren't visible in Regedit. They are provided by Perflib through registry APIs like `RegQueryValueEx`.
 - SYSTEM = `S-1-5-18`, LocalService = `S-1-5-19`, NetworkService = `S-1-5-20`
 
 ### Hives and on-disk files
@@ -133,6 +135,8 @@ Keys that exist in the real REGISTRY view but are not reachable from standard hi
 
 ### Symlink Icon
 
+![]()
+
 Symbolic link keys let the Configuration Manager redirect lookups to another key. They are created by passing `REG_CREATE_LINK` to `RegCreateKey` / `RegCreateKeyEx`. Internally, the link is stored as a `REG_LINK` value named `SymbolicLinkValue` that holds the target path. This value is nomrmally not visible in regedit.
 
 RegKit marks keys as symbolic links when the registry reports a link target (done by checking for a symbolic link target during key enumeration).
@@ -144,24 +148,29 @@ Examples:
 
 ### Database Icon
 
+![]()
+
 RegKit marks keys that map to hive files listed under HKLM\SYSTEM\CurrentControlSet\Control\Hivelist (see
 [A true hive is stored in a file.](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/)).
 
 These hive-backed keys can be opened directly via "Open Hive File" (View menu or context menu). See [Hives and on-disk files](https://github.com/nohuto/regkit#hives-and-on-disk-files) for hive file paths.
 
+### Simulated Key Icon
+
+![]()
+
+Keys marked as simulated are virtual entries created from trace files when a key exists in a trace but not in the actual hive view. They're displayed with the folder-sim icon so you can differ them from real keys. Creating or modifying a value in a simulated key will create the key path on demand.
+
 ## Trace Menu
 
-There are three trace files which are quite similar, 23H2/24H2/25H2. I've done all of them on new installations. This will load trace files that contain registry paths in the kernel namespace, for example:
+There are three trace files which are quite similar, 23H2/24H2/25H2. I've done all of them on new installations. Trace loading supports multiple active traces at once and shows "Read on boot" as `Yes (TraceName, ...)`.
 
-- `\\Registry\\Machine\\...`
-- `\\Registry\\User\\<SID>\\...` (I've replaced my SID with a <CURRENT_USER_SID> placeholder)
+It normalizes those paths into standard hive paths (HKLM, HKU, HKCU), and can simulate missing keys for trace only data (optional "Simulated Keys" view toggle). You can either use them for informational purposes or modify them (simulated keys are created on demand).
 
-It also normalizes those paths into standard hive paths (HKLM, HKU, HKCU), you can either use them for pure informational purposes or modify them. Note that WPR doesn't pass the type/data so you'll have to find that out on your own. Several ones are documented on my own in the [win-registry](https://github.com/nohuto/win-registry) repository (see 'Research' menu).
+Note that WPR doesn't pass the type/data so you'll have to find that out on your own. Several ones are documented on my own in the [win-registry](https://github.com/nohuto/win-registry) repository (see 'Research' menu).
 
 It's recommended that you create your own trace, as the templates are based on my system and IDs such as those for the disk won't be correct for your system. Follow the [wpr-wpa.md](https://github.com/nohuto/win-registry/blob/main/guide/wpr-wpa.md) guide to create a trace which regkit can use.
 
-Find can also search the loaded trace value names (if a trace is selected).
-
 ## Credits/References
 
-[Mysteries-of-the-registry](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/) & [Windows-Internals-E7-P2](https://github.com/nohuto/windows-books/releases/download/7th-Edition/Windows-Internals-E7-P2.pdf) were used for better understanding of the Registry and the documentation, it's recommended to read through these if you want more detailed infomation, as this repository isn't intended to be a complete documeantation of the registry, and therefore only contains a summary of certain topics. [Registry-finder](https://registry-finder.com/) was used for UI inspiration/ideas and [TotalRegistry](https://github.com/zodiacon/TotalRegistry) for feature inspiration.
+[Mysteries-of-the-registry](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/) & [Windows-Internals-E7-P2](https://github.com/nohuto/windows-books/releases/download/7th-Edition/Windows-Internals-E7-P2.pdf) were used for better understanding of the Registry and the documentation, it's recommended to read through these if you want more detailed infomation, as this repository isn't intended to be a complete documeantation of the registry, and therefore only contains a summary of certain topics. [Registry-finder](https://registry-finder.com/) was used for UI inspiration/ideas and [TotalRegistry](https://github.com/zodiacon/TotalRegistry) for feature inspiration. [Tabler icons](https://tabler.io/icons) for the icons.
