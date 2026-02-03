@@ -1168,6 +1168,9 @@ This documentation doesn't include all details, since the repo is used for showi
     "osvc" = ?; // REG_BINARY, see documentation below (written by HUBMISC_StoreDeviceMSOSVendorCodeInRegsitry)
 
     "AlternateSettingFilter"; // ?
+    "ResetTTOnCancel"; = ?;
+    "NoClearTTBufferOnCancel" = ?;
+    "PowerUpDelay" = ?;
 ```
 
 > [peripheral/assets | usbflags-HUBDSM_QueryingRegistryValuesForDevice.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-HUBDSM_QueryingRegistryValuesForDevice.c)  
@@ -1205,7 +1208,7 @@ This documentation doesn't include all details, since the repo is used for showi
     "debuglogmask" = 0xFFFFFFFE; // REG_DWORD, Bitmask for log categories
     "debuglogenable" = 1; // REG_DWORD (bool), enables debug log output
     "debugcatc" = 0; // REG_DWORD (bool), enables CATC analyzer trigger
-    "DisableSelectiveSuspend" = 0; // REG_DWORD (bool), global disable for selective suspend
+    "DisableSelectiveSuspend" = 0; // REG_DWORD (bool), global disable for selective suspend (GlobalUsbhubLegacyValues?)
     "DisableCcDetect" = 0; // REG_DWORD (bool), global disable for CC detection
     "EnPMDebug" = 0; // REG_DWORD (bool), for debugging power management
     "ForceHcD3NoWakeArm" = 0 // REG_DWORD (bool), prevents wake-arming when forcing HC to D3
@@ -1244,6 +1247,21 @@ This documentation doesn't include all details, since the repo is used for showi
     "EnableExtendedValidation" = ?; // REG_DWORD bitmask, any nonzero value sets global flag 0x20, bit 0x8 sets 0x2000, bit 0x4 sets 0x4000
     "WakeOnConnectUI" = ?; // REG_DWORD, any nonzero value sets global flag 0x40 - This controls the UI check box 'Allow this device to wake the system'.  Essentially this is control for the wake on connect feature.
     "PreventDebounceTimeForSuperSpeedDevices" = ?; // REG_DWORD, any nonzero value sets global flag 0x10000 - Checks if we need to give extra time to SuperSpeed devices before talking to them
+
+    // miscellaneous ones from GlobalUsbhubValues
+    "UsbDebugModeEnable" = ?;
+    "BreakOnHubException" = ?;
+    "debuglevel" = ?;
+    "DebugLogMask" = ?;
+    "DebugLogEnable" = ?;
+    "DisableHardReset" = ?;
+    "BreakOnReplicant" = ?;
+    "BreakOnEnumFailure" = ?;
+    "UseIoErrorLog" = ?;
+    "ForceResetOnResume" = ?;
+    "DisableFastResume" = ?;
+    "LogSize" = ?;
+    "IdleTimeout" = ?;
 
 // HUBREG_QueryGlobalUxdSettings (the defaults were taken from the W10 source)
 "HKLM\\SYSTEM\\CurrentControlSet\\Services\\usbhub\\uxd_control\\policy"; // g_UxdGlobalSettingsKey (aRegistryMachin_12)
