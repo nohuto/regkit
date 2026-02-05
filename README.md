@@ -1,6 +1,6 @@
 # RegKit
 
-RegKit is a native Windows Registry editor written in C++ using the Win32 API and common controls (comctl32) for performance reasons. It exposes both registry views, the standard hives and the REGISTRY root.
+RegKit is a native Windows Registry editor written in C++ using the Win32 API and common controls for performance reasons. It exposes both registry views, the standard hives and the REGISTRY root (the CM object-manager view).
 
 ## Table of Content
 
@@ -21,7 +21,7 @@ RegKit is a native Windows Registry editor written in C++ using the Win32 API an
 
 ## Differences to Default RegEdit
 
-RegKit adds functionality that standard RegEdit doesn't support/expose:
+RegKit adds functionality that standard regedit doesn't support/expose:
 
 - A real REGISTRY root view in addition to standard hives
 - Symbolic link detection (`SymbolicLinkValue` value with the link target)
@@ -37,11 +37,17 @@ RegKit adds functionality that standard RegEdit doesn't support/expose:
 - Local/remote/offline registry
 - Undo/redo, copy/paste (entire keys), replace, performant 'Find'
 - Find can target Standard Hives, the real REGISTRY root, and Trace values independently
+- Address bar accepts multiple registry path formats (abbreviated HK*, full root, regedit address bar, .reg header,
+  PowerShell drive/provider, escaped)
+- Copy Key Path As menu for the same formats (to copy/paste into the address bar)
+- Copy Value Name / Copy Value Data from value context menus
 - Tab control
+- Tab session restore (Save Tabs / Clear Tabs on Exit), including cached Find results
 - Filter bar (value list filter)
 - History view
 - Option to save/forget previous key tree state
 - Simulated keys toggle (from traces)
+- Compare Registries: compare two registry sources or .reg files and view detailed differences in a compare tab
 - Research menu (redirections to [win-registry](https://github.com/nohuto/win-registry))
 - Miscellaneous common functionalities
 
@@ -128,8 +134,8 @@ Volatile hives (like `HKLM\HARDWARE`) are created at boot and never written to d
 
 Keys that exist in the real REGISTRY view but are not reachable from standard hives:
 
-- `\REGISTRY\A` (private keys used by some processes, including UWP apps)
-- `\REGISTRY\WC` (Windows Containers / silos)
+- `\REGISTRY\A` - private keys used by some processes, including UWP apps
+- `\REGISTRY\WC` - Windows Containers / silos, used by modern registry virtualization and differencing hives
 
 ## Icons Meaning
 
@@ -137,7 +143,7 @@ Keys that exist in the real REGISTRY view but are not reachable from standard hi
 
 ![](https://github.com/nohuto/regkit/blob/main/assets/icons/light/symlink.ico?raw=true)
 
-Symbolic link keys let the Configuration Manager redirect lookups to another key. They are created by passing `REG_CREATE_LINK` to `RegCreateKey` / `RegCreateKeyEx`. Internally, the link is stored as a `REG_LINK` value named `SymbolicLinkValue` that holds the target path. This value is nomrmally not visible in regedit.
+A key created with `REG_OPTION_CREATE_LINK` is a registry symbolic link key, symbolic link keys let the Configuration Manager redirect lookups to another key. They are created by passing `REG_CREATE_LINK` to `RegCreateKey` / `RegCreateKeyEx`. Internally, the link is stored as a `REG_LINK` value named `SymbolicLinkValue` that holds the target path. This value is nomrmally not visible in regedit.
 
 RegKit marks keys as symbolic links when the registry reports a link target (done by checking for a symbolic link target during key enumeration).
 
@@ -153,7 +159,7 @@ Examples:
 RegKit marks keys that map to hive files listed under HKLM\SYSTEM\CurrentControlSet\Control\Hivelist (see
 [A true hive is stored in a file.](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/)).
 
-These hive-backed keys can be opened directly via "Open Hive File" (View menu or context menu). See [Hives and on-disk files](https://github.com/nohuto/regkit#hives-and-on-disk-files) for hive file paths.
+These hive-backed keys can be opened directly via "*Open Hive File*" (View menu or context menu). See [Hives and on-disk files](https://github.com/nohuto/regkit#hives-and-on-disk-files) for hive file paths.
 
 ### Simulated Key Icon
 
@@ -170,6 +176,9 @@ It normalizes those paths into standard hive paths (HKLM, HKU, HKCU), and can si
 Note that WPR doesn't pass the type/data so you'll have to find that out on your own. Several ones are documented on my own in the [win-registry](https://github.com/nohuto/win-registry) repository (see 'Research' menu).
 
 It's recommended that you create your own trace, as the templates are based on my system and IDs such as those for the disk won't be correct for your system. Follow the [wpr-wpa.md](https://github.com/nohuto/win-registry/blob/main/guide/wpr-wpa.md) guide to create a trace which regkit can use.
+
+> [!WARNING]
+> Loading traces affects startup time and memory consumption. Therefore, it's recommended to either load only one trace or none at all if you don't use them frequently (loading a trace takes only a few seconds, so it's better to load it when needed than to keep it active all the time).
 
 ## Credits/References
 
