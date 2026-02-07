@@ -653,7 +653,7 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
     "EnablePromotion" = 1; // REG_DWORD, found in 25H2 (not in 23H2)
 
 "<AdapterPnpKey>";
-    "HwQueuedRenderPacketGroupLimitPerNode" = <array>; // REG_BINARY, DWORD array, big endian
+    "HwQueuedRenderPacketGroupLimitPerNode" = ; // REG_BINARY, DWORD array, big endian
 ```
 
 ---
