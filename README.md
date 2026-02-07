@@ -119,6 +119,8 @@ Since many values/keys are unknown, I took some time to create several lists sho
 
 These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://github.com/nohuto/win-registry/blob/main/assets/dxgkrnl.c) for pseudocode snippets I used / [records/Graphics-Drivers.txt](https://github.com/nohuto/win-registry/blob/main/records/Graphics-Drivers.txt) for all values that get read on boot.
 
+The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are from `dxgmms2.sys`, I used the drivers from 23H2/25H2 since they differ at some point. See [dxgmms2](https://github.com/nohuto/win-registry/blob/main/assets/dxgmms2) for all used files.
+
 > [!WARNING]
 > Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
 
@@ -277,14 +279,238 @@ These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://githu
     "TdrTestMode"; v14 = 0
     "UnsupportedMonitorModesAllowed"; v5 = 0;
 
+    "PageFaultDebugMode" = 1; // REG_DWORD, missing/invalid or >1 -> 1
+
     // from procmon boot trace
     "DisableCABC" = ?;
     "ForceAccessedPhysically" = ?;
     "ForceToMapGpuVa" = ?;
-    "PageFaultDebugMode" = ?;
     "WarpOverrideWDDMVersion" = ?;
     "WarpSupportHybridDiscrete" = = ?;
     "WarpSupportsResourceResidency" = ?;
+
+    // miscellaneous
+    "CddBootImageMode" = ?;
+    "CddBootScreenMode" = ?;
+    "DODPreferredPresentMoveRegeionsOverride" = ?;
+    "DisableLddmSpriteTearDown" = ?;
+    "DisplayBrokerShouldNotBeActive" = ?;
+    "DxgKrnlVersion" = ?;
+    "MinDxgKrnlVersion" = ?;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\Scheduler";
+    "AutoSyncToCPUPriority" = 0; // REG_DWORD
+    "QuantumUnit" = 25000; // REG_DWORD
+    "PreemptionQuantumUnit" = 50000; // REG_DWORD
+    "EnablePreemption" = 1; // REG_DWORD
+    "HwQueuedRenderPacketGroupLimit" = 2; // REG_DWORD
+    "QueuedPresentLimit" = 3; // REG_DWORD
+    "InitDriverFenceId" = 0; // REG_DWORD
+    "CarryOverUsedQuantum" = 0; // REG_DWORD
+    "EnableFlipImmediateSwFlipQueue" = 1; // REG_DWORD, found in 23H2 (not in 25H2)
+    "AdjustWorkerThreadPriority" = 1; // REG_DWORD
+    "CountFlipTowardHwLimit" = 0; // REG_DWORD
+    "NumberOfDmaPacketPool" = 20; // REG_DWORD
+    "ProfileLevel" = 2; // REG_DWORD
+    "VSyncIdleTimeout" = 7; // REG_DWORD, becomes 1 when adapter version >= 1300 and flag set, <1300 min 4
+    "EnableDirectSubmission" = ; // REG_DWORD, found in 25H2 (not in 23H2), default from adapter cap
+    "CountPresentTowardHwLimit" = 0; // REG_DWORD
+    "EnableContextDelay" = 1; // REG_DWORD, found in 23H2 (not in 25H2)
+    "LogDriverVSyncCallback" = 0; // REG_DWORD, found in 23H2 (not in 25H2)
+    "MaximumAllowedPreemptionDelay" = 900; // REG_DWORD
+    "ContextSchedulingPenaltyDelay" = 1000; // REG_DWORD
+    "BackgroundProcessMaximumAllowedPreemptionDelay" = 8; // REG_DWORD
+    "ForceEnableFlipFenceModel" = 0; // REG_DWORD
+    "YieldPercentage" = 10; // REG_DWORD, valid 1..0x53 else default 10
+    "ForegroundPriorityBoost" = 1; // REG_DWORD
+    "ForceFlipTrueImmediateMode" = 0; // REG_DWORD, values 0..2
+    "MaxYieldInterval" = 16; // REG_DWORD
+    "MinYieldInterval" = 8000; // REG_DWORD, found in 25H2 (not in 23H2)
+    "MaxFocusGpuQuantumWithoutPresent" = 100; // REG_DWORD, 25H2 default 10 when flag set
+    "HistoryLogSize" = 64; // REG_DWORD, clamped 16..0x10000, must be 16, 32, 64, 128, ... (doubling sequence)
+    "HwQueuePacketCap" = ; // REG_DWORD, default from adapter cap, clamped 1..14
+    "FlipDoNotFlipMode" = 0; // REG_DWORD, values 0..2
+    "DdiSuspendMode" = 0; // REG_DWORD, values 0..2; found in 23H2 (not in 25H2)
+    "PfnCpuOverride" = 0; // REG_DWORD, values 0..3
+    "PerSourceCustomDuration" = ; // REG_DWORD, default 1 when adapter version >= 2000
+    "FlipOverrideMode" = 0; // REG_DWORD, 1 or 2 override device mode
+    "NpuContextSwitchQuantum" = 30000; // REG_DWORD, found in 25H2 (not in 23H2)
+    "NpuPreemptionQuantum" = 60000; // REG_DWORD, found in 25H2 (not in 23H2)
+    "HwSchThreadOffloadMode" = 2; // REG_DWORD, found in 25H2 (not in 23H2)
+    "DebugLargeSmoothenedDuration" = 1; // REG_DWORD, found in 25H2 (not in 23H2)
+    "AudioDgAutoBoostPriority" = 24; // REG_DWORD, found in 25H2 (not in 23H2)
+    "FrameServerAutoBoostPriority" = 17; // REG_DWORD, found in 25H2 (not in 23H2)
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\MemoryManager";
+    // ReadConfiguration
+    "PinnedMemoryLimit" = 25; // REG_DWORD, >= 0x5A -> default 25
+    "PinnedApertureMemoryLimit" = 40; // REG_DWORD, >= 0x5A -> default 40
+    "PagesHistory" = 0; // REG_DWORD, max 0x7FFFFFF
+    "MemTransferThreshold" = 10; // REG_DWORD
+    "ExcessiveMemTransferFlipThreshold" = 15; // REG_DWORD
+    "ExcessiveMemTransferPenalty" = 5; // REG_DWORD
+    "EventThrottleThreshold" = 300; // REG_DWORD
+    "DisablePrefetching" = 0; // REG_DWORD
+    "NbDmaBufferLimitPerDevice" = 256; // REG_DWORD, 1024 if system memory > 0x20000000
+    "NbCddDmaBufferLimitPerDevice" = 4; // REG_DWORD
+    "DmaBufferBytesLimitAllDevices" = 0x800000; // REG_DWORD, 0x2000000 if system memory > 0x20000000
+    "DmaBufferListBytesLimitAllDevices" = 0x400000; // REG_DWORD, 0x1000000 if system memory > 0x20000000
+    "NbDmaBufferLimitCompareWatermark" = 10; // REG_DWORD
+    "NbPagingHistoryRecords" = 0; // REG_DWORD, 0x40 if internal release
+    "PinDWMAllocationBackingStore" = 1; // REG_DWORD
+    "RemovePagesFromWorkingSetOnPagingForDwm" = 1; // REG_DWORD
+    "UseUnreset" = 1; // REG_DWORD
+    "PrivateHeapPackingThreshold" = 0x100000; // REG_DWORD
+    "PrivateHeapPackingBlockSize" = 0x800000; // REG_DWORD
+    "EvictTemporaryPeriod" = 60; // REG_DWORD
+    "EvictUnusedPeriod" = 60; // REG_DWORD
+    "ProcessPendingOfferPeriod" = 1; // REG_DWORD
+    "ProcessSysmemOfferPeriod" = 8; // REG_DWORD
+    "SegmentBalancingPolicy" = 2; // REG_DWORD
+    "BugcheckOnApertureCorruption" = 0; // REG_DWORD
+    "QuickApertureCorruptionCheck" = 0; // REG_DWORD
+    "DirectFlipMemoryRequirement" = 200; // REG_DWORD
+    "CommitProcessHeapOnDemand" = 1; // REG_DWORD
+    "SegmentCleanupSizeThreshold" = 4096; // REG_DWORD
+    "SegmentCleanupCountThreshold" = 6; // REG_DWORD
+    "SegmentCleanupTime" = 20; // REG_DWORD
+    "SelfRefreshVramForceEvictionTimer" = 900; // REG_DWORD
+    "MaxSegmentSize<0..31>" = 0; // REG_DWORD, if set, aligns to 4K and clamps to 0x800000
+
+    // unsure about the decomp defaults here
+    "PhysicalHeapSize" = 16; // REG_QWORD
+    "PhysicalHeapLowestAddress" = 16; // REG_QWORD
+    "PhysicalHeapHighestAddress" = 4294967295; // REG_QWORD
+
+    // ReadCommitLimitInformation
+    "PinnedBackingStoreLimit" = 0; // REG_DWORD, MB (<< 20), 0 -> system memory / 8
+    "MinimumSystemMemoryCommitLimit" = 0; // REG_DWORD, MB (<< 20), min 0x4000000
+    "SmallSystemMemorySize" = 0; // REG_DWORD, MB (<< 20)
+    "SystemPartitionCommitLimitPercentage" = 50; // REG_DWORD, clamped to 5..100
+    "SecondaryPartitionCommitLimitPercentage" = 80; // REG_DWORD, clamped to 5..100
+
+    // ReadWorkingSetConfiguration
+    "WorkingSet.DefaultMaximumPercentile" = 90; // REG_DWORD
+    "WorkingSet.DefaultMinimumPercentile" = 65; // REG_DWORD
+
+    // ReadUnusedAllocationConfiguration
+    "UnusedTrimmingPeriod" = 1; // REG_DWORD
+    "Unused.MinimumThreshold" = 0; // REG_DWORD
+    "Unused.LowThreshold" = 15; // REG_DWORD
+    "Unused.NormalThreshold" = 45; // REG_DWORD
+    "Unused.HighThreshold" = 120; // REG_DWORD
+    "Unused.MaximumThreshold" = 1000000; // REG_DWORD
+    "Unused.SelfTrimMinimumThreshold" = 0; // REG_DWORD
+    "Unused.SelfTrimLowThreshold" = 1; // REG_DWORD
+    "Unused.SelfTrimNormalThreshold" = 2; // REG_DWORD
+    "Unused.SelfTrimHighThreshold" = 5; // REG_DWORD
+    "Unused.SelfTrimMaximumThreshold" = 1000000; // REG_DWORD
+    "Unused.EvictApertureOfferLowThreshold" = 15; // REG_DWORD
+    "Unused.EvictApertureOfferNormalThreshold" = 15; // REG_DWORD
+    "Unused.EvictApertureOfferHighThreshold" = 30; // REG_DWORD
+    "Unused.EvictApertureOfferMaximumThreshold" = 30; // REG_DWORD
+
+    // ReadPreparationPeriodConfiguration
+    "PreparationPeriod" = 1; // REG_DWORD, scaled to 100ns
+    "Period.MinimumPolicyHeldPeriod" = 4; // REG_DWORD
+    "Period.MaximumPolicyHeldPeriod" = 64; // REG_DWORD
+    "Period.AlwaysForceMemReset" = 1; // REG_DWORD
+    "Period.EvictionThresholdForMemReset" = 32; // REG_DWORD, post query << 20
+    "Period.NbOfAllocationsThresholdToMRU" = 0x7FFFFFFF; // REG_DWORD
+
+    // ReadHeapConfiguration
+    "DebouncedPageManagement" = 1; // REG_DWORD
+    "DebouncedUnlockAge" = 15; // REG_DWORD
+    "DebouncedDecommitAge" = 15; // REG_DWORD
+    "RecycleHeapPackingThreshold" = 4; // REG_DWORD
+    "RecycleHeapPackingBlockSize" = 32; // REG_DWORD
+    "RecycleHeapPTDBlockSize" = 1024; // REG_DWORD
+    "ZeroedRecyclePages" = 1; // REG_DWORD
+    "LeanRecycleHeapPackingThreshold" = 4; // REG_DWORD
+    "LeanRecycleHeapPackingBlockSize" = 8; // REG_DWORD
+    "LeanRecycleHeapPTDBlockSize" = 64; // REG_DWORD
+    "MaximumDecommitDebounce" = 256; // REG_DWORD, 64 if system memory <= 0x53333333
+    "MaximumUnlockDebounce" = 256; // REG_DWORD, 64 if system memory <= 0x53333333
+    "RecycleHistory" = 0; // REG_DWORD
+    "RecycleHistorySize" = 64; // REG_DWORD
+    "ZeroPageLockThreshold" = 0x200000; // REG_DWORD, found in 25H2 (not in 23H2)
+
+    // ReadPowerConfiguration
+    "MemoryComponentActiveThreshold" = 300; // REG_DWORD, MB (<< 20)
+    "SelfRefreshMemoryEvictionThreshold" = 300; // REG_DWORD, MB (<< 20)
+
+    // ReadGpuVaConfiguration
+    "DisableUncommitGpuVaInPagingProcess" = 0; // REG_DWORD
+    "EnableZeroFlagInPde" = 0; // REG_DWORD
+    "DisableMakeIoMmuAddressValid" = 0; // REG_DWORD
+    "PagingProcessVaSpaceBitCount" = 30; // REG_DWORD
+    "GpuVaFirstValidAddress" = 0x10000; // REG_DWORD, masked to 4K
+    "EnableGpuVaGuardPages" = 0; // REG_DWORD
+    "AllocateGpuVaFromHighAddresses" = 0; // REG_DWORD
+    "CompanionContextMaxPendingOperations" = 128; // REG_DWORD, found in 25H2 (not in 23H2)
+
+    // ReadGpuVaPagingHistoryConfiguration
+    "GpuVaPagingHistorySize" = ; // REG_DWORD, default 0x40 if system memory > 0x53333333 else 0
+    "GpuVaPagingHistoryMask" = 391174; // REG_DWORD, derived, min 0x1000
+
+    // ReadPagingConfiguration
+    "DemotionWithinDeviceEnabled" = 1; // REG_DWORD
+    "DeviceSuspendPeriodMin" = 500; // REG_DWORD
+    "DeviceSuspendPeriodMax" = 500; // REG_DWORD
+    "DeviceResumePeriodMin" = 1000; // REG_DWORD
+    "DeviceResumePeriodMax" = 1000; // REG_DWORD
+    "PagingQueueProcessingPeriodTime" = 50; // REG_DWORD, clamped 16..300
+    "EnablePromotion" = 1; // REG_DWORD, found in 25H2 (not in 23H2)
+    "InitialPromotionInterval" = 48; // REG_DWORD
+    "MaximumPromotionInterval" = 5000; // REG_DWORD
+    "PromotionTargetSizePerInterval" = 0x2000000; // REG_QWORD
+    "PromotionNumberCapPerInterval" = 50; // REG_DWORD
+    "TransferFlushThreshold" = 1; // REG_DWORD, MB (<< 20)
+    "EnableAsyncResidency" = 1; // REG_DWORD
+    "ForceUncommitGpuVAOnEvict" = 0; // REG_DWORD
+    "ForceSynchronousEvict" = 0; // REG_DWORD
+    "BreakOnPagingFailure" = 0; // REG_DWORD
+    "TemporaryResourcePolicy" = 0; // REG_DWORD, found in 25H2 (not in 23H2)
+
+    // ReadTestAndStagingConfiguration
+    "BudgetThreshold" = 25; // REG_DWORD, clamped to <= 100
+    "PagingQueueFenceIncrement" = 1; // REG_DWORD, 0 = 1, upper bound 0x51EB851
+    "RestrictToPreferredSegment" = 0; // REG_DWORD
+    "Use64KPages" = 0; // REG_DWORD
+    "ExpandTo64KBAllocationSizeThreshold" = 0x400000; // REG_DWORD
+    "AlwaysDecommitOnOffer" = 0; // REG_DWORD
+    "LazyDecommitChunkSizeMB" = 32; // REG_DWORD, max 512
+    "DecommitRepurposeMode" = 1; // REG_DWORD, values 0..2 else 0, found in 23H2 (not in 25H2)
+    "DxgMms2OfferReclaim" = 4294967295; // REG_DWORD, allowed 0/1/2/4294967295, others = 0
+    "LargifyUpgradeThresholdPercent" = 0; // REG_DWORD, found in 25H2 (not in 23H2)
+    "LargifyUpgradeThresholdBytes" = 0; // REG_DWORD, found in 25H2 (not in 23H2)
+
+    // ReadVPRConfiguration
+    "VPRGrowRatioNumerator" = 4; // REG_DWORD
+    "VPRGrowRatioDenominator" = 5; // REG_DWORD, if denominator <= numerator or numerator == 0 -> 4/5
+    "VPRCapacityRatioNumerator" = 1; // REG_DWORD
+    "VPRCapacityRatioDenominator" = 5; // REG_DWORD, if denominator <= numerator or numerator == 0 -> 4/5
+
+    // ReadBudgetConfiguration
+    "GlobalCommitmentBudget" = 0; // REG_QWORD
+    "EnableTrimWnfCallback" = 1; // REG_DWORD
+    "StartPeriodicTrimThreshold" = 40; // REG_DWORD
+    "CriticalPeriodicTrimThreshold" = 10; // REG_DWORD
+    "IdleTrimInterval" = 90000; // REG_DWORD
+    "ForegroundTrimInterval" = 90000; // REG_DWORD
+    "MaximumTrimInterval" = 10000; // REG_DWORD
+    "MinimumTrimInterval" = 2000; // REG_DWORD
+    "VideoMemoryFragmentationBuffer" = 10; // REG_DWORD
+    "SystemMemoryFragmentationBuffer" = 5; // REG_DWORD
+    "ProcessBudgetCapBuffer" = 5; // REG_DWORD
+    "MaxVideoMemoryFragmentationBuffer" = 512; // REG_DWORD
+    "MaxProcessBudgetCapBuffer" = 256; // REG_DWORD
+    "L_LocalMemoryBudgetDWMTarget" = 30; // REG_DWORD
+    "L_LocalMemoryBudgetFocusTarget" = 50; // REG_DWORD
+    "LNL_LocalMemoryBudgetDWMTarget" = 30; // REG_DWORD
+    "LNL_LocalMemoryBudgetFocusTarget" = 50; // REG_DWORD
+    "LNL_NonLocalMemoryBudgetDWMTarget" = 30; // REG_DWORD
+    "LNL_NonLocalMemoryBudgetFocusTarget" = 50; // REG_DWORD
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\Power";
     "UseSelfRefreshVRAMInS3"; v166 = 1;
@@ -416,6 +642,18 @@ These are default values I found in `dxgkrnl.sys`, see [dxgkrnl.c](https://githu
 
 "<AdapterPnpKey>\\DxgkSettings";
     "UseSelfRefreshVRAMInS3"; v166 = 1;
+
+// these are also in dxgmms2 but read from the pnp key, not from GraphicsDrivers - see https://github.com/nohuto/win-config/blob/0cbc8e153f7ea6bf4b640e51c53d235a5de67de8/power/desc.md#disable-device-powersavings
+"<AdapterPnpKey>\\MemoryManager";
+    "MaxLocalSegmentSize" = 0; // REG_DWORD, MB (<< 20), 0 allowed, 1..256 -> 256
+    "MaxNonLocalSegmentSize" = 0; // REG_DWORD, MB (<< 20), 0 allowed, 1..512 -> 512
+    "SelfRefreshVramForceEvictionTimerDC" = 900; // REG_DWORD, found in 25H2 (not in 23H2)
+    "SelfRefreshVramForceEvictionTimerAC" = 900; // REG_DWORD, found in 25H2 (not in 23H2)
+    "Supports64KBPages" = 0; // REG_DWORD, bit0 used
+    "EnablePromotion" = 1; // REG_DWORD, found in 25H2 (not in 23H2)
+
+"<AdapterPnpKey>";
+    "HwQueuedRenderPacketGroupLimitPerNode" = <array>; // REG_BINARY, DWORD array, big endian
 ```
 
 ---
@@ -630,7 +868,7 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     "Mirroring" = 0; // dword_140FC31F4 dd 0
     "ModifiedWriteMaximum" = ?; // dword_140FC31FC
     "MoveImages" = 1; // MmRegistryState 
-    "NonPagedPoolQuota" = 4294967295; // PspDefaultResourceLimits (0xFFFFFFFF) 
+    "NonPagedPoolQuota" = 4294967295; // PspDefaultResourceLimits (4294967295) 
     "PagedPoolQuota" = ?; // unk_140FD7DE4
     "PageValidationAction" = 0; // MmPageValidationAction 
     "PageValidationFrequency" = 0; // MmPageValidationFrequency 
@@ -647,18 +885,18 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     "SoftThrottleLargeWriteAtPct" = 0; // CcAzure_SoftThrottleLargeWriteAtPct 
     "SpecialPurposeMemoryPages" = 0; // MmSpecialPurposeMemoryPages 
     "SpecialPurposeMemoryStartPage" = 0; // MmSpecialPurposeMemoryStartPage 
-    "SpecialPurposeMemoryStartPageValueSize" = 4294967295; // MmSpecialPurposeMemoryStartPageValueSize (0xFFFFFFFF) 
+    "SpecialPurposeMemoryStartPageValueSize" = 4294967295; // MmSpecialPurposeMemoryStartPageValueSize (4294967295) 
     "TopBottomDPTEqual" = 0; // CcAzure_TopBottomDPTEqual 
     "TrackLockedPages" = 0; // MmTrackLockedPages 
     "TrackPtes" = 0; // dword_140FC31EC dd 0
     "VerifierDifPoolTags" = 0; // DifpPoolTags 
-    "VerifierDifPoolTagsSizeBytes" = 4294967295; // DifpPoolTagsSizeBytes (0xFFFFFFFF) 
+    "VerifierDifPoolTagsSizeBytes" = 4294967295; // DifpPoolTagsSizeBytes (4294967295) 
     "VerifierFaultApplications" = 0; // VerifierFaultApplicationsBuffer 
-    "VerifierFaultApplicationsSize" = 4294967295; // VerifierFaultApplicationsBufferSize (0xFFFFFFFF) 
+    "VerifierFaultApplicationsSize" = 4294967295; // VerifierFaultApplicationsBufferSize (4294967295) 
     "VerifierFaultBootMinutes" = 8; // VfFaultInjectionBootMinutes 
     "VerifierFaultProbability" = 600; // VfFaultInjectionProbability (0x258) 
     "VerifierFaultTags" = 0; // VerifierFaultTagsBuffer 
-    "VerifierFaultTagsSize" = 4294967295; // VerifierFaultTagsBufferSize (0xFFFFFFFF) 
+    "VerifierFaultTagsSize" = 4294967295; // VerifierFaultTagsBufferSize (4294967295) 
     "VerifierHandleTraces" = 16384; // VfHandleTracingEntries (0x4000) 
     "VerifierIrpStackTraces" = 16384; // IovIrpTracesLength (0x4000) 
     "VerifierIrpTimeout" = 0; // VfWdIrpTimeoutMsec 
@@ -666,22 +904,22 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     "VerifierOptions" = 0; // VfOptionFlags 
     "VerifierRandomTargets" = 0; // VfRandomVerifiedDrivers 
     "VerifierSettingState" = 0; // VfRuleClasses 
-    "VerifierSettingStateSize" = 4294967295; // VfRuleClassesSize (0xFFFFFFFF) 
+    "VerifierSettingStateSize" = 4294967295; // VfRuleClassesSize (4294967295) 
     "VerifierTipDisable" = 0; // VerifierTipDisable 
     "VerifierTipLimitDenominator" = 0; // DifiPluginControlDenominator 
     "VerifierTipLimitNumerator" = 0; // DifiPluginControlNumerator 
     "VerifierTipSparseness" = 0; // DifiPluginControlSparseness 
     "VerifierTriageContext" = 0; // VfTriageContext 
     "VerifyBTSBufferSize" = 0; // ViVerifyBTSBufferSize 
-    "VerifyDriverLevel" = 4294967295; // MmVerifyDriverLevel (0xFFFFFFFF) 
+    "VerifyDriverLevel" = 4294967295; // MmVerifyDriverLevel (4294967295) 
     "VerifyDrivers" = 3905129288; // MmVerifyDriverBuffer (0xE8C38B48) 
     "VerifyDriversLength" = 1207968387; // MmVerifyDriverBufferLength (0x48002283) 
     "VerifyDriversSuppress" = 276138824; // VfXdvSuppressDriversBuffer (0x10758b48) 
     "VerifyDriversSuppressLength" = 3482011648; // VfXdvSuppressDriversBufferLength (0xCF8B4800) 
     "VerifyMode" = 4; // VfVerifyMode 
-    "VerifyTriage" = 4294967295; // ViVerifyTriage (0xFFFFFFFF) 
+    "VerifyTriage" = 4294967295; // ViVerifyTriage (4294967295) 
     "VerifyTriageRules" = 0; // ViVerifyTriageRules 
-    "VerifyTriageRulesSize" = 4294967295; // ViVerifyTriageRulesSize (0xFFFFFFFF) 
+    "VerifyTriageRulesSize" = 4294967295; // ViVerifyTriageRulesSize (4294967295) 
     "VmPauseOutswapSizeCapMB" = 512; // VmPauseOutswapSizeCapMB (0x200) 
     "WorkingSetPagesQuota" = ?; // unk_140FD7DEC
     "WorkingSetSwapSharedPages" = 0; // PspOutSwapSharedPages 
@@ -727,15 +965,15 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     // PopOpenPowerKey
     "AwayModeEnabled" = 0; // REG_DWORD, range: 0-1
     "HiberbootEnabled" = 0; // REG_DWORD, range: 0-1
-    "KernelResumeIoCpuTime" = 0; // REG_DWORD, milliseconds, range: 0-0xFFFFFFFF
+    "KernelResumeIoCpuTime" = 0; // REG_DWORD, milliseconds, range: 0-4294967295
     "MaxHuffRatio" = 1; // REG_DWORD, range: 1-98
     "MultiPhaseResumeDisabled" = 0; // REG_DWORD, range: 0-1
     "SystemPowerPolicy" = "<STRUCT 232 BYTES>"; // REG_BINARY, Size=232
 
     // HybridBootAnimationTime records the boot animation duration during fast boot, HiberIoCpuTime is CPU time spent on hibernation I/O during resume, ResumeCompleteTimestamp is the system timestamp when resume from hibernation completed. So all of them are just counters and chaning their data won't affect the boot.
-    "HiberIoCpuTime" = 0; // REG_DWORD, milliseconds, range: 0-0xFFFFFFFF
-    "HybridBootAnimationTime" = 1601; // REG_DWORD, milliseconds, range: 0-0xFFFFFFFF
-    "ResumeCompleteTimestamp" = 0; // REG_QWORD, range: 0-0xFFFFFFFFFFFFFFFF
+    "HiberIoCpuTime" = 0; // REG_DWORD, milliseconds, range: 0-4294967295
+    "HybridBootAnimationTime" = 1601; // REG_DWORD, milliseconds, range: 0-4294967295
+    "ResumeCompleteTimestamp" = 0; // REG_QWORD, range: 0-4294967295FFFFFFFF
 
     // PpmInitIllegalThrottleLogging
     "ProcessorThrottleLogInterval" = 10000; // REG_DWORD, milliseconds, range: 0-10000 (values >10000 are clamped to 10000)
@@ -835,7 +1073,7 @@ See [power-symbols](https://github.com/nohuto/win-registry/blob/main/assets/powe
     "ActiveIdleThreshold" = 5000000; // PopFxActiveIdleThreshold (0x004C4B40) 
     "ActiveIdleTimeout" = 1000; // PopFxActiveIdleTimeout (0x000003E8) 
     "AllowAudioToEnableExecutionRequiredPowerRequests" = 1; // PopPowerRequestActiveAudioEnablesExecutionRequired 
-    "AllowHibernate" = 4294967295; // PopAllowHibernateReg (0xFFFFFFFF) - REG_DWORD
+    "AllowHibernate" = 4294967295; // PopAllowHibernateReg (4294967295) - REG_DWORD
     "AllowSystemRequiredPowerRequests" = 1; // PopPowerRequestConvertSystemToExecution 
     "AlwaysComputeQosHints" = 0; // PpmPerfAlwaysComputeQosEnabled 
     "BootHeteroPolicyOverride" = 0; // PpmPerfBootHeteroPolicyOverrideEnabled 
@@ -849,14 +1087,14 @@ See [power-symbols](https://github.com/nohuto/win-registry/blob/main/assets/powe
     "DirectedDripsAction" = 3; // PopDirectedDripsAction 
     "DirectedDripsDebounceInterval" = 120; // PopDirectedDripsDebounceInterval (0x78) 
     "DirectedDripsDfxEnforcementPolicy" = 1; // PopDirectedDripsDfxEnforcementPolicy 
-    "DirectedDripsOverride" = 4294967295; // PopDirectedDripsOverride (0xFFFFFFFF) 
+    "DirectedDripsOverride" = 4294967295; // PopDirectedDripsOverride (4294967295) 
     "DirectedDripsSurprisePowerOnTimeout" = 5; // PopDirectedDripsSurprisePowerOnTimeoutSeconds 
     "DirectedDripsTimeout" = 300; // PopDirectedDripsTimeout (0x12C) 
     "DirectedDripsWaitWakeTimeout" = 5; // PopDirectedDripsWaitWakeTimeoutSeconds 
     "DirectedFxDefaultTimeout" = 120; // PopFxDirectedFxDefaultTimeout (0x00000078) 
     "DisableDisplayBurstOnPowerSourceChange" = 0; // PopDisableDisplayBurstOnPowerSourceChange 
     "DisableIdleStatesAtBoot" = 0; // PpmIdleDisableStatesAtBoot 
-    "DisableInboxPepGeneratedConstraints" = 4294967295; // PopDisableInboxPepGeneratedConstraintsOverride (0xFFFFFFFF) 
+    "DisableInboxPepGeneratedConstraints" = 4294967295; // PopDisableInboxPepGeneratedConstraintsOverride (4294967295) 
     "DisableVsyncLatencyUpdate" = 0; // PpmDisableVsyncLatencyUpdate 
     "DozeDeferralChecksToIgnore" = 0; // PopDozeDeferralChecksToIgnore 
     "DozeDeferralMaxSeconds" = 259200; // PopDozeDeferralMaxSeconds (0x0003F480) 
@@ -866,9 +1104,9 @@ See [power-symbols](https://github.com/nohuto/win-registry/blob/main/assets/powe
     "DripsWatchdogAction" = 198; // PopDripsWatchdogAction (0xC6) 
     "DripsWatchdogDebounceInterval" = 120; // PopDripsWatchdogDebounceInterval (0x78) 
     "DripsWatchdogTimeout" = 300; // PopDripsWatchdogTimeout (0x12C) 
-    "EnableInputSuppression" = 4294967295; // PopEnableInputSuppressionOverride (0xFFFFFFFF) 
+    "EnableInputSuppression" = 4294967295; // PopEnableInputSuppressionOverride (4294967295) 
     "EnableMinimalHiberFile" = 0; // PopEnableMinimalHiberFile 
-    "EnablePowerButtonSuppression" = 4294967295; // PopEnablePowerButtonSuppressionOverride (0xFFFFFFFF) 
+    "EnablePowerButtonSuppression" = 4294967295; // PopEnablePowerButtonSuppressionOverride (4294967295) 
     "EnergyEstimationEnabled" = 1; // PopEnergyEstimationEnabled 
     "EnforceAusterityMode" = 0; // PopEnforceAusterityMode 
     "EnforceConsoleLockScreenTimeout" = 0; // PopEnforceConsoleLockScreenTimeout 
@@ -882,14 +1120,14 @@ See [power-symbols](https://github.com/nohuto/win-registry/blob/main/assets/powe
     "HeteroFavoredCoreRotationTimeoutMs" = 30000; // PpmHeteroFavoredCoreRotationTimeoutMs (0x00007530) 
     "HeteroHgsEePerfHintsIndependentEnabled" = 0; // PpmHeteroHgsEePerfHintsIndependentEnabled 
     "HeteroHgsPlusDisabled" = 0; // PpmHeteroHgsThreadDisabled 
-    "HeteroMultiClassParkingEnabled" = 4294967295; // PpmHeteroMultiClassParkingRegValue (0xFFFFFFFF) 
-    "HeteroMultiCoreClassesEnabled" = 4294967295; // PpmHeteroMultiCoreClassesRegValue (0xFFFFFFFF) 
+    "HeteroMultiClassParkingEnabled" = 4294967295; // PpmHeteroMultiClassParkingRegValue (4294967295) 
+    "HeteroMultiCoreClassesEnabled" = 4294967295; // PpmHeteroMultiCoreClassesRegValue (4294967295) 
     "HeteroWpsContainmentEnumOverride" = 0; // PpmHeteroWpsContainmentEnumOverride 
     "HeteroWpsWorkloadProminenceCutoff" = 35; // PpmHeteroWpsWorkloadProminenceCutoff (0x23) 
     "HiberbootEnabled" = 0; // PopHiberbootEnabledReg 
     "HiberFileSizePercent" = 100; // PopHiberFileSizePercent dd 64h (IDA), but set to 0 by default on LTSC IoT Enterprise 2024 since hibernation is unsupported by default - REG_DWORD
-    "HiberFileType" = 4294967295; // PopHiberFileTypeReg (0xFFFFFFFF)
-    "HiberFileTypeDefault" = 4294967295; // PopHiberFileTypeDefaultReg (0xFFFFFFFF)
+    "HiberFileType" = 4294967295; // PopHiberFileTypeReg (4294967295)
+    "HiberFileTypeDefault" = 4294967295; // PopHiberFileTypeDefaultReg (4294967295)
     "HibernateBootOptimizationEnabled" = 0; // PopHiberBootOptimizationEnabledReg 
     "HibernateChecksummingEnabled" = 1; // PopHiberChecksummingEnabledReg 
     "HibernateEnabledDefault" = 1; // PopHiberEnabledDefaultReg - REG_DWORD
@@ -897,10 +1135,10 @@ See [power-symbols](https://github.com/nohuto/win-registry/blob/main/assets/powe
     "HighPerfDurationCSExit" = ?; // unk_140FC337C
     "HighPerfDurationSxExit" = ?; // unk_140FC3380
     "IdleDurationExpirationTimeout" = 4; // PpmIdleDurationExpirationTimeoutMs 
-    "IdleProcessorsRequireQosManagement" = 4294967295; // PpmPerfQosManageIdleProcessors (0xFFFFFFFF) 
+    "IdleProcessorsRequireQosManagement" = 4294967295; // PpmPerfQosManageIdleProcessors (4294967295) 
     "IdleStateTimeout" = 500; // PopPepIdleStateTimeout (0x000001F4) 
     "IgnoreCsComplianceCheck" = 0; // PopIgnoreCsComplianceCheck 
-    "IgnoreLidStateForInputSuppression" = 4294967295; // PopLidStateForInputSuppressionOverride (0xFFFFFFFF) 
+    "IgnoreLidStateForInputSuppression" = 4294967295; // PopLidStateForInputSuppressionOverride (4294967295) 
     "IpiLastClockOwnerDisable" = 0; // PpmIpiLastClockOwnerDisable 
     "LatencyToleranceDefault" = 100000; // PpmLatencyToleranceLimit (0x000186A0) 
     "LatencyToleranceFSVP" = 20000; // dword_140FC3428 dd 4E20
@@ -917,22 +1155,22 @@ See [power-symbols](https://github.com/nohuto/win-registry/blob/main/assets/powe
     "MultiparkGranularity" = 8; // PpmParkMultiparkGranularity 
     "PdcIdlePhaseDefaultWatchdogTimeoutSeconds" = 30; // PopPdcIdlePhaseDefaultWatchdogTimeoutSeconds (0x0000001E) 
     "PdcOneWayEntry" = 0; // PopPowerAggregatorOneWayEntry 
-    "PerfArtificialDomain" = 4294967295; // PpmPerfArtificialDomainSetting (0xFFFFFFFF) 
+    "PerfArtificialDomain" = 4294967295; // PpmPerfArtificialDomainSetting (4294967295) 
     "PerfBoostAtGuaranteed" = 0; // PpmPerfBoostAtGuaranteed 
     "PerfCalculateActualUtilization" = 1; // PpmPerfCalculateActualUtilization 
     "PerfCheckTimerImplementation" = 0; // PpmCheckTimerImplementation 
     "PerfIdealAggressiveIncreasePolicyThreshold" = 90; // PpmPerfIdealAggressiveIncreaseThreshold (0x5A) 
     "PerfQueryOnDevicePowerChanges" = 0; // PopFxPerfQueryOnDevicePowerChanges 
     "PerfSingleStepSize" = 5; // PpmPerfSingleStepSize (0x05) 
-    "PlatformAoAcOverride" = 4294967295; // PopPlatformAoAcOverride (0xFFFFFFFF) 
-    "PlatformRoleOverride" = 4294967295; // PopPlatformRoleOverride (0xFFFFFFFF) 
+    "PlatformAoAcOverride" = 4294967295; // PopPlatformAoAcOverride (4294967295) 
+    "PlatformRoleOverride" = 4294967295; // PopPlatformRoleOverride (4294967295) 
     "PoFxSystemIrpWaitForReportDevicePowered" = 0; // PopPoFxSystemIrpWaitForReportDevicePoweredReg 
     "PowerActionResumeWatchdogTimeoutDefault" = 300; // PopPowerActionResumingWatchdogTimeoutDefault (0x0000012C) 
     "PowerActionTransitioningWatchdogTimeoutDefault" = 600; // PopPowerActionTransitioningWatchdogTimeoutDefault (0x00000258) 
     "PromoteHibernateToShutdown" = 0; // PopPromoteHibernateToShutdown 
     "ProximityEscapeMsec" = 0; // TtmpProximityEscapeMsec 
     "RestrictedStandbyDozeTimeoutSeconds" = 0; // PopPowerAggregatorRestrictedStandbyDozeTimeoutSeconds 
-    "SkipHibernateMemoryMapValidation" = 4294967295; // PopEnableHibernateMemoryMapValidationOverride (0xFFFFFFFF) 
+    "SkipHibernateMemoryMapValidation" = 4294967295; // PopEnableHibernateMemoryMapValidationOverride (4294967295) 
     "SleepstudyAccountingEnabled" = 1; // SleepstudyHelperAccountingEnabled 
     "SleepstudyGlobalBlockerLimit" = 3000; // SleepstudyHelperBlockerGlobalLimit (0x0BB8) 
     "SleepstudyLibraryBlockerLimit" = 200; // SleepstudyHelperBlockerLibraryLimit (0xC8) 
@@ -1075,8 +1313,8 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
     "ChildWindowDpiIsolation" = 1; // range: 0-1
     "DisableDeviceBitmaps" = 0; // range: 0-1
     "EnableResizeOptimization" = 0; // range: 0-1, REG_DWORD
-    "ResizeTimeoutGdi" = 0; // range: 0-0xFFFFFFFF (ms)
-    "ResizeTimeoutModern" = 0; // range: 0-0xFFFFFFFF (ms)
+    "ResizeTimeoutGdi" = 0; // range: 0-4294967295 (ms)
+    "ResizeTimeoutModern" = 0; // range: 0-4294967295 (ms)
 
     "DefaultColorizationColorState" = 0;
     "DisallowAnimations" = 0;
@@ -1683,7 +1921,7 @@ See [mmcss-CiConfigInitialize.c](https://github.com/nohuto/win-registry/blob/mai
 ```c
 "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\multimedia\\systemprofile";
     "SystemResponsiveness" = 100; // addr 0x1C0011090LL
-    "NetworkThrottlingIndex" = 10; // addr 0x1C00110A0LL, 0 = 1, 1..70 keep, 71..0xFFFFFFFE -> 70, 0xFFFFFFFF (CsInitialize skips CiNdisThrottleWorkItem allocation and CiNdisOpenDevice) keep
+    "NetworkThrottlingIndex" = 10; // addr 0x1C00110A0LL, 0 = 1, 1..70 keep, 71..0xFFFFFFFE -> 70, 4294967295 (CsInitialize skips CiNdisThrottleWorkItem allocation and CiNdisOpenDevice) keep
     "NoLazyMode" = 0; // addr 0x1C0011080LL, non-zero = true, see below for more
     "IdleDetectionCycles" = 2; // addr 0x1C00110B0LL, valid 1..31 else -> 2
     "LazyModeTimeout" = 1000000; // addr 0x1C00110C0LL, 0 -> 1000000
@@ -1723,13 +1961,13 @@ See [stornvme-GetRegistrySettings23H2.c](https://github.com/nohuto/win-registry/
     "DiagnosticFlags" = 0; // REG_MULTI_SZ, bit 1 (0x2) forces LogSize default to 0x100000 bytes
     "LogSize" = 0; // REG_MULTI_SZ, stored as bytes (value << 10) 0 ignored (unless DiagnosticFlags set)
     "IoStripeAlignment" = 0; // REG_MULTI_SZ, applied only if value << 10
-    "MedPowerFxIdleTimeout" = 0xFFFFFFFF; // REG_MULTI_SZ
+    "MedPowerFxIdleTimeout" = 4294967295; // REG_MULTI_SZ
     "LowestPowerFxIdleTimeout" = 50; // REG_MULTI_SZ
     "MedPowerD3IdleTimeout" = 3000; // REG_MULTI_SZ
     "LowestPowerD3IdleTimeout" = 1000; // REG_MULTI_SZ
-    "MedPowerResumeLatency" = 0xFFFFFFFF; // REG_MULTI_SZ
-    "LowestPowerResumeLatency" = 0xFFFFFFFF; // REG_MULTI_SZ
-    "HostMemoryBufferBytes" = 0xFFFFFFFF; // REG_MULTI_SZ
+    "MedPowerResumeLatency" = 4294967295; // REG_MULTI_SZ
+    "LowestPowerResumeLatency" = 4294967295; // REG_MULTI_SZ
+    "HostMemoryBufferBytes" = 4294967295; // REG_MULTI_SZ
     "BypassSgl" = ?; // REG_MULTI_SZ
     "TestMdlDataBufferOffsetInBytes" = 0; // REG_MULTI_SZ
     "UseDumpPointers" = ?; // REG_MULTI_SZ, presence enables?
