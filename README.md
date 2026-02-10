@@ -199,7 +199,7 @@ Required filenames: `back.ico`, `binary.ico`, `copy.ico`, `database.ico`, `delet
 
 ### Symlink Icon
 
-![](https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/symlink.ico?raw=true)
+![](https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/symlink.ico?raw=true)
 
 A key created with `REG_OPTION_CREATE_LINK` is a registry symbolic link key, symbolic link keys let the Configuration Manager redirect lookups to another key. They are created by passing `REG_CREATE_LINK` to `RegCreateKey` / `RegCreateKeyEx`. Internally, the link is stored as a `REG_LINK` value named `SymbolicLinkValue` that holds the target path. This value is nomrmally not visible in regedit.
 
@@ -212,7 +212,7 @@ Examples:
 
 ### Database Icon
 
-![](https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/database.ico?raw=true)
+![](https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/database.ico?raw=true)
 
 RegKit marks keys that map to hive files listed under HKLM\SYSTEM\CurrentControlSet\Control\Hivelist (see
 [A true hive is stored in a file.](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/)).
@@ -221,7 +221,7 @@ These hive-backed keys can be opened directly via "*Open Hive File*" (View menu 
 
 ### Simulated Key Icon
 
-![](https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/folder-sim.ico?raw=true)
+![](https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/folder-sim.ico?raw=true)
 
 Keys marked as simulated are virtual entries created from trace files when a key exists in a trace but not in the actual hive view. They're displayed with the folder-sim icon so you can differ them from real keys. Creating or modifying a value in a simulated key will create the key path on demand.
 
@@ -240,4 +240,4 @@ It's recommended that you create your own trace, as the templates are based on m
 
 ## Credits/References
 
-[Mysteries-of-the-registry](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/) & [Windows-Internals-E7-P2](https://github.com/nohuto/windows-books/releases/download/7th-Edition/Windows-Internals-E7-P2.pdf) were used for better understanding of the Registry and the documentation, it's recommended to read through these if you want more detailed infomation, as this repository isn't intended to be a complete documeantation of the registry, and therefore only contains a summary of certain topics. [Registry-finder](https://registry-finder.com/) was used for UI inspiration/ideas and [TotalRegistry](https://github.com/zodiacon/TotalRegistry) for feature inspiration. [Tabler icons](https://tabler.io/icons) for the icons.
+[Mysteries-of-the-registry](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/) & [Windows-Internals-E7-P2](https://github.com/nohuto/windows-books/releases/download/7th-Edition/Windows-Internals-E7-P2.pdf) were used for better understanding of the Registry and the documentation, it's recommended to read through these if you want more detailed infomation, as this repository isn't intended to be a complete documeantation of the registry, and therefore only contains a summary of certain topics. [Registry-finder](https://registry-finder.com/) was used for UI inspiration/ideas and [TotalRegistry](https://github.com/zodiacon/TotalRegistry) for feature inspiration. [Tabler icons](https://tabler.io/icons), [Lucide](https://lucide.dev/) for the icons.
