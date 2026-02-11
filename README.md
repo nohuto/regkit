@@ -1,25 +1,25 @@
 # RegKit
 
-RegKit is a native Windows Registry editor written in C++ using the Win32 API and common controls for performance reasons. It exposes both registry views, the standard hives and the REGISTRY root (the CM object-manager view).
+RegKit is a native Windows Registry editor written in C++ using the Win32 API and common controls for performance reasons. Based on its features, customization options, and the fact that it is open source, it is the best alternative to regedit.
 
 ## Table of Content
 
 - [Differences to Default RegEdit](https://github.com/nohuto/regkit#differences-to-default-regedit)
-- [Rights and Elevation](https://github.com/nohuto/regkit#rights-and-elevation)
-- [Standard hives & REGISTRY Comparison](https://github.com/nohuto/regkit#standard-hives--registry-comparison)
-- [Registry fundamentals](https://github.com/nohuto/regkit#registry-fundamentals)
-  - [Keys, values, and naming](https://github.com/nohuto/regkit#keys-values-and-naming)
-  - [Registry value types](https://github.com/nohuto/regkit#registry-value-types)
-  - [Root keys and logical structure](https://github.com/nohuto/regkit#root-keys-and-logical-structure)
-  - [Hives and on-disk files](https://github.com/nohuto/regkit#hives-and-on-disk-files)
-- [REGISTRY only Keys](https://github.com/nohuto/regkit#registry-only-keys)
+- [Theme Presets](https://github.com/nohuto/regkit#theme-presets)
 - [Icon Sets](https://github.com/nohuto/regkit#icon-sets)
 - [Icons Meaning](https://github.com/nohuto/regkit#icons-meaning)
   - [Symlink Icon](https://github.com/nohuto/regkit#symlink-icon)
   - [Database Icon](https://github.com/nohuto/regkit#database-icon)
 - [Trace Menu](https://github.com/nohuto/regkit#trace-menu)
-- [Theme Presets](https://github.com/nohuto/regkit#theme-presets)
-  - [Theme Presets](https://github.com/nohuto/regkit#examples)
+- [Default Menu](https://github.com/nohuto/regkit#default-menu)
+- [Rights and Elevation](https://github.com/nohuto/regkit#rights-and-elevation)
+- [Registry fundamentals](https://github.com/nohuto/regkit#registry-fundamentals)
+  - [Standard hives & REGISTRY Comparison](https://github.com/nohuto/regkit#standard-hives--registry-comparison)
+  - [REGISTRY only Keys](https://github.com/nohuto/regkit#registry-only-keys)
+  - [Keys, values, and naming](https://github.com/nohuto/regkit#keys-values-and-naming)
+  - [Registry value types](https://github.com/nohuto/regkit#registry-value-types)
+  - [Root keys and logical structure](https://github.com/nohuto/regkit#root-keys-and-logical-structure)
+  - [Hives and on-disk files](https://github.com/nohuto/regkit#hives-and-on-disk-files)
 - [Credits/References](https://github.com/nohuto/regkit#creditsreferences)
 
 
@@ -42,9 +42,8 @@ RegKit adds functionality that standard regedit doesn't support/expose:
 - Loading/unloading hives
 - Local/remote/offline registry
 - Undo/redo, copy/paste (entire keys), replace, performant 'Find'
-- Find can target Standard Hives, the real REGISTRY root, and Trace values independently
-- Address bar accepts multiple registry path formats (abbreviated HK*, full root, regedit address bar, .reg header,
-  PowerShell drive/provider, escaped)
+- Find can search Standard Hives, the real REGISTRY root, and Trace values independently
+- Address bar accepts multiple registry path formats (abbreviated HK*, full root, regedit address bar, .reg header, PowerShell drive/provider, escaped)
 - Copy Key Path As menu for the same formats (to copy/paste into the address bar)
 - Copy Value Name / Copy Value Data from value context menus
 - Tab control
@@ -60,9 +59,7 @@ RegKit adds functionality that standard regedit doesn't support/expose:
 
 ## Theme Presets
 
-RegKit includes built in presets and a theme editor to customize colors (backgrounds, text, selection, borders, focus). Presets can be saved, exported, and imported as `.rktheme` files to share themes across machines.
-
-### Examples
+RegKit includes built in presets and a theme editor to customize colors (backgrounds, text, selection, borders, focus). Presets can be saved, exported, and imported as `.rktheme` files to share themes across machines. Examples:
 
 `Ayu Dark`:
 
@@ -82,6 +79,66 @@ RegKit includes built in presets and a theme editor to customize colors (backgro
 
 I haven't spent much time setting them up properly, some may not be perfect yet. You're able to edit each of these via the menu.
 
+## Icon Sets
+
+RegKit comes with multiple icon sets and supports user provided icons. Switch sets from `Options > Icons`.
+
+Built-in sets:
+- Lucide (default)
+- Tabler
+- Fluent UI
+- Material Symbols
+
+You can set your own ico set via `%LOCALAPPDATA%\Noverse\RegKit\icons`. If `icons\dark` and `icons\light` exist, regkit uses them for dark/light modes, if not it will use the root `icons` folder for both modes.
+
+Required filenames: `back.ico`, `binary.ico`, `copy.ico`, `database.ico`, `delete.ico`, `export.ico`, `folder.ico`, `folder-sim.ico`, `forward.ico`, `local-registry.ico`, `offline-registry.ico`, `paste.ico`, `redo.ico`, `refresh.ico`, `remote-registry.ico`, `replace.ico`, `search.ico`, `symlink.ico`, `text.ico`, `undo.ico`, `up.ico`.
+
+## Icons Meaning
+
+### Symlink Icon <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/symlink.ico?raw=true" width="16" height="16">
+
+A key created with `REG_OPTION_CREATE_LINK` is a registry symbolic link key, symbolic link keys let the Configuration Manager redirect lookups to another key. They are created by passing `REG_CREATE_LINK` to `RegCreateKey` / `RegCreateKeyEx`. Internally, the link is stored as a `REG_LINK` value named `SymbolicLinkValue` that holds the target path. This value is nomrmally not visible in regedit.
+
+RegKit marks keys as symbolic links when the registry reports a link target (done by checking for a symbolic link target during key enumeration).
+
+Examples:
+- `HKLM\SYSTEM\CurrentControlSet` -> `HKLM\SYSTEM\ControlSet00x`
+- `HKEY_CURRENT_USER` -> `HKEY_USERS\<CurrentUserSID>`
+- `HKEY_CURRENT_CONFIG` -> `HKLM\SYSTEM\CurrentControlSet\Hardware Profiles\Current`
+
+### Database Icon <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/database.ico?raw=true" width="16" height="16">
+
+RegKit marks keys that map to hive files listed under HKLM\SYSTEM\CurrentControlSet\Control\Hivelist (see
+[A true hive is stored in a file.](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/)).
+
+These hive-backed keys can be opened directly via "*Open Hive File*" (View menu or context menu). See [Hives and on-disk files](https://github.com/nohuto/regkit#hives-and-on-disk-files) for hive file paths.
+
+### Simulated Key Icon <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/folder-sim.ico?raw=true" width="16" height="16">
+
+Keys marked as simulated are virtual entries created from trace files when a key exists in a trace but not in the actual hive view. They're displayed with the folder-sim icon so you can differ them from real keys. Creating or modifying a value in a simulated key will create the key path on demand.
+
+## Trace Menu
+
+There are three trace files which are quite similar, 23H2/24H2/25H2. I've done all of them on new installations. Trace loading supports multiple active traces at once and shows "Read on boot" as `Yes (TraceName, ...)`.
+
+The trace key menu shows the kernel paths as they appear in the trace (for example `REGISTRY\\MACHINE\\...`), but trace data is also shown in the standard hives. Registry symbolic links (the `SymbolicLinkValue` targets) are resolved so trace values appear under linked keys (including `CurrentControlSet` and other link keys), and kernel-only roots like `REGISTRY\\A` or `REGISTRY\\WC` remain available. It can also simulate missing keys for trace-only data (optional "Simulated Keys" view toggle). You can either use traces for informational purposes or modify them (simulated keys are created on demand).
+
+Note that WPR doesn't pass the type/data so you'll have to find that out on your own. Several ones are documented on my own in the [win-registry](https://github.com/nohuto/win-registry) repository (see 'Research' menu).
+
+It's recommended that you create your own trace, as the templates are based on my system and IDs such as those for the disk won't be correct for your system. Follow the [wpr-wpa.md](https://github.com/nohuto/win-registry/blob/main/guide/wpr-wpa.md) guide to create a trace which regkit can use.
+
+> [!WARNING]
+> Loading traces affects startup time and memory consumption. Therefore, it's recommended to either load only one trace or none at all if you don't use them frequently (loading a trace takes only a few seconds, so it's better to load it when needed than to keep it active all the time).
+
+## Default Menu
+
+Default presets are `.reg` exports that fill the value list's `Default` column with data from new installations. If a value is included in the registry but not in the defaults list, it'll be displayed as `(Missing)`.
+
+> [!WARNING]
+> Loading your entire *Computer* export in here isn't recommended as it'll take a long time to parse the file. Therefore split top level keys into smaller parts.
+
+The current built in list isn't complete, I'll expand it over time.
+
 ## Rights and Elevation
 
 RegKit can relaunch itself under different security contexts because many registry areas are protected by ACLs and/or owned by TrustedInstaller. Some keys are owned by TrustedInstaller, and only that SID has write permissions (SYSTEM may be read-only). If a key is readable but writes fail with access denied, check the owner and ACLs. If the owner is TrustedInstaller, use the TrustedInstaller mode, if it is SYSTEM, use SYSTEM. Use the Options menu to restart with higher rights or to make the app always relaunch with them on startup.
@@ -95,11 +152,18 @@ RegKit can relaunch itself under different security contexts because many regist
 
 SYSTEM rights are for example needed for reading keys such as `HKLM\SAM\SAM`, `HKLM\SECURITY\Policy`, TrustedInstaller rights are for example needed to write in keys like `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing`.
 
-## Standard hives & REGISTRY Comparison
+## Registry fundamentals
+
+### Standard hives & REGISTRY Comparison
 
 RegEdit shows five common hives: `HKEY_LOCAL_MACHINE`, `HKEY_USERS`, `HKEY_CURRENT_USER`, `HKEY_CLASSES_ROOT`, and `HKEY_CURRENT_CONFIG`. Internally, all registry keys are rooted at a single object named `\REGISTRY` in the Object Manager namespace. Native APIs (NtOpenKey / ZwOpenKey) can access paths under `\REGISTRY` directly. The registry actually exposes nine root keys (including performance and local-settings roots) but most tools only show the common five.
 
-## Registry fundamentals
+### REGISTRY only Keys
+
+Keys that exist in the real REGISTRY view but are not reachable from standard hives:
+
+- `\REGISTRY\A` - private keys used by some processes, including UWP apps
+- `\REGISTRY\WC` - Windows Containers / silos, used by modern registry virtualization and differencing hives
 
 ### Keys, values, and naming
 
@@ -173,70 +237,6 @@ On disk, the registry is a set of hive files, not a single monolithic file. The 
 | Virtualized `HKLM\SOFTWARE\Classes` | `\ProgramData\Packages\<PackageFullName>\<UserSid>\SystemAppData\Helium\UserClasses.dat` |
 
 Volatile hives (like `HKLM\HARDWARE`) are created at boot and never written to disk, virtualized hives are mounted on demand for packaged apps.
-
-## REGISTRY only Keys
-
-Keys that exist in the real REGISTRY view but are not reachable from standard hives:
-
-- `\REGISTRY\A` - private keys used by some processes, including UWP apps
-- `\REGISTRY\WC` - Windows Containers / silos, used by modern registry virtualization and differencing hives
-
-## Icon Sets
-
-RegKit comes with multiple icon sets and supports user provided icons. Switch sets from `Options > Icons`.
-
-Built-in sets:
-- Lucide (default)
-- Tabler
-- Fluent UI
-- Material Symbols
-
-You can set your own ico set via `%LOCALAPPDATA%\Noverse\RegKit\icons`. If `icons\dark` and `icons\light` exist, regkit uses them for dark/light modes, if not it will use the root `icons` folder for both modes.
-
-Required filenames: `back.ico`, `binary.ico`, `copy.ico`, `database.ico`, `delete.ico`, `export.ico`, `folder.ico`, `folder-sim.ico`, `forward.ico`, `local-registry.ico`, `offline-registry.ico`, `paste.ico`, `redo.ico`, `refresh.ico`, `remote-registry.ico`, `replace.ico`, `search.ico`, `symlink.ico`, `text.ico`, `undo.ico`, `up.ico`.
-
-## Icons Meaning
-
-### Symlink Icon
-
-![](https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/symlink.ico?raw=true)
-
-A key created with `REG_OPTION_CREATE_LINK` is a registry symbolic link key, symbolic link keys let the Configuration Manager redirect lookups to another key. They are created by passing `REG_CREATE_LINK` to `RegCreateKey` / `RegCreateKeyEx`. Internally, the link is stored as a `REG_LINK` value named `SymbolicLinkValue` that holds the target path. This value is nomrmally not visible in regedit.
-
-RegKit marks keys as symbolic links when the registry reports a link target (done by checking for a symbolic link target during key enumeration).
-
-Examples:
-- `HKLM\SYSTEM\CurrentControlSet` -> `HKLM\SYSTEM\ControlSet00x`
-- `HKEY_CURRENT_USER` -> `HKEY_USERS\<CurrentUserSID>`
-- `HKEY_CURRENT_CONFIG` -> `HKLM\SYSTEM\CurrentControlSet\Hardware Profiles\Current`
-
-### Database Icon
-
-![](https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/database.ico?raw=true)
-
-RegKit marks keys that map to hive files listed under HKLM\SYSTEM\CurrentControlSet\Control\Hivelist (see
-[A true hive is stored in a file.](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/)).
-
-These hive-backed keys can be opened directly via "*Open Hive File*" (View menu or context menu). See [Hives and on-disk files](https://github.com/nohuto/regkit#hives-and-on-disk-files) for hive file paths.
-
-### Simulated Key Icon
-
-![](https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/folder-sim.ico?raw=true)
-
-Keys marked as simulated are virtual entries created from trace files when a key exists in a trace but not in the actual hive view. They're displayed with the folder-sim icon so you can differ them from real keys. Creating or modifying a value in a simulated key will create the key path on demand.
-
-## Trace Menu
-
-There are three trace files which are quite similar, 23H2/24H2/25H2. I've done all of them on new installations. Trace loading supports multiple active traces at once and shows "Read on boot" as `Yes (TraceName, ...)`.
-
-The trace key menu shows the kernel paths as they appear in the trace (for example `REGISTRY\\MACHINE\\...`), but trace data is also shown in the standard hives. Registry symbolic links (the `SymbolicLinkValue` targets) are resolved so trace values appear under linked keys (including `CurrentControlSet` and other link keys), and kernel-only roots like `REGISTRY\\A` or `REGISTRY\\WC` remain available. It can also simulate missing keys for trace-only data (optional "Simulated Keys" view toggle). You can either use traces for informational purposes or modify them (simulated keys are created on demand).
-
-Note that WPR doesn't pass the type/data so you'll have to find that out on your own. Several ones are documented on my own in the [win-registry](https://github.com/nohuto/win-registry) repository (see 'Research' menu).
-
-It's recommended that you create your own trace, as the templates are based on my system and IDs such as those for the disk won't be correct for your system. Follow the [wpr-wpa.md](https://github.com/nohuto/win-registry/blob/main/guide/wpr-wpa.md) guide to create a trace which regkit can use.
-
-> [!WARNING]
-> Loading traces affects startup time and memory consumption. Therefore, it's recommended to either load only one trace or none at all if you don't use them frequently (loading a trace takes only a few seconds, so it's better to load it when needed than to keep it active all the time).
 
 ## Credits/References
 
