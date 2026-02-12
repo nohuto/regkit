@@ -1,19 +1,21 @@
 # RegKit
 
-RegKit is a native Windows Registry editor written in C++ using the Win32 API and common controls for performance reasons. Based on its features, customization options, and the fact that it is open source, it is the best alternative to regedit.
+RegKit is a native Windows Registry editor written in C++ using the Win32 API and common controls for performance reasons. Based on its features, customization options, and the fact that it's FOSS, it's the best alternative to regedit.
 
 ## Table of Content
 
 - [Differences to Default RegEdit](https://github.com/nohuto/regkit#differences-to-default-regedit)
 - [Theme Presets](https://github.com/nohuto/regkit#theme-presets)
 - [Icon Sets](https://github.com/nohuto/regkit#icon-sets)
+  - [Icon Set Previews](https://github.com/nohuto/regkit#icon-set-previews)
 - [Icons Meaning](https://github.com/nohuto/regkit#icons-meaning)
   - [Symlink Icon](https://github.com/nohuto/regkit#symlink-icon)
   - [Database Icon](https://github.com/nohuto/regkit#database-icon)
+  - [Simulated Key Icon](https://github.com/nohuto/regkit#simulated-key-icon)
 - [Trace Menu](https://github.com/nohuto/regkit#trace-menu)
 - [Default Menu](https://github.com/nohuto/regkit#default-menu)
 - [Rights and Elevation](https://github.com/nohuto/regkit#rights-and-elevation)
-- [Registry fundamentals](https://github.com/nohuto/regkit#registry-fundamentals)
+- [Registry Fundamentals](https://github.com/nohuto/regkit#registry-fundamentals)
   - [Standard hives & REGISTRY Comparison](https://github.com/nohuto/regkit#standard-hives--registry-comparison)
   - [REGISTRY only Keys](https://github.com/nohuto/regkit#registry-only-keys)
   - [Keys, values, and naming](https://github.com/nohuto/regkit#keys-values-and-naming)
@@ -93,13 +95,40 @@ You can set your own ico set via `%LOCALAPPDATA%\Noverse\RegKit\icons`. If `icon
 
 Required filenames: `back.ico`, `binary.ico`, `copy.ico`, `database.ico`, `delete.ico`, `export.ico`, `folder.ico`, `folder-sim.ico`, `forward.ico`, `local-registry.ico`, `offline-registry.ico`, `paste.ico`, `redo.ico`, `refresh.ico`, `remote-registry.ico`, `replace.ico`, `search.ico`, `symlink.ico`, `text.ico`, `undo.ico`, `up.ico`.
 
+### Icon Set Previews
+
+| Icon | Lucide | Tabler | Fluent UI | Material Symbols |
+| --- | --- | --- | --- | --- |
+| `back` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/back.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/back.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/back.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/back.ico?raw=true" width="16" height="16"> |
+| `binary` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/binary.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/binary.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/binary.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/binary.ico?raw=true" width="16" height="16"> |
+| `copy` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/copy.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/copy.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/copy.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/copy.ico?raw=true" width="16" height="16"> |
+| `database` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/database.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/database.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/database.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/database.ico?raw=true" width="16" height="16"> |
+| `delete` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/delete.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/delete.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/delete.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/delete.ico?raw=true" width="16" height="16"> |
+| `export` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/export.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/export.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/export.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/export.ico?raw=true" width="16" height="16"> |
+| `folder` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/folder.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/folder.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/folder.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/folder.ico?raw=true" width="16" height="16"> |
+| `folder-sim` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/folder-sim.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/folder-sim.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/folder-sim.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/folder-sim.ico?raw=true" width="16" height="16"> |
+| `forward` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/forward.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/forward.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/forward.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/forward.ico?raw=true" width="16" height="16"> |
+| `local-registry` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/local-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/local-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/local-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/local-registry.ico?raw=true" width="16" height="16"> |
+| `offline-registry` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/offline-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/offline-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/offline-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/offline-registry.ico?raw=true" width="16" height="16"> |
+| `paste` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/paste.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/paste.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/paste.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/paste.ico?raw=true" width="16" height="16"> |
+| `redo` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/redo.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/redo.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/redo.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/redo.ico?raw=true" width="16" height="16"> |
+| `refresh` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/refresh.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/refresh.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/refresh.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/refresh.ico?raw=true" width="16" height="16"> |
+| `remote-registry` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/remote-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/remote-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/remote-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/remote-registry.ico?raw=true" width="16" height="16"> |
+| `replace` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/replace.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/replace.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/replace.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/replace.ico?raw=true" width="16" height="16"> |
+| `search` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/search.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/search.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/search.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/search.ico?raw=true" width="16" height="16"> |
+| `symlink` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/symlink.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/symlink.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/symlink.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/symlink.ico?raw=true" width="16" height="16"> |
+| `text` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/text.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/text.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/text.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/text.ico?raw=true" width="16" height="16"> |
+| `undo` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/undo.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/undo.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/undo.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/undo.ico?raw=true" width="16" height="16"> |
+| `up` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/up.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/tabler/light/up.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/fluentui/light/up.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/materialsymbols/light/up.ico?raw=true" width="16" height="16"> |
+
+
 ## Icons Meaning
 
 ### Symlink Icon <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/symlink.ico?raw=true" width="16" height="16">
 
-A key created with `REG_OPTION_CREATE_LINK` is a registry symbolic link key, symbolic link keys let the Configuration Manager redirect lookups to another key. They are created by passing `REG_CREATE_LINK` to `RegCreateKey` / `RegCreateKeyEx`. Internally, the link is stored as a `REG_LINK` value named `SymbolicLinkValue` that holds the target path. This value is nomrmally not visible in regedit.
+A key created with `REG_OPTION_CREATE_LINK` is a registry symbolic link key, symbolic link keys let the Configuration Manager redirect lookups to another key. They're created by passing `REG_CREATE_LINK` to `RegCreateKey` / `RegCreateKeyEx`. Internally, the link is stored as a `REG_LINK` value named `SymbolicLinkValue` that holds the target path. This value is usually not visible in regedit.
 
-RegKit marks keys as symbolic links when the registry reports a link target (done by checking for a symbolic link target during key enumeration).
+RegKit displays keys as symbolic links when the registry reports a link target (done by checking for a symbolic link target during key enumeration).
 
 Examples:
 - `HKLM\SYSTEM\CurrentControlSet` -> `HKLM\SYSTEM\ControlSet00x`
@@ -108,27 +137,26 @@ Examples:
 
 ### Database Icon <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/database.ico?raw=true" width="16" height="16">
 
-RegKit marks keys that map to hive files listed under HKLM\SYSTEM\CurrentControlSet\Control\Hivelist (see
-[A true hive is stored in a file.](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/)).
+RegKit marks keys that map to hive files listed under HKLM\SYSTEM\CurrentControlSet\Control\Hivelist (see "[A true hive is stored in a file.](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/)").
 
-These hive-backed keys can be opened directly via "*Open Hive File*" (View menu or context menu). See [Hives and on-disk files](https://github.com/nohuto/regkit#hives-and-on-disk-files) for hive file paths.
+These hive-backed keys can be opened directly via "*Open Hive File*" (view menu or context menu). See [Hives and on-disk files](https://github.com/nohuto/regkit#hives-and-on-disk-files) for hive file paths.
 
 ### Simulated Key Icon <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/folder-sim.ico?raw=true" width="16" height="16">
 
-Keys marked as simulated are virtual entries created from trace files when a key exists in a trace but not in the actual hive view. They're displayed with the folder-sim icon so you can differ them from real keys. Creating or modifying a value in a simulated key will create the key path on demand.
+Keys displayed as simulated are virtual entries created from trace files when a key exists in a trace but not in the actual hive view. They're displayed with the *folder-sim* icon so you can differ them from real keys. Creating or modifying a value in a simulated key will create the key path on demand.
 
 ## Trace Menu
 
 There are three trace files which are quite similar, 23H2/24H2/25H2. I've done all of them on new installations. Trace loading supports multiple active traces at once and shows "Read on boot" as `Yes (TraceName, ...)`.
 
-The trace key menu shows the kernel paths as they appear in the trace (for example `REGISTRY\\MACHINE\\...`), but trace data is also shown in the standard hives. Registry symbolic links (the `SymbolicLinkValue` targets) are resolved so trace values appear under linked keys (including `CurrentControlSet` and other link keys), and kernel-only roots like `REGISTRY\\A` or `REGISTRY\\WC` remain available. It can also simulate missing keys for trace-only data (optional "Simulated Keys" view toggle). You can either use traces for informational purposes or modify them (simulated keys are created on demand).
+The trace key menu shows the kernel paths as they appear in the trace (for example `REGISTRY\\MACHINE\\...`), but trace data is also shown in the standard hives. Registry symbolic links (the `SymbolicLinkValue` targets) are resolved so trace values appear under linked keys (including `CurrentControlSet` and other link keys), and kernel-only roots like `REGISTRY\\A` or `REGISTRY\\WC` remain available. It can also [simulate missing keys](https://github.com/nohuto/regkit#simulated-key-icon) for trace-only data (optional "Simulated Keys" view toggle). You can either use traces for informational purposes or modify them (simulated keys are created on demand).
 
 Note that WPR doesn't pass the type/data so you'll have to find that out on your own. Several ones are documented on my own in the [win-registry](https://github.com/nohuto/win-registry) repository (see 'Research' menu).
 
 It's recommended that you create your own trace, as the templates are based on my system and IDs such as those for the disk won't be correct for your system. Follow the [wpr-wpa.md](https://github.com/nohuto/win-registry/blob/main/guide/wpr-wpa.md) guide to create a trace which regkit can use.
 
 > [!WARNING]
-> Loading traces affects startup time and memory consumption. Therefore, it's recommended to either load only one trace or none at all if you don't use them frequently (loading a trace takes only a few seconds, so it's better to load it when needed than to keep it active all the time).
+> Loading traces affects startup time and memory consumption. Therefore, it's recommended to either load only one trace or none at all if you don't use them frequently (loading a trace takes only a few seconds, so it's better to load it when needed than to keep it active all the time). Parsing them doesn't affect the UI/display time, as a different thread is used for it.
 
 ## Default Menu
 
@@ -141,22 +169,24 @@ The current built in list isn't complete, I'll expand it over time.
 
 ## Rights and Elevation
 
-RegKit can relaunch itself under different security contexts because many registry areas are protected by ACLs and/or owned by TrustedInstaller. Some keys are owned by TrustedInstaller, and only that SID has write permissions (SYSTEM may be read-only). If a key is readable but writes fail with access denied, check the owner and ACLs. If the owner is TrustedInstaller, use the TrustedInstaller mode, if it is SYSTEM, use SYSTEM. Use the Options menu to restart with higher rights or to make the app always relaunch with them on startup.
+RegKit can relaunch itself under different security contexts because many registry areas are protected by ACLs and/or owned by TI (TrustedInstaller). Some keys are owned by TI, and only that SID has write permissions (SYSTEM may be read-only). If a key is readable but writes fail with access denied, check the owner and ACLs. If the owner is TI, use the TI mode, if it is SYSTEM, use SYSTEM. Use the Options menu to restart with higher rights or to make the app always relaunch with them on startup.
 
 > [!CAUTION]
 > These levels can bypass protections, use them only when you understand the impact.
 
 - Restart as Admin: uses UAC elevation for a standard elevated token
 - Restart as SYSTEM: uses an elevated process to duplicate a SYSTEM token, then creates a new RegKit process in the active session
-- Restart as TrustedInstaller: uses SYSTEM to start/query the TrustedInstaller service, duplicates its token, then launches RegKit with that token
+- Restart as TI: uses SYSTEM to start/query the TI service, duplicates its token, then launches RegKit with that token
 
-SYSTEM rights are for example needed for reading keys such as `HKLM\SAM\SAM`, `HKLM\SECURITY\Policy`, TrustedInstaller rights are for example needed to write in keys like `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing`.
+SYSTEM rights are for example needed for reading keys such as `HKLM\SAM\SAM`, `HKLM\SECURITY\Policy`, TI rights are for example needed to write in keys like `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing`.
 
-## Registry fundamentals
+## Registry Fundamentals
 
 ### Standard hives & REGISTRY Comparison
 
-RegEdit shows five common hives: `HKEY_LOCAL_MACHINE`, `HKEY_USERS`, `HKEY_CURRENT_USER`, `HKEY_CLASSES_ROOT`, and `HKEY_CURRENT_CONFIG`. Internally, all registry keys are rooted at a single object named `\REGISTRY` in the Object Manager namespace. Native APIs (NtOpenKey / ZwOpenKey) can access paths under `\REGISTRY` directly. The registry actually exposes nine root keys (including performance and local-settings roots) but most tools only show the common five.
+RegEdit shows five common hives `HKEY_LOCAL_MACHINE`, `HKEY_USERS`, `HKEY_CURRENT_USER`, `HKEY_CLASSES_ROOT`, and `HKEY_CURRENT_CONFIG`. Internally, all registry keys are rooted at a single object named `\REGISTRY` in the Object Manager namespace. Native APIs (NtOpenKey/ZwOpenKey) can access paths under `\REGISTRY` directly. The registry actually exposes nine root keys (including performance and local settings roots) but most tools only show the common five.
+
+You can query the REGISTRY key using WinDbg `!reg query \REGISTRY`.
 
 ### REGISTRY only Keys
 
@@ -201,7 +231,7 @@ There are nine root keys, their names start with `HKEY` as they represent handle
 | `HKEY_USERS` | `HKU` | All loaded user profiles (including `.DEFAULT` for the system account) | - |
 | `HKEY_CLASSES_ROOT` | `HKCR` | "Stores file association and Component Object Model (COM) object registration information" | Merged view of `HKLM\SOFTWARE\Classes` and `HKEY_USERS\<SID>\SOFTWARE\Classes` |
 | `HKEY_LOCAL_MACHINE` | `HKLM` | Machine-wide configuration (BCD, COMPONENTS, HARDWARE, SAM, SECURITY, SOFTWARE, SYSTEM) | - |
-| `HKEY_CURRENT_CONFIG` | `HKCC` | Stores some information about the current hardware profile (deprecated, "Hardware profiles are no longer supported in Windows, but the key still exists to support legacy applications that might depend on its presence." | `HKLM\SYSTEM\CurrentControlSet\Hardware Profiles\Current` (legacy, Yosifovich shows `Hardware\Profiles\Current`, but that's a typo in his blog) |
+| `HKEY_CURRENT_CONFIG` | `HKCC` | Stores some information about the current hardware profile (deprecated, "Hardware profiles are no longer supported in Windows, but the key still exists to support legacy applications that might depend on its presence.") | `HKLM\SYSTEM\CurrentControlSet\Hardware Profiles\Current` (legacy, Yosifovich shows `Hardware\Profiles\Current`, but that's a typo in his blog) |
 | `HKEY_PERFORMANCE_DATA` | `HKPD` | Live performance counter data, available only via APIs | - |
 | `HKEY_PERFORMANCE_TEXT` | `HKPT` | Performance counter names/descriptions in US English | - |
 | `HKEY_PERFORMANCE_NLSTEXT` | `HKPNT` | Performance counter names/descriptions in the OS language | - |
@@ -212,9 +242,13 @@ Notes:
 - `HKEY_PERFORMANCE_*` keys aren't stored in hive files and aren't visible in Regedit. They are provided by Perflib through registry APIs like `RegQueryValueEx`.
 - SYSTEM = `S-1-5-18`, LocalService = `S-1-5-19`, NetworkService = `S-1-5-20`
 
+Low level view of the REGISTRY ([*](https://projectzero.google/2024/10/the-windows-registry-adventure-4-hives.html)):
+
+![](https://github.com/nohuto/regkit/blob/main/assets/images/REGISTRYview.png?raw=true)
+
 ### Hives and on-disk files
 
-On disk, the registry is a set of hive files, not a single monolithic file. The Configuration Manager records loaded hive paths under `HKLM\SYSTEM\CurrentControlSet\Control\Hivelist` as they are mounted. The mapping below is from Windows Internals (some hives are volatile or virtualized):
+On disk, the registry is a set of hive files, not a single file. The Configuration Manager records loaded hive paths under `HKLM\SYSTEM\CurrentControlSet\Control\Hivelist` (WinDbg cmd to get HiceAddr etc. = `!reg hivelist`) as they are mounted. Each hive is a PRIMARY file plus `.LOG<1/2>` (also possible to only be a `.LOG` if REG_HIVE_SINGLE_LOG) used during flushing/crash recovery. The mapping below is from Windows Internals (some hives are volatile or virtualized):
 
 | Hive registry path | Hive file path |
 | --- | --- |
@@ -236,8 +270,10 @@ On disk, the registry is a set of hive files, not a single monolithic file. The 
 | Virtualized `HKCU` | `\ProgramData\Packages\<PackageFullName>\<UserSid>\SystemAppData\Helium\User.dat` |
 | Virtualized `HKLM\SOFTWARE\Classes` | `\ProgramData\Packages\<PackageFullName>\<UserSid>\SystemAppData\Helium\UserClasses.dat` |
 
-Volatile hives (like `HKLM\HARDWARE`) are created at boot and never written to disk, virtualized hives are mounted on demand for packaged apps.
+Volatile hives (like `HKLM\HARDWARE`) are created at boot and never written to disk (in paged pool, lost after reboot), virtualized hives are mounted on demand for packaged apps. Hives are loaded at boot or explicitly via `NtLoadKey` / `RegLoadKey` (SeRestorePrivilege required).
 
 ## Credits/References
 
-[Mysteries-of-the-registry](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/) & [Windows-Internals-E7-P2](https://github.com/nohuto/windows-books/releases/download/7th-Edition/Windows-Internals-E7-P2.pdf) were used for better understanding of the Registry and the documentation, it's recommended to read through these if you want more detailed infomation, as this repository isn't intended to be a complete documeantation of the registry, and therefore only contains a summary of certain topics. [Registry-finder](https://registry-finder.com/) was used for UI inspiration/ideas and [TotalRegistry](https://github.com/zodiacon/TotalRegistry) for feature inspiration. [Tabler icons](https://tabler.io/icons), [Lucide](https://lucide.dev/) for the icons.
+[Mysteries-of-the-registry](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/), [Windows-Internals-E7-P2](https://github.com/nohuto/windows-books/releases/download/7th-Edition/Windows-Internals-E7-P2.pdf), [NTRegistryImplimentation](https://empyreal96.github.io/nt-info-depot/Windows-Kernel-Internals/NTRegistryImplimentation.pdf), [The Windows Registry Adventure](https://projectzero.google/2024/10/the-windows-registry-adventure-4-hives.html) were used for better understanding of the Registry and the documentation. It's recommended to read through these if you want more detailed infomation, as this repository isn't intended to be a complete documeantation of the registry, and therefore only contains a summary of certain topics. [Registry-finder](https://registry-finder.com/) was used for UI inspiration/ideas and [TotalRegistry](https://github.com/zodiacon/TotalRegistry) for feature inspiration. [Tabler icons](https://tabler.io/icons), [Lucide](https://lucide.dev/) for the icons.
+
+I recommend reading through [Mysteries-of-the-registry](https://scorpiosoftware.net/2022/04/15/mysteries-of-the-registry/), [Windows-Internals-E7-P2](https://github.com/nohuto/windows-books/releases/download/7th-Edition/Windows-Internals-E7-P2.pdf), [NTRegistryImplimentation](https://empyreal96.github.io/nt-info-depot/Windows-Kernel-Internals/NTRegistryImplimentation.pdf), [The Windows Registry Adventure](https://projectzero.google/2024/10/the-windows-registry-adventure-4-hives.html) if you want a better understanding about it, since this repo is only a "short summary" and is missing on details.
