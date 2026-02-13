@@ -1,0 +1,101 @@
+// Copyright (C) 2026 Noverse (Nohuto)
+// This file is part of RegKit https://github.com/nohuto/regkit
+//
+// RegKit is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// RegKit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
+
+#include <windows.h>
+#include "resource.h"
+
+IDI_APPICON ICON "../assets/icons/regkit.ico"
+
+1 RT_MANIFEST "app.manifest"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION REGKIT_VERSION_MAJOR, REGKIT_VERSION_MINOR, REGKIT_VERSION_PATCH, REGKIT_VERSION_BUILD
+ PRODUCTVERSION REGKIT_VERSION_MAJOR, REGKIT_VERSION_MINOR, REGKIT_VERSION_PATCH, REGKIT_VERSION_BUILD
+ FILEFLAGSMASK 0x3fL
+ FILEFLAGS 0x0L
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904b0"
+    BEGIN
+      VALUE "CompanyName", "Noverse (Nohuto)\0"
+      VALUE "FileDescription", "RegKit\0"
+      VALUE "FileVersion", REGKIT_VERSION_STR "\0"
+      VALUE "InternalName", "regkit\0"
+      VALUE "LegalCopyright", "(C) 2026 Noverse (Nohuto)\0"
+      VALUE "OriginalFilename", "regkit.exe\0"
+      VALUE "ProductName", "RegKit\0"
+      VALUE "ProductVersion", REGKIT_VERSION_STR "\0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0409, 1200
+  END
+END
+
+// IDR_TRACE_23H2 RCDATA "../assets/traces/23H2.txt"
+// IDR_TRACE_24H2 RCDATA "../assets/traces/24H2.txt"
+// IDR_TRACE_25H2 RCDATA "../assets/traces/25H2.txt"
+
+IDI_ICON_LIGHT_BACK ICON "../assets/icons/lucide/light/back.ico"
+IDI_ICON_LIGHT_COPY ICON "../assets/icons/lucide/light/copy.ico"
+IDI_ICON_LIGHT_DELETE ICON "../assets/icons/lucide/light/delete.ico"
+IDI_ICON_LIGHT_EXPORT ICON "../assets/icons/lucide/light/export.ico"
+IDI_ICON_LIGHT_FOLDER ICON "../assets/icons/lucide/light/folder.ico"
+IDI_ICON_LIGHT_SYMLINK ICON "../assets/icons/lucide/light/symlink.ico"
+IDI_ICON_LIGHT_DATABASE ICON "../assets/icons/lucide/light/database.ico"
+IDI_ICON_LIGHT_FORWARD ICON "../assets/icons/lucide/light/forward.ico"
+IDI_ICON_LIGHT_LOCAL_REGISTRY ICON "../assets/icons/lucide/light/local-registry.ico"
+IDI_ICON_LIGHT_OFFLINE_REGISTRY ICON "../assets/icons/lucide/light/offline-registry.ico"
+IDI_ICON_LIGHT_PASTE ICON "../assets/icons/lucide/light/paste.ico"
+IDI_ICON_LIGHT_REDO ICON "../assets/icons/lucide/light/redo.ico"
+IDI_ICON_LIGHT_REFRESH ICON "../assets/icons/lucide/light/refresh.ico"
+IDI_ICON_LIGHT_REMOTE_REGISTRY ICON "../assets/icons/lucide/light/remote-registry.ico"
+IDI_ICON_LIGHT_REPLACE ICON "../assets/icons/lucide/light/replace.ico"
+IDI_ICON_LIGHT_SEARCH ICON "../assets/icons/lucide/light/search.ico"
+IDI_ICON_LIGHT_TEXT ICON "../assets/icons/lucide/light/text.ico"
+IDI_ICON_LIGHT_BINARY ICON "../assets/icons/lucide/light/binary.ico"
+IDI_ICON_LIGHT_UNDO ICON "../assets/icons/lucide/light/undo.ico"
+IDI_ICON_LIGHT_UP ICON "../assets/icons/lucide/light/up.ico"
+IDI_ICON_LIGHT_FOLDER_SIM ICON "../assets/icons/lucide/light/folder-sim.ico"
+
+IDI_ICON_DARK_BACK ICON "../assets/icons/lucide/dark/back.ico"
+IDI_ICON_DARK_COPY ICON "../assets/icons/lucide/dark/copy.ico"
+IDI_ICON_DARK_DELETE ICON "../assets/icons/lucide/dark/delete.ico"
+IDI_ICON_DARK_EXPORT ICON "../assets/icons/lucide/dark/export.ico"
+IDI_ICON_DARK_FOLDER ICON "../assets/icons/lucide/dark/folder.ico"
+IDI_ICON_DARK_SYMLINK ICON "../assets/icons/lucide/dark/symlink.ico"
+IDI_ICON_DARK_DATABASE ICON "../assets/icons/lucide/dark/database.ico"
+IDI_ICON_DARK_FORWARD ICON "../assets/icons/lucide/dark/forward.ico"
+IDI_ICON_DARK_LOCAL_REGISTRY ICON "../assets/icons/lucide/dark/local-registry.ico"
+IDI_ICON_DARK_OFFLINE_REGISTRY ICON "../assets/icons/lucide/dark/offline-registry.ico"
+IDI_ICON_DARK_PASTE ICON "../assets/icons/lucide/dark/paste.ico"
+IDI_ICON_DARK_REDO ICON "../assets/icons/lucide/dark/redo.ico"
+IDI_ICON_DARK_REFRESH ICON "../assets/icons/lucide/dark/refresh.ico"
+IDI_ICON_DARK_REMOTE_REGISTRY ICON "../assets/icons/lucide/dark/remote-registry.ico"
+IDI_ICON_DARK_REPLACE ICON "../assets/icons/lucide/dark/replace.ico"
+IDI_ICON_DARK_SEARCH ICON "../assets/icons/lucide/dark/search.ico"
+IDI_ICON_DARK_TEXT ICON "../assets/icons/lucide/dark/text.ico"
+IDI_ICON_DARK_BINARY ICON "../assets/icons/lucide/dark/binary.ico"
+IDI_ICON_DARK_UNDO ICON "../assets/icons/lucide/dark/undo.ico"
+IDI_ICON_DARK_UP ICON "../assets/icons/lucide/dark/up.ico"
+IDI_ICON_DARK_FOLDER_SIM ICON "../assets/icons/lucide/dark/folder-sim.ico"
+
+#include "dialogs.rc"
