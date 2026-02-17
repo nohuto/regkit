@@ -2010,8 +2010,7 @@ See [stornvme-GetRegistrySettings23H2.c](https://github.com/nohuto/win-registry/
     "ControllerResetWaitTimeCushion" = 20000; // REG_MULTI_SZ, GetDynamicRegistrySettings writes the read value directly (including 0)
     "DisableActivateFWWithoutReset" = 0; // REG_MULTI_SZ, read in GetRegistrySettingsForSpecificKey and returned directly
 
-// present in 24H2 path (not present in 23H2 path)
-"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device";
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device"; // present in 24H2 path (not present in 23H2 path)
     "DisableDSTThrottle" = ?; // REG_MULTI_SZ, GetDynamicRegistrySettings first clears flag 0x200000, then sets it when value is nonzero
     "DisableF0TimestampSync" = 0; // REG_MULTI_SZ
     "DisableForwardedIO" = 0; // REG_MULTI_SZ
@@ -2020,8 +2019,7 @@ See [stornvme-GetRegistrySettings23H2.c](https://github.com/nohuto/win-registry/
     "SupportZeroActiveNamespace" = 0; // REG_MULTI_SZ
     "WeightedRoundRobinEnabled" = 0; // REG_MULTI_SZ
 
-// not found in provided pseudocode assets
-"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters";
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters"; // not found in provided pseudocode assets
     "BusType" = ?;
     "BusyPauseTimeInMs" = ?;
     "BusyRetryCount" = ?;
@@ -2029,8 +2027,7 @@ See [stornvme-GetRegistrySettings23H2.c](https://github.com/nohuto/win-registry/
     "IoTimeoutValue" = ?;
     "PnpAsyncNewDevices" = ?;
 
-// not found in provided pseudocode assets
-"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device";
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device"; // not found in provided pseudocode assets
     "DriverParameter" = ?;
     "HostIdentifier" = ?;
     "LinkTimeout" = ?;
