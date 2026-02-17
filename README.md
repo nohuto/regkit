@@ -123,158 +123,157 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
 
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers"
-    "MiracastForceDisable"; v2 = 2;
-    "MiracastUseIhvDriver"; v3 = 2;
+    "MiracastForceDisable" = 2;
+    "MiracastUseIhvDriver" = 2;
 
-    "ContextNoPatchMode"; v38 = 0
-    "CreateGdiPrimaryOnSlaveGpu"; v48 = 0
-    "CrtcPhaseFrames"; v57 = 2
-    "DeadlockPulse"; v54 = 5000
-    "DeadlockPulseTolerance"; v55 = 500
-    "DeadlockTimeout"; v53 = 30000
-    "DisableBadDriverCheckForHwProtection"; v70 = 0 // DWORD
-    "DisableBoostedVSyncVirtualization"; v59 = 0 // DWORD
-    "DisableGdiContextGpuVa"; v41 = 0
-    "DisableIndependentVidPnVSync"; v56 = 0 // DWORD
-    "DisableMonitoredFenceGpuVa"; v43 = 0
-    "DisableMultiSourceMPOCheck"; v76 = 0
-    "DisableOverlays"; v67 = 0
-    "DisablePagingContextGpuVa"; v42 = 0
-    "DisableSecondaryIFlipSupport"; v71 = 0
-    "DriverManagesResidencyOverride"; v46 = 1
-    "DriverStoreCopyMode"; v33 = 1
-    "EnableBasicRenderGpuPv"; v60 = 0
-    "EnableDecodeMPO"; v69 = 1
-    "EnableFbrValidation"; v58 = 1
-    "EnableMultiPlaneOverlay3DDIs"; v73 = 0
-    "EnableOfferReclaimOnDriver"; v37 = 1
-    "EnablePanelFitterSupport"; v100 = 0
-    "EnableTimedCalls"; v49 = 0
-    "EnableWDDM23Synchronization"; v50 = 0
-    "Force32BitFences"; v68 = 0
-    "ForceDirectFlip"; v66 = 0
-    "ForceEnableDxgMms2"; v39 = 0
-    "ForceExplicitResidencyNotification"; v44 = 0 // DWORD
-    "ForceInitPagingProcessVaSpace"; v40 = 0
-    "ForceReplicateGdiContent"; v47 = 0
-    "ForceSecondaryIFlipSupport"; v72 = 0
-    "ForceSecondaryMPOSupport"; v97 = 0
-    "ForceSurpriseRemovalSupport"; v75 = 0
-    "ForceVariableRefresh"; v52 = 0
-    "GdiPhysicalAdapterIndex"; v74 = 0
-    "GpuPriorityChangeMode"; v64 = 1
-    "HighPriorityCompletionMode"; v63 = 1
-    "InitialPagingQueueFenceValue"; v45 = 7000
-    "IoMmuFlags"; v51 = 0
-    "KnownProcessBoostMode"; v61 = 1
-    "LeanMemoryLimit"; v122 = 1395864371
-    "LeanMemoryLimit"; v123 = 16
-    "NumVirtualFunctions"; v65 = 0
-    "SmallQuantumMode"; v62 = 1
+    "ContextNoPatchMode" = 0;
+    "CreateGdiPrimaryOnSlaveGpu" = 0;
+    "CrtcPhaseFrames" = 2;
+    "DeadlockPulse" = 5000;
+    "DeadlockPulseTolerance" = 500;
+    "DeadlockTimeout" = 30000;
+    "DisableBadDriverCheckForHwProtection" = 0; // REG_DWORD
+    "DisableBoostedVSyncVirtualization" = 0; // REG_DWORD
+    "DisableGdiContextGpuVa" = 0;
+    "DisableIndependentVidPnVSync" = 0; // REG_DWORD
+    "DisableMonitoredFenceGpuVa" = 0;
+    "DisableMultiSourceMPOCheck" = 0;
+    "DisableOverlays" = 0;
+    "DisablePagingContextGpuVa" = 0;
+    "DisableSecondaryIFlipSupport" = 0;
+    "DriverManagesResidencyOverride" = 1;
+    "DriverStoreCopyMode" = 1;
+    "EnableBasicRenderGpuPv" = 0;
+    "EnableDecodeMPO" = 1;
+    "EnableFbrValidation" = 1;
+    "EnableMultiPlaneOverlay3DDIs" = 0;
+    "EnableOfferReclaimOnDriver" = 1;
+    "EnablePanelFitterSupport" = 0;
+    "EnableTimedCalls" = 0;
+    "EnableWDDM23Synchronization" = 0;
+    "Force32BitFences" = 0;
+    "ForceDirectFlip" = 0;
+    "ForceEnableDxgMms2" = 0;
+    "ForceExplicitResidencyNotification" = 0; // REG_DWORD
+    "ForceInitPagingProcessVaSpace" = 0;
+    "ForceReplicateGdiContent" = 0;
+    "ForceSecondaryIFlipSupport" = 0;
+    "ForceSecondaryMPOSupport" = 0;
+    "ForceSurpriseRemovalSupport" = 0;
+    "ForceVariableRefresh" = 0;
+    "GdiPhysicalAdapterIndex" = 0;
+    "GpuPriorityChangeMode" = 1;
+    "HighPriorityCompletionMode" = 1;
+    "InitialPagingQueueFenceValue" = 7000;
+    "IoMmuFlags" = 0;
+    "KnownProcessBoostMode" = 1;
+    "LeanMemoryLimit" = ?; // REG_QWORD
+    "NumVirtualFunctions" = 0;
+    "SmallQuantumMode" = 1;
 
-    "DefaultActiveIdleThreshold"; v191 = 2000;
-    "DefaultD3TransitionIdleLongTimeThreshold"; v195 = 60000;
-    "DefaultD3TransitionIdleShortTimeThreshold"; v193 = 10000;
-    "DefaultD3TransitionIdleVeryLongTimeThreshold"; v197 = 60000;
-    "DefaultD3TransitionLatencyActivelyUsed"; v192 = 80;
-    "DefaultD3TransitionLatencyIdleLongTime"; v196 = 140000;
-    "DefaultD3TransitionLatencyIdleMonitorOff"; v200 = 250000;
-    "DefaultD3TransitionLatencyIdleNoContext"; v199 = 250000;
-    "DefaultD3TransitionLatencyIdleShortTime"; v194 = 80000;
-    "DefaultD3TransitionLatencyIdleVeryLongTime"; v198 = 200000;
-    "DefaultExpectedResidency"; v176 = 2000;
-    "DefaultIdleThresholdIdle0"; v187 = 200;
-    "DefaultIdleThresholdIdle0MonitorOff"; v222 = 100;
-    "DefaultLatencyToleranceIdle0"; v184 = 80;
-    "DefaultLatencyToleranceIdle0MonitorOff"; v188 = 2000;
-    "DefaultLatencyToleranceIdle1"; v185 = 15000;
-    "DefaultLatencyToleranceIdle1MonitorOff"; v189 = 50000;
-    "DefaultLatencyToleranceMemory"; v201 = 15000;
-    "DefaultLatencyToleranceMemoryNoContext"; v202 = 30000;
-    "DefaultLatencyToleranceNoContext"; v186 = 35000;
-    "DefaultLatencyToleranceNoContextMonitorOff"; v190 = 100000;
-    "DefaultLatencyToleranceOther"; v175 = -1;
-    "DefaultLatencyToleranceTimerPeriod"; v183 = 200;
-    "DefaultMemoryRefreshLatencyToleranceActivelyUsed"; v203 = 80;
-    "DefaultMemoryRefreshLatencyToleranceIdleShortTime"; v204 = 15000;
-    "DefaultMemoryRefreshLatencyToleranceMonitorOff"; v206 = 80000;
-    "DefaultMemoryRefreshLatencyToleranceNoContext"; v205 = 30000;
-    "DefaultPowerNotRequiredTimeout"; v209 = 25000;
-    "DisableDevicePowerRequired"; v179 = 0;
-    "DisablePStateManagement"; v181 = 0;
-    "EnablePODebounce"; v180 = 0;
-    "EnableRuntimePowerManagement"; v178 = 1;
-    "lowdebounce"; v182 = 3;
-    "MonitorLatencyTolerance"; v208 = 300000;
-    "MonitorRefreshLatencyTolerance"; v207 = 17000;
-    "uglitch"; v168 = 900;
-    "uhigh"; v169 = 700;
-    "uideal"; v167 = 500;
-    "ulow"; v170 = 300;
+    "DefaultActiveIdleThreshold" = 2000;
+    "DefaultD3TransitionIdleLongTimeThreshold" = 60000;
+    "DefaultD3TransitionIdleShortTimeThreshold" = 10000;
+    "DefaultD3TransitionIdleVeryLongTimeThreshold" = 60000;
+    "DefaultD3TransitionLatencyActivelyUsed" = 80;
+    "DefaultD3TransitionLatencyIdleLongTime" = 140000;
+    "DefaultD3TransitionLatencyIdleMonitorOff" = 250000;
+    "DefaultD3TransitionLatencyIdleNoContext" = 250000;
+    "DefaultD3TransitionLatencyIdleShortTime" = 80000;
+    "DefaultD3TransitionLatencyIdleVeryLongTime" = 200000;
+    "DefaultExpectedResidency" = 2000;
+    "DefaultIdleThresholdIdle0" = 200;
+    "DefaultIdleThresholdIdle0MonitorOff" = 100;
+    "DefaultLatencyToleranceIdle0" = 80;
+    "DefaultLatencyToleranceIdle0MonitorOff" = 2000;
+    "DefaultLatencyToleranceIdle1" = 15000;
+    "DefaultLatencyToleranceIdle1MonitorOff" = 50000;
+    "DefaultLatencyToleranceMemory" = 15000;
+    "DefaultLatencyToleranceMemoryNoContext" = 30000;
+    "DefaultLatencyToleranceNoContext" = 35000;
+    "DefaultLatencyToleranceNoContextMonitorOff" = 100000;
+    "DefaultLatencyToleranceOther" = -1;
+    "DefaultLatencyToleranceTimerPeriod" = 200;
+    "DefaultMemoryRefreshLatencyToleranceActivelyUsed" = 80;
+    "DefaultMemoryRefreshLatencyToleranceIdleShortTime" = 15000;
+    "DefaultMemoryRefreshLatencyToleranceMonitorOff" = 80000;
+    "DefaultMemoryRefreshLatencyToleranceNoContext" = 30000;
+    "DefaultPowerNotRequiredTimeout" = 25000;
+    "DisableDevicePowerRequired" = 0;
+    "DisablePStateManagement" = 0;
+    "EnablePODebounce" = 0;
+    "EnableRuntimePowerManagement" = 1;
+    "lowdebounce" = 3;
+    "MonitorLatencyTolerance" = 300000;
+    "MonitorRefreshLatencyTolerance" = 17000;
+    "uglitch" = 900;
+    "uhigh" = 700;
+    "uideal" = 500;
+    "ulow" = 300;
 
-    "AllowAdvancedEtwLogging"; v72 = 0;
-    "DiagnosticsBufferExpansionTime"; v58 = 300;
-    "EnableFuzzing"; v64 = 0;
-    "EnableHMDTestMode"; v67 = 0;
-    "EnableIgnoreWin32ProcessStatus"; v66 = 0;
-    "ExternalDiagnosticsBufferMultiplier"; v59 = 1;
-    "ExternalDiagnosticsBufferSize"; v56 = 16384;
-    "ForceUsb4MonitorSupport"; g_bDbgForceUsb4MonitorSupport = 0;
-    "InternalDiagnosticsBufferMultiplier"; v57 = 2;
-    "InternalDiagnosticsBufferSize"; v55 = 65536;
-    "InvestigationDebugParameter"; v65 = 0;
-    "MaximumAdapterCount"; v60 = 32;
-    "NodeUsageTelemetryTimerInterval"; v73 = v73; // ?
-    "PreserveFirmwareMode"; v68 = 0;
-    "PreventFullscreenWireFormatChange"; v69 = 0;
-    "RapidHpdMaxChainInMilliseconds"; v71 = 0;
-    "RapidHpdTimeoutInMilliseconds"; v70 = 0;
-    "TerminationListSizeLimit"; v62 = 67108864;
-    "TreatUsb4MonitorAsNormal"; g_bDbgTreatUsb4MonitorAsNormal = 0;
-    "Usb4MonitorDpcdDP_IN_Adapter_Number"; g_DbgUsb4MonitorDpcdDP_IN_Adapter_Number = 0;
-    "Usb4MonitorDpcdUSB4_Driver_ID"; g_DbgUsb4MonitorDpcdUSB4_Driver_ID = 0;
-    "Usb4MonitorPowerOnDelayInSeconds"; g_DbgUsb4MonitorPowerOnDelayInSeconds = 0;
-    "Usb4MonitorTargetId"; g_DbgUsb4MonitorTargetId = 0;
-    "ValidateWDDMCaps"; v63 = 0;
-    "WDDM2LockManagement"; v61 = 1;
+    "AllowAdvancedEtwLogging" = 0;
+    "DiagnosticsBufferExpansionTime" = 300;
+    "EnableFuzzing" = 0;
+    "EnableHMDTestMode" = 0;
+    "EnableIgnoreWin32ProcessStatus" = 0;
+    "ExternalDiagnosticsBufferMultiplier" = 1;
+    "ExternalDiagnosticsBufferSize" = 16384;
+    "ForceUsb4MonitorSupport" = 0;
+    "InternalDiagnosticsBufferMultiplier" = 2;
+    "InternalDiagnosticsBufferSize" = 65536;
+    "InvestigationDebugParameter" = 0;
+    "MaximumAdapterCount" = 32;
+    "NodeUsageTelemetryTimerInterval" = ?; // REG_DWORD
+    "PreserveFirmwareMode" = 0;
+    "PreventFullscreenWireFormatChange" = 0;
+    "RapidHpdMaxChainInMilliseconds" = 0;
+    "RapidHpdTimeoutInMilliseconds" = 0;
+    "TerminationListSizeLimit" = 67108864;
+    "TreatUsb4MonitorAsNormal" = 0;
+    "Usb4MonitorDpcdDP_IN_Adapter_Number" = 0;
+    "Usb4MonitorDpcdUSB4_Driver_ID" = 0;
+    "Usb4MonitorPowerOnDelayInSeconds" = 0;
+    "Usb4MonitorTargetId" = 0;
+    "ValidateWDDMCaps" = 0;
+    "WDDM2LockManagement" = 1;
 
-    "DisableVaBackedVm"; g_VgpuDisableVaBackedVm = 0;
-    "DisableVersionMismatchCheck"; v52 = 0;
-    "GpuVirtualizationFlags"; v50 = (g_VgpuReplaceWarp ? 0x8 : 0x0); // bit0: CreatePVGpu=0, bit2: ForceSvm=0, bit3: ReplaceWarp=default from g_VgpuReplaceWarp ?
-    "LimitNumberOfVfs"; g_LimitNumberOfVfs = 0;
-    "VirtualGpuOnly"; g_VirtualGpuOnly = 0;
+    "DisableVaBackedVm" = 0;
+    "DisableVersionMismatchCheck" = 0;
+    "GpuVirtualizationFlags" = ?; // REG_DWORD
+    "LimitNumberOfVfs" = 0;
+    "VirtualGpuOnly" = 0;
 
-    "ForceBddFallbackOnly"; v35 = 0;
-    "HwSchMode"; v29 = 0;
-    "HwSchOverrideBlockList"; v31 = 1;
-    "HwSchTreatExperimentalAsStable"; v30 = 0;
-    "MiracastDefaultRtspPort"; dword_1C0153F64 = 7236;
-    "PlatformSupportMiracast"; v26 = 0; // Set to 1 on LTSC IoT Enterprise 2024 by default
-    "SupportMultipleIntegratedDisplays"; v28 = 0;
-    "SuspendAdapterTimerPeriod"; v27 = 500000;
+    "ForceBddFallbackOnly" = ?;
+    "HwSchMode" = ?;
+    "HwSchOverrideBlockList" = ?;
+    "HwSchTreatExperimentalAsStable" = ?;
+    "MiracastDefaultRtspPort" = ?;
+    "PlatformSupportMiracast" = ?;
+    "SupportMultipleIntegratedDisplays" = ?;
+    "SuspendAdapterTimerPeriod" = ?;
 
-    "EnableExperimentalRefreshRates"; v22 = 0;
-    "RapidHPDThresholdCount"; *(_DWORD*)((char*)this + 544) = 5;
-    "RapidHPDTime"; v16 = 1000;
+    "EnableExperimentalRefreshRates" = 0;
+    "RapidHPDThresholdCount" = 5;
+    "RapidHPDTime" = 1000;
 
-    "TdrDdiDelay"; v11 = 5;
-    "TdrDebugMode"; v12 = 2;
-    "TdrDelay"; v8 = 2;
-    "TdrDodPresentDelay"; v9 = 2;
-    "TdrDodVSyncDelay"; v10 = 2;
-    "TdrLevel"; v13 = 3;
-    "TdrLimitCount"; v14 = 5;
-    "TdrLimitTime"; v15 = 60;
+    "TdrDdiDelay" = 5;
+    "TdrDebugMode" = 2;
+    "TdrDelay" = 2;
+    "TdrDodPresentDelay" = 2;
+    "TdrDodVSyncDelay" = 2;
+    "TdrLevel" = 3;
+    "TdrLimitCount" = 5;
+    "TdrLimitTime" = 60;
 
-    "DRTTestEnable"; v14 = 0; // 1484026436 = Enabled ?
-    "EnableAcmSupportDeveloperPreview"; v7 = 0;
-    "ForceEnableDWMClone"; v82 = 0
-    "HybridInternalPanelOverrideEnable"; v13 = 0
-    "IsInternalRelease"; v44 = 0
-    "MultiMonSupport"; v39 = 1;
-    "OutputDuplicationSessionApplicationLimit"; v14 = 4
-    "TdrTestMode"; v14 = 0
-    "UnsupportedMonitorModesAllowed"; v5 = 0;
+    "DRTTestEnable" = 0; // 1484026436 = Enabled ?
+    "EnableAcmSupportDeveloperPreview" = 0;
+    "ForceEnableDWMClone" = ?; // REG_DWORD, default is adapter capability flag
+    "HybridInternalPanelOverrideEnable" = 0;
+    "IsInternalRelease" = 0;
+    "MultiMonSupport" = 1;
+    "OutputDuplicationSessionApplicationLimit" = 4;
+    "TdrTestMode" = 0;
+    "UnsupportedMonitorModesAllowed" = ?;
 
     "PageFaultDebugMode" = 1; // REG_DWORD, missing/invalid or >1 -> 1
 
@@ -283,7 +282,7 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
     "ForceAccessedPhysically" = ?;
     "ForceToMapGpuVa" = ?;
     "WarpOverrideWDDMVersion" = ?;
-    "WarpSupportHybridDiscrete" = = ?;
+    "WarpSupportHybridDiscrete" = ?;
     "WarpSupportsResourceResidency" = ?;
 
     // miscellaneous
@@ -304,21 +303,21 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
     "ContextSchedulingPenaltyDelay" = 1000; // REG_DWORD
     "CountFlipTowardHwLimit" = 0; // REG_DWORD
     "CountPresentTowardHwLimit" = 0; // REG_DWORD
-    "DdiSuspendMode" = 0; // REG_DWORD, values 0..2, found in 23H2 (not in 25H2)
+    "DdiSuspendMode" = 0; // REG_DWORD, values 0-2, found in 23H2 (not in 25H2)
     "DebugLargeSmoothenedDuration" = 1; // REG_DWORD, found in 25H2 (not in 23H2)
     "EnableContextDelay" = 1; // REG_DWORD, found in 23H2 (not in 25H2)
-    "EnableDirectSubmission" = ; // REG_DWORD, found in 25H2 (not in 23H2), default from adapter cap
+    "EnableDirectSubmission" = ?; // REG_DWORD, found in 25H2 (not in 23H2), default from adapter cap
     "EnableFlipImmediateSwFlipQueue" = 1; // REG_DWORD, found in 23H2 (not in 25H2)
     "EnablePreemption" = 1; // REG_DWORD
-    "FlipDoNotFlipMode" = 0; // REG_DWORD, values 0..2
+    "FlipDoNotFlipMode" = 0; // REG_DWORD, values 0-2
     "FlipOverrideMode" = 0; // REG_DWORD, 1 or 2 override device mode
     "ForceEnableFlipFenceModel" = 0; // REG_DWORD
-    "ForceFlipTrueImmediateMode" = 0; // REG_DWORD, values 0..2
+    "ForceFlipTrueImmediateMode" = 0; // REG_DWORD, values 0-2
     "ForegroundPriorityBoost" = 1; // REG_DWORD
     "FrameServerAutoBoostPriority" = 17; // REG_DWORD, found in 25H2 (not in 23H2)
-    "HistoryLogSize" = 64; // REG_DWORD, clamped 16..0x10000, must be 16, 32, 64, 128, ... (doubling sequence)
+    "HistoryLogSize" = 64; // REG_DWORD, clamped 16-0x10000, must be 16, 32, 64, 128, ... (doubling sequence)
     "HwQueuedRenderPacketGroupLimit" = 2; // REG_DWORD
-    "HwQueuePacketCap" = ; // REG_DWORD, default from adapter cap, clamped 1..14
+    "HwQueuePacketCap" = ?; // REG_DWORD, default from adapter cap, clamped 1-14
     "HwSchThreadOffloadMode" = 2; // REG_DWORD, found in 25H2 (not in 23H2)
     "InitDriverFenceId" = 0; // REG_DWORD
     "LogDriverVSyncCallback" = 0; // REG_DWORD, found in 23H2 (not in 25H2)
@@ -329,14 +328,14 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
     "NpuContextSwitchQuantum" = 30000; // REG_DWORD, found in 25H2 (not in 23H2)
     "NpuPreemptionQuantum" = 60000; // REG_DWORD, found in 25H2 (not in 23H2)
     "NumberOfDmaPacketPool" = 20; // REG_DWORD
-    "PerSourceCustomDuration" = ; // REG_DWORD, default 1 when adapter version >= 2000
-    "PfnCpuOverride" = 0; // REG_DWORD, values 0..3
+    "PerSourceCustomDuration" = ?; // REG_DWORD, default 1 when adapter version >= 2000
+    "PfnCpuOverride" = 0; // REG_DWORD, values 0-3
     "PreemptionQuantumUnit" = 50000; // REG_DWORD
     "ProfileLevel" = 2; // REG_DWORD
     "QuantumUnit" = 25000; // REG_DWORD
     "QueuedPresentLimit" = 3; // REG_DWORD
     "VSyncIdleTimeout" = 7; // REG_DWORD, becomes 1 when adapter version >= 1300 and flag set, <1300 min 4
-    "YieldPercentage" = 10; // REG_DWORD, valid 1..0x53 else default 10
+    "YieldPercentage" = 10; // REG_DWORD, valid 1-0x53 else default 10
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\MemoryManager";
     // ReadConfiguration
@@ -351,7 +350,7 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
     "EvictUnusedPeriod" = 60; // REG_DWORD
     "ExcessiveMemTransferFlipThreshold" = 15; // REG_DWORD
     "ExcessiveMemTransferPenalty" = 5; // REG_DWORD
-    "MaxSegmentSize<0..31>" = 0; // REG_DWORD, if set, aligns to 4K and clamps to 0x800000
+    "MaxSegmentSize<0-31>" = 0; // REG_DWORD, if set, aligns to 4K and clamps to 0x800000
     "MemTransferThreshold" = 10; // REG_DWORD
     "NbCddDmaBufferLimitPerDevice" = 4; // REG_DWORD
     "NbDmaBufferLimitCompareWatermark" = 10; // REG_DWORD
@@ -375,16 +374,16 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
     "UseUnreset" = 1; // REG_DWORD
 
     // unsure about the decomp defaults here
-    "PhysicalHeapHighestAddress" = 4294967295; // REG_QWORD
-    "PhysicalHeapLowestAddress" = 16; // REG_QWORD
-    "PhysicalHeapSize" = 16; // REG_QWORD
+    "PhysicalHeapHighestAddress" = ?; // REG_QWORD
+    "PhysicalHeapLowestAddress" = ?; // REG_QWORD
+    "PhysicalHeapSize" = ?; // REG_QWORD
 
     // ReadCommitLimitInformation
     "MinimumSystemMemoryCommitLimit" = 0; // REG_DWORD, MB (<< 20), min 0x4000000
     "PinnedBackingStoreLimit" = 0; // REG_DWORD, MB (<< 20), 0 -> system memory / 8
-    "SecondaryPartitionCommitLimitPercentage" = 80; // REG_DWORD, clamped to 5..100
+    "SecondaryPartitionCommitLimitPercentage" = 80; // REG_DWORD, clamped to 5-100
     "SmallSystemMemorySize" = 0; // REG_DWORD, MB (<< 20)
-    "SystemPartitionCommitLimitPercentage" = 50; // REG_DWORD, clamped to 5..100
+    "SystemPartitionCommitLimitPercentage" = 50; // REG_DWORD, clamped to 5-100
 
     // ReadWorkingSetConfiguration
     "WorkingSet.DefaultMaximumPercentile" = 90; // REG_DWORD
@@ -448,7 +447,7 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
 
     // ReadGpuVaPagingHistoryConfiguration
     "GpuVaPagingHistoryMask" = 391174; // REG_DWORD, derived, min 0x1000
-    "GpuVaPagingHistorySize" = ; // REG_DWORD, default 0x40 if system memory > 0x53333333 else 0
+    "GpuVaPagingHistorySize" = ?; // REG_DWORD, default 0x40 if system memory > 0x53333333 else 0
 
     // ReadPagingConfiguration
     "BreakOnPagingFailure" = 0; // REG_DWORD
@@ -463,7 +462,7 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
     "ForceUncommitGpuVAOnEvict" = 0; // REG_DWORD
     "InitialPromotionInterval" = 48; // REG_DWORD
     "MaximumPromotionInterval" = 5000; // REG_DWORD
-    "PagingQueueProcessingPeriodTime" = 50; // REG_DWORD, clamped 16..300
+    "PagingQueueProcessingPeriodTime" = 50; // REG_DWORD, clamped 16-300
     "PromotionNumberCapPerInterval" = 50; // REG_DWORD
     "PromotionTargetSizePerInterval" = 0x2000000; // REG_QWORD
     "TemporaryResourcePolicy" = 0; // REG_DWORD, found in 25H2 (not in 23H2)
@@ -472,7 +471,7 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
     // ReadTestAndStagingConfiguration
     "AlwaysDecommitOnOffer" = 0; // REG_DWORD
     "BudgetThreshold" = 25; // REG_DWORD, clamped to <= 100
-    "DecommitRepurposeMode" = 1; // REG_DWORD, values 0..2 else 0, found in 23H2 (not in 25H2)
+    "DecommitRepurposeMode" = 1; // REG_DWORD, values 0-2 else 0, found in 23H2 (not in 25H2)
     "DxgMms2OfferReclaim" = 4294967295; // REG_DWORD, allowed 0/1/2/4294967295, others = 0
     "ExpandTo64KBAllocationSizeThreshold" = 0x400000; // REG_DWORD
     "LargifyUpgradeThresholdBytes" = 0; // REG_DWORD, found in 25H2 (not in 23H2)
@@ -510,53 +509,53 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
     "VideoMemoryFragmentationBuffer" = 10; // REG_DWORD
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\Power";
-    "UseSelfRefreshVRAMInS3"; v166 = 1;
+    "UseSelfRefreshVRAMInS3" = 1;
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\BasicDisplay";
-    "BasicDisplayUserNotified"; v2 = 0;
+    "BasicDisplayUserNotified" = 0;
 
-    "DisableBasicDisplayFallback"; v33 = -1;
-    "EnableBasicDisplayFallback"; v32 = -1;
-    "ForcePreserveBootDisplay"; v34 = 0;
+    "DisableBasicDisplayFallback" = ?;
+    "EnableBasicDisplayFallback" = ?;
+    "ForcePreserveBootDisplay" = ?;
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\Smm";
-    "DebugMode"; v11 = 0;
-    "EnablePageTracking"; v8 = 0;
-    "ForceDmaRemapping"; v9 = 0;
-    "ForceEnableIommu"; v3 = 0;
-    "IdentityMappedPassthrough"; v7 = 0;
-    "LogicalAddressMode"; v4 = 0;
-    "PreferHighLogicalAddresses"; v10 = 0;
+    "DebugMode" = 0;
+    "EnablePageTracking" = 0;
+    "ForceDmaRemapping" = 0;
+    "ForceEnableIommu" = 0;
+    "IdentityMappedPassthrough" = 0;
+    "LogicalAddressMode" = 0;
+    "PreferHighLogicalAddresses" = 0;
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\DMM";
-    "AssertOnDdiViolation"; g_DmmAssertOnDdiViolation = 0;
-    "BadMonitorModeDiag"; v17 = 2;
+    "AssertOnDdiViolation" = 0;
+    "BadMonitorModeDiag" = 2;
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\DMM";
-    "EnableVirtualRefreshRateOnExternalMonitor"; *((_DWORD*)this + 134) = 0;
-    "HPDFilterLimit"; *((_DWORD*)this + 133) = 20000000;
-    "LongLinkTrainingTimeout"; *((_DWORD*)this + 132) = 1000;
-    "ModeListCaching"; v81 = 1;
-    "SetTimingsFlags"; *((_DWORD*)this + 130) = 0;
-    "ShortLinkTrainingTimeout"; *((_DWORD*)this + 131) = 200;
+    "EnableVirtualRefreshRateOnExternalMonitor" = 0;
+    "HPDFilterLimit" = 20000000;
+    "LongLinkTrainingTimeout" = 1000;
+    "ModeListCaching" = 1;
+    "SetTimingsFlags" = 0;
+    "ShortLinkTrainingTimeout" = 200;
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\Validation";
-    "FailEscapeDDI"; v8 = 0
-    "FailRenderDDI"; v9 = 0
-    "FailReserveGPUVA"; v10 = 0
-    "Level"; v7 = 0
-    "ReportVirtualMachine"; v11 = 0
+    "FailEscapeDDI" = 0;
+    "FailRenderDDI" = 0;
+    "FailReserveGPUVA" = 0;
+    "Level" = 0;
+    "ReportVirtualMachine" = 0;
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers\\MonitorDataStore\\MONITOR-ID"
-    "AdvancedColorEnabled"; v3 = 0;
-    "AutoColorManagementEnabled"; v8 = 0;
-    "AutoColorManagementSupported"; = ? // REG_DWORD, bool?
+    "AdvancedColorEnabled" = 0;
+    "AutoColorManagementEnabled" = 0;
+    "AutoColorManagementSupported" = ?; // REG_DWORD, bool?
     "DockedOrientation" = ?;
     "EnableBoostRefreshRateByDefault" = ?;
-    "EnableIntegratedPanelAcmByDefault"; v6 = 0;
-    "EnableIntegratedPanelHdrByDefault"; v4 = 0;
-    "HDREnabled"; v2 = 0;
-    "MicrosoftApprovedAcmSupport"; v5 = 0;
+    "EnableIntegratedPanelAcmByDefault" = 0;
+    "EnableIntegratedPanelHdrByDefault" = 0;
+    "HDREnabled" = 0;
+    "MicrosoftApprovedAcmSupport" = 0;
     "MonitorOrientation" = ?;
     "OverrideWCGCapabilities" = ?;
     "PreferredScaleFactor" = ?;
@@ -564,93 +563,94 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
     "VMSDisabled" = ?;
 
 // the 3 keys below are based on a testing system monitor, therefore the defaults will be different for you
+
 "HKLM\\System\\CurrentControlSet\\Control\\GraphicsDrivers\\Configuration\\<CONFIG_ID>";
-    "SetId" = "MSBDD_MSI3CB01222_2E_07E4_FF_10DE_2482_00000007_00000000_0"; // REG_SZ
-    "Timestamp" = = ?; // REG_QWORD
+    "SetId" = ?; // REG_SZ
+    "Timestamp" = ?; // REG_QWORD
 
 "HKLM\\System\\CurrentControlSet\\Control\\GraphicsDrivers\\Configuration\\<CONFIG_ID>\\00\\00";
-    "ActiveSize.cx" = 2560; // REG_DWORD, horizontal pixels
-    "ActiveSize.cy" = 1440; // REG_DWORD, vertical lines
-    "BoostRefreshRateMultiplier" = 1; // REG_DWORD
-    "ColorBasis" = 2; // REG_DWORD
-    "DwmClipBox.bottom" = 1440; // REG_DWORD
-    "DwmClipBox.left" = 0; // REG_DWORD
-    "DwmClipBox.right" = 2560; // REG_DWORD
-    "DwmClipBox.top" = 0; // REG_DWORD
-    "Flags" = 25365391; // REG_DWORD
-    "HSyncFreq.Denominator" = 2640; // REG_DWORD
-    "HSyncFreq.Numerator" = 640000000; // REG_DWORD
-    "PixelFormat" = 21; // REG_DWORD
-    "PixelRate" = 640000000; // REG_DWORD
-    "PrimSurfSize.cx" = 2560; // REG_DWORD
-    "PrimSurfSize.cy" = 1440; // REG_DWORD
-    "Rotation" = 1; // REG_DWORD
-    "Scaling" = 4; // REG_DWORD
-    "ScanlineOrdering" = 1; // REG_DWORD
-    "Stride" = 10240; // REG_DWORD
-    "VideoStandard" = 255; // REG_DWORD
-    "VirtualRefreshRate.Denominator" = 1000; // REG_DWORD
-    "VirtualRefreshRate.Numerator" = 164802; // REG_DWORD
-    "VSyncFreq.Denominator" = 1000; // REG_DWORD
-    "VSyncFreq.Numerator" = 164802; // REG_DWORD, refresh rate
+    "ActiveSize.cx" = ?; // REG_DWORD, horizontal pixels
+    "ActiveSize.cy" = ?; // REG_DWORD, vertical lines
+    "BoostRefreshRateMultiplier" = ?; // REG_DWORD
+    "ColorBasis" = ?; // REG_DWORD
+    "DwmClipBox.bottom" = ?; // REG_DWORD
+    "DwmClipBox.left" = ?; // REG_DWORD
+    "DwmClipBox.right" = ?; // REG_DWORD
+    "DwmClipBox.top" = ?; // REG_DWORD
+    "Flags" = ?; // REG_DWORD
+    "HSyncFreq.Denominator" = ?; // REG_DWORD
+    "HSyncFreq.Numerator" = ?; // REG_DWORD
+    "PixelFormat" = ?; // REG_DWORD
+    "PixelRate" = ?; // REG_DWORD
+    "PrimSurfSize.cx" = ?; // REG_DWORD
+    "PrimSurfSize.cy" = ?; // REG_DWORD
+    "Rotation" = ?; // REG_DWORD
+    "Scaling" = ?; // REG_DWORD
+    "ScanlineOrdering" = ?; // REG_DWORD
+    "Stride" = ?; // REG_DWORD
+    "VideoStandard" = ?; // REG_DWORD
+    "VirtualRefreshRate.Denominator" = ?; // REG_DWORD
+    "VirtualRefreshRate.Numerator" = ?; // REG_DWORD
+    "VSyncFreq.Denominator" = ?; // REG_DWORD
+    "VSyncFreq.Numerator" = ?; // REG_DWORD, refresh rate
 
 "HKLM\\System\\CurrentControlSet\\Control\\GraphicsDrivers\\Configuration\\<CONFIG_ID>\\00";
-    "CcdDbVersion" = 4; // REG_DWORD
-    "ColorBasis" = 2; // REG_DWORD
-    "PixelFormat" = 21; // REG_DWORD
-    "Position.cx" = 0; // REG_DWORD
-    "Position.cy" = 0; // REG_DWORD
-    "PrimSurfSize.cx" = 2560; // REG_DWORD
-    "PrimSurfSize.cy" = 1440; // REG_DWORD
-    "Stride" = 10240; // REG_DWORD
+    "CcdDbVersion" = ?; // REG_DWORD
+    "ColorBasis" = ?; // REG_DWORD
+    "PixelFormat" = ?; // REG_DWORD
+    "Position.cx" = ?; // REG_DWORD
+    "Position.cy" = ?; // REG_DWORD
+    "PrimSurfSize.cx" = ?; // REG_DWORD
+    "PrimSurfSize.cy" = ?; // REG_DWORD
+    "Stride" = ?; // REG_DWORD
 
 "AdapterPnpKey";
-    "EnableVirtualTopologySupport"; v84 = 0;
+    "EnableVirtualTopologySupport" = 0;
     // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : EnableVirtualTopologySupport
-    "NeedToSuspendVidSchBeforeSetGammaRamp"; v83 = (AdapterBuild < 8704 ? 1 : 0)
+    "NeedToSuspendVidSchBeforeSetGammaRamp" = ?; // REG_DWORD, default depends on AdapterBuild < 8704
     // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : NeedToSuspendVidSchBeforeSetGammaRamp
     // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : NeedToSuspendVidSchBeforeSetGammaRamp
 
-    "DisableNonPOSTDevice"; v40 = 0;
+    "DisableNonPOSTDevice" = 0;
     // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : DisableNonPOSTDevice
     // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicRender : DisableNonPOSTDevice
 
-    "ACGSupported"; v165 = 0
+    "ACGSupported" = 0;
     // Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : ACGSupported
     // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicRender : ACGSupported
     // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : ACGSupported
-    "DxgkGpuVaIommuRequired"; v166 = 0
+    "DxgkGpuVaIommuRequired" = 0;
     // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : DxgkGpuVaIommuRequired
-    "DxgkGpuVaIommuGlobalSupported"; v167 = 0
+    "DxgkGpuVaIommuGlobalSupported" = 0;
     // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : DxgkGpuVaIommuGlobalSupported
 
-    "AllowUnspecifiedVSync"; v18 = 0;
+    "AllowUnspecifiedVSync" = 0;
     // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : AllowUnspecifiedHSync
     // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : AllowUnspecifiedHSync
-    "AllowUnspecifiedHSync"; v19 = 0;
+    "AllowUnspecifiedHSync" = 0;
     // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : AllowUnspecifiedHSync
     // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : AllowUnspecifiedHSync
-    "AllowUnspecifiedPixelRate"; v20 = 0;
+    "AllowUnspecifiedPixelRate" = 0;
     // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : AllowUnspecifiedPixelRate
     // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : AllowUnspecifiedPixelRate
-    "ForceDualViewBehavior"; v21 = 0;
+    "ForceDualViewBehavior" = 0;
     // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : ForceDualViewBehavior
     // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : ForceDualViewBehavior
 
 "<AdapterPnpKey>\\DxgkSettings";
-    "UseSelfRefreshVRAMInS3"; v166 = 1;
+    "UseSelfRefreshVRAMInS3" = 1;
 
 // these are also in dxgmms2 but read from the pnp key, not from GraphicsDrivers - see https://github.com/nohuto/win-config/blob/0cbc8e153f7ea6bf4b640e51c53d235a5de67de8/power/desc.md#disable-device-powersavings
 "<AdapterPnpKey>\\MemoryManager";
     "EnablePromotion" = 1; // REG_DWORD, found in 25H2 (not in 23H2)
-    "MaxLocalSegmentSize" = 0; // REG_DWORD, MB (<< 20), 0 allowed, 1..256 -> 256
-    "MaxNonLocalSegmentSize" = 0; // REG_DWORD, MB (<< 20), 0 allowed, 1..512 -> 512
+    "MaxLocalSegmentSize" = 0; // REG_DWORD, MB (<< 20), 0 allowed, 1-256 -> 256
+    "MaxNonLocalSegmentSize" = 0; // REG_DWORD, MB (<< 20), 0 allowed, 1-512 -> 512
     "SelfRefreshVramForceEvictionTimerAC" = 900; // REG_DWORD, found in 25H2 (not in 23H2)
     "SelfRefreshVramForceEvictionTimerDC" = 900; // REG_DWORD, found in 25H2 (not in 23H2)
     "Supports64KBPages" = 0; // REG_DWORD, bit0 used
 
 "<AdapterPnpKey>";
-    "HwQueuedRenderPacketGroupLimitPerNode" = ; // REG_BINARY, DWORD array, big endian
+    "HwQueuedRenderPacketGroupLimitPerNode" = ?; // REG_BINARY
 ```
 
 ---
@@ -960,20 +960,20 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
     "Win32CalloutWatchdogBugcheckEnabled" = 0; // PopWin32CalloutWatchdogBugcheckEnabled 
 
     // PopOpenPowerKey
-    "AwayModeEnabled" = 0; // REG_DWORD, range: 0-1
-    "HiberbootEnabled" = 0; // REG_DWORD, range: 0-1
-    "KernelResumeIoCpuTime" = 0; // REG_DWORD, milliseconds, range: 0-4294967295
-    "MaxHuffRatio" = 1; // REG_DWORD, range: 1-98
-    "MultiPhaseResumeDisabled" = 0; // REG_DWORD, range: 0-1
+    "AwayModeEnabled" = 0; // REG_DWORD, range 0-1
+    "HiberbootEnabled" = 0; // REG_DWORD, range 0-1, PopHiberbootEnabledReg
+    "KernelResumeIoCpuTime" = 0; // REG_DWORD, milliseconds, range 0-4294967295
+    "MaxHuffRatio" = 1; // REG_DWORD, range 1-98
+    "MultiPhaseResumeDisabled" = 0; // REG_DWORD, range 0-1
     "SystemPowerPolicy" = "<STRUCT 232 BYTES>"; // REG_BINARY, Size=232
 
     // HybridBootAnimationTime records the boot animation duration during fast boot, HiberIoCpuTime is CPU time spent on hibernation I/O during resume, ResumeCompleteTimestamp is the system timestamp when resume from hibernation completed. So all of them are just counters and chaning their data won't affect the boot.
-    "HiberIoCpuTime" = 0; // REG_DWORD, milliseconds, range: 0-4294967295
-    "HybridBootAnimationTime" = 1601; // REG_DWORD, milliseconds, range: 0-4294967295
-    "ResumeCompleteTimestamp" = 0; // REG_QWORD, range: 0-4294967295FFFFFFFF
+    "HiberIoCpuTime" = 0; // REG_DWORD, milliseconds, range 0-4294967295
+    "HybridBootAnimationTime" = 1601; // REG_DWORD, milliseconds, range 0-4294967295
+    "ResumeCompleteTimestamp" = 0; // REG_QWORD, range 0-4294967295FFFFFFFF
 
     // PpmInitIllegalThrottleLogging
-    "ProcessorThrottleLogInterval" = 10000; // REG_DWORD, milliseconds, range: 0-10000 (values >10000 are clamped to 10000)
+    "ProcessorThrottleLogInterval" = 10000; // REG_DWORD, milliseconds, range 0-10000 (values >10000 are clamped to 10000)
 
     // procmon boot trace
     "SleepStudyBufferSizeInMB" = ?;
@@ -1079,7 +1079,7 @@ See [power-symbols](https://github.com/nohuto/win-registry/blob/main/assets/powe
     "CheckPowerSourceAfterRtcWakeTime" = 30; // PopCheckPowerSourceAfterRtcWakeTime (0x1E) 
     "Class1InitialUnparkCount" = 64; // PpmParkInitialClass1UnParkCount (0x40) 
     "CoalescingFlushInterval" = 60; // PopCoalescingFlushInterval (0x0000003C) 
-    "CoalescingTimerInterval" = 1500; // PopCoalescingTimerInterval (0x000005DC) - Units: seconds (multiplies value by -10,000,000, one second in 100 ns units, so the default corresponds to a 25min cadence)
+    "CoalescingTimerInterval" = 1500; // PopCoalescingTimerInterval (0x000005DC) - Units: seconds (multiplies value by -10,000,000, one second in 100?ns units, so the default corresponds to a 25min cadence)
     "DeepIoCoalescingEnabled" = 0; // PopDeepIoCoalescingEnabled 
     "DirectedDripsAction" = 3; // PopDirectedDripsAction 
     "DirectedDripsDebounceInterval" = 120; // PopDirectedDripsDebounceInterval (0x78) 
@@ -1121,7 +1121,6 @@ See [power-symbols](https://github.com/nohuto/win-registry/blob/main/assets/powe
     "HeteroMultiCoreClassesEnabled" = 4294967295; // PpmHeteroMultiCoreClassesRegValue (4294967295) 
     "HeteroWpsContainmentEnumOverride" = 0; // PpmHeteroWpsContainmentEnumOverride 
     "HeteroWpsWorkloadProminenceCutoff" = 35; // PpmHeteroWpsWorkloadProminenceCutoff (0x23) 
-    "HiberbootEnabled" = 0; // PopHiberbootEnabledReg 
     "HiberFileSizePercent" = 100; // PopHiberFileSizePercent dd 64h (IDA), but set to 0 by default on LTSC IoT Enterprise 2024 since hibernation is unsupported by default - REG_DWORD
     "HiberFileType" = 4294967295; // PopHiberFileTypeReg (4294967295)
     "HiberFileTypeDefault" = 4294967295; // PopHiberFileTypeDefaultReg (4294967295)
@@ -1143,7 +1142,7 @@ See [power-symbols](https://github.com/nohuto/win-registry/blob/main/assets/powe
     "LatencyToleranceParked" = 0; // PpmIdleParkedLatencyLimit 
     "LatencyToleranceSoftParked" = 0; // PpmIdleSoftParkedLatencyLimit 
     "LatencyToleranceVSyncEnabled" = 13001; // dword_140FC3424 dd 32C9
-    "LidReliabilityState" = 1; // REG_DWORD, range: 0-1
+    "LidReliabilityState" = 1; // REG_DWORD, range 0-1
     "ManualDimTimeout" = 0; // PopAdaptiveManualDimTimeout 
     "MaximumFrequencyOverride" = 0; // PpmFrequencyOverride 
     "MfBufferingThreshold" = 0; // PpmMfBufferingThreshold 
@@ -1239,7 +1238,7 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
 > Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
 
 ```c
-"HKLM\\SOFTWARE\\Microsoft\\Windows\\DwmMicrosoft\\Windows\\Dwm";
+"HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm";
     "BlackOutAllReadback" = 0;
     "ConfigureInput" = 1;
     "CpuClipAASinkEnableIntermediates" = 1;
@@ -1284,14 +1283,14 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
     "WarpEnableDebugColor" = 0;
 
     "BackdropBlurCachingThrottleMs" = 25; // 25ms if missing, clamped to <=1000ms when present?
-    "CompositorClockPolicy" = 1; // range: 0-1
+    "CompositorClockPolicy" = 1; // range 0-1
     "CpuClipFlatteningTolerance" = 0; // scaled /1000
-    "CustomRefreshRateMode" = 0; // range: 0-2
+    "CustomRefreshRateMode" = 0; // range 0-2
     "DisableAdvancedDirectFlip" = 0; // REG_DWORD
     "DisableIndependentFlip" = 0;
     "DisableProjectedShadowsRendering" = 0;
     "FlattenVirtualSurfaceEffectInput" = 0;
-    "ForceEffectMode" = 0; // range: 0-2, REG_DWORD
+    "ForceEffectMode" = 0; // range 0-2, REG_DWORD
     "FrameCounterPosition" = 0;
     "InteractionOutputPredictionDisabled" = 0;
     "OverlayTestMode" = 0; // 5 = MPO disabled, REG_DWORD
@@ -1307,22 +1306,22 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
     "ModeChangeCurtainUseDebugColor" = 0;
     "UseDPIScaling" = 1;
 
-    "ChildWindowDpiIsolation" = 1; // range: 0-1
-    "DisableDeviceBitmaps" = 0; // range: 0-1
-    "EnableResizeOptimization" = 0; // range: 0-1, REG_DWORD
-    "ResizeTimeoutGdi" = 0; // range: 0-4294967295 (ms)
-    "ResizeTimeoutModern" = 0; // range: 0-4294967295 (ms)
+    "ChildWindowDpiIsolation" = 1; // range 0-1
+    "DisableDeviceBitmaps" = 0; // range 0-1
+    "EnableResizeOptimization" = 0; // REG_DWORD (no clamp?)
+    "ResizeTimeoutGdi" = 0; // range 0-4294967295 (ms)
+    "ResizeTimeoutModern" = 0; // range 0-4294967295 (ms)
 
     "DefaultColorizationColorState" = 0;
     "DisallowAnimations" = 0;
     "DisallowColorizationColorChanges" = 0;
 
-    "DisableSessionTermination" = 0; // range: 0–1
-    "ForceBasicDisplayAdapterOnDWMRestart" = 0; // range: 0–1
-    "OneCoreNoBootDWM" = 0; // range: 0–1, REG_DWORD
-    "OneCoreNoDWMRawGameController" = ? // didn't look into it yet, but it's related to OneCoreNoBootDWM
+    "DisableSessionTermination" = 0; // range 0-1
+    "ForceBasicDisplayAdapterOnDWMRestart" = 0; // range 0-1
+    "OneCoreNoBootDWM" = 0; // REG_DWORD, nonzero = enabled
+    "OneCoreNoDWMRawGameController" = ? // didn't look into it yet, but it's probably related to OneCoreNoBootDWM
 
-    "DisableHologramCompositor" = 0; // range: 0–1
+    "DisableHologramCompositor" = 0;
 
     // Haven't looked into them yet
     "ForceUDwmSoftwareDevice" = ?;
@@ -1371,76 +1370,89 @@ See [dwm.c](https://github.com/nohuto/win-registry/blob/main/assets/dwm.c) for u
 
 ## USB/USBHUB/USBFLAGS Values
 
-For entries described as "any nonzero", the code treats the DWORD as a boolean, means any nonzero value is equivalent to `1`. Default data is unknown for most values as the driver code only reads the registry and handles fallbacks, note that this is currently based on USBHUB3.sys only, means it's not complete (USBXHCI.sys was used for DisableHCS0Idle & TestRunEsmInWorkItem, Ucx01000.sys for Allow64KLowOrFullSpeedControlTransfers).
+For entries described as "any nonzero", the code treats the DWORD as a boolean, means any nonzero value is equivalent to `1`. Default data is unknown for most values as the driver code only reads the registry and handles fallbacks, note that this is currently based on USBHUB3.sys only, means it's not complete (USBXHCI.sys was used for DisableHCS0Idle & TestRunEsmInWorkItem, Ucx01000.sys for Allow64KLowOrFullSpeedControlTransfers, usbccgp.sys for GenericCompositeUSBDeviceString).
 
 This documentation doesn't include all details, since the repo is used for showing registry values, their default data, ranges and miscellaneous information. See [desc.md#usbflags-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usbflags-values), [desc.md#usb-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usb-values), [desc.md#usbhub-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usbhub-values) for more details. The USBHUB3.sys included some values located in the device hardware key like `DeviceIdleEnabled`, `DefaultIdleState`, `DeviceIdleIgnoreWakeEnable`, I didn't add them here since it lacks on details, see [desc.md#disable-device-powersavings](https://github.com/nohuto/win-config/blob/main/power/desc.md#disable-device-powersavings).
 
 `HUBDSM_QueryingRegistryValuesForDevice` -> `HUBMISC_QueryAndCacheRegistryValuesForDevice` -> `HUBREG_QueryUsbflagsValuesForDevice`
 
+> [!WARNING]
+> Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
+
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usbflags";
-    "IgnoreHWSerNum<vvvvpppp>" = ?; // REG_DWORD, dynamic name, seems to use vvvvpppp (vendor, product) see documentation below
-    "Allow64KLowOrFullSpeedControlTransfers"; ? = // REG_DWORD (bool), if 1 sets g_Allow64KLowOrFullSpeedControlTransfersFlag true, other values leave it false, missing/read failure leaves the global unchanged - "When enabled, low/full-speed control endpoints use 64KB max transfer size, otherwise table defaults apply. Query failures are non-fatal."
-    "DisableHCS0Idle" = 0; // REG_DWORD (bool), any nonzero disables S0 idle, missing/read failure treated as 0 - probably means "Disable Host Controller S0 Idle" (S = System)
-    "GenericCompositeUSBDeviceString" = // haven't looked into it yet
-    "SetMultiTTBitDuringConfigureEndpoint" = ? // REG_DWORD, if 1 sets flag 0x2000000000000000 at a1+336? if 0 clears it, missing/read failure leaves flags unchanged
-    "TestRunEsmInWorkItem" = 0; // REG_DWORD, if 1 sets bit 0 at a1+876? if 0 clears it, missing/read failure leaves bit cleared
+    "IgnoreHWSerNum<vvvvpppp>" = ?; // REG_DWORD, seems to use vvvvpppp (vendor, product) see documentation below
+    "Allow64KLowOrFullSpeedControlTransfers" = ?; // REG_DWORD, only value 1 enables, 0/other values disable
+    "DisableHCS0Idle" = 0; // REG_DWORD, nonzero disables S0 idle, missing/read failure behaves as 0
+    "GenericCompositeUSBDeviceString" = ?; // REG_SZ
+    "SetMultiTTBitDuringConfigureEndpoint" = ?; // REG_DWORD, 1 enables override, 0 disables override
+    "TestRunEsmInWorkItem" = 0; // REG_DWORD, 1 enables test mode bit, 0 clears it
 
-// these are built by HUBREG_OpenCreateUsbflagsDeviceKey
+// built by HUBREG_OpenCreateUsbflagsDeviceKey
+
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usbflags\\<vvvvpppprrrr>";
-    "IgnoreHWSerNum" = ?; // REG_DWORD, any nonzero value sets flag 0x1
-    "UseWin8DescriptorValidation" = ?; // REG_DWORD, any nonzero value sets flag 0x200000
-    "ResetOnResume" = ?; // REG_DWORD, any nonzero value sets flag 0x4
-    "DisableOnSoftRemove" = ?; // REG_DWORD, if zero clears flag 0x8, any nonzero leaves it set, many inf files set it to 1 so I guess that the default is 1
-    "RequestConfigDescOnReset" = ?; // REG_DWORD, any nonzero value sets flag 0x10. When set, device hack flag causes config descriptor request after reset
-    "DisableRecoveryFromPowerDrain" = ?; // REG_DWORD, any nonzero value sets flag 0x800000
-    "SkipContainerIdQuery" = ?; // REG_BINARY, any nonzero value sets flag 0x20 (1 means skip container ID query)
-    "DisableLPM" = ?; // REG_DWORD (bool), any nonzero value sets flag 0x80 - When set, disables low power link states for the device = the driver skips enabling U2 and forces U1/U2 timeouts to 0 so link power management stays off. Also disabled when a parent hub indicates LPM should be off for all downstream devices. (this is how I understood it while reading through the W10 source code)
+    "IgnoreHWSerNum" = ?; // REG_DWORD, nonzero enables "Ignore HW SerNum" behavior
+    "UseWin8DescriptorValidation" = ?; // REG_DWORD, nonzero enables Win8 descriptor validation path
+    "ResetOnResume" = ?; // REG_DWORD, nonzero enables reset on resume
+    "DisableOnSoftRemove" = 1; // REG_DWORD, default enabled, 0 disables it
+    "RequestConfigDescOnReset" = ?; // REG_DWORD, nonzero enables config descriptor query after reset
+    "DisableRecoveryFromPowerDrain" = ?; // REG_DWORD
+    "DisableLPM" = ?; // REG_DWORD, When set, disables low power link states for the device = the driver skips enabling U2 and forces U1/U2 timeouts to 0 so link power management stays off. Also disabled when a parent hub indicates LPM should be off for all downstream devices. (this is how I understood it while reading through the W10 source code)
                       // "A link enters a low power state (consuming less power than the working state) only when the downstream device enters the suspended state through the selective suspend mechanism", "After remaining idle for a certain period of time, link partners progressively enter U1 (standby with fast exit) and then U2 (standby with slower exit)"
                       // https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/usb-3-0-lpm-mechanism- https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/u1-and-u2-transitions
-    "SkipBOSDescriptorQuery" = ?; // REG_DWORD, any nonzero value sets flag 0x8000
-    "MsOs20DescriptorSetInfo" = ?; // REG_BINARY/REG_QWORD (8 bytes)??, on success stores QWORD and sets internal flag 0x4 for the descriptor info
-    "osvc" = ?; // REG_BINARY, see documentation below (written by HUBMISC_StoreDeviceMSOSVendorCodeInRegsitry)
+    "SkipBOSDescriptorQuery" = ?; // REG_DWORD
+    "AlternateSettingFilter" = ?; // REG_BINARY, size must be even and > 0 (data is cached as 16 bit entries "count = byte_size/2")
+    "ResetTTOnCancel" = ?; // REG_DWORD
+    "NoClearTTBufferOnCancel" = ?; // REG_DWORD, has priority over ResetTTOnCancel
+    "PowerUpDelay" = ?; // REG_DWORD?
 
-    "AlternateSettingFilter"; // ?
-    "ResetTTOnCancel"; = ?;
-    "NoClearTTBufferOnCancel" = ?;
-    "PowerUpDelay" = ?;
+    "osvc" = ?; // queried as 2 byte data
+    "SkipContainerIdQuery" = ?; // REG_DWORD
+    "MsOs20DescriptorSetInfo" = ?; // REG_BINARY/REG_QWORD
 ```
 
-> [peripheral/assets | usbflags-HUBDSM_QueryingRegistryValuesForDevice.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-HUBDSM_QueryingRegistryValuesForDevice.c)  
-> [peripheral/assets | usbflags-HUBMISC_QueryAndCacheRegistryValuesForDevice.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-HUBMISC_QueryAndCacheRegistryValuesForDevice.c)  
-> [peripheral/assets | usbflags-HUBREG_OpenCreateUsbflagsDeviceKey.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-HUBREG_OpenCreateUsbflagsDeviceKey.c)  
-> [peripheral/assets | usbflags-HUBREG_QueryUsbflagsValuesForDevice.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-HUBREG_QueryUsbflagsValuesForDevice.c)  
-> [peripheral/assets | usbflags-Controller_IsRegKeySetToDisableS0Idle.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-Controller_IsRegKeySetToDisableS0Idle.c)  
-> [peripheral/assets | usbflags-Controller_PopulateRegistryOverrideForSetMultiTTBitFlag.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-Controller_PopulateRegistryOverrideForSetMultiTTBitFlag.c)  
-> [peripheral/assets | usbflags-Controller_PopulateTestRegistrySettings.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-Controller_PopulateTestRegistrySettings.c)  
-> [peripheral/assets | usbflags-Registry_InitializeAllow64KLowOrFullSpeedControlTransfersFlag.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbflags-Registry_InitializeAllow64KLowOrFullSpeedControlTransfersFlag.c)
+> [peripheral/assets | usbflags-HUBDSM_QueryingRegistryValuesForDevice.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags-HUBDSM_QueryingRegistryValuesForDevice.c)  
+> [peripheral/assets | usbflags-HUBMISC_QueryAndCacheRegistryValuesForDevice.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags-HUBMISC_QueryAndCacheRegistryValuesForDevice.c)  
+> [peripheral/assets | usbflags-HUBREG_OpenCreateUsbflagsDeviceKey.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags-HUBREG_OpenCreateUsbflagsDeviceKey.c)  
+> [peripheral/assets | usbflags-HUBREG_QueryUsbflagsValuesForDevice.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags-HUBREG_QueryUsbflagsValuesForDevice.c)  
+> [peripheral/assets | usbflags-HUBREG_QueryHubErrataFlags.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags-HUBREG_QueryHubErrataFlags.c)  
+> [peripheral/assets | usbflags-HUBREG_QueryUsbflagsAlternateSettingFilter.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags-HUBREG_QueryUsbflagsAlternateSettingFilter.c)  
+> [peripheral/assets | usbflags-RegQueryGenericCompositeUSBDeviceString.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags-RegQueryGenericCompositeUSBDeviceString.c)  
+> [peripheral/assets | usbflags-GetConfigValue.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags-GetConfigValue.c)  
+> [peripheral/assets | usbflags-Controller_IsRegKeySetToDisableS0Idle.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags-Controller_IsRegKeySetToDisableS0Idle.c)  
+> [peripheral/assets | usbflags-Controller_PopulateRegistryOverrideForSetMultiTTBitFlag.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags-Controller_PopulateRegistryOverrideForSetMultiTTBitFlag.c)  
+> [peripheral/assets | usbflags-Controller_PopulateTestRegistrySettings.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags-Controller_PopulateTestRegistrySettings.c)  
+> [peripheral/assets | usbflags-Registry_InitializeAllow64KLowOrFullSpeedControlTransfersFlag.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags-Registry_InitializeAllow64KLowOrFullSpeedControlTransfersFlag.c)
 
 ```c
 // HUBREG_QueryGlobalUsb20HardwareLpmSettings
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\Usb20HardwareLpm"; // g_Usb20HardwareLpmKeyName (aRegistryMachin_8)
-    "Usb20HardwareLpmOverride" = ?; // REG_DWORD, any nonzero keeps global flag 0x8000 set, zero clears it
-    "Usb20HardwareLpmTimeout" = 2; // REG_DWORD, if value == 0xFF, byte a1+72 set to 0xFF, didn't find other handles
+    "Usb20HardwareLpmOverride" = 1; // REG_DWORD, default behavior enabled, 0 disables it
+    "Usb20HardwareLpmTimeout" = 2; // REG_DWORD, accepted range 0-255
 
 // HUBREG_OpenQueryAttemptRecoveryFromUsbPowerDrainValue
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\AutomaticSurpriseRemoval"; // g_UsbAutomaticSurpriseRemovalKeyName (aRegistryMachin_6)
-    "AttemptRecoveryFromUsbPowerDrain" = ?; // REG_DWORD, queried directly and via persisted state fallback under Control\usb
+    "AttemptRecoveryFromUsbPowerDrain" = 0; // REG_DWORD, is used to stop USB devices when your screen is off, obviously only for laptop users
 
 // HUBREG_QueryUsbHardwareVerifierValue
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\HardwareVerifier"; // g_HwVerifierKeyName (aRegistryMachin_7)
-    "<VID><PID><REV>\\usbUpto20|usb2X|usb30\\device" = ?; // REG_DWORD, subkey chosen from bcdUSB, value name is g_HwVerifierDeviceName
-    "<VID><PID>\\usbUpto20|usb2X|usb30\\device" = ?; // REG_DWORD, fallback if VID/PID/REV key missing
-    "global\\usbUpto20|usb2X|usb30\\device" = ?; // REG_DWORD, final fallback if no device specific key
+    "<VID><PID><REV>\\usbUpto20|usb2X|usb30\\device" = ?; // REG_DWORD, first lookup
+    "<VID><PID>\\usbUpto20|usb2X|usb30\\device" = ?; // REG_DWORD, fallback
+    "global\\usbUpto20|usb2X|usb30\\device" = ?; // REG_DWORD, last fallback
 
 // HUBREG_QueryGlobalUsbLtmSettings
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\UsbLtm"; // g_UsbLtmKeyName (aRegistryMachin_4)
-    "UsbLtmEnable" = 0; // REG_DWORD, any nonzero value sets global flag 0x40000, zero clears it
+    "UsbLtmEnable" = 0; // REG_DWORD, nonzero enables USB LTM
+
+// GetPersistedKeyPath / UsbDualRoleFeaturesQueryLocalMachine / ReadManifestAssignedValue
+"HKLM\\SYSTEM\\CurrentControlSet\\Control\\USB";
+    "DualRoleFeaturesTestOverride" = ?; // REG_DWORD, queried from GetPersistedKeyPath
+    "UcmIsPresent" = ?; // REG_DWORD
 
 // these are taken from the W10 source, they seem to exist on latest builds (they do exist in usbport.sys on 23H2)
 "HKLM\\SYSTEM\\CurrentControlSet\\Services\\usb";
-    "debuglevel" = 0; // REG_DWORD, default to 1/2 when DEBUG1/DEBUG2 builds. Trace verbosity, higher numbers enable more logs
-    "debuglogmask" = 0xFFFFFFFE; // REG_DWORD, Bitmask for log categories
+    "debuglevel" = 0; // REG_DWORD, default to 1/2 when DEBUG1/DEBUG2 builds, higher numbers enable more logs
+    "debuglogmask" = 0xFFFFFFFE; // REG_DWORD, bitmask for log categories
     "debuglogenable" = 1; // REG_DWORD (bool), enables debug log output
     "debugcatc" = 0; // REG_DWORD (bool), enables CATC analyzer trigger
     "DisableSelectiveSuspend" = 0; // REG_DWORD (bool), global disable for selective suspend (GlobalUsbhubLegacyValues?)
@@ -1452,10 +1464,10 @@ This documentation doesn't include all details, since the repo is used for showi
 
 // "This class is reserved for USB host controllers and USB hubs", I'll add them here as they're also in usbport.sys and also taken from the W10 source
 "HKLM\\System\\CurrentControlSet\\Control\\Class\\{36FC9E60-C465-11CF-8056-444553540000}\\<instance>";
-    "HcFlavor" = ? // REG_DWORD, auto detect. Values are USB_CONTROLLER_FLAVOR enum (definition external)
-    "TotalBusBandwidth" = ? // REG_DWORD, computed from miniport registration (bits/ms). Overrides bus bandwidth accounting
-    "HcDisableAllSelectiveSuspend" = 0 (non-IA64), 1 (IA64); // REG_DWORD, non-zero disables selective suspend
-    "CommonBuffer2GBLimit" = 0; // REG_DWORD, when non-zero, forces common buffers below 2GB ("Limit common buffer allocations for the miniport to the physical address range below 2GB.  Only bits 0 through 30 of the physical address can be set.  Bit 31 of the physical address cannot be set.")
+    "HcFlavor" = ? // REG_DWORD, auto detect
+    "TotalBusBandwidth" = ? // REG_DWORD, calculated from miniport registration (bits/ms), overrides bus bandwidth accounting
+    "HcDisableAllSelectiveSuspend" = 0 (non-IA64), 1 (IA64); // REG_DWORD, nonzero disables selective suspend
+    "CommonBuffer2GBLimit" = 0; // REG_DWORD, when nonzero, forces common buffers below 2GB ("Limit common buffer allocations for the miniport to the physical address range below 2GB.  Only bits 0 through 30 of the physical address can be set.  Bit 31 of the physical address cannot be set.")
     "ForceHCResetOnResume" = 0; // REG_DWORD, forces controller reset on resume
     "FastResumeEnable" = 0; // REG_DWORD, enables fast S0 resume
 
@@ -1464,24 +1476,25 @@ This documentation doesn't include all details, since the repo is used for showi
     "BootPathSurpriseRemovalCount" = ?;
 ```
 
-> [peripheral/assets | usb-GetPersistedKeyPath.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usb-GetPersistedKeyPath.c)  
-> [peripheral/assets | usb-HUBREG_OpenQueryAttemptRecoveryFromUsbPowerDrainValue.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usb-HUBREG_OpenQueryAttemptRecoveryFromUsbPowerDrainValue.c)  
-> [peripheral/assets | usb-HUBREG_QueryGlobalUsb20HardwareLpmSettings.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usb-HUBREG_QueryGlobalUsb20HardwareLpmSettings.c)  
-> [peripheral/assets | usb-HUBREG_QueryGlobalUsbLtmSettings.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usb-HUBREG_QueryGlobalUsbLtmSettings.c)  
-> [peripheral/assets | usb-HUBREG_QueryUsbHardwareVerifierValue.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usb-HUBREG_QueryUsbHardwareVerifierValue.c)  
-> [peripheral/assets | usb-ReadManifestAssignedValue.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usb-ReadManifestAssignedValue.c)
+> [peripheral/assets | usb-GetPersistedKeyPath.c](https://github.com/nohuto/win-registry/blob/main/assets/usb-GetPersistedKeyPath.c)  
+> [peripheral/assets | usb-HUBREG_OpenQueryAttemptRecoveryFromUsbPowerDrainValue.c](https://github.com/nohuto/win-registry/blob/main/assets/usb-HUBREG_OpenQueryAttemptRecoveryFromUsbPowerDrainValue.c)  
+> [peripheral/assets | usb-HUBREG_QueryGlobalUsb20HardwareLpmSettings.c](https://github.com/nohuto/win-registry/blob/main/assets/usb-HUBREG_QueryGlobalUsb20HardwareLpmSettings.c)  
+> [peripheral/assets | usb-HUBREG_QueryGlobalUsbLtmSettings.c](https://github.com/nohuto/win-registry/blob/main/assets/usb-HUBREG_QueryGlobalUsbLtmSettings.c)  
+> [peripheral/assets | usb-HUBREG_QueryUsbHardwareVerifierValue.c](https://github.com/nohuto/win-registry/blob/main/assets/usb-HUBREG_QueryUsbHardwareVerifierValue.c)  
+> [peripheral/assets | usb-ReadManifestAssignedValue.c](https://github.com/nohuto/win-registry/blob/main/assets/usb-ReadManifestAssignedValue.c)  
+> [peripheral/assets | usb-UsbDualRoleFeaturesQueryLocalMachine.c](https://github.com/nohuto/win-registry/blob/main/assets/usb-UsbDualRoleFeaturesQueryLocalMachine.c)
 
 ```c
 // HUBREG_QueryGlobalHubValues
 "HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBHUB\\hubg"; // g_HubGlobalKeyName (aRegistryMachin_10)
-    "DisableSelectiveSuspendUI" = ?; // REG_DWORD, any nonzero value sets global flag 0x2
-    "MsOsDescriptorMode" = ?; // REG_DWORD, stored to a1+8 when 0..3, out of range values are logged, MsOsDescriptorMode == 1 will force a MS OS descriptor query for all devices, regardless of USB version number. MsOsDescriptorMode == 2 will disable all MS OS descriptor queries. (there may exist a value named "DontSkipMsOsDescriptor" in this key)
-    "EnableDiagnosticMode" = ?; // REG_DWORD, any nonzero value sets global flag 0x8
-    "DisableOnSoftRemove" = ?; // REG_DWORD, if zero clears global flag 0x80 (default on) any nonzero leaves it set
-    "DisableUxdSupport" = ?; // REG_DWORD, any nonzero value sets global flag 0x10
-    "EnableExtendedValidation" = ?; // REG_DWORD bitmask, any nonzero value sets global flag 0x20, bit 0x8 sets 0x2000, bit 0x4 sets 0x4000
-    "WakeOnConnectUI" = ?; // REG_DWORD, any nonzero value sets global flag 0x40 - This controls the UI check box 'Allow this device to wake the system'.  Essentially this is control for the wake on connect feature.
-    "PreventDebounceTimeForSuperSpeedDevices" = ?; // REG_DWORD, any nonzero value sets global flag 0x10000 - Checks if we need to give extra time to SuperSpeed devices before talking to them
+    "DisableSelectiveSuspendUI" = ?; // REG_DWORD
+    "MsOsDescriptorMode" = ?; // REG_DWORD, valid values are 0-2
+    "EnableDiagnosticMode" = ?; // REG_DWORD, nonzero enables diagnostic mode
+    "DisableOnSoftRemove" = 1; // REG_DWORD, default behavior enabled, 0 disables it
+    "DisableUxdSupport" = ?; // REG_DWORD, nonzero disables UXD support
+    "EnableExtendedValidation" = ?; // REG_DWORD
+    "WakeOnConnectUI" = ?; // REG_DWORD, nonzero enables wake on connect UI ("This controls the UI check box 'Allow this device to wake the system'. Essentially this is control for the wake on connect feature.")
+    "PreventDebounceTimeForSuperSpeedDevices" = ?; // REG_DWORD, nonzero enables extra debounce handling ("Checks if we need to give extra time to SuperSpeed devices before talking to them")
 
     // miscellaneous ones from GlobalUsbhubValues
     "UsbDebugModeEnable" = ?;
@@ -1500,10 +1513,10 @@ This documentation doesn't include all details, since the repo is used for showi
 
 // HUBREG_QueryGlobalUxdSettings (the defaults were taken from the W10 source)
 "HKLM\\SYSTEM\\CurrentControlSet\\Services\\usbhub\\uxd_control\\policy"; // g_UxdGlobalSettingsKey (aRegistryMachin_12)
-    "UxdGlobalDeleteOnShutdown" = 0; // REG_DWORD (bool), any nonzero value sets global flag 0x100, global delete-on-shutdown policy
-    "UxdGlobalDeleteOnReload" = 0; // REG_DWORD (bool), any nonzero value sets global flag 0x200, global policy to delete UXD keys on disable/reload events
-    "UxdGlobalDeleteOnDisconnect" = 0; // REG_DWORD (bool), any nonzero value sets global flag 0x400, global policy to delete UXD keys on device disconnect
-    "UxdGlobalEnable" = 0; // REG_DWORD (bool), any nonzero value sets global flag 0x800, "main" enable = if 0, UXD settings are ignored
+    "UxdGlobalDeleteOnShutdown" = 0; // REG_DWORD, nonzero enables delete on shutdown
+    "UxdGlobalDeleteOnReload" = 0; // REG_DWORD, nonzero enables delete on reload
+    "UxdGlobalDeleteOnDisconnect" = 0; // REG_DWORD, nonzero enables delete on disconnect
+    "UxdGlobalEnable" = 0; // REG_DWORD, nonzero enables UXD globally
 
 // HUBREG_QueryUxdDeviceKey / HUBREG_DeleteUxdDeviceKey
 "HKLM\\SYSTEM\\CurrentControlSet\\Services\\usbhub\\uxd_control\\devices"; // g_UxdDeviceSettingsKey (aRegistryMachin_5)
@@ -1511,14 +1524,14 @@ This documentation doesn't include all details, since the repo is used for showi
 
 // HUBREG_GetUxdPnpValue
 "HKLM\\SYSTEM\\CurrentControlSet\\Services\\usbhub\\uxd_control\\pnp"; // g_UxdGuidSettingsKey (aRegistryMachin_3)
-    "{GUID}" = ?; // value name from RtlStringFromGUID, data queried via WDF
+    "{GUID}" = ?; // value name from RtlStringFromGUID
 ```
 
-> [peripheral/assets | usbhub-HUBREG_QueryUxdDeviceKey.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbhub-HUBREG_QueryUxdDeviceKey.c)  
-> [peripheral/assets | usbhub-HUBREG_DeleteUxdDeviceKey.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbhub-HUBREG_DeleteUxdDeviceKey.c)  
-> [peripheral/assets | usbhub-HUBREG_QueryGlobalUxdSettings.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbhub-HUBREG_QueryGlobalUxdSettings.c)  
-> [peripheral/assets | usbhub-HUBREG_QueryGlobalHubValues.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbhub-HUBREG_QueryGlobalHubValues.c)  
-> [peripheral/assets | usbhub-HUBREG_GetUxdPnpValue.c](https://github.com/nohuto/win-config/blob/main/peripheral/assets/usbhub-HUBREG_GetUxdPnpValue.c)  
+> [peripheral/assets | usbhub-HUBREG_QueryUxdDeviceKey.c](https://github.com/nohuto/win-registry/blob/main/assets/usbhub-HUBREG_QueryUxdDeviceKey.c)  
+> [peripheral/assets | usbhub-HUBREG_DeleteUxdDeviceKey.c](https://github.com/nohuto/win-registry/blob/main/assets/usbhub-HUBREG_DeleteUxdDeviceKey.c)  
+> [peripheral/assets | usbhub-HUBREG_QueryGlobalUxdSettings.c](https://github.com/nohuto/win-registry/blob/main/assets/usbhub-HUBREG_QueryGlobalUxdSettings.c)  
+> [peripheral/assets | usbhub-HUBREG_QueryGlobalHubValues.c](https://github.com/nohuto/win-registry/blob/main/assets/usbhub-HUBREG_QueryGlobalHubValues.c)  
+> [peripheral/assets | usbhub-HUBREG_GetUxdPnpValue.c](https://github.com/nohuto/win-registry/blob/main/assets/usbhub-HUBREG_GetUxdPnpValue.c)
 
 ```c
 aRegistryMachin_1 = "HKLM\\SYSTEM\\CurrentControlSet\\Control\\USBFN";
@@ -1620,7 +1633,7 @@ Here are elements which I tracked via Procmon (taken from default store and the 
     "\\25000071"; "Element" = 0100000000000000; // REG_BINARY, msi = 1 (forcedisable), Default = 0000000000000000, ForceEnable only via loadoptions FORCEMSI - The PCI Message Signaled Interrupt (MSI) policy. Zero (0) indicates default, and one (1) indicates that MSI interrupts are disabled.
     "\\25000066"; "Element" = 4000000000000000; // REG_BINARY, groupsize = 64 - Specifies the size of all processor groups. Must be set to a power of 2 (max of 64, see pseudocode below).
     "\\25000063"; "Element" = 0100000000000000; // REG_BINARY, configflags = 1 - Indicates whether processor specific configuration flags are to be used.
-    "\\25000061"; "Element" = 0200000000000000; // REG_BINARY, numproc = 2 - The maximum number of processors that can be utilized by the system; all other processors are ignored.
+    "\\25000061"; "Element" = 0200000000000000; // REG_BINARY, numproc = 2 - The maximum number of processors that can be utilized by the system, all other processors are ignored.
     "\\25000055"; "Element" = 0200000000000000; // REG_BINARY, x2apicpolicy = 2 (enable), Default = 0000000000000000, Disable = 0100000000000000 - Enables the use of extended APIC mode, if supported. Zero (0) indicates default behavior, one (1) indicates that extended APIC mode is disabled, and two (2) indicates that extended APIC mode is enabled. The system defaults to using extended APIC mode if available.
     "\\25000050"; "Element" = 0100000000000000; // REG_BINARY, clustermodeaddressing = 1 - Indicates that cluster-mode APIC addressing should be utilized, and the value is the maximum number of processors per cluster.
     "\\25000052"; "Element" = 0000000000000000; // REG_BINARY, restrictapicluster = 0 - The maximum number of APIC clusters that should be used by cluster-mode addressing.
@@ -1912,52 +1925,52 @@ Many parts aren't structered as they should be after decompiling via IDA, which 
 
 ## MMCSS Values
 
-All values are read via `CiConfigReadDWORD()`, so the type is DWORD for all listed ones. CiConfigInitializeFromRegistry probably handles the `\Tasks\` values.
+All values are read via `CiConfigReadDWORD()`, so the type is `REG_DWORD` for all listed ones. If `\Tasks` opens successfully, `CiConfigInitializeFromRegistry()` handles that part?
 
 See [mmcss-CiConfigInitialize.c](https://github.com/nohuto/win-registry/blob/main/assets/mmcss-CiConfigInitialize.c) for notes and [system/desc.md#mmcss-values](https://github.com/nohuto/win-config/blob/main/system/desc.md#mmcss-values) for details on SystemResponsiveness.
+
 ```c
 "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\multimedia\\systemprofile";
-    "SystemResponsiveness" = 100; // addr 0x1C0011090LL
-    "NetworkThrottlingIndex" = 10; // addr 0x1C00110A0LL, 0 = 1, 1..70 keep, 71..0xFFFFFFFE -> 70, 4294967295 (CsInitialize skips CiNdisThrottleWorkItem allocation and CiNdisOpenDevice) keep
-    "NoLazyMode" = 0; // addr 0x1C0011080LL, non-zero = true, see below for more
-    "IdleDetectionCycles" = 2; // addr 0x1C00110B0LL, valid 1..31 else -> 2
-    "LazyModeTimeout" = 1000000; // addr 0x1C00110C0LL, 0 -> 1000000
-    "SchedulerTimerResolution" = 10000; // addr 0x1C00110D0LL, >10000 -> 10000
-    "SchedulerPeriod" = 100000; // addr 0x1C00110E0LL, valid 50000..1000000 else -> 100000
-    "MaxThreadsPerProcess" = 32; // addr 0x1C00110F0LL, valid 8..128 else -> 32
-    "MaxThreadsTotal" = 256; // addr 0x1C0011100LL, valid 64..65535 else -> 256
+    "SystemResponsiveness" = 100; // see documentation below
+    "NetworkThrottlingIndex" = 10; // 0 becomes 1, 1-70 stay unchanged, 71-4294967294 become 70, 4294967295 stays unchanged
+    "NoLazyMode" = 0; // any nonzero value = enabled
+    "IdleDetectionCycles" = 2; // valid range is 1-31, otherwise 2 is used
+    "LazyModeTimeout" = 1000000; // 0 is replaced with 1000000
+    "SchedulerTimerResolution" = 10000; // values above 10000 are capped to 10000
+    "SchedulerPeriod" = 100000; // valid range is 50000-1000000, otherwise 100000 is used
+    "MaxThreadsPerProcess" = 32; // valid range is 8-128, otherwise 32 is used
+    "MaxThreadsTotal" = 256; // valid range is 64-65535, otherwise 256 is used
 ```
 
 ## StorNVMe Values
 
-Most values are read via `ReadMultiSzRegistryValueAndCompareId` using the device id match string `VEN_vvvv&DEV_dddd&REV_rr`, so I currently assume that their type is REG_MULTI_SZ. Several values are set to 0 which sometimes also means "ignore" for example. Note that the information in this list is based on `stornvme.sys` only (if value has comment).
+Most values below are read via `ReadMultiSzRegistryValueAndCompareId` with the device-id match string `VEN_vvvv&DEV_dddd&REV_rr` (therefore listed as `REG_MULTI_SZ`).
 
-[Database-engine/database-file-operations](https://learn.microsoft.com/en-us/troubleshoot/sql/database-engine/database-file-operations/troubleshoot-os-4kb-disk-sector-size?tabs=registry-editor#resolution-steps-for-disk-sector-size-errors-in-sql-server) validates that `ForcedPhysicalSectorSizeInBytes` is a Multi-String value, which confirms a part of my assumption, but I'm still not 100% sure about the rest. Feel free to correct me.
+One additional unnamed binary value is read via `ReadBinaryRegistryValue` between `AvailableSpareThreshold` and `ForcedPhysicalSectorSizeInBytes`; key name is not visible in the provided pseudocode.
 
-See [stornvme-GetRegistrySettings23H2.c](https://github.com/nohuto/win-registry/blob/main/assets/stornvme-GetRegistrySettings23H2.c) & [stornvme-GetRegistrySettings24H2.c](https://github.com/nohuto/win-registry/blob/main/assets/stornvme-GetRegistrySettings24H2.c) for details.
+`assets/stornvme-GetRegistrySettings26H1.c` is empty in this repository, so 26H1 coverage is limited to the helper xrefs currently present.
 
-> [!WARNING]
-> Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
+See [stornvme-GetRegistrySettings23H2.c](https://github.com/nohuto/win-registry/blob/main/assets/stornvme-GetRegistrySettings23H2.c), [stornvme-GetRegistrySettings24H2.c](https://github.com/nohuto/win-registry/blob/main/assets/stornvme-GetRegistrySettings24H2.c), [stornvmeGetDynamicRegistrySettings26H1.c](https://github.com/nohuto/win-registry/blob/main/assets/stornvmeGetDynamicRegistrySettings26H1.c), and [stornvme-GetRegistrySettingsForSpecificKey26H1.c](https://github.com/nohuto/win-registry/blob/main/assets/stornvme-GetRegistrySettingsForSpecificKey26H1.c) for details.
 
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device";
-    "MaxTransferSize" = 0; // REG_MULTI_SZ, range 1..2048, clamp to 2048 (value << 10) 0 = ignore
+    "MaxTransferSize" = 0; // REG_MULTI_SZ, range 1-2048, clamp to 2048 (value << 10) 0 = ignore
     "IoQueueDepth" = 0; // REG_MULTI_SZ
     "IoSubmissionQueueCount" = 0; // REG_MULTI_SZ
     "IoCompletionQueueCount" = 0; // REG_MULTI_SZ
     "InterruptCoalescingTime" = 0; // REG_MULTI_SZ
     "InterruptCoalescingEntry" = 0; // REG_MULTI_SZ
     "ArbitrationBurst" = 255; // REG_MULTI_SZ
-    "ContiguousMemoryFromAnyNode" = ?; // REG_MULTI_SZ
+    "ContiguousMemoryFromAnyNode" = 0; // REG_MULTI_SZ
     "ShutdownTimeout" = 0; // REG_MULTI_SZ, >0xFF coerced to 0xFF, 0 ignored
     "DeallocateMaxLbaCount" = 0; // REG_MULTI_SZ
-    "DisableDeallocate" = ?; // REG_MULTI_SZ
-    "ControllerBasicInit" = ?; // REG_MULTI_SZ
-    "AsyncEventMask" = 1823; // REG_MULTI_SZ, override masked to 0x1F, 0 ignored
-    "IdlePowerMode" = 0; // REG_MULTI_SZ, applied only if <=6, skipped when StorPortExtendedFunction(97) sets mode=2
+    "DisableDeallocate" = 0; // REG_MULTI_SZ
+    "ControllerBasicInit" = 0; // REG_MULTI_SZ
+    "AsyncEventMask" = ?; // REG_MULTI_SZ, nonzero override is masked with 0x1F (init observed: 23H2=1823, 24H2=134219551)
+    "IdlePowerMode" = 0; // REG_MULTI_SZ, applied only if value < 6, skipped when StorPortExtendedFunction(97) sets mode=2
     "DiagnosticFlags" = 0; // REG_MULTI_SZ, bit 1 (0x2) forces LogSize default to 0x100000 bytes
     "LogSize" = 0; // REG_MULTI_SZ, stored as bytes (value << 10) 0 ignored (unless DiagnosticFlags set)
-    "IoStripeAlignment" = 0; // REG_MULTI_SZ, applied only if value << 10
+    "IoStripeAlignment" = 0; // REG_MULTI_SZ, applied only if (value << 10) is 4K-aligned
     "MedPowerFxIdleTimeout" = 4294967295; // REG_MULTI_SZ
     "LowestPowerFxIdleTimeout" = 50; // REG_MULTI_SZ
     "MedPowerD3IdleTimeout" = 3000; // REG_MULTI_SZ
@@ -1965,51 +1978,50 @@ See [stornvme-GetRegistrySettings23H2.c](https://github.com/nohuto/win-registry/
     "MedPowerResumeLatency" = 4294967295; // REG_MULTI_SZ
     "LowestPowerResumeLatency" = 4294967295; // REG_MULTI_SZ
     "HostMemoryBufferBytes" = 4294967295; // REG_MULTI_SZ
-    "BypassSgl" = ?; // REG_MULTI_SZ
+    "BypassSgl" = 1; // REG_MULTI_SZ, only value bit0 is used
     "TestMdlDataBufferOffsetInBytes" = 0; // REG_MULTI_SZ
-    "UseDumpPointers" = ?; // REG_MULTI_SZ, presence enables?
-    "ReservedQueuePairCount" = 0; // REG_MULTI_SZ, valid 1..65535 (check v69-1 <= 0xFFFE)
+    "UseDumpPointers" = 0; // REG_MULTI_SZ
+    "ReservedQueuePairCount" = 0; // REG_MULTI_SZ, valid 1-65535 (check v69-1 <= 0xFFFE)
     "NvmeTestSwitch" = 1; // REG_MULTI_SZ
     "IoQueuePercentageInPollingMode" = 0; // REG_MULTI_SZ, >100 coerced to 100
     "IoPollingInterval" = 0; // REG_MULTI_SZ, >100000 coerced to 100000
     "IoCompletionCapInDPC" = 100; // REG_MULTI_SZ, if nonzero clamp to 128
     "IoPollingSize" = 0x4000; // REG_MULTI_SZ
     "ErrorEtwThrottleInterval" = 0xD693A400; // REG_MULTI_SZ, if nonzero clamp to max 0xD693A400
-    "ResetEnableMask" = ?; // REG_MULTI_SZ
-    "ReliabilityDegraded" = ?; // REG_MULTI_SZ
-    "ReadOnly" = ?; // REG_MULTI_SZ
-    "VolatileMemoryBackupDeviceFailed" = ?; // REG_MULTI_SZ
+    "ResetEnableMask" = 0; // REG_MULTI_SZ, value bit0/1/2 set internal flags 0x40/0x800/0x1000
+    "ReliabilityDegraded" = 0; // REG_MULTI_SZ
+    "ReadOnly" = 0; // REG_MULTI_SZ
+    "VolatileMemoryBackupDeviceFailed" = 0; // REG_MULTI_SZ
     "AvailableSpare" = 0; // REG_MULTI_SZ
     "AvailableSpareThreshold" = 0; // REG_MULTI_SZ
-    "HostIdentifier" = ?; // REG_BINARY, length 1..16
-    "ForcedPhysicalSectorSizeInBytes" = 0; // REG_MULTI_SZ
-    "RetainAsyncEventControlMask" = 0; // REG_MULTI_SZ
+    "ForcedPhysicalSectorSizeInBytes" = ?; // REG_MULTI_SZ, nonzero required before write
+    "RetainAsyncEventControlMask" = ?; // REG_MULTI_SZ, written directly when read succeeds
     "ShutdownTimeoutForSurpriseRemove" = 0; // REG_MULTI_SZ, >0xFF coerced to 0xFF, 0 ignored
-    "MaxIoCountLimit" = 0; // REG_MULTI_SZ, if nonzero clamp to 128
+    "MaxIoCountLimit" = 0; // REG_MULTI_SZ, nonzero required before write
     "SubmissionQueueAssignmentPolicy" = 0; // REG_MULTI_SZ
     "DisableMFNDCCDuringRemoval" = ?; // REG_MULTI_SZ
     "EnableSingleDpcForIoCompletion" = ?; // REG_MULTI_SZ
     "DisableNamespacePreferredValueCheck" = ?; // REG_MULTI_SZ
-    "IgnoreNamespacePreferredValues" = ?; // REG_MULTI_SZ0
+    "IgnoreNamespacePreferredValues" = ?; // REG_MULTI_SZ
     "DisableBypassIO" = ?; // REG_MULTI_SZ
-    "DisableGetActiveNSIDList" = ?; // REG_MULTI_SZ
-    "ForceCryptoEraseToUseFormatNVM" = ?; // REG_MULTI_SZ
+    "DisableGetActiveNSIDList" = 0; // REG_MULTI_SZ
+    "ForceCryptoEraseToUseFormatNVM" = 0; // REG_MULTI_SZ
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device";
-    "ControllerResetWaitTimeCushion" = 20000; // REG_MULTI_SZ, dynamic read in GetDynamicRegistrySettings, applied even if 0?
+    "ControllerResetWaitTimeCushion" = 20000; // REG_MULTI_SZ, GetDynamicRegistrySettings writes the read value directly (including 0)
     "DisableActivateFWWithoutReset" = 0; // REG_MULTI_SZ, read in GetRegistrySettingsForSpecificKey and returned directly
 
-// these don't exist in the driver on 23H2, but do exist in for example 24H2
+// present in 24H2 path (not present in 23H2 path)
 "HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device";
-    "DisableDSTThrottle" = ?; // REG_MULTI_SZ
-    "DisableF0TimestampSync" = ?; // REG_MULTI_SZ
-    "DisableForwardedIO" = ?; // REG_MULTI_SZ
-    "EnableIntelTSESplitIOWorkaround" = ?; // REG_MULTI_SZ
-    "EnforceActiveNamespaceIdentification" = ?; // REG_MULTI_SZ
-    "SupportZeroActiveNamespace" = ?; // REG_MULTI_SZ
-    "WeightedRoundRobinEnabled" = ?; // REG_MULTI_SZ
+    "DisableDSTThrottle" = ?; // REG_MULTI_SZ, GetDynamicRegistrySettings first clears flag 0x200000, then sets it when value is nonzero
+    "DisableF0TimestampSync" = 0; // REG_MULTI_SZ
+    "DisableForwardedIO" = 0; // REG_MULTI_SZ
+    "EnableIntelTSESplitIOWorkaround" = 0; // REG_MULTI_SZ
+    "EnforceActiveNamespaceIdentification" = 0; // REG_MULTI_SZ
+    "SupportZeroActiveNamespace" = 0; // REG_MULTI_SZ
+    "WeightedRoundRobinEnabled" = 0; // REG_MULTI_SZ
 
-// didn't search for them yet
+// not found in provided pseudocode assets
 "HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters";
     "BusType" = ?;
     "BusyPauseTimeInMs" = ?;
@@ -2018,9 +2030,10 @@ See [stornvme-GetRegistrySettings23H2.c](https://github.com/nohuto/win-registry/
     "IoTimeoutValue" = ?;
     "PnpAsyncNewDevices" = ?;
 
-// these seem to exist but not on my current 23H2 nor in the 10.0.26100.7309 version
+// not found in provided pseudocode assets
 "HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device";
     "DriverParameter" = ?;
+    "HostIdentifier" = ?;
     "LinkTimeout" = ?;
     "MaximumLogicalUnit" = ?;
     "MaximumUCXAddress" = ?;
@@ -2058,10 +2071,10 @@ Documented for the [peripheral/disable-touch--tablet](https://github.com/nohuto/
     "MultiTouchEnabled" = 1;
 
 "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PrecisionTouchPad";
-    "AAPThreshold" = 2; // range 0–4, touchpad sensitivity
-    "CursorSpeed" = 10; // range 1–20, pointer speed
-    "FeedbackIntensity" = 50; // range 0–100 (%), haptic feedback strength
-    "ClickForceSensitivity" = 50; // range 0–100 (%), relative click-force sensitivity
+    "AAPThreshold" = 2; // range 0-4, touchpad sensitivity
+    "CursorSpeed" = 10; // range 1-20, pointer speed
+    "FeedbackIntensity" = 50; // range 0-100 (%), haptic feedback strength
+    "ClickForceSensitivity" = 50; // range 0-100 (%), relative click-force sensitivity
     "LeaveOnWithMouse" = 1; // 0 = disable touchpad when mouse present, 1 = leave enabled
     "FeedbackEnabled" = 1; // 0 = no haptics, 1 = haptics on
     "TapsEnabled" = 1; // 0/1, single-finger tap-to-click
@@ -2105,7 +2118,7 @@ Documented for the [peripheral/disable-touch--tablet](https://github.com/nohuto/
     "TabletModeActivated" = 0; // set to 1 when SetModeInternal() switches into tablet mode
 
 "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ImmersiveShell";
-    "AllowPPITabletModeExit" = 0; // SHRegGetBOOLWithREGSAM, non-zero allows the mode switch
+    "AllowPPITabletModeExit" = 0; // SHRegGetBOOLWithREGSAM, nonzero allows the mode switch
 
 "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ImmersiveShell\\OverrideScaling";
     "SmallScreen" = 83; // ?
