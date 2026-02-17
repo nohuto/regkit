@@ -1444,12 +1444,12 @@ This documentation doesn't include all details, since the repo is used for showi
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\UsbLtm"; // g_UsbLtmKeyName (aRegistryMachin_4)
     "UsbLtmEnable" = 0; // REG_DWORD, nonzero enables USB LTM
 
-// GetPersistedKeyPath / UsbDualRoleFeaturesQueryLocalMachine / ReadManifestAssignedValue
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\USB";
     "DualRoleFeaturesTestOverride" = ?; // REG_DWORD, queried from GetPersistedKeyPath
     "UcmIsPresent" = ?; // REG_DWORD
 
 // these are taken from the W10 source, they seem to exist on latest builds (they do exist in usbport.sys on 23H2)
+
 "HKLM\\SYSTEM\\CurrentControlSet\\Services\\usb";
     "debuglevel" = 0; // REG_DWORD, default to 1/2 when DEBUG1/DEBUG2 builds, higher numbers enable more logs
     "debuglogmask" = 0xFFFFFFFE; // REG_DWORD, bitmask for log categories
@@ -1463,6 +1463,7 @@ This documentation doesn't include all details, since the repo is used for showi
     "ForcePortsHighSpeed" = 0; // REG_DWORD (bool), forces ports to remain under EHCI (HCT compatibility)
 
 // "This class is reserved for USB host controllers and USB hubs", I'll add them here as they're also in usbport.sys and also taken from the W10 source
+
 "HKLM\\System\\CurrentControlSet\\Control\\Class\\{36FC9E60-C465-11CF-8056-444553540000}\\<instance>";
     "HcFlavor" = ? // REG_DWORD, auto detect
     "TotalBusBandwidth" = ? // REG_DWORD, calculated from miniport registration (bits/ms), overrides bus bandwidth accounting
