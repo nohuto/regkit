@@ -1945,11 +1945,9 @@ See [mmcss-CiConfigInitialize.c](https://github.com/nohuto/win-registry/blob/mai
 
 ## StorNVMe Values
 
-Most values below are read via `ReadMultiSzRegistryValueAndCompareId` with the device-id match string `VEN_vvvv&DEV_dddd&REV_rr` (therefore listed as `REG_MULTI_SZ`).
+Most values are read via `ReadMultiSzRegistryValueAndCompareId` using the device id match string `VEN_vvvv&DEV_dddd&REV_rr`, so I currently assume that their type is REG_MULTI_SZ. Several values are set to 0 which sometimes also means "ignore" for example. Note that the information in this list is based on `stornvme.sys` only (if value has comment).
 
-One additional unnamed binary value is read via `ReadBinaryRegistryValue` between `AvailableSpareThreshold` and `ForcedPhysicalSectorSizeInBytes`; key name is not visible in the provided pseudocode.
-
-`assets/stornvme-GetRegistrySettings26H1.c` is empty in this repository, so 26H1 coverage is limited to the helper xrefs currently present.
+[Database-engine/database-file-operations](https://learn.microsoft.com/en-us/troubleshoot/sql/database-engine/database-file-operations/troubleshoot-os-4kb-disk-sector-size?tabs=registry-editor#resolution-steps-for-disk-sector-size-errors-in-sql-server) validates that `ForcedPhysicalSectorSizeInBytes` is a Multi-String value, which confirms a part of my assumption, but I'm still not 100% sure about the rest. Feel free to correct me.
 
 See [stornvme-GetRegistrySettings23H2.c](https://github.com/nohuto/win-registry/blob/main/assets/stornvme-GetRegistrySettings23H2.c), [stornvme-GetRegistrySettings24H2.c](https://github.com/nohuto/win-registry/blob/main/assets/stornvme-GetRegistrySettings24H2.c), [stornvmeGetDynamicRegistrySettings26H1.c](https://github.com/nohuto/win-registry/blob/main/assets/stornvmeGetDynamicRegistrySettings26H1.c), and [stornvme-GetRegistrySettingsForSpecificKey26H1.c](https://github.com/nohuto/win-registry/blob/main/assets/stornvme-GetRegistrySettingsForSpecificKey26H1.c) for details.
 
