@@ -2006,11 +2006,10 @@ See [stornvme-GetRegistrySettings23H2.c](https://github.com/nohuto/win-registry/
     "DisableGetActiveNSIDList" = 0; // REG_MULTI_SZ
     "ForceCryptoEraseToUseFormatNVM" = 0; // REG_MULTI_SZ
 
-"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device";
     "ControllerResetWaitTimeCushion" = 20000; // REG_MULTI_SZ, GetDynamicRegistrySettings writes the read value directly (including 0)
     "DisableActivateFWWithoutReset" = 0; // REG_MULTI_SZ, read in GetRegistrySettingsForSpecificKey and returned directly
 
-"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device"; // present in 24H2 path (not present in 23H2 path)
+    // present in 24H2 path (not present in 23H2 path)
     "DisableDSTThrottle" = ?; // REG_MULTI_SZ, GetDynamicRegistrySettings first clears flag 0x200000, then sets it when value is nonzero
     "DisableF0TimestampSync" = 0; // REG_MULTI_SZ
     "DisableForwardedIO" = 0; // REG_MULTI_SZ
@@ -2019,15 +2018,6 @@ See [stornvme-GetRegistrySettings23H2.c](https://github.com/nohuto/win-registry/
     "SupportZeroActiveNamespace" = 0; // REG_MULTI_SZ
     "WeightedRoundRobinEnabled" = 0; // REG_MULTI_SZ
 
-"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters"; // not found in provided pseudocode assets
-    "BusType" = ?;
-    "BusyPauseTimeInMs" = ?;
-    "BusyRetryCount" = ?;
-    "IoLatencyCap" = ?;
-    "IoTimeoutValue" = ?;
-    "PnpAsyncNewDevices" = ?;
-
-"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device"; // not found in provided pseudocode assets
     "DriverParameter" = ?;
     "HostIdentifier" = ?;
     "LinkTimeout" = ?;
@@ -2036,6 +2026,16 @@ See [stornvme-GetRegistrySettings23H2.c](https://github.com/nohuto/win-registry/
     "MinimumUCXAddress" = ?;
     "NumberOfRequests" = ?;
     "UncachedExtAlignment" = ?;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters";
+    "StorageSupportedFeatures" = 1; // "Support ByPass IO"?
+    "DmaRemappingCompatible" = 2; // https://github.com/nohuto/win-config/blob/main/security/desc.md#opt-out-dma-remapping
+    "BusType" = ?; // bustype 0x11 is value of BusTypeNVMe
+    "BusyPauseTimeInMs" = ?;
+    "BusyRetryCount" = ?;
+    "IoLatencyCap" = ?;
+    "IoTimeoutValue" = 10;
+    "PnpAsyncNewDevices" = ?;
 ```
 
 ## Miscellaneous Values
