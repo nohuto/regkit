@@ -19,6 +19,7 @@ winget install Microsoft.WindowsADK
   - [Power Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#power-values)
   - [DWM Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#dwm-values)
   - [USBFLAGS/USBHUB/USB Values](https://github.com/nohuto/win-registry#usbusbhubusbflags-values)
+  - [PnP Device Values](https://github.com/nohuto/win-registry#pnp-device-values)
   - [BCD Edits](https://github.com/nohuto/win-registry#bcd-edits)
   - [Intel NIC Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#intel-nic-values)
   - [MMCSS Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#mmcss-values)
