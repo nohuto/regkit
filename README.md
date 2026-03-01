@@ -1588,7 +1588,7 @@ A simple example here would be [GetEnhancedVerifierOptions](https://github.com/n
 
 `INF default` = install-time default from INF entries.
 
-To create this list, I've used many driver pseudocodes (usbhub, winhub, USBHUB, ACPI, PCI, WDF, hidclass, USBHUB3...), several INF files, and W10 source for comments (which may not be accurate anymore).
+To create this list, I've used many driver pseudocodes (usbhub, winhub, acpi, pci, wdf, hidclass, USBHUB3...), several INF files, and W10 source for comments (which may not be accurate anymore).
 
 > [!WARNING]
 > Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
