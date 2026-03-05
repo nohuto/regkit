@@ -1594,7 +1594,6 @@ To create this list, I've used many driver pseudocodes (usbhub, winhub, acpi, pc
 > Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
 
 ```c
-
 "HKLM\\SYSTEM\\CurrentControlSet\\Enum\\<enumerator>\\<deviceID>\\<instanceID>\\Device Parameters";
     "AllowIdleIrpInD3" = 1; // REG_DWORD (bool), INF default (input.inf)
     "CollectionReenumerateSelfInterfaceEnabled" = 0; // REG_DWORD (bool)
@@ -1646,6 +1645,58 @@ To create this list, I've used many driver pseudocodes (usbhub, winhub, acpi, pc
     "HubFWUpdateProtocol" = ?; // REG_DWORD
     "OvercurrentDetected" = ?; // REG_DWORD (bool)
     "WakeSystemOnConnect" = ?; // REG_DWORD (bool)
+    "AOCID" = ?;
+    "AutoplayOnSpecialInterface" = ?;
+    "CustomWake" = ?;
+    "DefaultSimulatedTarget" = ?;
+    "DeviceGroup" = ?;
+    "DeviceGroups" = ?;
+    "DeviceHandlers" = ?;
+    "FailReasonID" = ?;
+    "FirmwareCapsuleFilename" = ?;
+    "FirmwareFilename" = ?;
+    "FirmwareId" = ?;
+    "FirmwareIntegrityFilename" = ?;
+    "FirmwareMeasurementsFilename" = ?;
+    "FirmwareStatus" = ?;
+    "FirmwareVersion" = ?;
+    "FirmwareVersionFormat" = ?;
+    "FlipFlopHScroll" = ?;
+    "FlipFlopWheel" = ?;
+    "ForceVirtualDesktop" = ?;
+    "FullPowerDownOnTransientDx" = ?;
+    "FunctionDriverOptIn" = ?;
+    "HackFlags" = ?;
+    "HasPhysicalKeys" = ?;
+    "HScrollHighResolutionDisable" = ?;
+    "HScrollPageOverride" = ?;
+    "HScrollScalingFactor" = ?;
+    "HScrollUsageOverride" = ?;
+    "Icons" = ?;
+    "IdleSupported" = ?;
+    "IdleTimeoutPeriodInMilliSec" = ?;
+    "KeyboardNumberFunctionKeysOverride" = ?;
+    "KeyboardNumberIndicatorsOverride" = ?;
+    "KeyboardNumberTotalKeysOverride" = ?;
+    "KeyboardSubtypeOverride" = ?;
+    "KeyboardTypeOverride" = ?;
+    "Label" = ?;
+    "NoMediaIcons" = ?;
+    "NoSoftEject" = ?;
+    "NumberOfPairingSlots" = ?;
+    "OriginalConfigurationValue" = ?;
+    "RootBus" = ?;
+    "TargetForcePriorityList" = ?;
+    "TargetPriorityList" = ?;
+    "Usb4HostName" = ?;
+    "UsbccgpCapabilities" = ?;
+    "UseStrictBiosHandoff" = ?;
+    "VhfMode" = ?;
+    "VideoID" = ?;
+    "VScrollHighResolutionDisable" = ?;
+    "VScrollPageOverride" = ?;
+    "VScrollUsageOverride" = ?;
+    "WheelScalingFactor" = ?;
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Enum\\<enumerator>\\<deviceID>\\<instanceID>\\Device Parameters\\e5b3b5ac-9725-4f78-963f-03dfb1d828c7";
     "BusDataLinkSettleTime" = ?; // REG_DWORD, accepted if <= 150, larger values are ignored
@@ -1721,6 +1772,112 @@ To create this list, I've used many driver pseudocodes (usbhub, winhub, acpi, pc
     "Flags" = ?; // REG_DWORD, data size 1
     "LinkNode" = ?; // REG_BINARY, ACPIAmliBuildObjectPathname
     "StaticVector" = ?; // REG_DWORD, PcisuppSetRoutingInfo writes this when no LinkNode is present
+
+// miscellaneous values from boot trace, haven't looked into them yet
+"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\<enumerator>\\<deviceID>\\<instanceID>";
+    "Address" = ?;
+    "Capabilities" = ?;
+    "CompatibleIDs" = ?;
+    "ConfigFlags" = ?;
+    "ContainerID" = ?;
+    "DeviceCharacteristics" = ?;
+    "DeviceDesc" = ?;
+    "DeviceReported" = ?;
+    "DeviceType" = ?;
+    "Driver" = ?;
+    "Exclusive" = ?;
+    "HardwareID" = ?;
+    "InstallFlags" = ?;
+    "LocationInformation" = ?;
+    "LowerFilters" = ?;
+    "Mfg" = ?;
+    "ParentIdPrefix" = ?;
+    "Phantom" = ?;
+    "RemovalPolicy" = ?;
+    "SECURITY" = ?;
+    "Service" = ?;
+    "UINumber" = ?;
+    "UINumberDescFormat" = ?;
+    "UniqueParentID" = ?;
+    "UpperFilters" = ?;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\<enumerator>\\<deviceID>\\<instanceID>\\Control";
+    "AllocConfig" = ?;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\<enumerator>\\<deviceID>\\<instanceID>\\LogConf";
+    "AllocConfig" = ?;
+    "BootConfig" = ?;
+    "ForcedConfig" = ?;
+    "OverrideConfigVector" = ?;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\<enumerator>\\<deviceID>\\<instanceID>\\Device Parameters\\BiosConfig";
+    "DEV_00&FUN_00" = ?;
+    "DEV_00&FUN_01" = ?;
+    "DEV_00&FUN_02" = ?;
+    "DEV_00&FUN_03" = ?;
+    "DEV_01&FUN_00" = ?;
+    "DEV_01&FUN_01" = ?;
+    "DEV_01&FUN_02" = ?;
+    "DEV_02&FUN_00" = ?;
+    "DEV_03&FUN_00" = ?;
+    "DEV_03&FUN_01" = ?;
+    "DEV_04&FUN_00" = ?;
+    "DEV_05&FUN_00" = ?;
+    "DEV_07&FUN_00" = ?;
+    "DEV_07&FUN_01" = ?;
+    "DEV_08&FUN_00" = ?;
+    "DEV_08&FUN_01" = ?;
+    "DEV_09&FUN_00" = ?;
+    "DEV_14&FUN_00" = ?;
+    "DEV_14&FUN_03" = ?;
+    "DEV_18&FUN_00" = ?;
+    "DEV_18&FUN_01" = ?;
+    "DEV_18&FUN_02" = ?;
+    "DEV_18&FUN_03" = ?;
+    "DEV_18&FUN_04" = ?;
+    "DEV_18&FUN_05" = ?;
+    "DEV_18&FUN_06" = ?;
+    "DEV_18&FUN_07" = ?;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\<enumerator>\\<deviceID>\\<instanceID>\\Device Parameters\\StorPort";
+    "AdapterGuid" = ?;
+    "BusSpecificResetTimeout" = ?;
+    "BusyPauseTime" = ?;
+    "BusyRetryCount" = ?;
+    "DisableD3Cold" = ?;
+    "DisableIdlePowerManagement" = ?;
+    "DisableNVMeActiveNamespaceIDListCheck" = ?;
+    "DisableRuntimePowerManagement" = ?;
+    "DlrmDisable" = ?;
+    "EnableIdlePowerManagement" = ?;
+    "EnableLogoETW" = ?;
+    "EnableNVMeInterface" = ?;
+    "FwActivateTimeoutForController" = ?;
+    "IdleTimeoutInMS" = ?;
+    "InitialTimestamp" = ?;
+    "Is1667Device" = ?;
+    "MinimumIdleTimeoutInMS" = ?;
+    "PLDRTimeout" = ?;
+    "PowerCycleCount" = ?;
+    "PowerCycleCountOverride" = ?;
+    "PowerSrbTimeout" = ?;
+    "QueueFullWaitIoPercentage" = ?;
+    "TotalSenseDataBytes" = ?;
+    "UseDMAv3" = ?;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\<enumerator>\\<deviceID>\\<instanceID>\\Device Parameters\\DMA Management";
+    "RemappingFlags" = ?;
+    "RemappingSupported" = ?;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\<enumerator>\\<deviceID>\\<instanceID>\\Device Parameters\\partmgr";
+    "Attributes" = ?;
+    "DiskId" = ?;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\<enumerator>\\<deviceID>\\<instanceID>\\Device Parameters\\WUDF";
+    "SoftwareDeviceTag" = ?;
+
+"HKLM\\SYSTEM\\CurrentControlSet\\Enum\\<enumerator>\\<deviceID>\\<instanceID>\\Device Parameters\\WUDF\\CompanionConfigurations\\USBXHCI";
+    "CompanionServiceList" = ?;
 ```
 
 > [pnp/assets | BthUsb_QuerySelectiveSuspend.c](https://github.com/nohuto/win-registry/blob/main/assets/pnp/BthUsb_QuerySelectiveSuspend.c)  
