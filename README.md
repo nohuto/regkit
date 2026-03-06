@@ -604,54 +604,6 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
     "PrimSurfSize.cx" = ?; // REG_DWORD
     "PrimSurfSize.cy" = ?; // REG_DWORD
     "Stride" = ?; // REG_DWORD
-
-"AdapterPnpKey";
-    "EnableVirtualTopologySupport" = 0;
-    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : EnableVirtualTopologySupport
-    "NeedToSuspendVidSchBeforeSetGammaRamp" = ?; // REG_DWORD, default depends on AdapterBuild < 8704
-    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : NeedToSuspendVidSchBeforeSetGammaRamp
-    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : NeedToSuspendVidSchBeforeSetGammaRamp
-
-    "DisableNonPOSTDevice" = 0;
-    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : DisableNonPOSTDevice
-    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicRender : DisableNonPOSTDevice
-
-    "ACGSupported" = 0;
-    // Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : ACGSupported
-    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicRender : ACGSupported
-    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : ACGSupported
-    "DxgkGpuVaIommuRequired" = 0;
-    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : DxgkGpuVaIommuRequired
-    "DxgkGpuVaIommuGlobalSupported" = 0;
-    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : DxgkGpuVaIommuGlobalSupported
-
-    "AllowUnspecifiedVSync" = 0;
-    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : AllowUnspecifiedHSync
-    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : AllowUnspecifiedHSync
-    "AllowUnspecifiedHSync" = 0;
-    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : AllowUnspecifiedHSync
-    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : AllowUnspecifiedHSync
-    "AllowUnspecifiedPixelRate" = 0;
-    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : AllowUnspecifiedPixelRate
-    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : AllowUnspecifiedPixelRate
-    "ForceDualViewBehavior" = 0;
-    // \Registry\Machine\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000 : ForceDualViewBehavior
-    // \Registry\Machine\SYSTEM\ControlSet001\Services\BasicDisplay : ForceDualViewBehavior
-
-"<AdapterPnpKey>\\DxgkSettings";
-    "UseSelfRefreshVRAMInS3" = 1;
-
-// these are also in dxgmms2 but read from the pnp key, not from GraphicsDrivers - see https://github.com/nohuto/win-config/blob/0cbc8e153f7ea6bf4b640e51c53d235a5de67de8/power/desc.md#disable-device-powersavings
-"<AdapterPnpKey>\\MemoryManager";
-    "EnablePromotion" = 1; // REG_DWORD, found in 25H2 (not in 23H2)
-    "MaxLocalSegmentSize" = 0; // REG_DWORD, MB (<< 20), 0 allowed, 1-256 -> 256
-    "MaxNonLocalSegmentSize" = 0; // REG_DWORD, MB (<< 20), 0 allowed, 1-512 -> 512
-    "SelfRefreshVramForceEvictionTimerAC" = 900; // REG_DWORD, found in 25H2 (not in 23H2)
-    "SelfRefreshVramForceEvictionTimerDC" = 900; // REG_DWORD, found in 25H2 (not in 23H2)
-    "Supports64KBPages" = 0; // REG_DWORD, bit0 used
-
-"<AdapterPnpKey>";
-    "HwQueuedRenderPacketGroupLimitPerNode" = ?; // REG_BINARY
 ```
 
 ---
