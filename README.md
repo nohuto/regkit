@@ -1378,7 +1378,60 @@ For entries described as "any nonzero", the code treats the DWORD as a boolean, 
 
 This documentation doesn't include all details, since the repo is used for showing registry values, their default data, ranges and miscellaneous information. See [desc.md#usbflags-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usbflags-values), [desc.md#usb-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usb-values), [desc.md#usbhub-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usbhub-values) for more details. The USBHUB3.sys included some values located in the device hardware key like `DeviceIdleEnabled`, `DefaultIdleState`, `DeviceIdleIgnoreWakeEnable`, I didn't add them here since it lacks on details, see [desc.md#disable-device-powersavings](https://github.com/nohuto/win-config/blob/main/power/desc.md#disable-device-powersavings).
 
-You can use `!usb3kd.device_info` to get more information on a USB device in the USB 3.0 tree, I might add more on it soon.
+You can use `!usb3kd.device_info` to get more information on a USB device in the USB 3.0 tree, example:
+```c
+lkd> !usb3.usb_tree
+
+4) !device_info 0xffffb009127ca1f0, !devstack ffffb009127e1d80
+    Current Device State: ConfiguredInD0
+    Desc: USB Receiver
+    USB\VID_046D&PID_C547&REV_0402 Logitech Inc.
+    !ucx_device 0xffffb009127cad00 !xhci_deviceslots 0xffffb0090bc17db0 1 !xhci_info 0xffffb0090bc17db0
+
+lkd> !usb3kd.device_info 0xffffb009127ca1f0
+
+U1Timeout: 0, U2Timeout: 0
+DeviceFlags: DeviceIsComposite MsOsDescriptorNotSupported UsbWakeupSupport 
+DeviceStateFlags: DeviceAttachSuccessful DeviceIsKnown ConfigurationIsValid ConfigDescIsValid 
+                  DeviceStarted InstallMSOSExtEventProcessed IsNative 
+DeviceHackFlags: DisableOnSoftRemove DisableLpm
+```
+The `DisableLpm` DeviceHackFlags exists if the value is set (DisableLPM).
+
+You can see existing `_USB_DEVICE_HACKS` using the dt command:
+```c
+lkd> .load usb3kd
+lkd> dt USBHUB3!_USB_DEVICE_HACKS
+   +0x000 AsUlong32        : Uint4B
+   +0x000 DisableSerialNumber : Pos 0, 1 Bit
+   +0x000 DontSkipMsOsDescriptor : Pos 1, 1 Bit
+   +0x000 ResetOnResumeSx  : Pos 2, 1 Bit
+   +0x000 DisableOnSoftRemove : Pos 3, 1 Bit
+   +0x000 RequestConfigDescOnReset : Pos 4, 1 Bit
+   +0x000 SkipContainerIdQuery : Pos 5, 1 Bit
+   +0x000 IgnoreBOSDescriptorValidationFailure : Pos 6, 1 Bit
+   +0x000 DisableLpm       : Pos 7, 1 Bit
+   +0x000 SkipSetSel       : Pos 8, 1 Bit
+   +0x000 ResetOnResumeInSuperSpeed : Pos 9, 1 Bit
+   +0x000 AllowInvalidPipeHandles : Pos 10, 1 Bit
+   +0x000 DisableUASP      : Pos 11, 1 Bit
+   +0x000 SkipSetIsochDelay : Pos 12, 1 Bit
+   +0x000 ResetOnResumeS0  : Pos 13, 1 Bit
+   +0x000 DisableHotReset  : Pos 14, 1 Bit
+   +0x000 SkipBOSDescriptorQuery : Pos 15, 1 Bit
+   +0x000 NonFunctional    : Pos 16, 1 Bit
+   +0x000 DisableUsb20HardwareLpm : Pos 17, 1 Bit
+   +0x000 DisableRemoteWakeForUsb20HardwareLpm : Pos 18, 1 Bit
+   +0x000 DisableSuperSpeed : Pos 19, 1 Bit
+   +0x000 IncompatibleWithWindows : Pos 20, 1 Bit
+   +0x000 UseWin8DescriptorValidation : Pos 21, 1 Bit
+   +0x000 DisableFastEnumeration : Pos 22, 1 Bit
+   +0x000 DisableRecoveryFromPowerDrain : Pos 23, 1 Bit
+   +0x000 AddControllerSuffixedCompatIdToAudioDevices : Pos 24, 1 Bit
+   +0x000 AddMausbSuffixToHardwareId : Pos 25, 1 Bit
+   +0x000 EnablePLDRDuringCyclePort : Pos 26, 1 Bit
+   +0x000 ResetOnErrorInD2Resume : Pos 27, 1 Bit
+```
 
 > https://github.com/nohuto/windows-driver-docs/blob/staging/windows-driver-docs-pr/debuggercmds/-usb3kd-device-info.md
 
@@ -1405,7 +1458,7 @@ You can use `!usb3kd.device_info` to get more information on a USB device in the
     "DisableOnSoftRemove" = 1; // REG_DWORD, default enabled, 0 disables it
     "RequestConfigDescOnReset" = ?; // REG_DWORD, nonzero enables config descriptor query after reset
     "DisableRecoveryFromPowerDrain" = ?; // REG_DWORD
-    "DisableLPM" = ?; // REG_DWORD, When set, disables low power link states for the device = the driver skips enabling U2 and forces U1/U2 timeouts to 0 so link power management stays off. Also disabled when a parent hub indicates LPM should be off for all downstream devices. (this is how I understood it while reading through the W10 source code)
+    "DisableLpm" = ?; // REG_DWORD, When set, disables low power link states for the device = the driver skips enabling U2 and forces U1/U2 timeouts to 0 so link power management stays off. Also disabled when a parent hub indicates LPM should be off for all downstream devices. (this is how I understood it while reading through the W10 source code)
                       // "A link enters a low power state (consuming less power than the working state) only when the downstream device enters the suspended state through the selective suspend mechanism", "After remaining idle for a certain period of time, link partners progressively enter U1 (standby with fast exit) and then U2 (standby with slower exit)"
                       // https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/usb-3-0-lpm-mechanism- https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/u1-and-u2-transitions
     "SkipBOSDescriptorQuery" = ?; // REG_DWORD
