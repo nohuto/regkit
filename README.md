@@ -1378,6 +1378,10 @@ For entries described as "any nonzero", the code treats the DWORD as a boolean, 
 
 This documentation doesn't include all details, since the repo is used for showing registry values, their default data, ranges and miscellaneous information. See [desc.md#usbflags-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usbflags-values), [desc.md#usb-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usb-values), [desc.md#usbhub-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usbhub-values) for more details. The USBHUB3.sys included some values located in the device hardware key like `DeviceIdleEnabled`, `DefaultIdleState`, `DeviceIdleIgnoreWakeEnable`, I didn't add them here since it lacks on details, see [desc.md#disable-device-powersavings](https://github.com/nohuto/win-config/blob/main/power/desc.md#disable-device-powersavings).
 
+You can use `!usb3kd.device_info` to get more information on a USB device in the USB 3.0 tree, I might add more on it soon.
+
+> https://github.com/nohuto/windows-driver-docs/blob/staging/windows-driver-docs-pr/debuggercmds/-usb3kd-device-info.md
+
 `HUBDSM_QueryingRegistryValuesForDevice` -> `HUBMISC_QueryAndCacheRegistryValuesForDevice` -> `HUBREG_QueryUsbflagsValuesForDevice`
 
 > [!WARNING]
@@ -1413,6 +1417,15 @@ This documentation doesn't include all details, since the repo is used for showi
     "osvc" = ?; // queried as 2 byte data
     "SkipContainerIdQuery" = ?; // REG_DWORD
     "MsOs20DescriptorSetInfo" = ?; // REG_BINARY/REG_QWORD
+
+    //"DisableFastEnumeration"
+    //"DisableHotReset"
+    //"DisableSerialNumber"
+    //"DisableSuperSpeed"
+    //"ResetOnResumeS0"
+    //"ResetOnResumeSx"
+    //"SkipSetIsochDelay"
+    //"SkipSetSel"
 ```
 
 > [peripheral/assets | HUBDSM_QueryingRegistryValuesForDevice.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags/HUBDSM_QueryingRegistryValuesForDevice.c)  
