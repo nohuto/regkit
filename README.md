@@ -1392,9 +1392,10 @@ lkd> dt USBHUB3!_USB_DEVICE_HACKS
 > [!WARNING]
 > Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
 
+Note on some usbflag values ("queried as 4-byte boolean"), `USBHUB3` reads a 4-byte and handles any nonzero value as enabled. The value type is not enforced, so both `REG_DWORD` and `REG_BINARY` should work if they're a 4-byte nonzero value (that's my current assumption). I would personally use `REG_BINARY` instead of `REG_DWORD` for now, as for example `osvc`, `IgnoreHWSerNum`, `ResetOnResume` are `REG_BINARY` ([usb-device-specific-registry-settings.md](https://github.com/nohuto/windows-driver-docs/blob/staging/windows-driver-docs-pr/usbcon/usb-device-specific-registry-settings.md)).
+
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usbflags";
-    "IgnoreHWSerNum<vvvvpppp>" = ?; // REG_DWORD, seems to use vvvvpppp (vendor, product) see documentation below
     "Allow64KLowOrFullSpeedControlTransfers" = ?; // REG_DWORD, only value 1 enables, 0/other values disable
     "DisableHCS0Idle" = 0; // REG_DWORD, nonzero disables S0 idle, missing/read failure behaves as 0
     "GenericCompositeUSBDeviceString" = ?; // REG_SZ
@@ -1404,33 +1405,50 @@ lkd> dt USBHUB3!_USB_DEVICE_HACKS
 // built by HUBREG_OpenCreateUsbflagsDeviceKey
 
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usbflags\\<vvvvpppprrrr>";
-    "IgnoreHWSerNum" = ?; // REG_DWORD, nonzero enables "Ignore HW SerNum" behavior
-    "UseWin8DescriptorValidation" = ?; // REG_DWORD, nonzero enables Win8 descriptor validation path
-    "ResetOnResume" = ?; // REG_DWORD, nonzero enables reset on resume
-    "DisableOnSoftRemove" = 1; // REG_DWORD, default enabled, 0 disables it
-    "RequestConfigDescOnReset" = ?; // REG_DWORD, nonzero enables config descriptor query after reset
-    "DisableRecoveryFromPowerDrain" = ?; // REG_DWORD
-    "DisableLpm" = ?; // REG_DWORD, When set, disables low power link states for the device = the driver skips enabling U2 and forces U1/U2 timeouts to 0 so link power management stays off. Also disabled when a parent hub indicates LPM should be off for all downstream devices. (this is how I understood it while reading through the W10 source code)
+    "IgnoreHWSerNum" = ?; // REG_BINARY, Indicates whether the USB driver stack must ignore the serial number of the device.
+                          // 0x00: The setting is disabled.
+                          // 0x01: Forces the USB driver stack to ignore the serial number of the device. Therefore, the device instance is tied to the port to which the device is attached.
+    "UseWin8DescriptorValidation" = ?; // queried as 4-byte boolean
+    "ResetOnResume" = ?; // REG_BINARY, indicates whether the USB driver stack must reset the device when the port resumes from a sleep cycle.
+                         // 0x0000: The setting is disabled.
+                         // 0x0001: Forces the USB driver stack to reset a device on port resume.
+    "DisableOnSoftRemove" = 1; // queried as 4-byte boolean
+    "RequestConfigDescOnReset" = ?; // queried as 4-byte boolean
+    "DisableRecoveryFromPowerDrain" = ?; // queried as 4-byte boolean
+    "DisableLpm" = ?; // queried as 4-byte boolean. When enabled, link power management is disabled for the device.
                       // "A link enters a low power state (consuming less power than the working state) only when the downstream device enters the suspended state through the selective suspend mechanism", "After remaining idle for a certain period of time, link partners progressively enter U1 (standby with fast exit) and then U2 (standby with slower exit)"
                       // https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/usb-3-0-lpm-mechanism- https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/u1-and-u2-transitions
-    "SkipBOSDescriptorQuery" = ?; // REG_DWORD
+    "SkipBOSDescriptorQuery" = ?; // queried as 4-byte boolean
     "AlternateSettingFilter" = ?; // REG_BINARY, size must be even and > 0 (data is cached as 16 bit entries "count = byte_size/2")
     "ResetTTOnCancel" = ?; // REG_DWORD
     "NoClearTTBufferOnCancel" = ?; // REG_DWORD, has priority over ResetTTOnCancel
     "PowerUpDelay" = ?; // REG_DWORD?
 
-    "osvc" = ?; // queried as 2 byte data
-    "SkipContainerIdQuery" = ?; // REG_DWORD
-    "MsOs20DescriptorSetInfo" = ?; // REG_BINARY/REG_QWORD
+    "osvc" = ?; // REG_BINARY, "Indicates whether the operating system queried the device for Microsoft-defined USB descriptors. If the previously attempted OS descriptor query was successful, the value contains the vendor code from the OS string descriptor."
+                // 0x0000: The device didn't provide a valid response to the Microsoft OS string descriptor request.
+                // 0x01xx: The device provided a valid response to the Microsoft OS string descriptor request, where xx is the bVendorCode contained in the response.
+    "SkipContainerIdQuery" = ?; // queried as 4-byte boolean
+    "MsOs20DescriptorSetInfo" = ?; // queried as 8-byte
 
-    //"DisableFastEnumeration"
-    //"DisableHotReset"
-    //"DisableSerialNumber"
-    //"DisableSuperSpeed"
-    //"ResetOnResumeS0"
-    //"ResetOnResumeSx"
-    //"SkipSetIsochDelay"
+    //"DontSkipMsOsDescriptor"
+    //"IgnoreBOSDescriptorValidationFailure"
     //"SkipSetSel"
+    //"ResetOnResumeInSuperSpeed"
+    //"AllowInvalidPipeHandles"
+    //"DisableUASP"
+    //"SkipSetIsochDelay"
+    //"ResetOnResumeS0"
+    //"DisableHotReset"
+    //"NonFunctional"
+    //"DisableUsb20HardwareLpm"
+    //"DisableRemoteWakeForUsb20HardwareLpm"
+    //"DisableSuperSpeed"
+    //"IncompatibleWithWindows"
+    //"DisableFastEnumeration"
+    //"AddControllerSuffixedCompatIdToAudioDevices"
+    //"AddMausbSuffixToHardwareId"
+    //"EnablePLDRDuringCyclePort"
+    //"ResetOnErrorInD2Resume"
 ```
 
 > [peripheral/assets | HUBDSM_QueryingRegistryValuesForDevice.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags/HUBDSM_QueryingRegistryValuesForDevice.c)  
