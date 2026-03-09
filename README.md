@@ -615,35 +615,36 @@ See [session-manager-symbols](https://github.com/nohuto/win-registry/blob/main/a
 > [session-manager/assets | GetRegistryQwordValue.c](https://github.com/nohuto/win-registry/blob/main/assets/session-manager/GetRegistryQwordValue.c)  
 > [session-manager/assets | RtlpHpApplySegmentHeapConfigurations.c](https://github.com/nohuto/win-registry/blob/main/assets/session-manager/RtlpHpApplySegmentHeapConfigurations.c)
 
+The comments of some values with more details are based on pseudocode, if so I added the function name to the end of the comment. Search for the function name in [decompiled-pseudocode/tree/main/ntoskrnl](https://github.com/nohuto/decompiled-pseudocode/tree/main/ntoskrnl).
+
 > [!WARNING]
 > Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
 
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel";
-    "AdjustDpcThreshold" = 20; // KiAdjustDpcThreshold
-    "AlwaysTrackIoBoosting" = 0; // PspAlwaysTrackIoBoosting
+    "AdjustDpcThreshold" = 20; // KiAdjustDpcThreshold, per CPU countdown value. When it reaches 1, it's reloaded and current DPC queue depth is incremented up to DpcQueueDepth ("number of clock ticks before DpcQueueDepth is incremented if DPCs are not pending") (KeAccumulateTicks, KiInitPrcb)
+    "AlwaysTrackIoBoosting" = 0; // PspAlwaysTrackIoBoosting enabling forces IO-boost tracking part in PsBoostThreadIoEx
     "AmdTprLowerInterruptDelayConfig" = 0; // KiAmdTprLowerInterruptDelayConfig
-    "BoostingPeriodMultiplier" = 3; // KiNormalPriorityBoostingPeriodMultiplier
+    "BoostingPeriodMultiplier" = 3; // KiNormalPriorityBoostingPeriodMultiplier clamped to 1-20 and used as multiplier in 'NormalPriority AntiStarvation' scheduling paths (KiInitializeNormalPriorityAntiStarvationPolicies, KiPrepareReadyThreadForRescheduling, KiNormalPriorityReadyScan)
     "BugCheckUnexpectedInterrupts" = 0; // KiBugCheckUnexpectedInterrupts
     "CacheAwareScheduling" = 47; // KiCacheAwareScheduling
-    "CacheErrataOverride" = 0; // KiTLBCOverride
-    "CacheIsoBitmap" = 0; // KiCacheIsoBitmap
-    "DebuggerIsStallOwner" = 0; // KiDebuggerIsStallOwner
-    "DebugPollInterval" = 2000; // KiDebugPollInterval
-    "DefaultDynamicHeteroCpuPolicy" = 3; // (policy enum only)
-    // Behavior of Dynamic hetero policy All (0) (all available) Large (1) LargeOrIdle (2) Small (3) SmallOrIdle (4) Dynamic (5) (use priority and other metrics to decide) BiasedSmall (6) (use priority and other metrics, but prefer small) BiasedLarge (7).
+    "CacheErrataOverride" = 0; // KiTLBCOverride, value 1 and other nonzero values set MSR 0xC0011023 differently (KiInitializeCacheErrataSupport, KiInitMachineDependent, KiDisableCacheErrataSource, KeRestoreProcessorSpecificFeatures)
+    "CacheIsoBitmap" = 0; // KiCacheIsoBitmap, if nonzero and "if ( _bittest64(&KeFeatureBits, 0x2Cu) )", value is written to MSR 0xC91 (KeInitializeCatRegisters)
+    "DebuggerIsStallOwner" = 0; // KiDebuggerIsStallOwner (KiSetDebuggerOwner)
+    "DebugPollInterval" = 2000; // KiDebugPollInterval, debugger enabled (KdDebuggerEnabled) timer path uses 10000 * value (KiGetNextTimerExpirationDueTime)
+    "DefaultDynamicHeteroCpuPolicy" = 3; // KiDefaultDynamicHeteroCpuPolicy, behavior of Dynamic hetero policy All (0) (all available) Large (1) LargeOrIdle (2) Small (3) SmallOrIdle (4) Dynamic (5) (use priority and other metrics to decide) BiasedSmall (6) (use priority and other metrics, but prefer small) BiasedLarge (7).
     "DefaultHeteroCpuPolicy" = 5; // KiDefaultHeteroCpuPolicy
     "DeviceOwnerProtectionDowngradeAllowed" = 0; // SeDeviceOwnerProtectionDowngradeAllowed
     "DisableControlFlowGuardExportSuppression" = 0; // PspDisableControlFlowGuardExportSuppression
     "DisableExceptionChainValidation" = 2; // PspSehValidationPolicy
-    "DisableLightWeightSuspend" = 0; // KiDisableLightWeightSuspend
-    "DisableLowQosTimerResolution" = 1; // KeDisableLowQosTimerResolution
+    "DisableLightWeightSuspend" = 0; // KiDisableLightWeightSuspend, nonzero blocks lightweight suspend part in KiSuspendThread and uses the APC path (KiSuspendThread)
+    "DisableLowQosTimerResolution" = 1; // KeDisableLowQosTimerResolution, uses ExpUpdateTimerResolution for specific processes etc? (PspSetProcessTimerResolutionPolicy)
     "DisablePointerParameterAlignmentValidation" = 0; // KiDisablePointerParameterAlignmentValidation
     "DisableTsx" = 0; // KiDisableTsx
-    "DpcCumulativeSoftTimeout" = 120000; // KeDpcCumulativeSoftTimeoutMs
-    "DpcQueueDepth" = 4; // KiMaximumDpcQueueDepth
-    "DpcSoftTimeout" = 20000; // KeDpcSoftTimeoutMs
-    "DPCTimeout" = 20000; // KeDpcTimeoutMs
+    "DpcCumulativeSoftTimeout" = 120000; // KeDpcCumulativeSoftTimeoutMs, range 2000-DpcWatchdogPeriod, gets multiplied by KeVerifierDpcScalingFactor (KiInitDpcThresholds, KiApplyDpcVerificationScaleSettings)
+    "DpcQueueDepth" = 4; // KiMaximumDpcQueueDepth, "Number of DPCs queued before an interrupt will be sent even for Medium or below DPCs"
+    "DpcSoftTimeout" = 20000; // KeDpcSoftTimeoutMs, range 20-DPCTimeout, gets multiplied by KeVerifierDpcScalingFactor (KiInitDpcThresholds, KiApplyDpcVerificationScaleSettings)
+    "DPCTimeout" = 20000; // KeDpcTimeoutMs, data 1-19 = 20, "specific DPC execution time limit control" (KiInitDpcThresholds)
     "DpcWatchdogPeriod" = 120000; // KeDpcWatchdogPeriodMs
     "DpcWatchdogProfileBufferSizeBytes" = 266240; // KeDpcWatchdogProfileBufferSizeBytes
     "DpcWatchdogProfileCumulativeDpcThreshold" = 110000; // KeDpcWatchdogProfileCumulativeDpcThresholdMs
@@ -1442,7 +1443,7 @@ Note on some usbflag values ("queried as 4-byte boolean"), `USBHUB3` reads a 4-b
     //"NonFunctional"
     //"DisableUsb20HardwareLpm"
     //"DisableRemoteWakeForUsb20HardwareLpm"
-    //"DisableSuperSpeed"
+    "DisableSuperSpeed" // "There are certains hubs that we just don't want to support as they are too buggy. We will completely disable SuperSpeed for them."
     //"IncompatibleWithWindows"
     //"DisableFastEnumeration"
     //"AddControllerSuffixedCompatIdToAudioDevices"
@@ -1593,7 +1594,6 @@ aRegistryMachin_13 = "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb";
 ```
 
 ## PnP Device Values
-
 
 Windows Plug and Play (PnP) creates a device node (devnode) for each detected device instance ("The PnP manager is the primary component involved in supporting the ability of Windows to recognize and adapt to changing hardware configurations."). In WinDbg (`!devnode`), `InstancePath` assigns to the device instance key under:
 ```c
