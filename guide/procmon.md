@@ -10,7 +10,7 @@ Start with configuring the filter (`CTRL` + `L`):
 
 You can disable the other activity monitoring:
 
-![](https://github.com/nohuto/win-registry/blob/main/images/monitoring.png)
+![](https://github.com/nohuto/win-registry/blob/main/guide/images/monitoring.png)
 
 If you want to trace all `Reg...` activity, which would use:
 ```c
@@ -39,7 +39,7 @@ Now you'll see all kind of registry activity, what you want to look for is the p
 
 Save the content using `.csv`, afterwards you can remove specific parts of the file, if you want to.
 
-![](https://github.com/nohuto/win-registry/blob/main/images/pmsave.png)
+![](https://github.com/nohuto/win-registry/blob/main/images/guide/images.png)
 
 `CTRL` + `H` (Regular expression):  
 `"Reg\w*"` - Removes the operations  

@@ -1,4 +1,4 @@
-﻿# WPR / [Procmon](https://github.com/nohuto/win-registry/blob/main/guide/procmon.md) Registry Activity Records
+﻿# [WPR](https://github.com/nohuto/win-registry/blob/main/guide/wpr-wpa.md) / [Procmon](https://github.com/nohuto/win-registry/blob/main/guide/procmon.md) Registry Activity Records
 
 Most activities were recorded during boot, there are some others, such as `Steam.txt`, `TLOU2.txt`, `StartAllBack.txt`, and `Lighshot.txt`, that were traced using Procmon during use. You can get the Windowos Performance Toolkit from [ADK](https://go.microsoft.com/fwlink/?linkid=2337875), or install it via `winget`, but this will install more than the Performance Toolkit.
 
@@ -2348,7 +2348,7 @@ See [mmcss-CiConfigInitialize.c](https://github.com/nohuto/win-registry/blob/mai
 
 ```c
 "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\multimedia\\systemprofile";
-    "SystemResponsiveness" = 100; // see documentation below
+    "SystemResponsiveness" = 20; // see win-config section in system\desc
     "NetworkThrottlingIndex" = 10; // 0 becomes 1, 1-70 stay unchanged, 71-4294967294 become 70, 4294967295 stays unchanged
     "NoLazyMode" = 0; // any nonzero value = enabled
     "IdleDetectionCycles" = 2; // valid range is 1-31, otherwise 2 is used
