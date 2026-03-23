@@ -565,6 +565,9 @@ The `GraphicsDrivers\Scheduler` / `GraphicsDrivers\MemoryManager` values are fro
 
 // the 3 keys below are based on a testing system monitor, therefore the defaults will be different for you
 
+"HKLM\\System\\CurrentControlSet\\Control\\GraphicsDrivers\\Configuration"; // from LGPE
+    "DefaultCloneResolutionSetting" = 0; // range 0 (default), 1 (internal), 2 (external), "Set Cloned Monitor Preferred Resolution Source", "Enabling this policy allows to override the default behavior when connecting an additional monitor. It allows control over whether a cloned display prioritizes the internal or external monitor i.e. setting its preferred resolution source. Internal sets the resolution of the main display as the source on both screens. External sets the resolution of the connected (external) display as the source on both screens. Default uses the system's default behavior determined by Windows Settings." This policy is supported on 24H2+
+
 "HKLM\\System\\CurrentControlSet\\Control\\GraphicsDrivers\\Configuration\\<CONFIG_ID>";
     "SetId" = ?; // REG_SZ
     "Timestamp" = ?; // REG_QWORD
