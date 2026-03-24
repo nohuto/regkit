@@ -1146,7 +1146,7 @@ See [power-symbols](https://github.com/nohuto/win-registry/blob/main/assets/powe
     "Win32kCalloutWatchdogTimeoutSeconds" = 30; // PopWin32kCalloutWatchdogTimeoutSeconds (0x0000001E) 
 
     // UmpoRestoreEsOverrideState
-    "EnergySaverState" = 2; // 1 = override state (more power savings)? if != 1 no override? (WNF_PO_ENERGY_SAVER_OVERRIDE/WNF_SEB_ENERGY_SAVER_STATE_V2)
+    "EnergySaverState" = 2; // 1 = override state (more power savings) if != 1 no override? (WNF_PO_ENERGY_SAVER_OVERRIDE/WNF_SEB_ENERGY_SAVER_STATE_V2), this value is controlled by System > Power: Always use energy saver (1=on, 2=off)
 
     // InitializePowerWatchdogTimeoutDefaults
     "PowerWatchdogDrvSetMonitorTimeoutMsec" = 10000; // v10[13]
