@@ -19,6 +19,9 @@ winget install Microsoft.WindowsADK
   - [Power Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#power-values)
   - [DWM Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#dwm-values)
   - [USBFLAGS/USBHUB/USB Values](https://github.com/nohuto/win-registry#usbusbhubusbflags-values)
+    - [USBFLAGS Values](https://github.com/nohuto/win-registry#usbflags-values)
+    - [USB Values](https://github.com/nohuto/win-registry#usb-values)
+    - [USBHUB Values](https://github.com/nohuto/win-registry#usbhub-values)
   - [PnP Device Values](https://github.com/nohuto/win-registry#pnp-device-values)
   - [BCD Edits](https://github.com/nohuto/win-registry#bcd-edits)
   - [Intel NIC Values](https://github.com/nohuto/win-registry?tab=readme-ov-file#intel-nic-values)
@@ -1330,73 +1333,20 @@ See [assets/dwm](https://github.com/nohuto/win-registry/tree/main/assets/dwm) fo
 
 ## USB/USBHUB/USBFLAGS Values
 
-For entries described as "any nonzero", the code treats the DWORD as a boolean, means any nonzero value is equivalent to `1`. Default data is unknown for most values as the driver code only reads the registry and handles fallbacks, note that this is currently based on USBHUB3.sys only, means it's not complete (USBXHCI.sys was used for DisableHCS0Idle & TestRunEsmInWorkItem, Ucx01000.sys for Allow64KLowOrFullSpeedControlTransfers, usbccgp.sys for GenericCompositeUSBDeviceString).
-
 This documentation doesn't include all details, since the repo is used for showing registry values, their default data, ranges and miscellaneous information. See [desc.md#usbflags-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usbflags-values), [desc.md#usb-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usb-values), [desc.md#usbhub-values](https://github.com/nohuto/win-config/blob/main/peripheral/desc.md#usbhub-values) for more details. The USBHUB3.sys included some values located in the device hardware key like `DeviceIdleEnabled`, `DefaultIdleState`, `DeviceIdleIgnoreWakeEnable`, I didn't add them here since it lacks on details, see [desc.md#disable-device-powersavings](https://github.com/nohuto/win-config/blob/main/power/desc.md#disable-device-powersavings).
 
-You can use `!usb3kd.device_info` to get more information on a USB device in the USB 3.0 tree, example:
-```c
-lkd> !usb3.usb_tree
-
-4) !device_info 0xffffb009127ca1f0, !devstack ffffb009127e1d80
-    Current Device State: ConfiguredInD0
-    Desc: USB Receiver
-    USB\VID_046D&PID_C547&REV_0402 Logitech Inc.
-    !ucx_device 0xffffb009127cad00 !xhci_deviceslots 0xffffb0090bc17db0 1 !xhci_info 0xffffb0090bc17db0
-
-lkd> !usb3kd.device_info 0xffffb009127ca1f0
-
-U1Timeout: 0, U2Timeout: 0
-DeviceFlags: DeviceIsComposite MsOsDescriptorNotSupported UsbWakeupSupport 
-DeviceStateFlags: DeviceAttachSuccessful DeviceIsKnown ConfigurationIsValid ConfigDescIsValid 
-                  DeviceStarted InstallMSOSExtEventProcessed IsNative 
-DeviceHackFlags: DisableOnSoftRemove DisableLpm
-```
-The `DisableLpm` DeviceHackFlags exists if the value is set (DisableLPM).
-
-You can see existing `_USB_DEVICE_HACKS` using the dt command:
-```c
-lkd> .load usb3kd
-lkd> dt USBHUB3!_USB_DEVICE_HACKS
-   +0x000 AsUlong32        : Uint4B
-   +0x000 DisableSerialNumber : Pos 0, 1 Bit
-   +0x000 DontSkipMsOsDescriptor : Pos 1, 1 Bit
-   +0x000 ResetOnResumeSx  : Pos 2, 1 Bit
-   +0x000 DisableOnSoftRemove : Pos 3, 1 Bit
-   +0x000 RequestConfigDescOnReset : Pos 4, 1 Bit
-   +0x000 SkipContainerIdQuery : Pos 5, 1 Bit
-   +0x000 IgnoreBOSDescriptorValidationFailure : Pos 6, 1 Bit
-   +0x000 DisableLpm       : Pos 7, 1 Bit
-   +0x000 SkipSetSel       : Pos 8, 1 Bit
-   +0x000 ResetOnResumeInSuperSpeed : Pos 9, 1 Bit
-   +0x000 AllowInvalidPipeHandles : Pos 10, 1 Bit
-   +0x000 DisableUASP      : Pos 11, 1 Bit
-   +0x000 SkipSetIsochDelay : Pos 12, 1 Bit
-   +0x000 ResetOnResumeS0  : Pos 13, 1 Bit
-   +0x000 DisableHotReset  : Pos 14, 1 Bit
-   +0x000 SkipBOSDescriptorQuery : Pos 15, 1 Bit
-   +0x000 NonFunctional    : Pos 16, 1 Bit
-   +0x000 DisableUsb20HardwareLpm : Pos 17, 1 Bit
-   +0x000 DisableRemoteWakeForUsb20HardwareLpm : Pos 18, 1 Bit
-   +0x000 DisableSuperSpeed : Pos 19, 1 Bit
-   +0x000 IncompatibleWithWindows : Pos 20, 1 Bit
-   +0x000 UseWin8DescriptorValidation : Pos 21, 1 Bit
-   +0x000 DisableFastEnumeration : Pos 22, 1 Bit
-   +0x000 DisableRecoveryFromPowerDrain : Pos 23, 1 Bit
-   +0x000 AddControllerSuffixedCompatIdToAudioDevices : Pos 24, 1 Bit
-   +0x000 AddMausbSuffixToHardwareId : Pos 25, 1 Bit
-   +0x000 EnablePLDRDuringCyclePort : Pos 26, 1 Bit
-   +0x000 ResetOnErrorInD2Resume : Pos 27, 1 Bit
-```
-
-> https://github.com/nohuto/windows-driver-docs/blob/staging/windows-driver-docs-pr/debuggercmds/-usb3kd-device-info.md
+### USBFLAGS Values
 
 `HUBDSM_QueryingRegistryValuesForDevice` -> `HUBMISC_QueryAndCacheRegistryValuesForDevice` -> `HUBREG_QueryUsbflagsValuesForDevice`
 
 > [!WARNING]
 > Everything listed below is based on personal research. Mistakes may exist, but I don't think I've made any.
 
+For entries described as "any nonzero", the code treats the DWORD as a boolean, means any nonzero value is equivalent to `1`. Default data is unknown for most values as the driver code only reads the registry and handles fallbacks.
+
 Note on some usbflag values ("queried as 4-byte boolean"), `USBHUB3` reads a 4-byte and handles any nonzero value as enabled. The value type is not enforced, so both `REG_DWORD` and `REG_BINARY` should work if they're a 4-byte nonzero value (that's my current assumption). I would personally use `REG_BINARY` instead of `REG_DWORD` for now, as for example `osvc`, `IgnoreHWSerNum`, `ResetOnResume` are `REG_BINARY` ([usb-device-specific-registry-settings.md](https://github.com/nohuto/windows-driver-docs/blob/staging/windows-driver-docs-pr/usbcon/usb-device-specific-registry-settings.md)).
+
+See [win-config/peripheral/usbflags-values/](https://www.noverse.dev/docs/win-config/peripheral/usbflags-values/) for notes on `USB_DEVICE_HACKS`/miscellaneous information on values.
 
 ```c
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usbflags";
@@ -1468,6 +1418,10 @@ Note on some usbflag values ("queried as 4-byte boolean"), `USBHUB3` reads a 4-b
 > [peripheral/assets | Controller_PopulateTestRegistrySettings.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags/Controller_PopulateTestRegistrySettings.c)  
 > [peripheral/assets | Registry_InitializeAllow64KLowOrFullSpeedControlTransfersFlag.c](https://github.com/nohuto/win-registry/blob/main/assets/usbflags/Registry_InitializeAllow64KLowOrFullSpeedControlTransfersFlag.c)
 
+### USB Values
+
+For entries described as "any nonzero", the code treats the DWORD as a boolean, means any nonzero value is equivalent to `1`. Default data is unknown for most values as the driver code only reads the registry and handles fallbacks.
+
 ```c
 // HUBREG_QueryGlobalUsb20HardwareLpmSettings
 "HKLM\\SYSTEM\\CurrentControlSet\\Control\\usb\\Usb20HardwareLpm"; // g_Usb20HardwareLpmKeyName (aRegistryMachin_8)
@@ -1530,6 +1484,10 @@ Note on some usbflag values ("queried as 4-byte boolean"), `USBHUB3` reads a 4-b
 > [peripheral/assets | HUBREG_QueryUsbHardwareVerifierValue.c](https://github.com/nohuto/win-registry/blob/main/assets/usb/HUBREG_QueryUsbHardwareVerifierValue.c)  
 > [peripheral/assets | ReadManifestAssignedValue.c](https://github.com/nohuto/win-registry/blob/main/assets/usb/ReadManifestAssignedValue.c)  
 > [peripheral/assets | UsbDualRoleFeaturesQueryLocalMachine.c](https://github.com/nohuto/win-registry/blob/main/assets/usb/UsbDualRoleFeaturesQueryLocalMachine.c)
+
+### USBHUB Values
+
+For entries described as "any nonzero", the code treats the DWORD as a boolean, means any nonzero value is equivalent to `1`. Default data is unknown for most values as the driver code only reads the registry and handles fallbacks.
 
 ```c
 // HUBREG_QueryGlobalHubValues
