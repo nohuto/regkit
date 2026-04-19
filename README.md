@@ -161,15 +161,13 @@ Note that WPR doesn't pass the type/data so you'll have to find that out on your
 
 It's recommended that you create your own trace, as the templates are based on my system and IDs such as those for the disk won't be correct for your system. Follow the [wpr-wpa.md](https://github.com/nohuto/regkit/blob/main/guide/wpr-wpa.md) guide to create a trace which regkit can use.
 
-> [!WARNING]
-> Loading traces affects startup time and memory consumption. Therefore, it's recommended to either load only one trace or none at all if you don't use them frequently (loading a trace takes only a few seconds, so it's better to load it when needed than to keep it active all the time). Parsing them doesn't affect the UI/display time, as a different thread is used for it.
+Loading traces affects startup time and memory consumption. Therefore, it's recommended to either load only one trace or none at all if you don't use them frequently (loading a trace takes only a few seconds, so it's better to load it when needed than to keep it active all the time). Parsing them doesn't affect the UI/display time, as a different thread is used for it.
 
 ## Default Menu
 
 Default presets are `.reg` exports that fill the value list's `Default` column with data from new installations. If a value is included in the registry but not in the defaults list, it'll be displayed as `(Missing)`.
 
-> [!WARNING]
-> Loading your entire *Computer* export in here isn't recommended as it'll take a long time to parse the file. Therefore split top level keys into smaller parts.
+Loading your entire *Computer* export in here isn't recommended as it'll take a long time to parse the file. Therefore split top level keys into smaller parts.
 
 The current built in list isn't complete, I'll expand it over time.
 
@@ -177,8 +175,7 @@ The current built in list isn't complete, I'll expand it over time.
 
 RegKit can relaunch itself under different security contexts because many registry areas are protected by ACLs and/or owned by TI (TrustedInstaller). Some keys are owned by TI, and only that SID has write permissions (SYSTEM may be read-only). If a key is readable but writes fail with access denied, check the owner and ACLs. If the owner is TI, use the TI mode, if it is SYSTEM, use SYSTEM. Use the Options menu to restart with higher rights or to make the app always relaunch with them on startup.
 
-> [!CAUTION]
-> These levels can bypass protections, use them only when you understand the impact.
+These levels can bypass protections, use them only when you understand the impact.
 
 - Restart as Admin: uses UAC elevation for a standard elevated token
 - Restart as SYSTEM: uses an elevated process to duplicate a SYSTEM token, then creates a new RegKit process in the active session
