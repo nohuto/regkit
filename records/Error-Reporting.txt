@@ -1,4 +1,4 @@
-Boot Record | Authored by Nohuto | Based on 24H2 / IoT Enterprise LTSC | discord.gg/E2ybG4j9jU | github.com/nohuto/regkit
+Boot Record | Authored by Nohuto | Based on 25H2 | discord.gg/E2ybG4j9jU | github.com/nohuto/regkit
 
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : ArchiveFolderCountLimit
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : AutoApproveOSDumps
@@ -15,9 +15,9 @@ Boot Record | Authored by Nohuto | Based on 24H2 / IoT Enterprise LTSC | discord
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : CorporateWerUploadOnFreeNetworksOnly
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : CorporateWerUseAuthentication
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : CorporateWerUseSSL
+\Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : DISABLED
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : DeferCabUpload
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : DisableArchive
-\Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : Disabled
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : DisableEnterpriseAuthProxy
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : DisableWerUpload
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : DontSendAdditionalData
@@ -36,11 +36,13 @@ Boot Record | Authored by Nohuto | Based on 24H2 / IoT Enterprise LTSC | discord
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : MinFreeDiskSpace
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : MinQueueSize
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : NoHeapDumpOnQueue
-\Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : OobeCompleted
+\Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : OOBECompleted
+\Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : PreviousRing
+\Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : PreviousTelemetryMode
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : QueueNoPesterInterval
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : QueuePesterInterval
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : QueueSizeMaxPercentFreeDisk
-\Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : source
+\Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : Source
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : StorePath
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : UploadOnFreeNetworksOnly
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : User
