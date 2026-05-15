@@ -2335,34 +2335,34 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     ShellExecuteW(hwnd_, L"open", L"https://github.com/nohuto/regkit#capture-table", nullptr, nullptr, SW_SHOWNORMAL);
     return true;
   case cmd::kResearchDxgKernel:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/dxg-kernel-values/#registry-values-details", nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/dxg-kernel-values/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
     return true;
   case cmd::kResearchSessionManager:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/kernel-values/#registry-values-details", nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/kernel-values/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
     return true;
   case cmd::kResearchPower:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/power/power-values/#registry-values-details", nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/power/power-values/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
     return true;
   case cmd::kResearchDwm:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/dwm-values/#registry-values-details", nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/dwm-values/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
     return true;
   case cmd::kResearchUsb:
-    ShellExecuteW(hwnd_, L"open", L"https://github.com/nohuto/regkit#registry-values-details", nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteW(hwnd_, L"open", L"https://github.com/nohuto/regkit#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
     return true;
   case cmd::kResearchBcd:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/bcd-edits/#registry-values-details", nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/bcd-edits/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
     return true;
   case cmd::kResearchIntelNic:
-    ShellExecuteW(hwnd_, L"open", L"https://github.com/nohuto/regkit#registry-values-details", nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteW(hwnd_, L"open", L"https://github.com/nohuto/regkit#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
     return true;
   case cmd::kResearchMmcss:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/mmcss-values/#registry-values-details", nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/mmcss-values/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
     return true;
   case cmd::kResearchStorNvme:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/peripheral/stornvme-values/#registry-values-details", nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/peripheral/stornvme-values/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
     return true;
   case cmd::kResearchNotifications:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/disable-notifications/#registry-research", nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/disable-notifications/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
     return true;
   case cmd::kWindowNew:
     ui::LaunchNewInstance();
