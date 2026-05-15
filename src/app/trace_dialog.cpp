@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "app/trace_dialog.h"
+#include "../../include/app/trace_dialog.h"
 
 #include <algorithm>
 #include <cwchar>
@@ -26,8 +26,8 @@
 
 #include <commctrl.h>
 
-#include "app/theme.h"
-#include "app/ui_helpers.h"
+#include "../../include/app/theme.h"
+#include "../../include/app/ui_helpers.h"
 
 // Older SDKs omit the NMTVITEMCHANGE struct even though TVN_ITEMCHANGED is
 // defined.

@@ -16,12 +16,14 @@
 
 #pragma once
 
+#include "../win32/windows_config.h"
+
 #include <windows.h>
 #include <commctrl.h>
 
 #include <string>
 
-namespace regkit::ui {
+namespace regkit { namespace ui {
 
 LOGFONTW DefaultUIFontLogFont();
 HFONT DefaultUIFont();
@@ -39,4 +41,4 @@ int PromptYesNoCancel(HWND owner, const std::wstring& message, const std::wstrin
 int PromptChoice(HWND owner, const std::wstring& message, const std::wstring& title, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label);
 bool LaunchNewInstance();
 
-} // namespace regkit::ui
+} } // namespace regkit::ui

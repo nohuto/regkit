@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "app/toolbar.h"
+#include "../../include/app/toolbar.h"
 
-#include "win32/icon_resources.h"
+#include "../../include/win32/icon_resources.h"
 
 namespace regkit {
 

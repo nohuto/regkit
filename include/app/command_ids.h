@@ -16,7 +16,8 @@
 
 #pragma once
 
-namespace regkit::cmd {
+#include <minwindef.h>
+namespace regkit { namespace cmd {
 
 constexpr int kFileExit = 2000;
 constexpr int kFileImport = 2001;
@@ -164,11 +165,11 @@ constexpr int kHeaderSizeToFit = 4000;
 constexpr int kHeaderSizeAll = 4001;
 constexpr int kHeaderToggleBase = 4100;
 
-} // namespace regkit::cmd
+} } // namespace regkit::cmd
 
-namespace regkit::rowkind {
+namespace regkit { namespace rowkind {
 
 constexpr LPARAM kKey = 1;
 constexpr LPARAM kValue = 2;
 
-} // namespace regkit::rowkind
+} } // namespace regkit::rowkind

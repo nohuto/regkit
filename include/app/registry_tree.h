@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include "../win32/windows_config.h"
+
 #include <windows.h>
 #include <commctrl.h>
 
@@ -24,7 +26,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "registry/registry_provider.h"
+#include "../registry/registry_provider.h"
 
 namespace regkit {
 

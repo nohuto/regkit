@@ -16,9 +16,11 @@
 
 #pragma once
 
+#include "../win32/windows_config.h"
+
 #include <windows.h>
 
-#include "win32/win32_helpers.h"
+#include "../win32/win32_helpers.h"
 
 namespace regkit {
 

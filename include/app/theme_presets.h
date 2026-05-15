@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "app/theme.h"
+#include "theme.h"
 
 namespace regkit {
 

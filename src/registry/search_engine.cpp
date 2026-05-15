@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "registry/search_engine.h"
+#include "../../include/registry/search_engine.h"
 
 #include <algorithm>
 #include <condition_variable>

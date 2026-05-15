@@ -16,12 +16,14 @@
 
 #pragma once
 
+#include "../win32/windows_config.h"
+
 #include <windows.h>
 
 #include <string>
 #include <vector>
 
-#include "registry/search_engine.h"
+#include "../registry/search_engine.h"
 
 namespace regkit {
 

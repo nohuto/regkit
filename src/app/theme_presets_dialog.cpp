@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "app/app_window.h"
+#include "../../include/app/app_window.h"
 
 #include <algorithm>
 #include <commctrl.h>
@@ -22,8 +22,8 @@
 #include <uxtheme.h>
 #include <vsstyle.h>
 
-#include "app/ui_helpers.h"
-#include "app/value_dialogs.h"
+#include "../../include/app/ui_helpers.h"
+#include "../../include/app/value_dialogs.h"
 
 namespace regkit {
 

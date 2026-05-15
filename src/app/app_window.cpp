@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "app/app_window.h"
+#include "../../include/app/app_window.h"
 
 #include <algorithm>
 #include <chrono>
@@ -40,15 +40,14 @@
 #include <windowsx.h>
 #include <winternl.h>
 
-#include "app/command_ids.h"
-#include "app/registry_io.h"
-#include "app/registry_security.h"
-#include "app/ui_helpers.h"
-#include "app/value_dialogs.h"
-#include "registry/registry_provider.h"
-#include "resource.h"
-#include "win32/icon_resources.h"
-#include "win32/win32_helpers.h"
+#include "../../include/app/command_ids.h"
+#include "../../include/app/registry_security.h"
+#include "../../include/app/ui_helpers.h"
+#include "../../include/app/value_dialogs.h"
+#include "../../include/registry/registry_provider.h"
+#include "../../include/win32/icon_resources.h"
+#include "../../include/win32/win32_helpers.h"
+#include "../../resources/resource.h"
 
 namespace regkit {
 
@@ -97,6 +96,25 @@ constexpr wchar_t kRestartSystemArg[] = L"--restart-system";
 constexpr wchar_t kRestartTiArg[] = L"--restart-ti";
 constexpr int kMaxRecentTraces = cmd::kTraceRecentMax - cmd::kTraceRecentBase + 1;
 constexpr int kMaxRecentDefaults = cmd::kDefaultRecentMax - cmd::kDefaultRecentBase + 1;
+
+template <typename T>
+T ClampValue(T value, T low, T high) {
+  return value < low ? low : (high < value ? high : value);
+}
+
+char* MutableData(std::string& text) {
+  return text.empty() ? nullptr : &text[0];
+}
+
+wchar_t* MutableData(std::wstring& text) {
+  return text.empty() ? nullptr : &text[0];
+}
+
+template <typename T>
+void ReleasePostedPayload(std::unique_ptr<T>& payload) {
+  T* posted_payload = payload.release();
+  (void)posted_payload;
+}
 
 bool ParseBundledTraceLabel(const std::wstring& path, std::wstring* label);
 constexpr wchar_t kStandardGroupLabel[] = L"Standart Hives";
@@ -490,12 +508,12 @@ int FetchListViewItemText(HWND list, int index, int column, std::wstring* buffer
   }
   LVITEMW item = {};
   item.iSubItem = column;
-  item.pszText = buffer->data();
+  item.pszText = MutableData(*buffer);
   item.cchTextMax = static_cast<int>(buffer->size());
   int length = static_cast<int>(SendMessageW(list, LVM_GETITEMTEXTW, static_cast<WPARAM>(index), reinterpret_cast<LPARAM>(&item)));
   if (length >= static_cast<int>(buffer->size() - 1)) {
     buffer->resize(static_cast<size_t>(length) + 2);
-    item.pszText = buffer->data();
+    item.pszText = MutableData(*buffer);
     item.cchTextMax = static_cast<int>(buffer->size());
     length = static_cast<int>(SendMessageW(list, LVM_GETITEMTEXTW, static_cast<WPARAM>(index), reinterpret_cast<LPARAM>(&item)));
   }
@@ -647,7 +665,7 @@ std::wstring FindAssetsIconsRoot() {
   DWORD len = GetCurrentDirectoryW(0, nullptr);
   if (len > 0) {
     std::wstring cwd(len, L'\0');
-    DWORD written = GetCurrentDirectoryW(len, cwd.data());
+    DWORD written = GetCurrentDirectoryW(len, MutableData(cwd));
     if (written != 0) {
       if (written < cwd.size() && cwd[written] == L'\0') {
         cwd.resize(written);
@@ -949,7 +967,7 @@ bool ReadFileBinary(const std::wstring& path, std::string* buffer) {
   }
   std::string temp(static_cast<size_t>(size.QuadPart), '\0');
   DWORD read = 0;
-  bool ok = ReadFile(file, temp.data(), static_cast<DWORD>(temp.size()), &read, nullptr) != 0;
+  bool ok = ReadFile(file, MutableData(temp), static_cast<DWORD>(temp.size()), &read, nullptr) != 0;
   CloseHandle(file);
   if (!ok || read == 0) {
     return false;
@@ -3397,7 +3415,7 @@ public:
     return S_OK;
   }
 
-  HRESULT STDMETHODCALLTYPE Expand(PCWSTR text) override {
+  HRESULT STDMETHODCALLTYPE Expand(PCWSTR text) noexcept override {
     if (!text) {
       query_override_.clear();
       return S_OK;
@@ -3419,7 +3437,7 @@ private:
       return L"";
     }
     std::wstring text(static_cast<size_t>(length) + 1, L'\0');
-    GetWindowTextW(edit_, text.data(), length + 1);
+    GetWindowTextW(edit_, MutableData(text), length + 1);
     text.resize(static_cast<size_t>(length));
     return text;
   }
@@ -3496,7 +3514,7 @@ LRESULT CALLBACK AutoCompleteListBoxSubclassProc(HWND hwnd, UINT msg, WPARAM wpa
       int len = static_cast<int>(SendMessageW(hwnd, LB_GETTEXTLEN, i, 0));
       if (len > 0 && len < 8192) {
         std::wstring item_text(static_cast<size_t>(len) + 1, L'\0');
-        SendMessageW(hwnd, LB_GETTEXT, static_cast<WPARAM>(i), reinterpret_cast<LPARAM>(item_text.data()));
+        SendMessageW(hwnd, LB_GETTEXT, static_cast<WPARAM>(i), reinterpret_cast<LPARAM>(MutableData(item_text)));
         item_text.resize(static_cast<size_t>(len));
         RECT text_rect = item_rect;
         text_rect.left += 6;
@@ -7096,7 +7114,7 @@ void MainWindow::ApplyDragLayout() {
   int content_total_height = std::max(0, status_top - y);
   int min_history = kMinHistoryHeight;
   int max_history = std::max(min_history, content_total_height - kHistoryMaxPadding);
-  int history_height = show_history ? std::clamp(history_height_, min_history, max_history) : 0;
+  int history_height = show_history ? ClampValue(history_height_, min_history, max_history) : 0;
   if (show_history) {
     history_height_ = history_height;
   }
@@ -7121,7 +7139,7 @@ void MainWindow::ApplyDragLayout() {
   int min_tree = kMinTreeWidth;
   int min_list = kMinValueListWidth;
   int max_tree = std::max(min_tree, available_width - min_list - kSplitterWidth);
-  int tree_width = show_tree ? std::clamp(tree_width_, min_tree, max_tree) : 0;
+  int tree_width = show_tree ? ClampValue(tree_width_, min_tree, max_tree) : 0;
   if (show_tree) {
     tree_width_ = tree_width;
   }
@@ -7284,7 +7302,7 @@ void MainWindow::UpdateSplitterTrack(int client_x) {
     return;
   }
   int desired = splitter_start_width_ + (client_x - splitter_start_x_);
-  desired = std::clamp(desired, splitter_min_width_, splitter_max_width_);
+  desired = ClampValue(desired, splitter_min_width_, splitter_max_width_);
   if (desired == tree_width_) {
     return;
   }
@@ -7297,7 +7315,7 @@ void MainWindow::UpdateHistorySplitterTrack(int client_y) {
     return;
   }
   int desired = history_splitter_start_height_ - (client_y - history_splitter_start_y_);
-  desired = std::clamp(desired, history_splitter_min_height_, history_splitter_max_height_);
+  desired = ClampValue(desired, history_splitter_min_height_, history_splitter_max_height_);
   if (desired == history_height_) {
     return;
   }
@@ -7798,7 +7816,7 @@ void MainWindow::LayoutControls(int width, int height) {
       int available = std::max(0, tabs_width);
       int min_needed = kTabMinWidth + filter_min_width + filter_gap;
       if (available >= min_needed) {
-        int target_width = std::clamp(available / 4, filter_min_width, filter_max_width);
+        int target_width = ClampValue(available / 4, filter_min_width, filter_max_width);
         int filter_width = std::min(target_width, std::max(filter_min_width, available - kTabMinWidth - filter_gap));
         tabs_width = std::max(kTabMinWidth, available - filter_width - filter_gap);
         int filter_y = y + std::max(0, (tabs_height - filter_height) / 2);
@@ -7818,7 +7836,7 @@ void MainWindow::LayoutControls(int width, int height) {
       }
     } else if (!show_tabs && show_filter) {
       int available = std::max(0, tabs_width);
-      int filter_width = std::clamp(available, filter_min_width, filter_max_width);
+      int filter_width = ClampValue(available, filter_min_width, filter_max_width);
       int filter_y = y + std::max(0, (tabs_height - filter_height) / 2);
       int filter_x = padding + std::max(0, tabs_width - filter_width);
       place(filter_edit_, filter_x, filter_y, filter_width, filter_height);
@@ -7849,7 +7867,7 @@ void MainWindow::LayoutControls(int width, int height) {
   int content_total_height = std::max(0, status_top - y);
   int min_history = kMinHistoryHeight;
   int max_history = std::max(min_history, content_total_height - kHistoryMaxPadding);
-  int history_height = show_history ? std::clamp(history_height_, min_history, max_history) : 0;
+  int history_height = show_history ? ClampValue(history_height_, min_history, max_history) : 0;
   if (show_history) {
     history_height_ = history_height;
   }
@@ -11348,7 +11366,7 @@ bool MainWindow::ReadSearchResults(const std::wstring& path, std::vector<SearchR
   }
   std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
   DWORD read = 0;
-  bool ok = ReadFile(file, buffer.data(), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
+  bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
   CloseHandle(file);
   if (!ok) {
     return false;
@@ -11519,7 +11537,7 @@ void MainWindow::LoadTabs() {
         if (GetFileSizeEx(file, &size) && size.QuadPart >= 0 && size.QuadPart <= static_cast<LONGLONG>(std::numeric_limits<int>::max())) {
           std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
           DWORD read = 0;
-          if (ReadFile(file, buffer.data(), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0) {
+          if (ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0) {
             buffer.resize(read);
             if (buffer.size() >= 3 && static_cast<unsigned char>(buffer[0]) == 0xEF && static_cast<unsigned char>(buffer[1]) == 0xBB && static_cast<unsigned char>(buffer[2]) == 0xBF) {
               buffer.erase(0, 3);
@@ -11611,7 +11629,7 @@ void MainWindow::LoadTabs() {
 
   int count = TabCtrl_GetItemCount(tab_);
   if (count > 0) {
-    int sel = std::clamp(active_index, 0, count - 1);
+    int sel = ClampValue(active_index, 0, count - 1);
     TabCtrl_SetCurSel(tab_, sel);
     if (IsSearchTabIndex(sel)) {
       active_search_tab_index_ = sel;
@@ -11784,7 +11802,7 @@ void MainWindow::LoadComments() {
   }
   std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
   DWORD read = 0;
-  bool ok = ReadFile(file, buffer.data(), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
+  bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
   CloseHandle(file);
   if (!ok || read == 0) {
     return;
@@ -11914,7 +11932,7 @@ bool MainWindow::ImportCommentsFromFile(const std::wstring& path) {
     }
     std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
     DWORD read = 0;
-    bool ok = ReadFile(file, buffer.data(), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
+    bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
     CloseHandle(file);
     if (!ok || read == 0) {
       return false;
@@ -12156,7 +12174,7 @@ void MainWindow::LoadSettings() {
   }
   std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
   DWORD read = 0;
-  bool ok = ReadFile(file, buffer.data(), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
+  bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
   CloseHandle(file);
   if (!ok || read == 0) {
     return;
@@ -12576,7 +12594,7 @@ void MainWindow::LoadTreeState() {
   }
   std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
   DWORD read = 0;
-  bool ok = ReadFile(file, buffer.data(), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
+  bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
   CloseHandle(file);
   if (!ok || read == 0) {
     return;
@@ -13089,7 +13107,7 @@ void MainWindow::StartValueListWorker() {
         continue;
       }
       if (PostMessageW(task->hwnd, kValueListReadyMessage, static_cast<WPARAM>(task->generation), reinterpret_cast<LPARAM>(payload.get())) != 0) {
-        payload.release();
+        ReleasePostedPayload(payload);
       }
     }
   });
@@ -13131,7 +13149,7 @@ void MainWindow::StartTraceParseThread(TraceParseSession* session) {
       if (!hwnd || !IsWindow(hwnd) || !PostMessageW(hwnd, kTraceParseBatchMessage, 0, reinterpret_cast<LPARAM>(payload.get()))) {
         return;
       }
-      payload.release();
+      ReleasePostedPayload(payload);
     };
 
     std::string buffer;
@@ -13252,7 +13270,7 @@ void MainWindow::StartDefaultParseThread(DefaultParseSession* session) {
       if (!hwnd || !IsWindow(hwnd) || !PostMessageW(hwnd, kDefaultParseBatchMessage, 0, reinterpret_cast<LPARAM>(payload.get()))) {
         return;
       }
-      payload.release();
+      ReleasePostedPayload(payload);
     };
 
     std::wstring content;
@@ -13811,7 +13829,7 @@ void MainWindow::LoadTraceSettings() {
   }
   std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
   DWORD read = 0;
-  bool ok = ReadFile(file, buffer.data(), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
+  bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
   CloseHandle(file);
   if (!ok || read == 0) {
     return;
@@ -14027,7 +14045,7 @@ void MainWindow::LoadActiveTraces() {
   }
   std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
   DWORD read = 0;
-  bool ok = ReadFile(file, buffer.data(), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
+  bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
   CloseHandle(file);
   if (!ok || read == 0) {
     return;
@@ -14369,7 +14387,7 @@ bool MainWindow::IsProcessTrustedInstaller() const {
 bool MainWindow::RestartAsAdmin() {
   std::wstring exe_path;
   exe_path.resize(MAX_PATH);
-  DWORD len = GetModuleFileNameW(nullptr, exe_path.data(), static_cast<DWORD>(exe_path.size()));
+  DWORD len = GetModuleFileNameW(nullptr, MutableData(exe_path), static_cast<DWORD>(exe_path.size()));
   if (len == 0 || len >= exe_path.size()) {
     ui::ShowError(hwnd_, L"Failed to locate the executable path.");
     return false;
@@ -14387,7 +14405,7 @@ bool MainWindow::RestartAsAdmin() {
 bool MainWindow::RestartAsSystem() {
   std::wstring exe_path;
   exe_path.resize(MAX_PATH);
-  DWORD len = GetModuleFileNameW(nullptr, exe_path.data(), static_cast<DWORD>(exe_path.size()));
+  DWORD len = GetModuleFileNameW(nullptr, MutableData(exe_path), static_cast<DWORD>(exe_path.size()));
   if (len == 0 || len >= exe_path.size()) {
     ui::ShowError(hwnd_, L"Failed to locate the executable path.");
     return false;
@@ -14427,7 +14445,7 @@ bool MainWindow::RestartAsSystem() {
 bool MainWindow::RestartAsTrustedInstaller() {
   std::wstring exe_path;
   exe_path.resize(MAX_PATH);
-  DWORD len = GetModuleFileNameW(nullptr, exe_path.data(), static_cast<DWORD>(exe_path.size()));
+  DWORD len = GetModuleFileNameW(nullptr, MutableData(exe_path), static_cast<DWORD>(exe_path.size()));
   if (len == 0 || len >= exe_path.size()) {
     ui::ShowError(hwnd_, L"Failed to locate the executable path.");
     return false;
@@ -14467,7 +14485,7 @@ bool MainWindow::RestartAsTrustedInstaller() {
 void MainWindow::SyncReplaceRegeditState() {
   std::wstring exe_path;
   exe_path.resize(MAX_PATH);
-  DWORD len = GetModuleFileNameW(nullptr, exe_path.data(), static_cast<DWORD>(exe_path.size()));
+  DWORD len = GetModuleFileNameW(nullptr, MutableData(exe_path), static_cast<DWORD>(exe_path.size()));
   if (len == 0 || len >= exe_path.size()) {
     return;
   }
@@ -14491,7 +14509,7 @@ void MainWindow::SyncReplaceRegeditState() {
 
   std::wstring debugger;
   debugger.resize(size / sizeof(wchar_t));
-  result = RegQueryValueExW(base, L"Debugger", nullptr, &type, reinterpret_cast<LPBYTE>(debugger.data()), &size);
+  result = RegQueryValueExW(base, L"Debugger", nullptr, &type, reinterpret_cast<LPBYTE>(MutableData(debugger)), &size);
   RegCloseKey(base);
   if (result != ERROR_SUCCESS) {
     replace_regedit_ = false;
@@ -14547,7 +14565,7 @@ void MainWindow::SyncReplaceRegeditState() {
 void MainWindow::ReplaceRegedit(bool enable) {
   std::wstring exe_path;
   exe_path.resize(MAX_PATH);
-  DWORD len = GetModuleFileNameW(nullptr, exe_path.data(), static_cast<DWORD>(exe_path.size()));
+  DWORD len = GetModuleFileNameW(nullptr, MutableData(exe_path), static_cast<DWORD>(exe_path.size()));
   if (len == 0 || len >= exe_path.size()) {
     ui::ShowError(hwnd_, L"Failed to locate the executable path.");
     return;
@@ -16855,7 +16873,7 @@ bool MainWindow::OpenRegFileTab(const std::wstring& path) {
       if (!hwnd || !IsWindow(hwnd) || !PostMessageW(hwnd, kRegFileLoadReadyMessage, 0, reinterpret_cast<LPARAM>(payload.get()))) {
         return;
       }
-      payload.release();
+      ReleasePostedPayload(payload);
     });
     reg_file_parse_sessions_.emplace(path_lower, std::move(session));
   };

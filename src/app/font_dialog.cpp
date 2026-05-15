@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "app/font_dialog.h"
+#include "../../include/app/font_dialog.h"
 
 #include <algorithm>
 #include <commdlg.h>
@@ -22,7 +22,7 @@
 #include <dlgs.h>
 #include <uxtheme.h>
 
-#include "app/theme.h"
+#include "../../include/app/theme.h"
 
 namespace regkit {
 

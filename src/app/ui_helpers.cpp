@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "app/ui_helpers.h"
+#include "../../include/app/ui_helpers.h"
 
 #include <algorithm>
 #include <cwchar>
@@ -25,8 +25,8 @@
 #include <shellapi.h>
 #include <uxtheme.h>
 
-#include "app/theme.h"
-#include "win32/win32_helpers.h"
+#include "../../include/app/theme.h"
+#include "../../include/win32/win32_helpers.h"
 
 namespace regkit::ui {
 

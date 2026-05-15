@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "app/app_window.h"
+#include "../../include/app/app_window.h"
 
 #include <algorithm>
 #include <commctrl.h>
@@ -25,17 +25,17 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "app/command_ids.h"
-#include "app/favorites_store.h"
-#include "app/font_dialog.h"
-#include "app/registry_io.h"
-#include "app/theme.h"
-#include "app/ui_helpers.h"
-#include "app/value_dialogs.h"
-#include "registry/registry_provider.h"
-#include "registry/search_engine.h"
-#include "resource.h"
-#include "win32/win32_helpers.h"
+#include "../../include/app/command_ids.h"
+#include "../../include/app/favorites_store.h"
+#include "../../include/app/font_dialog.h"
+#include "../../include/app/registry_io.h"
+#include "../../include/app/theme.h"
+#include "../../include/app/ui_helpers.h"
+#include "../../include/app/value_dialogs.h"
+#include "../../include/registry/registry_provider.h"
+#include "../../include/registry/search_engine.h"
+#include "../../include/win32/win32_helpers.h"
+#include "../../resources/resource.h"
 
 namespace regkit {
 
@@ -286,12 +286,12 @@ int FetchListViewItemText(HWND list, int index, int column, std::wstring* buffer
   }
   LVITEMW item = {};
   item.iSubItem = column;
-  item.pszText = buffer->data();
+  item.pszText = &(*buffer)[0];
   item.cchTextMax = static_cast<int>(buffer->size());
   int length = static_cast<int>(SendMessageW(list, LVM_GETITEMTEXTW, static_cast<WPARAM>(index), reinterpret_cast<LPARAM>(&item)));
   if (length >= static_cast<int>(buffer->size() - 1)) {
     buffer->resize(static_cast<size_t>(length) + 2);
-    item.pszText = buffer->data();
+    item.pszText = &(*buffer)[0];
     item.cchTextMax = static_cast<int>(buffer->size());
     length = static_cast<int>(SendMessageW(list, LVM_GETITEMTEXTW, static_cast<WPARAM>(index), reinterpret_cast<LPARAM>(&item)));
   }
@@ -675,7 +675,7 @@ bool ReadRegFileText(const std::wstring& path, std::wstring* out) {
   }
   std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
   DWORD read = 0;
-  bool ok = ReadFile(file, buffer.data(), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
+  bool ok = ReadFile(file, &buffer[0], static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
   CloseHandle(file);
   if (!ok || read == 0) {
     return false;
@@ -1115,8 +1115,9 @@ std::wstring ReadComboText(HWND combo) {
   if (length <= 0) {
     return text;
   }
-  text.resize(static_cast<size_t>(length));
-  GetWindowTextW(combo, text.data(), length + 1);
+  text.resize(static_cast<size_t>(length) + 1);
+  int copied = GetWindowTextW(combo, &text[0], length + 1);
+  text.resize(static_cast<size_t>(copied));
   return text;
 }
 
@@ -1130,8 +1131,9 @@ std::wstring ReadDialogText(HWND dlg, int id) {
     return L"";
   }
   std::wstring text;
-  text.resize(static_cast<size_t>(length));
-  GetWindowTextW(ctrl, text.data(), length + 1);
+  text.resize(static_cast<size_t>(length) + 1);
+  int copied = GetWindowTextW(ctrl, &text[0], length + 1);
+  text.resize(static_cast<size_t>(copied));
   return text;
 }
 

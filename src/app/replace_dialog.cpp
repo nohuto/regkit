@@ -14,16 +14,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "app/replace_dialog.h"
+#include "../../include/app/replace_dialog.h"
 
 #include <algorithm>
 
 #include <commctrl.h>
 #include <uxtheme.h>
 
-#include "app/search_dialog.h"
-#include "app/theme.h"
-#include "app/ui_helpers.h"
+#include "../../include/app/search_dialog.h"
+#include "../../include/app/theme.h"
+#include "../../include/app/ui_helpers.h"
 
 namespace regkit {
 

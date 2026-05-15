@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include "windows_config.h"
+
 #include <windows.h>
 
 #include <string>

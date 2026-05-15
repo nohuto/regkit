@@ -16,14 +16,18 @@
 
 #pragma once
 
-#include "../win32/windows_config.h"
+#ifndef UNICODE
+#define UNICODE
+#endif
 
-#include <windows.h>
+#ifndef _UNICODE
+#define _UNICODE
+#endif
 
-#include "../registry/registry_provider.h"
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 
-namespace regkit {
-
-bool ShowRegistryPermissions(HWND owner, const RegistryNode& node);
-
-} // namespace regkit
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif

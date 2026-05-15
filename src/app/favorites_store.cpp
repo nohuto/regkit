@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "app/favorites_store.h"
+#include "../../include/app/favorites_store.h"
 
 #include <algorithm>
 #include <cwchar>
@@ -25,7 +25,7 @@
 
 #include <shlobj.h>
 
-#include "win32/win32_helpers.h"
+#include "../../include/win32/win32_helpers.h"
 
 namespace regkit {
 

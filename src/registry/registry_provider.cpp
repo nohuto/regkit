@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "registry/registry_provider.h"
+#include "../../include/registry/registry_provider.h"
 
 #include <algorithm>
 #include <cwctype>
@@ -26,7 +26,7 @@
 
 #include <winternl.h>
 
-#include "win32/win32_helpers.h"
+#include "../../include/win32/win32_helpers.h"
 
 namespace regkit {
 

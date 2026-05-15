@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include "../win32/windows_config.h"
+
 #include <windows.h>
 #include <commctrl.h>
 
@@ -30,17 +32,17 @@
 #include <unordered_set>
 #include <vector>
 
-#include "app/registry_tree.h"
-#include "app/replace_dialog.h"
-#include "app/search_dialog.h"
-#include "app/theme.h"
-#include "app/theme_presets.h"
-#include "app/toolbar.h"
-#include "app/trace_dialog.h"
-#include "app/value_list.h"
-#include "registry/registry_provider.h"
-#include "registry/search_engine.h"
-#include "win32/win32_helpers.h"
+#include "registry_tree.h"
+#include "replace_dialog.h"
+#include "search_dialog.h"
+#include "theme.h"
+#include "theme_presets.h"
+#include "toolbar.h"
+#include "trace_dialog.h"
+#include "value_list.h"
+#include "../registry/registry_provider.h"
+#include "../registry/search_engine.h"
+#include "../win32/win32_helpers.h"
 
 struct IAutoComplete2;
 struct IEnumString;

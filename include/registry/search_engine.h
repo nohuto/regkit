@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include "registry/registry_provider.h"
+#include "registry_provider.h"
 
 namespace regkit {
 

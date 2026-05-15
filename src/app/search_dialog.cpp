@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "app/search_dialog.h"
+#include "../../include/app/search_dialog.h"
 
 #include <algorithm>
 #include <limits>
@@ -23,12 +23,12 @@
 #include <commctrl.h>
 #include <shlobj.h>
 
-#include "app/registry_tree.h"
-#include "app/theme.h"
-#include "app/ui_helpers.h"
-#include "app/value_dialogs.h"
-#include "registry/registry_provider.h"
-#include "win32/win32_helpers.h"
+#include "../../include/app/registry_tree.h"
+#include "../../include/app/theme.h"
+#include "../../include/app/ui_helpers.h"
+#include "../../include/app/value_dialogs.h"
+#include "../../include/registry/registry_provider.h"
+#include "../../include/win32/win32_helpers.h"
 
 namespace regkit {
 

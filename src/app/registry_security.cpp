@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "app/registry_security.h"
+#include "../../include/app/registry_security.h"
 
 #include <string>
 
@@ -22,7 +22,7 @@
 #include <aclapi.h>
 #include <aclui.h>
 
-#include "registry/registry_provider.h"
+#include "../../include/registry/registry_provider.h"
 
 namespace regkit {
 

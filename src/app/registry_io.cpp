@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "app/registry_io.h"
+#include "../../include/app/registry_io.h"
 
 #include <cwchar>
 #include <cwctype>
@@ -24,8 +24,8 @@
 #include <commdlg.h>
 #include <shellapi.h>
 
-#include "app/value_dialogs.h"
-#include "win32/win32_helpers.h"
+#include "../../include/app/value_dialogs.h"
+#include "../../include/win32/win32_helpers.h"
 
 namespace regkit {
 

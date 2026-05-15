@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "app/theme_presets.h"
+#include "../../include/app/theme_presets.h"
 
 #include <algorithm>
 #include <cwctype>
 #include <fstream>
 #include <sstream>
 
-#include "win32/win32_helpers.h"
+#include "../../include/win32/win32_helpers.h"
 
 namespace regkit {
 
