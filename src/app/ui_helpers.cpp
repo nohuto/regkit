@@ -800,8 +800,8 @@ LRESULT CALLBACK AboutDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
                                        L"https://github.com/nohuto/regkit</a>",
                                        WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hwnd, nullptr, nullptr, nullptr);
     state->discord_link = CreateWindowExW(0, WC_LINK,
-                                          L"Discord: <a href=\"https://discord.com/invite/E2ybG4j9jU\">"
-                                          L"https://discord.com/invite/E2ybG4j9jU</a>",
+                                          L"Discord: <a href=\"https://discord.noverse.dev\">"
+                                          L"https://discord.noverse.dev</a>",
                                           WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hwnd, nullptr, nullptr, nullptr);
     state->website_link = CreateWindowExW(0, WC_LINK,
                                           L"Website: <a href=\"https://www.noverse.dev/\">"
@@ -1253,7 +1253,7 @@ void ShowAbout(HWND owner) {
   }
   ShowInfo(owner, L"\x00A9 Noverse (Nohuto) 2026\n"
                   L"Repository: https://github.com/nohuto/regkit\n"
-                  L"Discord: https://discord.com/invite/E2ybG4j9jU\n"
+                  L"Discord: https://discord.noverse.dev\n"
                   L"Website: https://www.noverse.dev/\n"
                   L"Email: nohuto@tuta.io");
 }

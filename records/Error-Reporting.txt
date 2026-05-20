@@ -1,4 +1,4 @@
-Boot Record | Authored by Nohuto | Based on 25H2 | discord.gg/E2ybG4j9jU | github.com/nohuto/regkit
+Boot Record | Authored by Nohuto | Based on 25H2 | discord.noverse.dev | github.com/nohuto/regkit
 
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : ArchiveFolderCountLimit
 \Registry\Machine\SOFTWARE\Microsoft\WINDOWS\Windows Error Reporting : AutoApproveOSDumps
