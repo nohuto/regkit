@@ -10,7 +10,7 @@ Start with configuring the filter (`CTRL` + `L`):
 
 You can disable the other activity monitoring:
 
-![](https://github.com/nohuto/regkit/tree/main/guide/images/monitoring.png)
+![](https://github.com/nohuto/regkit/tree/main/guides/images/monitoring.png)
 
 If you want to trace all `Reg...` activity, which would use:
 ```c
