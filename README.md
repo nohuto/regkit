@@ -172,11 +172,6 @@ This includes details on keys/values which are either poorly documented or not d
 - [StorNVMe Values](https://www.noverse.dev/docs/win-config/peripheral/stornvme-values/#registry-values)
 - [Notification Values](https://www.noverse.dev/docs/win-config/system/disable-notifications/#registry-values)
 
-## Guides
-
-- [procmon.md](https://github.com/nohuto/regkit/blob/main/guides/procmon.md) - Guide on how to trace registry activity for a specific app.
-- [wpr-wpa.md](https://github.com/nohuto/regkit/blob/main/guides/wpr-wpa.md) - Guide on how to create a boot registry activity trace and how to format it so regkit can use it.
-
 ## Capture Table
 
 Most activities were captured during boot, there are some others such as `Steam.txt`, `TLOU2.txt`, `StartAllBack.txt`, and `Lighshot.txt`, that were captured using Procmon during use.

@@ -1,6 +1,6 @@
 # Boot Registry Activity
 
-Requirement is the [Windows Performance Toolkit](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-recorder) which you can get from [ADK](https://go.microsoft.com/fwlink/?linkid=2337875), or install it via `winget install Microsoft.WindowsADK`, but this will install more than the Performance Toolkit.
+Short guide on how to create a boot registry activity trace and how to format it so regkit can use it. Requirement is the [Windows Performance Toolkit](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-recorder) which you can get from [ADK](https://go.microsoft.com/fwlink/?linkid=2337875), or install it via `winget install Microsoft.WindowsADK`, but this will install more than the Performance Toolkit.
 
 ## Starting a Boot Record
 

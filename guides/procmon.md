@@ -32,6 +32,7 @@ RegSetKeySecurity
 RegSetValue
 RegUnloadKey
 ```
+
 `Operation` `begins with` `Reg`
 
 Now you'll see all kind of registry activity, what you want to look for is the path the program uses, if there's any. TLOU II uses:
