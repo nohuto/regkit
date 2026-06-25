@@ -1062,7 +1062,6 @@ void Theme::ApplyToComboBox(HWND hwnd) const {
     auto* state = new ComboBoxThemeState();
     SetWindowSubclass(hwnd, ComboBoxThemeSubclassProc, 1, reinterpret_cast<DWORD_PTR>(state));
   }
-  LONG_PTR style = GetWindowLongPtrW(hwnd, GWL_STYLE);
   COMBOBOXINFO info = {sizeof(COMBOBOXINFO)};
   if (GetComboBoxInfo(hwnd, &info) && info.hwndList) {
     const wchar_t* theme_name = is_dark_ ? L"CFD" : L"Explorer";

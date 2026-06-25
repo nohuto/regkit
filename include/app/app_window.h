@@ -50,11 +50,22 @@ struct IEnumString;
 namespace regkit {
 
 struct HistoryEntry {
+  enum class RevertKind {
+    kNone,
+    kSetValue,
+    kDeleteValue,
+    kDeleteKey,
+  };
+
   uint64_t timestamp = 0;
   std::wstring time_text;
   std::wstring action;
   std::wstring old_data;
   std::wstring new_data;
+  std::wstring key_path;
+  std::wstring value_name;
+  RevertKind revert_kind = RevertKind::kNone;
+  ValueEntry revert_value;
 };
 
 class MainWindow {
@@ -261,6 +272,9 @@ private:
   void ToggleHistoryColumn(int column, bool visible);
   void ToggleSearchColumn(int column, bool visible);
   void AppendHistoryEntry(const std::wstring& action, const std::wstring& old_data, const std::wstring& new_data);
+  void AppendHistoryEntry(HistoryEntry entry);
+  bool OpenHistoryTarget(const HistoryEntry& entry);
+  bool RevertHistoryEntry(const HistoryEntry& entry);
   std::wstring ResolveSearchComment(const SearchResult& result) const;
   bool EnsureSearchResultDataLoaded(SearchResult* result);
   void ShowTreeContextMenu(POINT screen_pt);

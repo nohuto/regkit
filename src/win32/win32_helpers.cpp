@@ -16,8 +16,11 @@
 
 #include "../../include/win32/win32_helpers.h"
 
+#include <algorithm>
 #include <array>
 #include <cwchar>
+#include <cwctype>
+#include <limits>
 #include <vector>
 
 #include <pathcch.h>
@@ -337,18 +340,35 @@ void UniqueHKey::reset(HKEY key) noexcept {
   key_ = key;
 }
 
+std::wstring GetModulePath() {
+  DWORD capacity = MAX_PATH;
+  for (;;) {
+    std::wstring path(capacity, L'\0');
+    DWORD len = GetModuleFileNameW(nullptr, path.data(), capacity);
+    if (len == 0) {
+      return L"";
+    }
+    if (len < capacity) {
+      path.resize(len);
+      return path;
+    }
+    if (capacity >= 32768) {
+      return L"";
+    }
+    capacity = std::min<DWORD>(capacity * 2, 32768);
+  }
+}
+
 std::wstring GetModuleDirectory() {
-  wchar_t buffer[MAX_PATH] = {};
-  DWORD len = GetModuleFileNameW(nullptr, buffer, static_cast<DWORD>(std::size(buffer)));
-  if (len == 0) {
+  std::wstring path = GetModulePath();
+  if (path.empty()) {
     return L"";
   }
-  std::wstring path(buffer, len);
-  if (FAILED(PathCchRemoveFileSpec(path.data(), path.size() + 1))) {
+  path.push_back(L'\0');
+  if (FAILED(PathCchRemoveFileSpec(path.data(), path.size()))) {
     return L"";
   }
-  size_t new_len = wcsnlen_s(path.data(), path.size());
-  path.resize(new_len);
+  path.resize(wcsnlen_s(path.data(), path.size()));
   return path;
 }
 
@@ -356,9 +376,11 @@ std::wstring JoinPath(const std::wstring& left, const std::wstring& right) {
   if (left.empty()) {
     return right;
   }
-  wchar_t buffer[MAX_PATH] = {};
-  if (SUCCEEDED(PathCchCombine(buffer, std::size(buffer), left.c_str(), right.c_str()))) {
-    return buffer;
+  size_t capacity = std::max<size_t>(MAX_PATH, left.size() + right.size() + 2);
+  capacity = std::min<size_t>(capacity, 32768);
+  std::wstring buffer(capacity, L'\0');
+  if (SUCCEEDED(PathCchCombine(buffer.data(), buffer.size(), left.c_str(), right.c_str()))) {
+    return buffer.c_str();
   }
   if (left.back() == L'\\') {
     return left + right;
@@ -392,6 +414,61 @@ std::wstring Utf8ToWide(const std::string& text) {
   return out;
 }
 
+std::wstring FormatWin32Error(DWORD code) {
+  if (code == 0) {
+    return L"";
+  }
+  wchar_t buffer[512] = {};
+  DWORD len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, code, 0, buffer, static_cast<DWORD>(_countof(buffer)), nullptr);
+  if (len == 0) {
+    return L"Unknown error.";
+  }
+  while (len > 0 && (buffer[len - 1] == L'\r' || buffer[len - 1] == L'\n')) {
+    buffer[--len] = L'\0';
+  }
+  return buffer;
+}
+
+std::wstring ToLower(const std::wstring& text) {
+  std::wstring out;
+  out.reserve(text.size());
+  for (wchar_t ch : text) {
+    out.push_back(static_cast<wchar_t>(towlower(ch)));
+  }
+  return out;
+}
+
+std::wstring TrimWhitespace(const std::wstring& text) {
+  size_t start = 0;
+  while (start < text.size() && iswspace(static_cast<wint_t>(text[start]))) {
+    ++start;
+  }
+  size_t end = text.size();
+  while (end > start && iswspace(static_cast<wint_t>(text[end - 1]))) {
+    --end;
+  }
+  return text.substr(start, end - start);
+}
+
+std::wstring ExpandEnvironmentStringsDynamic(const std::wstring& text) {
+  if (text.empty()) {
+    return L"";
+  }
+  DWORD needed = ExpandEnvironmentStringsW(text.c_str(), nullptr, 0);
+  if (needed == 0) {
+    return L"";
+  }
+  std::wstring expanded(needed, L'\0');
+  DWORD written = ExpandEnvironmentStringsW(text.c_str(), expanded.data(), needed);
+  if (written == 0 || written > needed) {
+    return L"";
+  }
+  while (!expanded.empty() && expanded.back() == L'\0') {
+    expanded.pop_back();
+  }
+  return expanded;
+}
+
 std::wstring ToHex(const BYTE* data, size_t size, size_t max_bytes) {
   if (!data || size == 0) {
     return L"";
@@ -412,6 +489,93 @@ std::wstring ToHex(const BYTE* data, size_t size, size_t max_bytes) {
     out.append(L" ...");
   }
   return out;
+}
+
+bool ReadFileBytes(const std::wstring& path, std::vector<BYTE>* out, uint64_t max_bytes, DWORD share_mode) {
+  if (!out) {
+    return false;
+  }
+  out->clear();
+  HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, share_mode, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (file == INVALID_HANDLE_VALUE) {
+    return false;
+  }
+  LARGE_INTEGER size = {};
+  if (!GetFileSizeEx(file, &size) || size.QuadPart <= 0 || static_cast<uint64_t>(size.QuadPart) > max_bytes || size.QuadPart > static_cast<LONGLONG>(std::numeric_limits<DWORD>::max())) {
+    CloseHandle(file);
+    return false;
+  }
+  out->resize(static_cast<size_t>(size.QuadPart));
+  DWORD read = 0;
+  BOOL ok = ReadFile(file, out->data(), static_cast<DWORD>(out->size()), &read, nullptr);
+  CloseHandle(file);
+  if (!ok || read != out->size()) {
+    out->clear();
+    return false;
+  }
+  return true;
+}
+
+bool ReadTextFile(const std::wstring& path, std::wstring* out, bool* utf16, uint64_t max_bytes, DWORD share_mode) {
+  if (!out) {
+    return false;
+  }
+  out->clear();
+  if (utf16) {
+    *utf16 = false;
+  }
+  std::vector<BYTE> bytes;
+  if (!ReadFileBytes(path, &bytes, max_bytes, share_mode)) {
+    return false;
+  }
+  if (bytes.size() >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) {
+    size_t wchar_count = (bytes.size() - 2) / sizeof(wchar_t);
+    out->assign(reinterpret_cast<const wchar_t*>(bytes.data() + 2), wchar_count);
+    if (utf16) {
+      *utf16 = true;
+    }
+    return !out->empty();
+  }
+  size_t offset = 0;
+  if (bytes.size() >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) {
+    offset = 3;
+  }
+  std::string utf8(reinterpret_cast<const char*>(bytes.data() + offset), bytes.size() - offset);
+  *out = Utf8ToWide(utf8);
+  return !out->empty();
+}
+
+bool WriteTextFile(const std::wstring& path, const std::wstring& text, bool utf16) {
+  HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (file == INVALID_HANDLE_VALUE) {
+    return false;
+  }
+  DWORD written = 0;
+  if (utf16) {
+    const BYTE bom[2] = {0xFF, 0xFE};
+    if (!WriteFile(file, bom, sizeof(bom), &written, nullptr) || written != sizeof(bom)) {
+      CloseHandle(file);
+      return false;
+    }
+    if (text.empty()) {
+      CloseHandle(file);
+      return true;
+    }
+    const BYTE* data = reinterpret_cast<const BYTE*>(text.data());
+    DWORD bytes = static_cast<DWORD>(text.size() * sizeof(wchar_t));
+    BOOL ok = WriteFile(file, data, bytes, &written, nullptr);
+    CloseHandle(file);
+    return ok != 0 && written == bytes;
+  }
+  std::string utf8 = WideToUtf8(text);
+  if (utf8.empty()) {
+    CloseHandle(file);
+    return true;
+  }
+  DWORD bytes = static_cast<DWORD>(utf8.size());
+  BOOL ok = WriteFile(file, utf8.data(), bytes, &written, nullptr);
+  CloseHandle(file);
+  return ok != 0 && written == bytes;
 }
 
 std::wstring GetCurrentUserSidString() {
@@ -564,8 +728,6 @@ bool LaunchProcessAsSystem(const std::wstring& command_line, const std::wstring&
   bool result = false;
   DWORD error = ERROR_SUCCESS;
 
-  // Impersonate to enable SeDebug, duplicate a SYSTEM token, then launch in the
-  // active session.
   ScopedHandle current_token;
   ScopedHandle current_impersonation;
   ScopedHandle system_token;

@@ -34,19 +34,13 @@ struct FontDialogHookState {
   LOGFONTW preview_base_font = {};
 };
 
-struct FontDialogListBoxState {
-  int hot_index = -1;
-};
-
 constexpr UINT_PTR kFontDialogSubclassId = 1;
-constexpr UINT_PTR kFontDialogListBoxSubclassId = 2;
 constexpr UINT_PTR kFontDialogGroupBoxSubclassId = 3;
 constexpr UINT_PTR kFontDialogSampleSubclassId = 4;
 constexpr UINT kFontDialogUpdatePreviewMessage = WM_APP + 101;
 constexpr int kFontDialogWidth = 447;
 constexpr int kFontDialogHeight = 324;
 
-LRESULT CALLBACK FontDialogListBoxSubclassProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_PTR ref_data);
 LRESULT CALLBACK FontDialogGroupBoxSubclassProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_PTR ref_data);
 LRESULT CALLBACK FontDialogSampleSubclassProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_PTR ref_data);
 
@@ -222,11 +216,6 @@ void ApplyComboTheme(HWND combo, bool dark_mode) {
       }
       SetWindowPos(info.hwndList, nullptr, 0, 0, 0, 0,
                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-      if (!GetWindowSubclass(info.hwndList, FontDialogListBoxSubclassProc, kFontDialogListBoxSubclassId, nullptr)) {
-        auto* state = new FontDialogListBoxState();
-        SetWindowSubclass(info.hwndList, FontDialogListBoxSubclassProc, kFontDialogListBoxSubclassId,
-                          reinterpret_cast<DWORD_PTR>(state));
-      }
     }
     RedrawWindow(info.hwndList, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW | RDW_FRAME);
   }
@@ -278,123 +267,6 @@ void PaintFontDialogGroupBox(HWND hwnd, HDC hdc) {
   if (old_font) {
     SelectObject(hdc, old_font);
   }
-}
-
-LRESULT CALLBACK FontDialogListBoxSubclassProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_PTR ref_data) {
-  auto* state = reinterpret_cast<FontDialogListBoxState*>(ref_data);
-  switch (msg) {
-  case WM_NCDESTROY:
-    delete state;
-    RemoveWindowSubclass(hwnd, FontDialogListBoxSubclassProc, id);
-    break;
-  case WM_ERASEBKGND:
-    return 1;
-  case WM_MOUSEMOVE: {
-    if (!state) {
-      break;
-    }
-    TRACKMOUSEEVENT tme = {};
-    tme.cbSize = sizeof(tme);
-    tme.dwFlags = TME_LEAVE;
-    tme.hwndTrack = hwnd;
-    TrackMouseEvent(&tme);
-
-    DWORD item = static_cast<DWORD>(SendMessageW(hwnd, LB_ITEMFROMPOINT, 0, lparam));
-    int hot_index = HIWORD(item) ? -1 : static_cast<int>(LOWORD(item));
-    if (state->hot_index != hot_index) {
-      state->hot_index = hot_index;
-      InvalidateRect(hwnd, nullptr, FALSE);
-    }
-    break;
-  }
-  case WM_MOUSELEAVE: {
-    if (state && state->hot_index != -1) {
-      state->hot_index = -1;
-      InvalidateRect(hwnd, nullptr, FALSE);
-    }
-    break;
-  }
-  case WM_LBUTTONDOWN:
-  case WM_LBUTTONUP:
-  case WM_KEYDOWN:
-  case WM_KEYUP:
-  case WM_MOUSEWHEEL:
-  case WM_VSCROLL:
-  case LB_SETCURSEL:
-  case LB_SETTOPINDEX: {
-    LRESULT result = DefSubclassProc(hwnd, msg, wparam, lparam);
-    InvalidateRect(hwnd, nullptr, FALSE);
-    return result;
-  }
-  case WM_PRINTCLIENT:
-  case WM_PAINT: {
-    PAINTSTRUCT ps = {};
-    HDC hdc = (msg == WM_PAINT) ? BeginPaint(hwnd, &ps) : reinterpret_cast<HDC>(wparam);
-    RECT rc = {};
-    GetClientRect(hwnd, &rc);
-    FillRect(hdc, &rc, Theme::Current().SurfaceBrush());
-
-    HFONT font = reinterpret_cast<HFONT>(SendMessageW(hwnd, WM_GETFONT, 0, 0));
-    HGDIOBJ old_font = nullptr;
-    if (font) {
-      old_font = SelectObject(hdc, font);
-    }
-    SetBkMode(hdc, TRANSPARENT);
-
-    int count = static_cast<int>(SendMessageW(hwnd, LB_GETCOUNT, 0, 0));
-    int top_index = static_cast<int>(SendMessageW(hwnd, LB_GETTOPINDEX, 0, 0));
-    int current_index = static_cast<int>(SendMessageW(hwnd, LB_GETCURSEL, 0, 0));
-    int item_height = static_cast<int>(SendMessageW(hwnd, LB_GETITEMHEIGHT, 0, 0));
-    if (item_height <= 0) {
-      TEXTMETRICW metrics = {};
-      GetTextMetricsW(hdc, &metrics);
-      item_height = metrics.tmHeight + metrics.tmExternalLeading + 4;
-    }
-
-    int visible_top = 0;
-    for (int index = top_index; index < count && visible_top < rc.bottom; ++index) {
-      RECT item_rect = {rc.left, visible_top, rc.right, std::min(visible_top + item_height, static_cast<int>(rc.bottom))};
-      bool selected = index == current_index;
-      bool hot = state && index == state->hot_index && !selected;
-      HBRUSH item_brush =
-          CreateSolidBrush(selected ? Theme::Current().FocusColor() : hot ? Theme::Current().HoverColor() : Theme::Current().SurfaceColor());
-      FillRect(hdc, &item_rect, item_brush);
-      DeleteObject(item_brush);
-
-      int text_len = static_cast<int>(SendMessageW(hwnd, LB_GETTEXTLEN, index, 0));
-      if (text_len > 0 && text_len < 511) {
-        wchar_t buffer[512] = {};
-        SendMessageW(hwnd, LB_GETTEXT, index, reinterpret_cast<LPARAM>(buffer));
-        RECT text_rect = item_rect;
-        text_rect.left += 6;
-        text_rect.right -= 4;
-        SetTextColor(hdc, selected ? Theme::Current().SelectionTextColor() : Theme::Current().TextColor());
-        DrawTextW(hdc, buffer, -1, &text_rect, DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_NOPREFIX);
-      }
-
-      visible_top += item_height;
-    }
-
-    HPEN border_pen = CreatePen(PS_SOLID, 1, Theme::Current().BorderColor());
-    HGDIOBJ old_pen = SelectObject(hdc, border_pen);
-    HGDIOBJ old_brush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
-    Rectangle(hdc, rc.left, rc.top, rc.right, rc.bottom);
-    SelectObject(hdc, old_brush);
-    SelectObject(hdc, old_pen);
-    DeleteObject(border_pen);
-
-    if (old_font) {
-      SelectObject(hdc, old_font);
-    }
-    if (msg == WM_PAINT) {
-      EndPaint(hwnd, &ps);
-    }
-    return 0;
-  }
-  default:
-    break;
-  }
-  return DefSubclassProc(hwnd, msg, wparam, lparam);
 }
 
 LRESULT CALLBACK FontDialogGroupBoxSubclassProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_PTR) {

@@ -1093,18 +1093,21 @@ bool PromptExportPath(HWND owner, std::wstring* path) {
   if (!path) {
     return false;
   }
-  wchar_t buffer[MAX_PATH] = {};
+  std::wstring buffer(32768, L'\0');
+  if (!path->empty()) {
+    wcsncpy_s(buffer.data(), buffer.size(), path->c_str(), _TRUNCATE);
+  }
   OPENFILENAMEW ofn = {};
   ofn.lStructSize = sizeof(ofn);
   ofn.hwndOwner = owner;
   ofn.lpstrFilter = L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0";
-  ofn.lpstrFile = buffer;
-  ofn.nMaxFile = static_cast<DWORD>(_countof(buffer));
+  ofn.lpstrFile = buffer.data();
+  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
   ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
   if (!GetSaveFileNameW(&ofn)) {
     return false;
   }
-  *path = buffer;
+  *path = buffer.c_str();
   return true;
 }
 
@@ -1183,7 +1186,7 @@ INT_PTR CALLBACK ExportDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lpar
     }
     int id = LOWORD(wparam);
     if (id == IDC_EXPORT_BROWSE && HIWORD(wparam) == BN_CLICKED) {
-      std::wstring path;
+      std::wstring path = ReadDialogText(dlg, IDC_EXPORT_PATH);
       if (PromptExportPath(dlg, &path)) {
         SetDlgItemTextW(dlg, IDC_EXPORT_PATH, path.c_str());
       }

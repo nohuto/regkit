@@ -214,18 +214,18 @@ bool PromptOpenThemeFile(HWND owner, std::wstring* path) {
   if (!path) {
     return false;
   }
-  wchar_t buffer[MAX_PATH] = {};
+  std::wstring buffer(32768, L'\0');
   OPENFILENAMEW ofn = {};
   ofn.lStructSize = sizeof(ofn);
   ofn.hwndOwner = owner;
   ofn.lpstrFilter = L"RegKit Theme Presets (*.rktheme)\0*.rktheme\0All Files (*.*)\0*.*\0\0";
-  ofn.lpstrFile = buffer;
-  ofn.nMaxFile = static_cast<DWORD>(_countof(buffer));
+  ofn.lpstrFile = buffer.data();
+  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
   ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
   if (!GetOpenFileNameW(&ofn)) {
     return false;
   }
-  *path = buffer;
+  *path = buffer.c_str();
   return true;
 }
 
@@ -233,18 +233,18 @@ bool PromptSaveThemeFile(HWND owner, std::wstring* path) {
   if (!path) {
     return false;
   }
-  wchar_t buffer[MAX_PATH] = {};
+  std::wstring buffer(32768, L'\0');
   OPENFILENAMEW ofn = {};
   ofn.lStructSize = sizeof(ofn);
   ofn.hwndOwner = owner;
   ofn.lpstrFilter = L"RegKit Theme Presets (*.rktheme)\0*.rktheme\0All Files (*.*)\0*.*\0\0";
-  ofn.lpstrFile = buffer;
-  ofn.nMaxFile = static_cast<DWORD>(_countof(buffer));
+  ofn.lpstrFile = buffer.data();
+  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
   ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
   if (!GetSaveFileNameW(&ofn)) {
     return false;
   }
-  *path = buffer;
+  *path = buffer.c_str();
   return true;
 }
 
@@ -926,7 +926,6 @@ LRESULT CALLBACK ThemePresetWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARA
       return 0;
     }
     int id = LOWORD(wparam);
-    int code = HIWORD(wparam);
     switch (id) {
     case kNewPresetId: {
       std::wstring name;

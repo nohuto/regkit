@@ -28,6 +28,7 @@
 
 #include "../../include/app/theme.h"
 #include "../../include/app/ui_helpers.h"
+#include "../../include/win32/win32_helpers.h"
 
 // Older SDKs omit the NMTVITEMCHANGE struct even though TVN_ITEMCHANGED is
 // defined.
@@ -51,6 +52,8 @@ constexpr wchar_t kAppTitle[] = L"RegKit";
 constexpr UINT kDialogAddEntriesMessage = WM_APP + 1;
 constexpr UINT kDialogDoneMessage = WM_APP + 2;
 constexpr UINT kDialogProcessEntriesMessage = WM_APP + 3;
+
+using util::ToLower;
 
 enum ControlId {
   kTraceLabel = 100,
@@ -121,15 +124,6 @@ void RestoreOwnerWindow(HWND owner, bool* restored) {
   *restored = true;
 }
 
-std::wstring ToLower(const std::wstring& text) {
-  std::wstring out;
-  out.reserve(text.size());
-  for (wchar_t ch : text) {
-    out.push_back(static_cast<wchar_t>(towlower(ch)));
-  }
-  return out;
-}
-
 bool EqualsInsensitive(const std::wstring& left, const std::wstring& right) {
   if (left.size() != right.size()) {
     return false;
@@ -186,7 +180,7 @@ TraceNodeData* StoreNodeData(TraceDialogState* state, bool is_value, const std::
   return raw;
 }
 
-void UpdateStatus(HWND hwnd, TraceDialogState* state) {
+void UpdateStatus(TraceDialogState* state) {
   if (!state || !state->status) {
     return;
   }
@@ -276,7 +270,7 @@ HTREEITEM EnsureKeyNode(HWND tree, TraceDialogState* state, const std::wstring& 
   return parent == TVI_ROOT ? nullptr : parent;
 }
 
-HTREEITEM InsertValueNode(HWND tree, TraceDialogState* state, HTREEITEM key_item, const std::wstring& key_path, const std::wstring& value_name, const std::wstring& value_lower) {
+HTREEITEM InsertValueNode(HWND tree, TraceDialogState* state, HTREEITEM key_item, const std::wstring& key_path, const std::wstring& value_name) {
   if (!state || !tree || !key_item) {
     return nullptr;
   }
@@ -315,7 +309,7 @@ void EnsureValueNodes(HWND tree, TraceDialogState* state, HTREEITEM key_item, co
       continue;
     }
     std::wstring value_name = display == L"(Default)" ? L"" : display;
-    InsertValueNode(tree, state, key_item, key_path, value_name, value_lower);
+    InsertValueNode(tree, state, key_item, key_path, value_name);
   }
 }
 
@@ -341,7 +335,7 @@ void AddEntry(HWND tree, TraceDialogState* state, const KeyValueDialogEntry& ent
     if (key_item) {
       UINT state_mask = TreeView_GetItemState(tree, key_item, TVIS_EXPANDED);
       if (state_mask & TVIS_EXPANDED) {
-        InsertValueNode(tree, state, key_item, entry.key_path, value_name, value_lower);
+        InsertValueNode(tree, state, key_item, entry.key_path, value_name);
       }
     }
   }
@@ -431,7 +425,7 @@ void ProcessPendingEntries(HWND hwnd, TraceDialogState* state) {
       break;
     }
   }
-  UpdateStatus(hwnd, state);
+  UpdateStatus(state);
   if (state->pending_index >= state->pending_entries.size()) {
     state->pending_entries.clear();
     state->pending_index = 0;
@@ -592,7 +586,7 @@ LRESULT CALLBACK TraceDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
     Theme::Current().ApplyToTreeView(state->tree);
     Theme::Current().ApplyToChildren(hwnd);
 
-    UpdateStatus(hwnd, state);
+    UpdateStatus(state);
     LayoutDialog(hwnd, state, font);
 
     if (state->on_ready) {
@@ -710,7 +704,7 @@ LRESULT CALLBACK TraceDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
   case kDialogDoneMessage:
     if (state) {
       state->loading_done = (wparam != 0);
-      UpdateStatus(hwnd, state);
+      UpdateStatus(state);
     }
     return 0;
   case kDialogProcessEntriesMessage:

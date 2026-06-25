@@ -773,12 +773,10 @@ LRESULT CALLBACK BrowseDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
         }
         if (draw->nmcd.dwDrawStage == CDDS_ITEMPREPAINT) {
           if (draw->nmcd.uItemState & CDIS_SELECTED) {
-            draw->clrText = theme.SelectionTextColor();
-            draw->clrTextBk = theme.SelectionColor();
-          } else {
-            draw->clrText = theme.TextColor();
-            draw->clrTextBk = theme.PanelColor();
+            return CDRF_DODEFAULT;
           }
+          draw->clrText = theme.TextColor();
+          draw->clrTextBk = theme.PanelColor();
           return CDRF_NEWFONT;
         }
       }

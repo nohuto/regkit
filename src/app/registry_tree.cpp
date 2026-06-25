@@ -17,7 +17,8 @@
 #include "../../include/app/registry_tree.h"
 
 #include <algorithm>
-#include <cwctype>
+
+#include "../../include/win32/win32_helpers.h"
 
 namespace regkit {
 
@@ -29,13 +30,7 @@ constexpr wchar_t kRealGroupLabel[] = L"REGISTRY";
 #define TVS_EX_DOUBLEBUFFER 0x0004
 #endif
 
-std::wstring ToLower(const std::wstring& text) {
-  std::wstring out = text;
-  for (auto& ch : out) {
-    ch = static_cast<wchar_t>(towlower(ch));
-  }
-  return out;
-}
+using util::ToLower;
 } // namespace
 
 void RegistryTree::Create(HWND parent, HINSTANCE instance, int control_id, bool show_border) {

@@ -31,17 +31,7 @@ namespace regkit {
 
 namespace {
 
-std::wstring FormatWin32Error(DWORD code) {
-  if (code == 0) {
-    return L"";
-  }
-  wchar_t buffer[512] = {};
-  DWORD len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, code, 0, buffer, static_cast<DWORD>(_countof(buffer)), nullptr);
-  if (len == 0) {
-    return L"Unknown error.";
-  }
-  return buffer;
-}
+using util::FormatWin32Error;
 
 bool EnsureDirectory(const std::wstring& path) {
   if (path.empty()) {

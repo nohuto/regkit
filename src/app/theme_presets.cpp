@@ -17,7 +17,6 @@
 #include "../../include/app/theme_presets.h"
 
 #include <algorithm>
-#include <cwctype>
 #include <fstream>
 #include <sstream>
 
@@ -29,21 +28,14 @@ namespace {
 
 constexpr wchar_t kPresetSection[] = L"[preset]";
 
+using util::ToLower;
+
 ThemePreset MakePreset(const wchar_t* name, const ThemeColors& colors, bool is_dark) {
   ThemePreset preset;
   preset.name = name ? name : L"";
   preset.colors = colors;
   preset.is_dark = is_dark;
   return preset;
-}
-
-std::wstring ToLower(const std::wstring& text) {
-  std::wstring out;
-  out.reserve(text.size());
-  for (wchar_t ch : text) {
-    out.push_back(static_cast<wchar_t>(towlower(ch)));
-  }
-  return out;
 }
 
 std::wstring Trim(const std::wstring& text) {

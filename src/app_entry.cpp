@@ -18,6 +18,7 @@
 
 #include <windows.h>
 
+#include <algorithm>
 #include <commctrl.h>
 #include <cwctype>
 #include <limits>
@@ -26,7 +27,9 @@
 #include <vector>
 
 #include "../include/app/app_window.h"
+#include "../include/app/registry_io.h"
 #include "../include/app/theme.h"
+#include "../include/app/theme_presets.h"
 #include "../include/app/ui_helpers.h"
 #include "../include/win32/win32_helpers.h"
 
@@ -39,20 +42,11 @@ constexpr ULONG_PTR kRegeditCompatActivateCopyDataId = 0x52474354;
 constexpr wchar_t kRegeditWindowClassName[] = L"RegEdit_RegEdit";
 constexpr wchar_t kRegKitWindowProperty[] = L"RegKitMainWindow";
 
+using util::FormatWin32Error;
+using util::TrimWhitespace;
+
 bool ParseBool(const std::wstring& value) {
   return (_wcsicmp(value.c_str(), L"1") == 0 || _wcsicmp(value.c_str(), L"true") == 0 || _wcsicmp(value.c_str(), L"yes") == 0);
-}
-
-std::wstring FormatWin32Error(DWORD code) {
-  if (code == 0) {
-    return L"";
-  }
-  wchar_t buffer[512] = {};
-  DWORD len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, code, 0, buffer, static_cast<DWORD>(_countof(buffer)), nullptr);
-  if (len == 0) {
-    return L"Unknown error.";
-  }
-  return buffer;
 }
 
 std::vector<std::wstring> GetCommandLineArgs() {
@@ -113,6 +107,19 @@ bool IsInterceptedRegeditLaunch(const std::vector<std::wstring>& args) {
     }
   }
   return false;
+}
+
+std::vector<std::wstring> RegFilesFromArgs(const std::vector<std::wstring>& args) {
+  std::vector<std::wstring> files;
+  for (const auto& arg : args) {
+    if (arg.empty() || arg[0] == L'-' || arg[0] == L'/' || IsRegeditLaunchArg(arg)) {
+      continue;
+    }
+    if (HasRegExtension(arg)) {
+      files.push_back(arg);
+    }
+  }
+  return files;
 }
 
 bool LooksLikeRegistryPath(const std::wstring& arg) {
@@ -271,23 +278,13 @@ HWND FindRunningRegKitWindow() {
   return found;
 }
 
-std::wstring TrimWhitespace(const std::wstring& text) {
-  size_t start = 0;
-  while (start < text.size() && iswspace(text[start])) {
-    ++start;
-  }
-  size_t end = text.size();
-  while (end > start && iswspace(text[end - 1])) {
-    --end;
-  }
-  return text.substr(start, end - start);
-}
-
 struct StartupSettings {
   bool single_instance = true;
   bool always_run_as_admin = false;
   bool always_run_as_system = false;
   bool always_run_as_trustedinstaller = false;
+  regkit::ThemeMode theme_mode = regkit::ThemeMode::kSystem;
+  std::wstring theme_preset;
 };
 
 bool ReadSettingsFileContent(std::wstring* content) {
@@ -359,9 +356,42 @@ StartupSettings LoadStartupSettings() {
       settings.always_run_as_system = ParseBool(value);
     } else if (_wcsicmp(key.c_str(), L"always_run_as_trustedinstaller") == 0) {
       settings.always_run_as_trustedinstaller = ParseBool(value);
+    } else if (_wcsicmp(key.c_str(), L"theme_mode") == 0) {
+      if (_wcsicmp(value.c_str(), L"dark") == 0) {
+        settings.theme_mode = regkit::ThemeMode::kDark;
+      } else if (_wcsicmp(value.c_str(), L"light") == 0) {
+        settings.theme_mode = regkit::ThemeMode::kLight;
+      } else if (_wcsicmp(value.c_str(), L"custom") == 0) {
+        settings.theme_mode = regkit::ThemeMode::kCustom;
+      } else {
+        settings.theme_mode = regkit::ThemeMode::kSystem;
+      }
+    } else if (_wcsicmp(key.c_str(), L"theme_preset") == 0) {
+      settings.theme_preset = value;
     }
   }
   return settings;
+}
+
+void ApplyStartupTheme(const StartupSettings& settings) {
+  if (settings.theme_mode == regkit::ThemeMode::kCustom) {
+    std::vector<regkit::ThemePreset> presets;
+    if (!regkit::ThemePresetStore::Load(&presets)) {
+      presets = regkit::ThemePresetStore::BuiltInPresets();
+    }
+    if (!presets.empty()) {
+      auto it = std::find_if(presets.begin(), presets.end(), [&](const regkit::ThemePreset& preset) {
+        return _wcsicmp(preset.name.c_str(), settings.theme_preset.c_str()) == 0;
+      });
+      if (it == presets.end()) {
+        it = presets.begin();
+      }
+      regkit::Theme::SetCustomColors(it->colors, it->is_dark);
+      regkit::Theme::SetMode(regkit::ThemeMode::kCustom);
+      return;
+    }
+  }
+  regkit::Theme::SetMode(settings.theme_mode);
 }
 
 bool IsProcessElevated() {
@@ -377,13 +407,10 @@ bool IsProcessTrustedInstaller() {
 }
 
 bool RelaunchAsAdmin() {
-  std::wstring exe_path;
-  exe_path.resize(MAX_PATH);
-  DWORD len = GetModuleFileNameW(nullptr, exe_path.data(), static_cast<DWORD>(exe_path.size()));
-  if (len == 0 || len >= exe_path.size()) {
+  std::wstring exe_path = util::GetModulePath();
+  if (exe_path.empty()) {
     return false;
   }
-  exe_path.resize(len);
   HINSTANCE result = ShellExecuteW(nullptr, L"runas", exe_path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
   return reinterpret_cast<INT_PTR>(result) > 32;
 }
@@ -398,16 +425,13 @@ bool RestartAsSystem(std::wstring* error_message, bool* launched) {
   if (IsProcessSystem()) {
     return true;
   }
-  std::wstring exe_path;
-  exe_path.resize(MAX_PATH);
-  DWORD len = GetModuleFileNameW(nullptr, exe_path.data(), static_cast<DWORD>(exe_path.size()));
-  if (len == 0 || len >= exe_path.size()) {
+  std::wstring exe_path = util::GetModulePath();
+  if (exe_path.empty()) {
     if (error_message) {
       *error_message = L"Failed to locate the executable path.";
     }
     return false;
   }
-  exe_path.resize(len);
   if (!IsProcessElevated()) {
     HINSTANCE result = ShellExecuteW(nullptr, L"runas", exe_path.c_str(), kRestartSystemArg, nullptr, SW_SHOWNORMAL);
     if (reinterpret_cast<INT_PTR>(result) <= 32) {
@@ -455,16 +479,13 @@ bool RestartAsTrustedInstaller(std::wstring* error_message, bool* launched) {
   if (IsProcessTrustedInstaller()) {
     return true;
   }
-  std::wstring exe_path;
-  exe_path.resize(MAX_PATH);
-  DWORD len = GetModuleFileNameW(nullptr, exe_path.data(), static_cast<DWORD>(exe_path.size()));
-  if (len == 0 || len >= exe_path.size()) {
+  std::wstring exe_path = util::GetModulePath();
+  if (exe_path.empty()) {
     if (error_message) {
       *error_message = L"Failed to locate the executable path.";
     }
     return false;
   }
-  exe_path.resize(len);
   if (!IsProcessElevated()) {
     HINSTANCE result = ShellExecuteW(nullptr, L"runas", exe_path.c_str(), kRestartTiArg, nullptr, SW_SHOWNORMAL);
     if (reinterpret_cast<INT_PTR>(result) <= 32) {
@@ -519,9 +540,11 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
 
   const auto args = GetCommandLineArgs();
   const StartupSettings startup_settings = LoadStartupSettings();
+  ApplyStartupTheme(startup_settings);
   std::wstring startup_jump_target;
   const bool regedit_compat_requested = IsInterceptedRegeditLaunch(args);
   const bool external_jump_requested = ResolveExternalJumpTarget(args, &startup_jump_target);
+  const std::vector<std::wstring> regedit_merge_files = regedit_compat_requested ? RegFilesFromArgs(args) : std::vector<std::wstring>();
   bool restart_system = HasCommandLineArg(args, kRestartSystemArg);
   bool restart_ti = HasCommandLineArg(args, kRestartTiArg);
   if (restart_ti) {
@@ -571,6 +594,21 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
     regkit::ui::ShowError(nullptr, L"Administrator restart was cancelled.");
   }
 
+  if (regedit_compat_requested && !regedit_merge_files.empty()) {
+    for (const auto& path : regedit_merge_files) {
+      if (!regkit::ui::ConfirmRegFileMerge(nullptr, path)) {
+        return 0;
+      }
+      std::wstring error;
+      if (!regkit::ImportRegFileFromPath(path, &error)) {
+        regkit::ui::ShowRegFileMergeFailed(nullptr, path, error);
+        return 1;
+      }
+      regkit::ui::ShowRegFileMergeSucceeded(nullptr, path);
+    }
+    return 0;
+  }
+
   HANDLE instance_mutex = nullptr;
   if (!restart_system && !restart_ti && startup_settings.single_instance) {
     instance_mutex = CreateMutexW(nullptr, TRUE, L"RegKit.SingleInstance");
@@ -616,15 +654,6 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
     window.QueueExternalJump(startup_jump_target);
   }
   window.Show(cmd_show);
-
-  for (const auto& arg : args) {
-    if (!arg.empty() && arg[0] == L'-') {
-      continue;
-    }
-    if (HasRegExtension(arg)) {
-      window.OpenRegFileTab(arg);
-    }
-  }
 
   MSG msg = {};
   while (GetMessageW(&msg, nullptr, 0, 0) > 0) {

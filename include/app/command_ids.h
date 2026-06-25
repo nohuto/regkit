@@ -30,6 +30,7 @@ constexpr int kFileSaveOfflineHive = 2007;
 constexpr int kFileImportComments = 2008;
 constexpr int kFileExportComments = 2009;
 constexpr int kFileSave = 2017;
+constexpr int kFileOpenRegFile = 2018;
 
 constexpr int kNewKey = 2010;
 constexpr int kNewString = 2011;
@@ -125,6 +126,8 @@ constexpr int kOptionsIconSetFluentUi = 2470;
 constexpr int kOptionsIconSetMaterialSymbols = 2472;
 constexpr int kOptionsIconSetCustom = 2473;
 constexpr int kOptionsIconSetTabler = 2474;
+constexpr int kHistoryOpenTarget = 2475;
+constexpr int kHistoryRevert = 2476;
 
 constexpr int kHelpAbout = 2500;
 constexpr int kHelpContents = 2501;

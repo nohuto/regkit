@@ -28,7 +28,6 @@ namespace regkit { namespace ui {
 LOGFONTW DefaultUIFontLogFont();
 HFONT DefaultUIFont();
 
-void DrawListViewFocusBorder(HWND list, HDC hdc, int item_index, COLORREF color);
 LRESULT HandleThemedListViewCustomDraw(HWND list, NMLVCUSTOMDRAW* draw);
 
 bool CopyTextToClipboard(HWND owner, const std::wstring& text);
@@ -36,6 +35,9 @@ void ShowError(HWND owner, const std::wstring& message);
 void ShowWarning(HWND owner, const std::wstring& message);
 void ShowInfo(HWND owner, const std::wstring& message);
 void ShowAbout(HWND owner);
+bool ConfirmRegFileMerge(HWND owner, const std::wstring& path);
+void ShowRegFileMergeSucceeded(HWND owner, const std::wstring& path);
+void ShowRegFileMergeFailed(HWND owner, const std::wstring& path, const std::wstring& detail);
 bool ConfirmDelete(HWND owner, const std::wstring& title, const std::wstring& name);
 int PromptYesNoCancel(HWND owner, const std::wstring& message, const std::wstring& title);
 int PromptChoice(HWND owner, const std::wstring& message, const std::wstring& title, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label);

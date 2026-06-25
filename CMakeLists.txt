@@ -86,5 +86,6 @@ add_custom_command(TARGET RegKit POST_BUILD
 )
 
 if (MSVC)
+    target_compile_options(RegKit PRIVATE /EHsc)
     target_link_options(RegKit PRIVATE "/MANIFEST:NO")
 endif()

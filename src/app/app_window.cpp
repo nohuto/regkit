@@ -155,6 +155,10 @@ constexpr UINT_PTR kAutoCompleteListBoxSubclassId = 7;
 constexpr UINT_PTR kFilterSubclassId = 8;
 constexpr wchar_t kRegeditWindowClassName[] = L"RegEdit_RegEdit";
 constexpr wchar_t kRegKitWindowProperty[] = L"RegKitMainWindow";
+constexpr wchar_t kRegeditIfeoPath[] = L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\regedit.exe";
+using util::FormatWin32Error;
+using util::ToLower;
+using util::TrimWhitespace;
 
 constexpr int kToolbarSepGroup1 = 30001;
 constexpr int kToolbarSepGroup2 = 30002;
@@ -218,6 +222,9 @@ struct ValueListPayload {
 HBRUSH GetCachedBrush(COLORREF color);
 HPEN GetCachedPen(COLORREF color, int width = 1);
 std::vector<std::wstring> SplitPath(const std::wstring& path);
+std::wstring EscapeHistoryField(const std::wstring& text);
+std::wstring UnescapeHistoryField(const std::wstring& text);
+std::vector<std::wstring> SplitHistoryFields(const std::wstring& line);
 std::wstring NormalizeTraceKeyPathBasic(const std::wstring& text);
 std::wstring ResolveRegistryLinkPath(const std::wstring& path);
 
@@ -291,7 +298,7 @@ bool ListViewItemSelected(HWND list, int item_index) {
   return item_index >= 0 && (ListView_GetItemState(list, item_index, LVIS_SELECTED) & LVIS_SELECTED) != 0;
 }
 
-bool DrawSearchMatchSubItem(const SearchResult& result, int subitem, bool selected, HDC hdc, const RECT& rect, HFONT font) {
+bool DrawSearchMatchSubItem(const SearchResult& result, int subitem, HDC hdc, const RECT& rect, HFONT font) {
   bool match_subitem = false;
   if (result.match_field == SearchMatchField::kPath && subitem == 0) {
     match_subitem = true;
@@ -325,9 +332,8 @@ bool DrawSearchMatchSubItem(const SearchResult& result, int subitem, bool select
   }
 
   const Theme& theme = Theme::Current();
-  COLORREF bg = selected ? theme.SelectionColor() : theme.PanelColor();
-  COLORREF fg = selected ? theme.SelectionTextColor() : theme.TextColor();
-  HBRUSH bg_brush = GetCachedBrush(bg);
+  COLORREF fg = theme.TextColor();
+  HBRUSH bg_brush = GetCachedBrush(theme.PanelColor());
   FillRect(hdc, &rect, bg_brush);
 
   HFONT old_font = nullptr;
@@ -368,7 +374,7 @@ bool DrawSearchMatchSubItem(const SearchResult& result, int subitem, bool select
   return true;
 }
 
-void DrawHistoryListItem(HWND list, HDC hdc, int item_index, bool selected, bool hot, HFONT font) {
+void DrawHistoryListItem(HWND list, HDC hdc, int item_index, bool hot, HFONT font) {
   if (!list || !hdc || item_index < 0) {
     return;
   }
@@ -379,10 +385,7 @@ void DrawHistoryListItem(HWND list, HDC hdc, int item_index, bool selected, bool
   const Theme& theme = Theme::Current();
   COLORREF bg = theme.PanelColor();
   COLORREF fg = theme.TextColor();
-  if (selected) {
-    bg = theme.SelectionColor();
-    fg = theme.SelectionTextColor();
-  } else if (hot) {
+  if (hot) {
     bg = theme.HoverColor();
   }
   FillRect(hdc, &row_rect, GetCachedBrush(bg));
@@ -469,14 +472,12 @@ LRESULT HandleHistoryListCustomDraw(HWND list, NMLVCUSTOMDRAW* draw) {
   case CDDS_ITEMPREPAINT: {
     int item_index = static_cast<int>(draw->nmcd.dwItemSpec);
     bool selected = ListViewItemSelected(list, item_index);
+    if (selected) {
+      return CDRF_DODEFAULT;
+    }
     bool hot = (draw->nmcd.uItemState & CDIS_HOT) != 0;
     HFONT font = reinterpret_cast<HFONT>(SendMessageW(list, WM_GETFONT, 0, 0));
-    DrawHistoryListItem(list, draw->nmcd.hdc, item_index, selected, hot, font);
-    if (selected) {
-      const Theme& theme = Theme::Current();
-      COLORREF border = (GetFocus() == list) ? theme.FocusColor() : theme.BorderColor();
-      ui::DrawListViewFocusBorder(list, draw->nmcd.hdc, item_index, border);
-    }
+    DrawHistoryListItem(list, draw->nmcd.hdc, item_index, hot, font);
     return CDRF_SKIPDEFAULT;
   }
   default:
@@ -563,34 +564,22 @@ int FindLastVisibleColumn(const std::vector<bool>& visible) {
   return -1;
 }
 
-std::wstring FormatWin32Error(DWORD code) {
-  if (code == 0) {
-    return L"";
-  }
-  wchar_t buffer[512] = {};
-  DWORD len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, code, 0, buffer, static_cast<DWORD>(_countof(buffer)), nullptr);
-  if (len == 0) {
-    return L"Unknown error.";
-  }
-  return buffer;
-}
-
 bool PromptOpenFile(HWND owner, const wchar_t* filter, std::wstring* path) {
   if (!path) {
     return false;
   }
-  wchar_t buffer[MAX_PATH] = {};
+  std::wstring buffer(32768, L'\0');
   OPENFILENAMEW ofn = {};
   ofn.lStructSize = sizeof(ofn);
   ofn.hwndOwner = owner;
   ofn.lpstrFilter = filter;
-  ofn.lpstrFile = buffer;
-  ofn.nMaxFile = static_cast<DWORD>(_countof(buffer));
+  ofn.lpstrFile = buffer.data();
+  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
   ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
   if (!GetOpenFileNameW(&ofn)) {
     return false;
   }
-  *path = buffer;
+  *path = buffer.c_str();
   return true;
 }
 
@@ -598,18 +587,18 @@ bool PromptSaveFile(HWND owner, const wchar_t* filter, std::wstring* path) {
   if (!path) {
     return false;
   }
-  wchar_t buffer[MAX_PATH] = {};
+  std::wstring buffer(32768, L'\0');
   OPENFILENAMEW ofn = {};
   ofn.lStructSize = sizeof(ofn);
   ofn.hwndOwner = owner;
   ofn.lpstrFilter = filter;
-  ofn.lpstrFile = buffer;
-  ofn.nMaxFile = static_cast<DWORD>(_countof(buffer));
+  ofn.lpstrFile = buffer.data();
+  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
   ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
   if (!GetSaveFileNameW(&ofn)) {
     return false;
   }
-  *path = buffer;
+  *path = buffer.c_str();
   return true;
 }
 
@@ -901,21 +890,6 @@ std::wstring EnsureRegExtension(std::wstring path) {
   return path;
 }
 
-std::wstring TrimWhitespace(const std::wstring& text) {
-  size_t start = 0;
-  while (start < text.size() && (text[start] == L' ' || text[start] == L'\t')) {
-    ++start;
-  }
-  if (start == text.size()) {
-    return L"";
-  }
-  size_t end = text.size() - 1;
-  while (end > start && (text[end] == L' ' || text[end] == L'\t')) {
-    --end;
-  }
-  return text.substr(start, end - start + 1);
-}
-
 bool IsWhitespaceOnly(const std::wstring& text) {
   for (wchar_t ch : text) {
     if (!iswspace(static_cast<wint_t>(ch))) {
@@ -1043,10 +1017,9 @@ std::wstring ReadFontSubstitute(const wchar_t* value_name) {
       return L"";
     }
     if (type == REG_EXPAND_SZ) {
-      wchar_t expanded[512] = {};
-      DWORD expanded_len = ExpandEnvironmentStringsW(value.c_str(), expanded, static_cast<DWORD>(_countof(expanded)));
-      if (expanded_len > 0 && expanded_len < _countof(expanded)) {
-        value.assign(expanded, expanded_len - 1);
+      std::wstring expanded = util::ExpandEnvironmentStringsDynamic(value);
+      if (!expanded.empty()) {
+        value = std::move(expanded);
       }
     }
     return value;
@@ -1070,34 +1043,43 @@ bool WindowClassEquals(HWND hwnd, const wchar_t* class_name) {
   return _wcsicmp(buffer, class_name) == 0;
 }
 
-std::wstring ToLower(const std::wstring& text) {
-  std::wstring out;
-  out.reserve(text.size());
-  for (wchar_t ch : text) {
-    out.push_back(static_cast<wchar_t>(towlower(ch)));
+std::wstring GetDefaultRegeditPath() {
+  DWORD needed = GetWindowsDirectoryW(nullptr, 0);
+  if (needed == 0) {
+    return L"";
   }
-  return out;
+  std::wstring windows_dir(needed, L'\0');
+  DWORD written = GetWindowsDirectoryW(windows_dir.data(), needed);
+  if (written == 0 || written >= needed) {
+    return L"";
+  }
+  windows_dir.resize(written);
+  return util::JoinPath(windows_dir, L"regedit.exe");
 }
 
-bool ReadRegFileText(const std::wstring& path, std::wstring* out) {
-  if (!out) {
+bool LaunchDefaultRegeditProcess(const std::wstring& regedit_path, DWORD* error_code) {
+  if (error_code) {
+    *error_code = ERROR_SUCCESS;
+  }
+  if (regedit_path.empty()) {
+    if (error_code) {
+      *error_code = ERROR_FILE_NOT_FOUND;
+    }
     return false;
   }
-  out->clear();
-  std::string buffer;
-  if (!ReadFileBinary(path, &buffer)) {
+  std::wstring command_line = L"\"" + regedit_path + L"\" /m";
+  STARTUPINFOW startup = {};
+  startup.cb = sizeof(startup);
+  PROCESS_INFORMATION process = {};
+  if (!CreateProcessW(nullptr, command_line.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &startup, &process)) {
+    if (error_code) {
+      *error_code = GetLastError();
+    }
     return false;
   }
-  if (buffer.size() >= 2 && static_cast<unsigned char>(buffer[0]) == 0xFF && static_cast<unsigned char>(buffer[1]) == 0xFE) {
-    size_t wchar_count = (buffer.size() - 2) / sizeof(wchar_t);
-    out->assign(reinterpret_cast<const wchar_t*>(buffer.data() + 2), wchar_count);
-    return !out->empty();
-  }
-  if (buffer.size() >= 3 && static_cast<unsigned char>(buffer[0]) == 0xEF && static_cast<unsigned char>(buffer[1]) == 0xBB && static_cast<unsigned char>(buffer[2]) == 0xBF) {
-    buffer.erase(0, 3);
-  }
-  *out = util::Utf8ToWide(buffer);
-  return !out->empty();
+  CloseHandle(process.hThread);
+  CloseHandle(process.hProcess);
+  return true;
 }
 
 void TrimHistoryEntriesToLimit(std::vector<HistoryEntry>* entries, size_t max_rows) {
@@ -1329,28 +1311,6 @@ std::wstring FormatRegValueData(DWORD type, const std::vector<BYTE>& data) {
   return L"hex(" + std::wstring(type_buffer) + L"):" + hex;
 }
 
-bool WriteRegFileText(const std::wstring& path, const std::wstring& text) {
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return false;
-  }
-  const wchar_t bom = 0xFEFF;
-  DWORD written = 0;
-  if (!WriteFile(file, &bom, static_cast<DWORD>(sizeof(bom)), &written, nullptr)) {
-    CloseHandle(file);
-    return false;
-  }
-  if (!text.empty()) {
-    DWORD bytes = static_cast<DWORD>(text.size() * sizeof(wchar_t));
-    if (!WriteFile(file, text.data(), bytes, &written, nullptr)) {
-      CloseHandle(file);
-      return false;
-    }
-  }
-  CloseHandle(file);
-  return true;
-}
-
 struct ParsedRegFileRoot {
   std::wstring name;
   std::shared_ptr<RegistryProvider::VirtualRegistryData> data;
@@ -1407,7 +1367,7 @@ bool ParseRegFileToVirtualRoots(const std::wstring& path, std::vector<ParsedRegF
     return false;
   }
   std::wstring content;
-  if (!ReadRegFileText(path, &content)) {
+  if (!util::ReadTextFile(path, &content)) {
     if (error) {
       *error = L"Failed to read registry file.";
     }
@@ -1813,10 +1773,9 @@ std::wstring NormalizeHiveFilePath(const std::wstring& raw_path) {
       path = std::wstring(windows_dir) + suffix;
     }
   }
-  wchar_t expanded[4096] = {};
-  DWORD expanded_len = ExpandEnvironmentStringsW(path.c_str(), expanded, static_cast<DWORD>(_countof(expanded)));
-  if (expanded_len > 0 && expanded_len < _countof(expanded)) {
-    path.assign(expanded, expanded_len - 1);
+  std::wstring expanded = util::ExpandEnvironmentStringsDynamic(path);
+  if (!expanded.empty()) {
+    path = std::move(expanded);
   }
   path = ResolveDevicePath(path);
   return path;
@@ -3484,51 +3443,6 @@ struct AutoCompleteThemeContext {
 
 LRESULT CALLBACK AutoCompleteListBoxSubclassProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR, DWORD_PTR) {
   switch (msg) {
-  case WM_ERASEBKGND:
-    return TRUE;
-  case WM_PAINT: {
-    PAINTSTRUCT ps = {};
-    HDC hdc = BeginPaint(hwnd, &ps);
-    const Theme& theme = Theme::Current();
-    RECT client = {};
-    GetClientRect(hwnd, &client);
-    FillRect(hdc, &client, theme.SurfaceBrush());
-
-    int count = static_cast<int>(SendMessageW(hwnd, LB_GETCOUNT, 0, 0));
-    int selected = static_cast<int>(SendMessageW(hwnd, LB_GETCURSEL, 0, 0));
-    HFONT font = reinterpret_cast<HFONT>(SendMessageW(hwnd, WM_GETFONT, 0, 0));
-    HFONT old_font = font ? reinterpret_cast<HFONT>(SelectObject(hdc, font)) : nullptr;
-    SetBkMode(hdc, TRANSPARENT);
-
-    for (int i = 0; i < count; ++i) {
-      RECT item_rect = {};
-      if (SendMessageW(hwnd, LB_GETITEMRECT, static_cast<WPARAM>(i), reinterpret_cast<LPARAM>(&item_rect)) == LB_ERR) {
-        continue;
-      }
-      bool is_selected = (i == selected);
-      COLORREF bg = is_selected ? theme.SelectionColor() : theme.SurfaceColor();
-      COLORREF text = is_selected ? theme.SelectionTextColor() : theme.TextColor();
-      FillRect(hdc, &item_rect, GetCachedBrush(bg));
-      SetTextColor(hdc, text);
-
-      int len = static_cast<int>(SendMessageW(hwnd, LB_GETTEXTLEN, i, 0));
-      if (len > 0 && len < 8192) {
-        std::wstring item_text(static_cast<size_t>(len) + 1, L'\0');
-        SendMessageW(hwnd, LB_GETTEXT, static_cast<WPARAM>(i), reinterpret_cast<LPARAM>(MutableData(item_text)));
-        item_text.resize(static_cast<size_t>(len));
-        RECT text_rect = item_rect;
-        text_rect.left += 6;
-        text_rect.right -= 6;
-        DrawTextW(hdc, item_text.c_str(), -1, &text_rect, DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
-      }
-    }
-
-    if (old_font) {
-      SelectObject(hdc, old_font);
-    }
-    EndPaint(hwnd, &ps);
-    return 0;
-  }
   case WM_NCDESTROY:
     RemoveWindowSubclass(hwnd, AutoCompleteListBoxSubclassProc, kAutoCompleteListBoxSubclassId);
     break;
@@ -3549,12 +3463,12 @@ LRESULT CALLBACK AutoCompletePopupSubclassProc(HWND hwnd, UINT msg, WPARAM wpara
       case CDDS_PREPAINT:
         return CDRF_NOTIFYITEMDRAW;
       case CDDS_ITEMPREPAINT: {
+        if (draw->nmcd.uItemState & CDIS_SELECTED) {
+          return CDRF_DODEFAULT;
+        }
         COLORREF text = theme.TextColor();
         COLORREF background = theme.SurfaceColor();
-        if (draw->nmcd.uItemState & CDIS_SELECTED) {
-          text = theme.SelectionTextColor();
-          background = theme.SelectionColor();
-        } else if (draw->nmcd.uItemState & CDIS_HOT) {
+        if (draw->nmcd.uItemState & CDIS_HOT) {
           background = theme.HoverColor();
         }
         draw->clrText = text;
@@ -4332,9 +4246,9 @@ LRESULT CALLBACK MainWindow::AddressEditProc(HWND hwnd, UINT message, WPARAM wpa
   }
   if (message == WM_KEYUP) {
     LRESULT result = DefSubclassProc(hwnd, message, wparam, lparam);
-    auto* self = reinterpret_cast<MainWindow*>(ref_data);
-    if (self) {
-      self->ApplyAutoCompleteTheme();
+    auto* window = reinterpret_cast<MainWindow*>(ref_data);
+    if (window) {
+      window->ApplyAutoCompleteTheme();
     }
     return result;
   }
@@ -4739,11 +4653,15 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
     std::vector<std::wstring> reg_paths;
     std::wstring offline_candidate;
     for (UINT index = 0; index < count; ++index) {
-      wchar_t buffer[MAX_PATH] = {};
-      if (DragQueryFileW(drop, index, buffer, static_cast<UINT>(_countof(buffer))) == 0) {
+      UINT path_len = DragQueryFileW(drop, index, nullptr, 0);
+      if (path_len == 0) {
         continue;
       }
-      std::wstring path = buffer;
+      std::wstring path(path_len + 1, L'\0');
+      if (DragQueryFileW(drop, index, path.data(), static_cast<UINT>(path.size())) == 0) {
+        continue;
+      }
+      path.resize(path_len);
       if (HasRegExtension(path)) {
         reg_paths.push_back(path);
       } else if (offline_candidate.empty()) {
@@ -5785,13 +5703,12 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
         case CDDS_PREPAINT:
           return CDRF_NOTIFYITEMDRAW;
         case CDDS_ITEMPREPAINT: {
+          if (draw->nmcd.uItemState & CDIS_SELECTED) {
+            return CDRF_DODEFAULT;
+          }
           const Theme& theme = Theme::Current();
-          bool selected = (draw->nmcd.uItemState & CDIS_SELECTED) != 0;
           bool hot = (draw->nmcd.uItemState & CDIS_HOT) != 0;
-          if (selected) {
-            draw->clrText = theme.SelectionTextColor();
-            draw->clrTextBk = theme.SelectionColor();
-          } else if (hot) {
+          if (hot) {
             draw->clrText = theme.TextColor();
             draw->clrTextBk = theme.HoverColor();
           } else {
@@ -6184,7 +6101,7 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
           if (item_index >= 0 && tab_index >= 0 && static_cast<size_t>(tab_index) < search_tabs_.size() && static_cast<size_t>(item_index) < search_tabs_[static_cast<size_t>(tab_index)].results.size()) {
             const SearchResult& result = search_tabs_[static_cast<size_t>(tab_index)].results[static_cast<size_t>(item_index)];
             bool selected = ListViewItemSelected(search_results_list_, item_index);
-            if (DrawSearchMatchSubItem(result, draw->iSubItem, selected, draw->nmcd.hdc, draw->nmcd.rc, ui_font_)) {
+            if (!selected && DrawSearchMatchSubItem(result, draw->iSubItem, draw->nmcd.hdc, draw->nmcd.rc, ui_font_)) {
               return CDRF_SKIPDEFAULT;
             }
           }
@@ -6458,6 +6375,10 @@ void MainWindow::StartStartupCacheLoad(bool include_tree_state) {
         entry.action = UnescapeHistoryField(parts[2]);
         entry.old_data = UnescapeHistoryField(parts[3]);
         entry.new_data = UnescapeHistoryField(parts[4]);
+        if (parts.size() >= 7) {
+          entry.key_path = UnescapeHistoryField(parts[5]);
+          entry.value_name = UnescapeHistoryField(parts[6]);
+        }
         payload->history_entries.push_back(std::move(entry));
       }
       TrimHistoryEntriesToLimit(&payload->history_entries, static_cast<size_t>(history_max_rows));
@@ -7007,9 +6928,6 @@ void MainWindow::ComputeHistorySplitterLimits(int* min_height, int* max_height) 
   UINT dpi = GetWindowDpi(hwnd_);
   const int address_height = CalcEditHeight(address_edit_, ui_font_, util::ScaleForDpi(16, dpi));
   const int tabs_height = std::max(20, tab_height_);
-  const int filter_min_width = 160;
-  const int filter_max_width = 260;
-  const int filter_gap = 6;
   int status_height = 0;
   if (status_bar_ && show_status_bar_) {
     RECT sb_rect = {};
@@ -8353,6 +8271,7 @@ void MainWindow::EnsureValueRowData(ListRow* row) {
   if (row->value_data_size == 0) {
     row->data.clear();
     row->data_ready = true;
+    value_list_.InvalidateFilterCache(row);
     return;
   }
   if (!current_node_) {
@@ -8363,6 +8282,7 @@ void MainWindow::EnsureValueRowData(ListRow* row) {
   if (!RegistryProvider::QueryValue(*current_node_, row->extra, &entry)) {
     row->data.clear();
     row->data_ready = true;
+    value_list_.InvalidateFilterCache(row);
     return;
   }
 
@@ -8378,6 +8298,7 @@ void MainWindow::EnsureValueRowData(ListRow* row) {
   if (row->size.empty() && row->value_data_size > 0) {
     row->size = std::to_wstring(row->value_data_size);
   }
+  value_list_.InvalidateFilterCache(row);
 }
 
 void MainWindow::UpdateAddressBar(RegistryNode* node) {
@@ -9712,9 +9633,10 @@ void MainWindow::RebuildHistoryList() {
   int index = 0;
   for (const auto& entry : history_entries_) {
     LVITEMW item = {};
-    item.mask = LVIF_TEXT;
+    item.mask = LVIF_TEXT | LVIF_PARAM;
     item.iItem = index;
     item.pszText = const_cast<wchar_t*>(entry.time_text.c_str());
+    item.lParam = static_cast<LPARAM>(index);
     int inserted = ListView_InsertItem(history_list_, &item);
     if (inserted >= 0) {
       ListView_SetItemText(history_list_, inserted, 1, const_cast<wchar_t*>(entry.action.c_str()));
@@ -10861,6 +10783,10 @@ bool MainWindow::LoadOfflineRegistryFromPath(const std::wstring& path, bool open
   UpdateRegistryTabEntry(RegistryMode::kOffline, selection_path, L"");
   ApplyRegistryRoots(roots);
   RefreshRegistryTabLabels();
+  HistoryEntry history;
+  history.action = L"Load offline registry";
+  history.new_data = selection_path;
+  AppendHistoryEntry(std::move(history));
   return true;
 }
 
@@ -10894,6 +10820,10 @@ bool MainWindow::SaveOfflineRegistry() {
       }
     }
     ClearOfflineDirty();
+    HistoryEntry history;
+    history.action = L"Save offline registry";
+    history.new_data = std::to_wstring(offline_roots_.size()) + L" hives";
+    AppendHistoryEntry(std::move(history));
     return true;
   }
   if (!offline_root_) {
@@ -10920,6 +10850,10 @@ bool MainWindow::SaveOfflineRegistry() {
     return false;
   }
   ClearOfflineDirty();
+  HistoryEntry history;
+  history.action = L"Save offline registry";
+  history.new_data = path;
+  AppendHistoryEntry(std::move(history));
   return true;
 }
 
@@ -11118,24 +11052,32 @@ bool MainWindow::NavigateToResolvedExternalJump(const std::wstring& key_path, co
 }
 
 void MainWindow::AppendHistoryEntry(const std::wstring& action, const std::wstring& old_data, const std::wstring& new_data) {
+  HistoryEntry entry;
+  entry.action = action;
+  entry.old_data = old_data;
+  entry.new_data = new_data;
+  if (current_node_) {
+    entry.key_path = RegistryProvider::BuildPath(*current_node_);
+  }
+  AppendHistoryEntry(std::move(entry));
+}
+
+void MainWindow::AppendHistoryEntry(HistoryEntry entry) {
   if (!history_list_) {
     return;
   }
 
-  SYSTEMTIME st = {};
-  GetLocalTime(&st);
-  wchar_t time_buffer[64] = {};
-  swprintf_s(time_buffer, L"%d/%d/%d %d:%02d:%02d", st.wMonth, st.wDay, st.wYear, st.wHour, st.wMinute, st.wSecond);
+  if (entry.timestamp == 0 || entry.time_text.empty()) {
+    SYSTEMTIME st = {};
+    GetLocalTime(&st);
+    wchar_t time_buffer[64] = {};
+    swprintf_s(time_buffer, L"%d/%d/%d %d:%02d:%02d", st.wMonth, st.wDay, st.wYear, st.wHour, st.wMinute, st.wSecond);
 
-  FILETIME now = {};
-  GetSystemTimeAsFileTime(&now);
-
-  HistoryEntry entry;
-  entry.timestamp = FileTimeToUint64(now);
-  entry.time_text = time_buffer;
-  entry.action = action;
-  entry.old_data = old_data;
-  entry.new_data = new_data;
+    FILETIME now = {};
+    GetSystemTimeAsFileTime(&now);
+    entry.timestamp = FileTimeToUint64(now);
+    entry.time_text = time_buffer;
+  }
   history_entries_.push_back(entry);
   if (history_loaded_) {
     AppendHistoryCache(entry);
@@ -11145,6 +11087,67 @@ void MainWindow::AppendHistoryEntry(const std::wstring& action, const std::wstri
 
   SortHistoryEntries(&history_entries_, history_sort_column_, history_sort_ascending_);
   RebuildHistoryList();
+}
+
+bool MainWindow::OpenHistoryTarget(const HistoryEntry& entry) {
+  if (entry.key_path.empty()) {
+    return false;
+  }
+  return NavigateToResolvedExternalJump(entry.key_path, entry.value_name, true);
+}
+
+bool MainWindow::RevertHistoryEntry(const HistoryEntry& entry) {
+  if (!EnsureWritable() || entry.key_path.empty() || entry.revert_kind == HistoryEntry::RevertKind::kNone) {
+    return false;
+  }
+
+  bool ok = false;
+  is_replaying_ = true;
+  switch (entry.revert_kind) {
+  case HistoryEntry::RevertKind::kSetValue: {
+    RegistryNode node;
+    if (ResolvePathToNode(entry.key_path, &node)) {
+      ok = RegistryProvider::SetValue(node, entry.revert_value.name, entry.revert_value.type, entry.revert_value.data);
+    }
+    break;
+  }
+  case HistoryEntry::RevertKind::kDeleteValue: {
+    RegistryNode node;
+    if (ResolvePathToNode(entry.key_path, &node)) {
+      ok = RegistryProvider::DeleteValue(node, entry.value_name);
+    }
+    break;
+  }
+  case HistoryEntry::RevertKind::kDeleteKey: {
+    RegistryNode node;
+    if (ResolvePathToNode(entry.key_path, &node)) {
+      std::wstring name = LeafName(node);
+      if (!name.empty() && ui::ConfirmDelete(hwnd_, L"Revert Key Creation", name)) {
+        ok = RegistryProvider::DeleteKey(node);
+      }
+    }
+    break;
+  }
+  default:
+    break;
+  }
+  is_replaying_ = false;
+
+  if (!ok) {
+    ui::ShowError(hwnd_, L"Failed to revert history entry.");
+    return false;
+  }
+
+  HistoryEntry revert_entry;
+  revert_entry.action = L"Revert: " + entry.action;
+  revert_entry.key_path = entry.key_path;
+  revert_entry.value_name = entry.value_name;
+  AppendHistoryEntry(std::move(revert_entry));
+  RefreshTreeSelection();
+  if (current_node_) {
+    UpdateValueListForNode(current_node_);
+  }
+  return true;
 }
 
 std::wstring MainWindow::ResolveSearchComment(const SearchResult& result) const {
@@ -11240,6 +11243,10 @@ void MainWindow::LoadHistoryCache() {
     entry.action = UnescapeHistoryField(parts[2]);
     entry.old_data = UnescapeHistoryField(parts[3]);
     entry.new_data = UnescapeHistoryField(parts[4]);
+    if (parts.size() >= 7) {
+      entry.key_path = UnescapeHistoryField(parts[5]);
+      entry.value_name = UnescapeHistoryField(parts[6]);
+    }
     history_entries_.push_back(std::move(entry));
   }
 
@@ -11263,6 +11270,10 @@ void MainWindow::AppendHistoryCache(const HistoryEntry& entry) {
   line.append(EscapeHistoryField(entry.old_data));
   line.push_back(L'\t');
   line.append(EscapeHistoryField(entry.new_data));
+  line.push_back(L'\t');
+  line.append(EscapeHistoryField(entry.key_path));
+  line.push_back(L'\t');
+  line.append(EscapeHistoryField(entry.value_name));
   line.push_back(L'\n');
 
   std::string utf8 = util::WideToUtf8(line);
@@ -11592,13 +11603,13 @@ void MainWindow::LoadTabs() {
                 }
                 tabs_.push_back(std::move(entry));
               } else if (_wcsicmp(type.c_str(), L"search") == 0 && parts.size() >= 4) {
-                std::wstring file = UnescapeHistoryField(parts[3]);
-                SearchTab tab;
-                tab.label = label.empty() ? L"Find" : label;
-                tab.cache_file = std::move(file);
-                tab.results_loaded = tab.cache_file.empty();
-                tab.is_compare = StartsWithInsensitive(tab.label, L"Compare:");
-                search_tabs_.push_back(std::move(tab));
+                std::wstring cache_file = UnescapeHistoryField(parts[3]);
+                SearchTab search_tab;
+                search_tab.label = label.empty() ? L"Find" : label;
+                search_tab.cache_file = std::move(cache_file);
+                search_tab.results_loaded = search_tab.cache_file.empty();
+                search_tab.is_compare = StartsWithInsensitive(search_tab.label, L"Compare:");
+                search_tabs_.push_back(std::move(search_tab));
                 int search_index = static_cast<int>(search_tabs_.size() - 1);
                 TCITEMW item = {};
                 item.mask = TCIF_TEXT;
@@ -12081,6 +12092,9 @@ void MainWindow::RefreshValueListComments() {
     SortValueRows(&value_list_.rows(), value_sort_column_, value_sort_ascending_);
     changed = true;
   }
+  if (changed) {
+    value_list_.InvalidateFilterCache();
+  }
   if (value_list_.HasFilter()) {
     value_list_.RebuildFilter();
   } else if (changed && value_list_.hwnd()) {
@@ -12330,9 +12344,9 @@ void MainWindow::LoadSettings() {
         wcsncpy_s(custom_font_.lfFaceName, value.c_str(), _TRUNCATE);
       }
     } else if (_wcsicmp(key.c_str(), L"font_size") == 0) {
-      int size = _wtoi(value.c_str());
-      if (size > 0) {
-        font_size = size;
+      int parsed_size = _wtoi(value.c_str());
+      if (parsed_size > 0) {
+        font_size = parsed_size;
         font_size_set = true;
       }
     } else if (_wcsicmp(key.c_str(), L"font_weight") == 0) {
@@ -12725,23 +12739,18 @@ void MainWindow::StartValueListWorker() {
         return {};
       };
 
-      auto lookup_hive_root = [&](const RegistryNode& node) -> bool {
-        if (task->hive_list.empty()) {
-          return false;
-        }
-        std::wstring nt_path = RegistryProvider::BuildNtPath(node);
-        if (nt_path.empty()) {
-          return false;
-        }
-        std::wstring nt_lower = ToLower(nt_path);
-        for (const auto& entry : task->hive_list) {
-          const std::wstring& hive_key = entry.first;
-          if (nt_lower == hive_key) {
-            return true;
-          }
-        }
-        return false;
+      std::unordered_set<std::wstring> hive_roots;
+      hive_roots.reserve(task->hive_list.size());
+      for (const auto& entry : task->hive_list) {
+        hive_roots.insert(entry.first);
+      }
+      struct KeyMetadata {
+        int image_index = kFolderIconIndex;
+        bool is_link = false;
       };
+      std::unordered_map<std::wstring, KeyMetadata> key_metadata_cache;
+      key_metadata_cache.reserve(256);
+
       auto resolve_key_icon = [&](const RegistryNode& node, bool* is_link) -> int {
         if (is_link) {
           *is_link = false;
@@ -12749,17 +12758,33 @@ void MainWindow::StartValueListWorker() {
         if (node.simulated) {
           return kFolderSimIconIndex;
         }
+        std::wstring cache_key = RegistryProvider::BuildPath(node);
+        auto cached = key_metadata_cache.find(cache_key);
+        if (cached != key_metadata_cache.end()) {
+          if (is_link) {
+            *is_link = cached->second.is_link;
+          }
+          return cached->second.image_index;
+        }
+        KeyMetadata metadata;
+        std::wstring nt_path = RegistryProvider::BuildNtPath(node);
+        if (!nt_path.empty() && hive_roots.find(ToLower(nt_path)) != hive_roots.end()) {
+          metadata.image_index = kDatabaseIconIndex;
+          key_metadata_cache.emplace(std::move(cache_key), metadata);
+          return metadata.image_index;
+        }
         std::wstring link_target;
         if (RegistryProvider::QuerySymbolicLinkTarget(node, &link_target)) {
           if (is_link) {
             *is_link = true;
           }
-          return kSymlinkIconIndex;
+          metadata.image_index = kSymlinkIconIndex;
+          metadata.is_link = true;
+          key_metadata_cache.emplace(std::move(cache_key), metadata);
+          return metadata.image_index;
         }
-        if (lookup_hive_root(node)) {
-          return kDatabaseIconIndex;
-        }
-        return kFolderIconIndex;
+        key_metadata_cache.emplace(std::move(cache_key), metadata);
+        return metadata.image_index;
       };
 
       auto subkeys = RegistryProvider::EnumSubKeyNames(task->snapshot, false);
@@ -13274,7 +13299,7 @@ void MainWindow::StartDefaultParseThread(DefaultParseSession* session) {
     };
 
     std::wstring content;
-    if (!ReadRegFileText(source, &content)) {
+    if (!util::ReadTextFile(source, &content)) {
       post_batch(nullptr, true, L"Failed to read registry file.", false);
       return;
     }
@@ -14385,14 +14410,11 @@ bool MainWindow::IsProcessTrustedInstaller() const {
 }
 
 bool MainWindow::RestartAsAdmin() {
-  std::wstring exe_path;
-  exe_path.resize(MAX_PATH);
-  DWORD len = GetModuleFileNameW(nullptr, MutableData(exe_path), static_cast<DWORD>(exe_path.size()));
-  if (len == 0 || len >= exe_path.size()) {
+  std::wstring exe_path = util::GetModulePath();
+  if (exe_path.empty()) {
     ui::ShowError(hwnd_, L"Failed to locate the executable path.");
     return false;
   }
-  exe_path.resize(len);
   HINSTANCE result = ShellExecuteW(hwnd_, L"runas", exe_path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
   if (reinterpret_cast<INT_PTR>(result) <= 32) {
     ui::ShowError(hwnd_, L"Failed to restart with administrator rights.");
@@ -14403,14 +14425,11 @@ bool MainWindow::RestartAsAdmin() {
 }
 
 bool MainWindow::RestartAsSystem() {
-  std::wstring exe_path;
-  exe_path.resize(MAX_PATH);
-  DWORD len = GetModuleFileNameW(nullptr, MutableData(exe_path), static_cast<DWORD>(exe_path.size()));
-  if (len == 0 || len >= exe_path.size()) {
+  std::wstring exe_path = util::GetModulePath();
+  if (exe_path.empty()) {
     ui::ShowError(hwnd_, L"Failed to locate the executable path.");
     return false;
   }
-  exe_path.resize(len);
 
   if (!IsProcessElevated()) {
     HINSTANCE result = ShellExecuteW(hwnd_, L"runas", exe_path.c_str(), kRestartSystemArg, nullptr, SW_SHOWNORMAL);
@@ -14443,14 +14462,11 @@ bool MainWindow::RestartAsSystem() {
 }
 
 bool MainWindow::RestartAsTrustedInstaller() {
-  std::wstring exe_path;
-  exe_path.resize(MAX_PATH);
-  DWORD len = GetModuleFileNameW(nullptr, MutableData(exe_path), static_cast<DWORD>(exe_path.size()));
-  if (len == 0 || len >= exe_path.size()) {
+  std::wstring exe_path = util::GetModulePath();
+  if (exe_path.empty()) {
     ui::ShowError(hwnd_, L"Failed to locate the executable path.");
     return false;
   }
-  exe_path.resize(len);
 
   if (!IsProcessElevated()) {
     HINSTANCE result = ShellExecuteW(hwnd_, L"runas", exe_path.c_str(), kRestartTiArg, nullptr, SW_SHOWNORMAL);
@@ -14483,13 +14499,10 @@ bool MainWindow::RestartAsTrustedInstaller() {
 }
 
 void MainWindow::SyncReplaceRegeditState() {
-  std::wstring exe_path;
-  exe_path.resize(MAX_PATH);
-  DWORD len = GetModuleFileNameW(nullptr, MutableData(exe_path), static_cast<DWORD>(exe_path.size()));
-  if (len == 0 || len >= exe_path.size()) {
+  std::wstring exe_path = util::GetModulePath();
+  if (exe_path.empty()) {
     return;
   }
-  exe_path.resize(len);
 
   HKEY base = nullptr;
   LONG result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\regedit.exe", 0, KEY_QUERY_VALUE, &base);
@@ -14526,10 +14539,9 @@ void MainWindow::SyncReplaceRegeditState() {
 
   std::wstring expanded = debugger;
   if (type == REG_EXPAND_SZ) {
-    wchar_t buffer[MAX_PATH * 2] = {};
-    DWORD expanded_len = ExpandEnvironmentStringsW(debugger.c_str(), buffer, static_cast<DWORD>(_countof(buffer)));
-    if (expanded_len > 0 && expanded_len < _countof(buffer)) {
-      expanded.assign(buffer, expanded_len - 1);
+    std::wstring resolved = util::ExpandEnvironmentStringsDynamic(debugger);
+    if (!resolved.empty()) {
+      expanded = std::move(resolved);
     }
   }
 
@@ -14563,14 +14575,11 @@ void MainWindow::SyncReplaceRegeditState() {
 }
 
 void MainWindow::ReplaceRegedit(bool enable) {
-  std::wstring exe_path;
-  exe_path.resize(MAX_PATH);
-  DWORD len = GetModuleFileNameW(nullptr, MutableData(exe_path), static_cast<DWORD>(exe_path.size()));
-  if (len == 0 || len >= exe_path.size()) {
+  std::wstring exe_path = util::GetModulePath();
+  if (exe_path.empty()) {
     ui::ShowError(hwnd_, L"Failed to locate the executable path.");
     return;
   }
-  exe_path.resize(len);
 
   HKEY base = nullptr;
   DWORD base_disp = 0;
@@ -14627,16 +14636,24 @@ bool MainWindow::OpenDefaultRegedit() {
     return false;
   }
 
-  const wchar_t* key_path = L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\regedit.exe";
-  util::UniqueHKey key;
-  LONG result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, key_path, 0, KEY_READ | KEY_WRITE, key.put());
-  if (result == ERROR_FILE_NOT_FOUND) {
-    HINSTANCE launched = ShellExecuteW(hwnd_, L"open", L"regedit.exe", nullptr, nullptr, SW_SHOWNORMAL);
-    if (reinterpret_cast<INT_PTR>(launched) <= 32) {
-      ui::ShowError(hwnd_, L"Failed to open Regedit.");
-      return false;
+  std::wstring regedit_path = GetDefaultRegeditPath();
+  if (regedit_path.empty()) {
+    ui::ShowError(hwnd_, L"Failed to locate the default Regedit executable.");
+    return false;
+  }
+  auto launch_regedit = [&]() -> bool {
+    DWORD launch_error = ERROR_SUCCESS;
+    if (LaunchDefaultRegeditProcess(regedit_path, &launch_error)) {
+      return true;
     }
-    return true;
+    ui::ShowError(hwnd_, FormatWin32Error(launch_error));
+    return false;
+  };
+
+  util::UniqueHKey key;
+  LONG result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, kRegeditIfeoPath, 0, KEY_READ | KEY_WRITE | KEY_WOW64_64KEY, key.put());
+  if (result == ERROR_FILE_NOT_FOUND) {
+    return launch_regedit();
   }
   if (result != ERROR_SUCCESS) {
     ui::ShowError(hwnd_, FormatWin32Error(result));
@@ -14647,12 +14664,7 @@ bool MainWindow::OpenDefaultRegedit() {
   DWORD size = 0;
   result = RegQueryValueExW(key.get(), L"Debugger", nullptr, &type, nullptr, &size);
   if (result == ERROR_FILE_NOT_FOUND) {
-    HINSTANCE launched = ShellExecuteW(hwnd_, L"open", L"regedit.exe", nullptr, nullptr, SW_SHOWNORMAL);
-    if (reinterpret_cast<INT_PTR>(launched) <= 32) {
-      ui::ShowError(hwnd_, L"Failed to open Regedit.");
-      return false;
-    }
-    return true;
+    return launch_regedit();
   }
   if (result != ERROR_SUCCESS || (type != REG_SZ && type != REG_EXPAND_SZ) || size == 0) {
     ui::ShowError(hwnd_, L"Failed to read the Regedit debugger value.");
@@ -14692,7 +14704,8 @@ bool MainWindow::OpenDefaultRegedit() {
     return false;
   }
 
-  HINSTANCE launched = ShellExecuteW(hwnd_, L"open", L"regedit.exe", nullptr, nullptr, SW_SHOWNORMAL);
+  DWORD launch_error = ERROR_SUCCESS;
+  bool launched = LaunchDefaultRegeditProcess(regedit_path, &launch_error);
 
   LONG restore = RegSetValueExW(key.get(), L"Debugger", 0, type, data.data(), size);
   RegDeleteValueW(key.get(), temp_name.c_str());
@@ -14700,8 +14713,8 @@ bool MainWindow::OpenDefaultRegedit() {
     ui::ShowError(hwnd_, FormatWin32Error(restore));
     return false;
   }
-  if (reinterpret_cast<INT_PTR>(launched) <= 32) {
-    ui::ShowError(hwnd_, L"Failed to open Regedit.");
+  if (!launched) {
+    ui::ShowError(hwnd_, FormatWin32Error(launch_error));
     return false;
   }
   return true;
@@ -14737,10 +14750,11 @@ void MainWindow::OpenHiveFileDir() {
     return;
   }
   std::wstring args = L"/select,\"" + hive_path + L"\"";
-  wchar_t folder[MAX_PATH] = {};
-  wcsncpy_s(folder, hive_path.c_str(), _TRUNCATE);
-  if (SUCCEEDED(PathCchRemoveFileSpec(folder, _countof(folder)))) {
-    ShellExecuteW(hwnd_, L"open", L"explorer.exe", args.c_str(), folder, SW_SHOWNORMAL);
+  std::wstring folder = hive_path;
+  folder.push_back(L'\0');
+  if (SUCCEEDED(PathCchRemoveFileSpec(folder.data(), folder.size()))) {
+    folder.resize(wcsnlen_s(folder.data(), folder.size()));
+    ShellExecuteW(hwnd_, L"open", L"explorer.exe", args.c_str(), folder.c_str(), SW_SHOWNORMAL);
   } else {
     ShellExecuteW(hwnd_, L"open", L"explorer.exe", args.c_str(), nullptr, SW_SHOWNORMAL);
   }
@@ -16011,7 +16025,7 @@ bool MainWindow::ParseDefaultRegFile(const std::wstring& path, DefaultData* out,
   }
   out->values_by_key.clear();
   std::wstring content;
-  if (!ReadRegFileText(path, &content)) {
+  if (!util::ReadTextFile(path, &content)) {
     if (error) {
       *error = L"Failed to read registry file.";
     }
@@ -16702,7 +16716,7 @@ bool MainWindow::SaveRegFileTab(int tab_index) {
   if (!BuildRegFileContent(entry, &content)) {
     return false;
   }
-  if (!WriteRegFileText(entry.reg_file_path, content)) {
+  if (!util::WriteTextFile(entry.reg_file_path, content, true)) {
     ui::ShowError(hwnd_, L"Failed to save registry file.");
     return false;
   }
@@ -16710,6 +16724,7 @@ bool MainWindow::SaveRegFileTab(int tab_index) {
     entry.reg_file_dirty = false;
     BuildMenus();
   }
+  AppendHistoryEntry(L"Save .reg file " + FileNameOnly(entry.reg_file_path), L"", entry.reg_file_path);
   return true;
 }
 
@@ -16725,7 +16740,7 @@ bool MainWindow::ExportRegFileTab(int tab_index, const std::wstring& path) {
     return false;
   }
   std::wstring target = EnsureRegExtension(path);
-  if (!WriteRegFileText(target, content)) {
+  if (!util::WriteTextFile(target, content, true)) {
     ui::ShowError(hwnd_, L"Failed to export registry file.");
     return false;
   }
@@ -16896,6 +16911,7 @@ bool MainWindow::OpenRegFileTab(const std::wstring& path) {
       ApplyViewVisibility();
       UpdateStatus();
       start_parse();
+      AppendHistoryEntry(L"Open .reg file " + FileNameOnly(path), L"", path);
       return true;
     }
   }
@@ -16918,6 +16934,7 @@ bool MainWindow::OpenRegFileTab(const std::wstring& path) {
   ApplyViewVisibility();
   UpdateStatus();
   start_parse();
+  AppendHistoryEntry(L"Open .reg file " + FileNameOnly(path), L"", path);
   return true;
 }
 

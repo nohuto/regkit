@@ -69,6 +69,8 @@ public:
   void Clear();
   void SetFilter(const std::wstring& text);
   void RebuildFilter();
+  void InvalidateFilterCache();
+  void InvalidateFilterCache(const ListRow* row);
   bool HasFilter() const;
   size_t RowCount() const;
   const ListRow* RowAt(int index) const;
@@ -80,6 +82,8 @@ private:
   HWND hwnd_ = nullptr;
   std::vector<ListRow> rows_;
   std::vector<int> visible_indices_;
+  std::vector<std::wstring> filter_cache_;
+  std::vector<bool> filter_cache_valid_;
   std::wstring filter_text_;
 };
 

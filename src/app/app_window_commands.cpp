@@ -43,6 +43,9 @@ namespace {
 
 constexpr wchar_t kRepoUrl[] = L"https://github.com/nohuto/regkit";
 
+using util::ToLower;
+using util::TrimWhitespace;
+
 HMENU BuildCopyKeyPathMenu() {
   HMENU menu = CreatePopupMenu();
   AppendMenuW(menu, MF_STRING, cmd::kEditCopyKeyPathAbbrev, L"Abbreviated (HKLM)");
@@ -229,18 +232,18 @@ bool PromptOpenFilePath(HWND owner, const wchar_t* filter, std::wstring* path) {
   if (!path) {
     return false;
   }
-  wchar_t buffer[MAX_PATH] = {};
+  std::wstring buffer(32768, L'\0');
   OPENFILENAMEW ofn = {};
   ofn.lStructSize = sizeof(ofn);
   ofn.hwndOwner = owner;
   ofn.lpstrFilter = filter;
-  ofn.lpstrFile = buffer;
-  ofn.nMaxFile = static_cast<DWORD>(_countof(buffer));
+  ofn.lpstrFile = buffer.data();
+  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
   ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
   if (!GetOpenFileNameW(&ofn)) {
     return false;
   }
-  *path = buffer;
+  *path = buffer.c_str();
   return true;
 }
 
@@ -248,18 +251,18 @@ bool PromptSaveFilePath(HWND owner, const wchar_t* filter, std::wstring* path) {
   if (!path) {
     return false;
   }
-  wchar_t buffer[MAX_PATH] = {};
+  std::wstring buffer(32768, L'\0');
   OPENFILENAMEW ofn = {};
   ofn.lStructSize = sizeof(ofn);
   ofn.hwndOwner = owner;
   ofn.lpstrFilter = filter;
-  ofn.lpstrFile = buffer;
-  ofn.nMaxFile = static_cast<DWORD>(_countof(buffer));
+  ofn.lpstrFile = buffer.data();
+  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
   ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
   if (!GetSaveFileNameW(&ofn)) {
     return false;
   }
-  *path = buffer;
+  *path = buffer.c_str();
   return true;
 }
 
@@ -389,30 +392,6 @@ HTREEITEM FindChildByText(HWND tree, HTREEITEM parent, const std::wstring& text)
     child = TreeView_GetNextSibling(tree, child);
   }
   return nullptr;
-}
-
-std::wstring TrimWhitespace(const std::wstring& text) {
-  size_t start = 0;
-  while (start < text.size() && (text[start] == L' ' || text[start] == L'\t')) {
-    ++start;
-  }
-  if (start >= text.size()) {
-    return L"";
-  }
-  size_t end = text.size();
-  while (end > start && (text[end - 1] == L' ' || text[end - 1] == L'\t')) {
-    --end;
-  }
-  return text.substr(start, end - start);
-}
-
-std::wstring ToLower(const std::wstring& text) {
-  std::wstring out;
-  out.reserve(text.size());
-  for (wchar_t ch : text) {
-    out.push_back(static_cast<wchar_t>(towlower(ch)));
-  }
-  return out;
 }
 
 bool StartsWithInsensitive(const std::wstring& text, const std::wstring& prefix) {
@@ -659,40 +638,6 @@ void ApplyEditCustomBorder(HWND parent, int id) {
   SetWindowPos(ctrl, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 }
 
-bool ReadRegFileText(const std::wstring& path, std::wstring* out) {
-  if (!out) {
-    return false;
-  }
-  out->clear();
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return false;
-  }
-  LARGE_INTEGER size = {};
-  if (!GetFileSizeEx(file, &size) || size.QuadPart <= 0 || size.QuadPart > static_cast<LONGLONG>(32 * 1024 * 1024)) {
-    CloseHandle(file);
-    return false;
-  }
-  std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
-  DWORD read = 0;
-  bool ok = ReadFile(file, &buffer[0], static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
-  CloseHandle(file);
-  if (!ok || read == 0) {
-    return false;
-  }
-  buffer.resize(read);
-  if (buffer.size() >= 2 && static_cast<unsigned char>(buffer[0]) == 0xFF && static_cast<unsigned char>(buffer[1]) == 0xFE) {
-    size_t wchar_count = (buffer.size() - 2) / sizeof(wchar_t);
-    out->assign(reinterpret_cast<const wchar_t*>(buffer.data() + 2), wchar_count);
-    return !out->empty();
-  }
-  if (buffer.size() >= 3 && static_cast<unsigned char>(buffer[0]) == 0xEF && static_cast<unsigned char>(buffer[1]) == 0xBB && static_cast<unsigned char>(buffer[2]) == 0xBF) {
-    buffer.erase(0, 3);
-  }
-  *out = util::Utf8ToWide(buffer);
-  return !out->empty();
-}
-
 bool ParseQuotedString(const std::wstring& text, std::wstring* out, size_t* end_pos) {
   if (!out || text.empty() || text.front() != L'"') {
     return false;
@@ -777,7 +722,7 @@ bool ParseRegFile(const std::wstring& path, RegFileData* out, std::wstring* erro
   out->keys.clear();
   out->key_order.clear();
   std::wstring content;
-  if (!ReadRegFileText(path, &content)) {
+  if (!util::ReadTextFile(path, &content, nullptr, 32ull * 1024ull * 1024ull)) {
     if (error) {
       *error = L"Failed to read registry file.";
     }
@@ -1531,6 +1476,7 @@ void MainWindow::BuildMenus() {
   }
   UINT save_flags = MF_STRING | (can_save ? 0 : MF_GRAYED);
   append_menu(file_menu, save_flags, cmd::kFileSave, L"Save");
+  append_menu(file_menu, MF_STRING, cmd::kFileOpenRegFile, L"Open .reg File...");
   UINT import_flags = MF_STRING | (can_modify ? 0 : MF_GRAYED);
   append_menu(file_menu, import_flags, cmd::kFileImport, L"Import...");
   append_menu(file_menu, MF_STRING, cmd::kFileExport, L"Export...");
@@ -1929,10 +1875,24 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     if (!EnsureWritable()) {
       return true;
     }
+    std::wstring path;
+    if (!PromptOpenFilePath(hwnd_, L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0\0", &path)) {
+      return true;
+    }
     std::wstring error;
-    if (!ImportRegFile(hwnd_, &error) && !error.empty()) {
+    if (ImportRegFileFromPath(path, &error)) {
+      AppendHistoryEntry(L"Import .reg file " + FileNameOnly(path), L"", path);
+    } else if (!error.empty()) {
       ui::ShowError(hwnd_, error);
     }
+    return true;
+  }
+  case cmd::kFileOpenRegFile: {
+    std::wstring path;
+    if (!PromptOpenFilePath(hwnd_, L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0\0", &path)) {
+      return true;
+    }
+    OpenRegFileTab(path);
     return true;
   }
   case cmd::kFileSave: {
@@ -1966,7 +1926,9 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       if (!PromptSaveFilePath(hwnd_, L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0\0", &path)) {
         return true;
       }
-      ExportRegFileTab(tab_index, path);
+      if (ExportRegFileTab(tab_index, path)) {
+        AppendHistoryEntry(L"Export .reg tab " + FileNameOnly(path), L"", path);
+      }
       return true;
     }
     if (!current_node_) {
@@ -2007,7 +1969,13 @@ bool MainWindow::HandleMenuCommand(int command_id) {
         dedupe(&selected_keys);
         std::wstring error;
         std::wstring path = RegistryProvider::BuildPath(*current_node_);
-        if (!ExportRegFileSelection(hwnd_, path, selected_values, selected_keys, &error) && !error.empty()) {
+        if (ExportRegFileSelection(hwnd_, path, selected_values, selected_keys, &error)) {
+          HistoryEntry entry;
+          entry.action = L"Export registry selection";
+          entry.old_data = std::to_wstring(selected_keys.size()) + L" keys, " + std::to_wstring(selected_values.size()) + L" values";
+          entry.key_path = path;
+          AppendHistoryEntry(std::move(entry));
+        } else if (!error.empty()) {
           ui::ShowError(hwnd_, error);
         }
         return true;
@@ -2015,7 +1983,13 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     }
     std::wstring error;
     std::wstring path = RegistryProvider::BuildPath(*current_node_);
-    if (!ExportRegFile(hwnd_, path, &error) && !error.empty()) {
+    if (ExportRegFile(hwnd_, path, &error)) {
+      HistoryEntry entry;
+      entry.action = L"Export registry key";
+      entry.key_path = path;
+      entry.new_data = path;
+      AppendHistoryEntry(std::move(entry));
+    } else if (!error.empty()) {
       ui::ShowError(hwnd_, error);
     }
     return true;
@@ -2025,7 +1999,9 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     if (!PromptOpenFilePath(hwnd_, L"RegKit Comment Files (*.rkc)\0*.rkc\0All Files (*.*)\0*.*\0\0", &path)) {
       return true;
     }
-    if (!ImportCommentsFromFile(path)) {
+    if (ImportCommentsFromFile(path)) {
+      AppendHistoryEntry(L"Import comments " + FileNameOnly(path), L"", path);
+    } else {
       ui::ShowError(hwnd_, L"Failed to import comments.");
     }
     return true;
@@ -2035,7 +2011,9 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     if (!PromptSaveFilePath(hwnd_, L"RegKit Comment Files (*.rkc)\0*.rkc\0All Files (*.*)\0*.*\0\0", &path)) {
       return true;
     }
-    if (!ExportCommentsToFile(path)) {
+    if (ExportCommentsToFile(path)) {
+      AppendHistoryEntry(L"Export comments " + FileNameOnly(path), L"", path);
+    } else {
       ui::ShowError(hwnd_, L"Failed to export comments.");
     }
     return true;
@@ -2053,10 +2031,11 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     if (current_node_ && (current_node_->root == HKEY_LOCAL_MACHINE || current_node_->root == HKEY_USERS)) {
       root = current_node_->root;
     }
-    if (!LoadHive(hwnd_, root, &error) && !error.empty()) {
-      ui::ShowError(hwnd_, error);
-    } else {
+    if (LoadHive(hwnd_, root, &error)) {
+      AppendHistoryEntry(L"Load hive", L"", RegistryProvider::RootName(root));
       UpdateValueListForNode(current_node_);
+    } else if (!error.empty()) {
+      ui::ShowError(hwnd_, error);
     }
     return true;
   }
@@ -2569,6 +2548,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       ui::ShowError(hwnd_, L"Failed to import favorites.");
     } else {
       RefreshFavoritesCache();
+      AppendHistoryEntry(L"Import favorites " + FileNameOnly(path), L"", path);
     }
     BuildMenus();
     return true;
@@ -2584,6 +2564,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       RefreshFavoritesCache();
       BuildMenus();
     }
+    AppendHistoryEntry(L"Import Regedit favorites", L"", std::to_wstring(imported) + L" favorites");
     return true;
   }
   case cmd::kFavoritesExport: {
@@ -2593,6 +2574,8 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     }
     if (!FavoritesStore::ExportToFile(path)) {
       ui::ShowError(hwnd_, L"Failed to export favorites.");
+    } else {
+      AppendHistoryEntry(L"Export favorites " + FileNameOnly(path), L"", path);
     }
     return true;
   }
@@ -4360,8 +4343,25 @@ void MainWindow::ShowHistoryContextMenu(POINT screen_pt) {
   if (index >= 0) {
     ListView_SetItemState(history_list_, index, LVIS_SELECTED, LVIS_SELECTED);
   }
+  const HistoryEntry* entry = nullptr;
+  if (index >= 0) {
+    LVITEMW item = {};
+    item.mask = LVIF_PARAM;
+    item.iItem = index;
+    if (ListView_GetItem(history_list_, &item)) {
+      size_t history_index = static_cast<size_t>(item.lParam);
+      if (history_index < history_entries_.size()) {
+        entry = &history_entries_[history_index];
+      }
+    }
+  }
 
   HMENU menu = CreatePopupMenu();
+  UINT open_flags = MF_STRING | ((entry && !entry->key_path.empty()) ? 0 : MF_GRAYED);
+  UINT revert_flags = MF_STRING | ((entry && entry->revert_kind != HistoryEntry::RevertKind::kNone) ? 0 : MF_GRAYED);
+  AppendMenuW(menu, open_flags, cmd::kHistoryOpenTarget, L"Open Entry");
+  AppendMenuW(menu, revert_flags, cmd::kHistoryRevert, L"Revert");
+  AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   AppendMenuW(menu, MF_STRING, cmd::kEditCopyKey, L"Copy");
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   AppendMenuW(menu, MF_STRING, cmd::kEditDelete, L"Clear History");
@@ -4369,7 +4369,13 @@ void MainWindow::ShowHistoryContextMenu(POINT screen_pt) {
   int command = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON, screen_pt.x, screen_pt.y, 0, hwnd_, nullptr);
   DestroyMenu(menu);
 
-  if (command == cmd::kEditCopyKey && index >= 0) {
+  if (command == cmd::kHistoryOpenTarget && entry) {
+    if (!OpenHistoryTarget(*entry)) {
+      ui::ShowError(hwnd_, L"Failed to open history target.");
+    }
+  } else if (command == cmd::kHistoryRevert && entry) {
+    RevertHistoryEntry(*entry);
+  } else if (command == cmd::kEditCopyKey && index >= 0) {
     wchar_t time[128] = {};
     wchar_t action[256] = {};
     wchar_t old_data[256] = {};

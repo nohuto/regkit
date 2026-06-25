@@ -16,17 +16,42 @@
 
 #include "../../include/app/value_list.h"
 
+#include <algorithm>
+#include <cwctype>
+
+#include "../../include/win32/win32_helpers.h"
+
 namespace regkit {
 
 namespace {
-bool ContainsInsensitive(const std::wstring& text, const std::wstring& needle) {
-  if (needle.empty()) {
-    return true;
+void AppendSearchField(std::wstring* out, const std::wstring& text) {
+  if (!out || text.empty()) {
+    return;
   }
-  if (text.empty()) {
-    return false;
+  if (!out->empty()) {
+    out->push_back(L'\x1f');
   }
-  return FindStringOrdinal(FIND_FROMSTART, text.c_str(), static_cast<int>(text.size()), needle.c_str(), static_cast<int>(needle.size()), TRUE) >= 0;
+  out->reserve(out->size() + text.size());
+  for (wchar_t ch : text) {
+    out->push_back(static_cast<wchar_t>(towlower(ch)));
+  }
+}
+
+std::wstring BuildSearchText(const ListRow& row) {
+  std::wstring text;
+  size_t reserve = row.name.size() + row.type.size() + row.data.size() + row.default_data.size() + row.read_on_boot.size() + row.extra.size() + row.size.size() + row.date.size() + row.details.size() + row.comment.size() + 10;
+  text.reserve(reserve);
+  AppendSearchField(&text, row.name);
+  AppendSearchField(&text, row.type);
+  AppendSearchField(&text, row.data);
+  AppendSearchField(&text, row.default_data);
+  AppendSearchField(&text, row.read_on_boot);
+  AppendSearchField(&text, row.extra);
+  AppendSearchField(&text, row.size);
+  AppendSearchField(&text, row.date);
+  AppendSearchField(&text, row.details);
+  AppendSearchField(&text, row.comment);
+  return text;
 }
 
 } // namespace
@@ -62,6 +87,10 @@ void ValueList::SetColumns(const std::vector<ColumnInfo>& columns) {
 
 void ValueList::SetRows(std::vector<ListRow> rows) {
   rows_ = std::move(rows);
+  filter_cache_.clear();
+  filter_cache_valid_.clear();
+  filter_cache_.resize(rows_.size());
+  filter_cache_valid_.resize(rows_.size(), false);
   RebuildFilter();
 }
 
@@ -72,6 +101,8 @@ void ValueList::SetImageList(HIMAGELIST image_list) {
 void ValueList::Clear() {
   rows_.clear();
   visible_indices_.clear();
+  filter_cache_.clear();
+  filter_cache_valid_.clear();
   ListView_SetItemCountEx(hwnd_, 0, LVSICF_NOINVALIDATEALL | LVSICF_NOSCROLL);
   InvalidateRect(hwnd_, nullptr, TRUE);
 }
@@ -92,15 +123,42 @@ void ValueList::RebuildFilter() {
       visible_indices_.push_back(static_cast<int>(i));
     }
   } else {
+    if (filter_cache_.size() != rows_.size()) {
+      filter_cache_.assign(rows_.size(), std::wstring());
+      filter_cache_valid_.assign(rows_.size(), false);
+    }
+    std::wstring filter = util::ToLower(filter_text_);
     for (size_t i = 0; i < rows_.size(); ++i) {
-      const auto& row = rows_[i];
-      if (ContainsInsensitive(row.name, filter_text_) || ContainsInsensitive(row.type, filter_text_) || ContainsInsensitive(row.data, filter_text_) || ContainsInsensitive(row.default_data, filter_text_) || ContainsInsensitive(row.read_on_boot, filter_text_) || ContainsInsensitive(row.extra, filter_text_) || ContainsInsensitive(row.size, filter_text_) || ContainsInsensitive(row.date, filter_text_) || ContainsInsensitive(row.details, filter_text_) || ContainsInsensitive(row.comment, filter_text_)) {
+      if (!filter_cache_valid_[i]) {
+        filter_cache_[i] = BuildSearchText(rows_[i]);
+        filter_cache_valid_[i] = true;
+      }
+      if (filter_cache_[i].find(filter) != std::wstring::npos) {
         visible_indices_.push_back(static_cast<int>(i));
       }
     }
   }
   ListView_SetItemCountEx(hwnd_, static_cast<int>(visible_indices_.size()), LVSICF_NOINVALIDATEALL | LVSICF_NOSCROLL);
   InvalidateRect(hwnd_, nullptr, TRUE);
+}
+
+void ValueList::InvalidateFilterCache() {
+  std::fill(filter_cache_valid_.begin(), filter_cache_valid_.end(), false);
+}
+
+void ValueList::InvalidateFilterCache(const ListRow* row) {
+  if (!row || rows_.empty()) {
+    return;
+  }
+  const ListRow* first = rows_.data();
+  const ListRow* last = first + rows_.size();
+  if (row < first || row >= last) {
+    return;
+  }
+  size_t index = static_cast<size_t>(row - first);
+  if (index < filter_cache_valid_.size()) {
+    filter_cache_valid_[index] = false;
+  }
 }
 
 bool ValueList::HasFilter() const {

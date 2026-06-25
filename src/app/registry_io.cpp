@@ -23,6 +23,7 @@
 
 #include <commdlg.h>
 #include <shellapi.h>
+#include <shlobj.h>
 
 #include "../../include/app/value_dialogs.h"
 #include "../../include/win32/win32_helpers.h"
@@ -31,17 +32,9 @@ namespace regkit {
 
 namespace {
 
-std::wstring FormatWin32Error(DWORD code) {
-  if (code == 0) {
-    return L"";
-  }
-  wchar_t buffer[512] = {};
-  DWORD len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, code, 0, buffer, static_cast<DWORD>(_countof(buffer)), nullptr);
-  if (len == 0) {
-    return L"Unknown error.";
-  }
-  return buffer;
-}
+using util::FormatWin32Error;
+using util::ToLower;
+using util::TrimWhitespace;
 
 std::wstring GetRegExePath() {
   wchar_t system_dir[MAX_PATH] = {};
@@ -55,17 +48,52 @@ std::wstring GetRegExePath() {
 bool RunRegCommand(const std::wstring& args, DWORD* exit_code, std::wstring* error) {
   std::wstring reg = GetRegExePath();
   std::wstring cmdline = L"\"" + reg + L"\" " + args;
+  SECURITY_ATTRIBUTES security = {};
+  security.nLength = sizeof(security);
+  security.bInheritHandle = TRUE;
+  HANDLE read_pipe = nullptr;
+  HANDLE write_pipe = nullptr;
+  bool capture_output = CreatePipe(&read_pipe, &write_pipe, &security, 0) != FALSE;
+  if (capture_output) {
+    SetHandleInformation(read_pipe, HANDLE_FLAG_INHERIT, 0);
+  }
   STARTUPINFOW si = {};
   si.cb = sizeof(si);
   si.dwFlags = STARTF_USESHOWWINDOW;
   si.wShowWindow = SW_HIDE;
+  if (capture_output) {
+    si.dwFlags |= STARTF_USESTDHANDLES;
+    si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    si.hStdOutput = write_pipe;
+    si.hStdError = write_pipe;
+  }
   PROCESS_INFORMATION pi = {};
   DWORD flags = CREATE_NO_WINDOW;
-  if (!CreateProcessW(nullptr, cmdline.data(), nullptr, nullptr, FALSE, flags, nullptr, nullptr, &si, &pi)) {
+  if (!CreateProcessW(nullptr, cmdline.data(), nullptr, nullptr, capture_output ? TRUE : FALSE, flags, nullptr, nullptr, &si, &pi)) {
+    if (read_pipe) {
+      CloseHandle(read_pipe);
+    }
+    if (write_pipe) {
+      CloseHandle(write_pipe);
+    }
     if (error) {
       *error = FormatWin32Error(GetLastError());
     }
     return false;
+  }
+  if (write_pipe) {
+    CloseHandle(write_pipe);
+    write_pipe = nullptr;
+  }
+  std::string output;
+  if (capture_output) {
+    char buffer[4096] = {};
+    DWORD read = 0;
+    while (ReadFile(read_pipe, buffer, static_cast<DWORD>(sizeof(buffer)), &read, nullptr) && read > 0) {
+      output.append(buffer, buffer + read);
+    }
+    CloseHandle(read_pipe);
+    read_pipe = nullptr;
   }
   WaitForSingleObject(pi.hProcess, INFINITE);
   DWORD code = 0;
@@ -76,7 +104,19 @@ bool RunRegCommand(const std::wstring& args, DWORD* exit_code, std::wstring* err
     *exit_code = code;
   }
   if (code != 0 && error) {
-    *error = L"reg.exe exited with code " + std::to_wstring(code) + L".";
+    std::wstring detail;
+    if (!output.empty()) {
+      int chars = MultiByteToWideChar(CP_OEMCP, 0, output.data(), static_cast<int>(output.size()), nullptr, 0);
+      if (chars > 0) {
+        detail.resize(static_cast<size_t>(chars));
+        MultiByteToWideChar(CP_OEMCP, 0, output.data(), static_cast<int>(output.size()), detail.data(), chars);
+        detail = TrimWhitespace(detail);
+      }
+    }
+    if (detail.empty()) {
+      detail = L"reg.exe exited with code " + std::to_wstring(code) + L".";
+    }
+    *error = detail;
   }
   return code == 0;
 }
@@ -142,18 +182,18 @@ bool PromptOpenFile(HWND owner, const wchar_t* filter, std::wstring* path) {
   if (!path) {
     return false;
   }
-  wchar_t buffer[MAX_PATH] = {};
+  std::wstring buffer(32768, L'\0');
   OPENFILENAMEW ofn = {};
   ofn.lStructSize = sizeof(ofn);
   ofn.hwndOwner = owner;
   ofn.lpstrFilter = filter;
-  ofn.lpstrFile = buffer;
-  ofn.nMaxFile = static_cast<DWORD>(_countof(buffer));
+  ofn.lpstrFile = buffer.data();
+  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
   ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
   if (!GetOpenFileNameW(&ofn)) {
     return false;
   }
-  *path = buffer;
+  *path = buffer.c_str();
   return true;
 }
 
@@ -187,10 +227,7 @@ bool PromptSaveRegFile(HWND owner, const std::wstring& default_name, std::wstrin
   if (name.empty()) {
     name = L"RegistryExport.reg";
   }
-  if (name.size() >= MAX_PATH) {
-    name.resize(MAX_PATH - 1);
-  }
-  std::wstring buffer(MAX_PATH, L'\0');
+  std::wstring buffer(32768, L'\0');
   wcsncpy_s(buffer.data(), buffer.size(), name.c_str(), _TRUNCATE);
   OPENFILENAMEW ofn = {};
   ofn.lStructSize = sizeof(ofn);
@@ -207,88 +244,38 @@ bool PromptSaveRegFile(HWND owner, const std::wstring& default_name, std::wstrin
   return true;
 }
 
-bool ReadFileBytes(const std::wstring& path, std::vector<BYTE>* out) {
-  if (!out) {
-    return false;
-  }
-  out->clear();
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return false;
-  }
-  LARGE_INTEGER size = {};
-  if (!GetFileSizeEx(file, &size) || size.QuadPart <= 0) {
-    CloseHandle(file);
-    return false;
-  }
-  if (size.QuadPart > static_cast<LONGLONG>(64 * 1024 * 1024)) {
-    CloseHandle(file);
-    return false;
-  }
-  out->resize(static_cast<size_t>(size.QuadPart));
-  DWORD read = 0;
-  BOOL ok = ReadFile(file, out->data(), static_cast<DWORD>(out->size()), &read, nullptr);
-  CloseHandle(file);
-  if (!ok || read != out->size()) {
-    out->clear();
-    return false;
-  }
-  return true;
-}
+std::wstring EnsureRegExtension(std::wstring path);
 
-bool ReadRegFileText(const std::wstring& path, std::wstring* out, bool* utf16) {
-  if (!out) {
-    return false;
+std::wstring ExportDefaultNameFromKeyPath(const std::wstring& key_path) {
+  std::wstring trimmed = key_path;
+  while (!trimmed.empty() && (trimmed.back() == L'\\' || trimmed.back() == L'/')) {
+    trimmed.pop_back();
   }
-  std::vector<BYTE> bytes;
-  if (!ReadFileBytes(path, &bytes)) {
-    return false;
+  if (trimmed.empty()) {
+    return L"RegistryExport.reg";
   }
-  bool is_utf16 = false;
-  if (bytes.size() >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) {
-    is_utf16 = true;
-    size_t wchar_count = (bytes.size() - 2) / sizeof(wchar_t);
-    out->assign(reinterpret_cast<const wchar_t*>(bytes.data() + 2), wchar_count);
-  } else {
-    if (bytes.size() >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) {
-      std::string utf8(reinterpret_cast<const char*>(bytes.data() + 3), bytes.size() - 3);
-      *out = util::Utf8ToWide(utf8);
-    } else {
-      std::string utf8(reinterpret_cast<const char*>(bytes.data()), bytes.size());
-      *out = util::Utf8ToWide(utf8);
-    }
+  size_t slash = trimmed.find_last_of(L"\\/");
+  std::wstring leaf = (slash == std::wstring::npos) ? trimmed : trimmed.substr(slash + 1);
+  if (leaf.empty()) {
+    leaf = L"RegistryExport";
   }
-  if (utf16) {
-    *utf16 = is_utf16;
+  std::wstring file_name = EnsureRegExtension(SanitizeFileName(leaf));
+  PWSTR desktop = nullptr;
+  if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Desktop, 0, nullptr, &desktop)) && desktop) {
+    std::wstring path = util::JoinPath(desktop, file_name);
+    CoTaskMemFree(desktop);
+    return path;
   }
-  return !out->empty();
-}
-
-bool WriteRegFileText(const std::wstring& path, const std::wstring& text, bool utf16) {
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return false;
+  if (desktop) {
+    CoTaskMemFree(desktop);
   }
-  DWORD written = 0;
-  if (utf16) {
-    const BYTE bom[2] = {0xFF, 0xFE};
-    WriteFile(file, bom, sizeof(bom), &written, nullptr);
-    const BYTE* data = reinterpret_cast<const BYTE*>(text.data());
-    DWORD bytes = static_cast<DWORD>(text.size() * sizeof(wchar_t));
-    BOOL ok = WriteFile(file, data, bytes, &written, nullptr);
-    CloseHandle(file);
-    return ok != 0;
-  }
-  std::string utf8 = util::WideToUtf8(text);
-  BOOL ok = WriteFile(file, utf8.data(), static_cast<DWORD>(utf8.size()), &written, nullptr);
-  CloseHandle(file);
-  return ok != 0;
+  return file_name;
 }
 
 bool FilterExportedRegFile(const std::wstring& source, const std::wstring& target, std::wstring* error) {
   std::wstring content;
   bool utf16 = false;
-  if (!ReadRegFileText(source, &content, &utf16)) {
+  if (!util::ReadTextFile(source, &content, &utf16)) {
     if (error) {
       *error = L"Failed to read exported registry file.";
     }
@@ -329,7 +316,7 @@ bool FilterExportedRegFile(const std::wstring& source, const std::wstring& targe
     }
   }
 
-  if (!WriteRegFileText(target, output, utf16)) {
+  if (!util::WriteTextFile(target, output, utf16)) {
     if (error) {
       *error = L"Failed to write exported registry file.";
     }
@@ -415,15 +402,6 @@ bool ParseValueLine(const std::wstring& line, std::wstring* value_name) {
   }
   value_name->clear();
   return false;
-}
-
-std::wstring ToLower(const std::wstring& text) {
-  std::wstring out;
-  out.reserve(text.size());
-  for (wchar_t ch : text) {
-    out.push_back(static_cast<wchar_t>(towlower(ch)));
-  }
-  return out;
 }
 
 bool FilterRegFileValues(const std::wstring& content, const std::vector<std::wstring>& values, std::wstring* output, std::wstring* error) {
@@ -566,7 +544,7 @@ bool ExportKeyToContent(const std::wstring& key_path, bool include_subkeys, std:
   }
 
   bool is_utf16 = false;
-  if (!ReadRegFileText(read_path, content, &is_utf16)) {
+  if (!util::ReadTextFile(read_path, content, &is_utf16)) {
     if (error) {
       *error = L"Failed to read exported registry file.";
     }
@@ -619,7 +597,7 @@ bool ImportRegFileFromPath(const std::wstring& path, std::wstring* error) {
 
 bool ExportRegFile(HWND owner, const std::wstring& key_path, std::wstring* error) {
   ExportOptions options;
-  if (!PromptForExportOptions(owner, L"", &options)) {
+  if (!PromptForExportOptions(owner, ExportDefaultNameFromKeyPath(key_path), &options)) {
     return false;
   }
   options.path = EnsureRegExtension(options.path);
@@ -744,7 +722,7 @@ bool ExportRegFileSelection(HWND owner, const std::wstring& base_key_path, const
     return false;
   }
 
-  if (!WriteRegFileText(path, output, output_utf16)) {
+  if (!util::WriteTextFile(path, output, output_utf16)) {
     if (error) {
       *error = L"Failed to write exported registry file.";
     }

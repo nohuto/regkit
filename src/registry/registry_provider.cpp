@@ -42,6 +42,9 @@ namespace {
 
 using NtOpenKeyFn = NTSTATUS(NTAPI*)(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES);
 
+using util::FormatWin32Error;
+using util::ToLower;
+
 using ORHKEY = void*;
 using OROpenHiveFn = DWORD(WINAPI*)(PCWSTR, ORHKEY*);
 using ORCloseHiveFn = DWORD(WINAPI*)(ORHKEY);
@@ -242,18 +245,6 @@ bool GetOsVersion(DWORD* major, DWORD* minor) {
   return true;
 }
 
-std::wstring FormatWin32Error(DWORD code) {
-  if (code == 0) {
-    return L"";
-  }
-  wchar_t buffer[512] = {};
-  DWORD len = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, code, 0, buffer, static_cast<DWORD>(_countof(buffer)), nullptr);
-  if (len == 0) {
-    return L"Unknown error.";
-  }
-  return buffer;
-}
-
 bool SplitSubKey(const std::wstring& subkey, std::wstring* parent, std::wstring* name) {
   if (!parent || !name) {
     return false;
@@ -267,15 +258,6 @@ bool SplitSubKey(const std::wstring& subkey, std::wstring* parent, std::wstring*
   *parent = subkey.substr(0, pos);
   *name = subkey.substr(pos + 1);
   return !name->empty();
-}
-
-std::wstring ToLower(const std::wstring& text) {
-  std::wstring out;
-  out.reserve(text.size());
-  for (wchar_t ch : text) {
-    out.push_back(static_cast<wchar_t>(towlower(ch)));
-  }
-  return out;
 }
 
 std::vector<std::wstring> SplitPath(const std::wstring& path) {
@@ -820,7 +802,9 @@ std::vector<std::wstring> RegistryProvider::EnumSubKeyNames(const RegistryNode& 
     }
     CloseOfflineKey(key);
     if (sorted) {
-      std::sort(names.begin(), names.end());
+      std::sort(names.begin(), names.end(), [](const std::wstring& left, const std::wstring& right) {
+        return _wcsicmp(left.c_str(), right.c_str()) < 0;
+      });
     }
     return names;
   }
@@ -850,7 +834,9 @@ std::vector<std::wstring> RegistryProvider::EnumSubKeyNames(const RegistryNode& 
   }
 
   if (sorted) {
-    std::sort(names.begin(), names.end());
+    std::sort(names.begin(), names.end(), [](const std::wstring& left, const std::wstring& right) {
+      return _wcsicmp(left.c_str(), right.c_str()) < 0;
+    });
   }
   return names;
 }
@@ -1184,7 +1170,7 @@ bool RegistryProvider::EnumKeyStreaming(const RegistryNode& node, bool include_v
           data_len = static_cast<DWORD>(data.size());
           result = api->enum_value(key.handle, index, name_buffer.data(), &name_len, &type, data.data(), &data_len);
         }
-        if (result != ERROR_SUCCESS && result != ERROR_MORE_DATA) {
+        if (result != ERROR_SUCCESS && !(result == ERROR_MORE_DATA && !include_data)) {
           continue;
         }
         name_buffer[name_len] = L'\0';
@@ -1260,7 +1246,7 @@ bool RegistryProvider::EnumKeyStreaming(const RegistryNode& node, bool include_v
         data_len = static_cast<DWORD>(data.size());
         result = RegEnumValueW(key.get(), index, name_buffer.data(), &name_len, nullptr, &type, data.data(), &data_len);
       }
-      if (result != ERROR_SUCCESS && result != ERROR_MORE_DATA) {
+      if (result != ERROR_SUCCESS && !(result == ERROR_MORE_DATA && !include_data)) {
         continue;
       }
       name_buffer[name_len] = L'\0';
@@ -1540,22 +1526,26 @@ std::wstring RegistryProvider::FormatValueDataForDisplay(DWORD type, const BYTE*
   }
 
   if ((base_type == REG_SZ || base_type == REG_EXPAND_SZ) && base.front() == L'@') {
-    wchar_t resolved[512] = {};
-    if (SUCCEEDED(SHLoadIndirectString(base.c_str(), resolved, static_cast<UINT>(_countof(resolved)), nullptr))) {
-      if (wcslen(resolved) > 0) {
+    std::wstring resolved(1024, L'\0');
+    HRESULT hr = SHLoadIndirectString(base.c_str(), resolved.data(), static_cast<UINT>(resolved.size()), nullptr);
+    if (hr == HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER)) {
+      resolved.assign(4096, L'\0');
+      hr = SHLoadIndirectString(base.c_str(), resolved.data(), static_cast<UINT>(resolved.size()), nullptr);
+    }
+    if (SUCCEEDED(hr)) {
+      while (!resolved.empty() && resolved.back() == L'\0') {
+        resolved.pop_back();
+      }
+      if (!resolved.empty()) {
         return resolved;
       }
     }
   }
 
   if (base_type == REG_EXPAND_SZ) {
-    wchar_t expanded[512] = {};
-    DWORD length = ExpandEnvironmentStringsW(base.c_str(), expanded, static_cast<DWORD>(_countof(expanded)));
-    if (length > 0 && length < _countof(expanded)) {
-      std::wstring result(expanded);
-      if (!result.empty() && result != base) {
-        return result;
-      }
+    std::wstring expanded = util::ExpandEnvironmentStringsDynamic(base);
+    if (!expanded.empty() && expanded != base) {
+      return expanded;
     }
   }
 

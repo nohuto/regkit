@@ -21,7 +21,9 @@
 #include <windows.h>
 #include <objbase.h>
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 namespace util {
 
@@ -97,10 +99,18 @@ private:
 };
 
 std::wstring GetModuleDirectory();
+std::wstring GetModulePath();
 std::wstring JoinPath(const std::wstring& left, const std::wstring& right);
 std::string WideToUtf8(const std::wstring& text);
 std::wstring Utf8ToWide(const std::string& text);
+std::wstring FormatWin32Error(DWORD code);
+std::wstring ToLower(const std::wstring& text);
+std::wstring TrimWhitespace(const std::wstring& text);
+std::wstring ExpandEnvironmentStringsDynamic(const std::wstring& text);
 std::wstring ToHex(const BYTE* data, size_t size, size_t max_bytes);
+bool ReadFileBytes(const std::wstring& path, std::vector<BYTE>* out, uint64_t max_bytes = 64ull * 1024ull * 1024ull, DWORD share_mode = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE);
+bool ReadTextFile(const std::wstring& path, std::wstring* out, bool* utf16 = nullptr, uint64_t max_bytes = 64ull * 1024ull * 1024ull, DWORD share_mode = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE);
+bool WriteTextFile(const std::wstring& path, const std::wstring& text, bool utf16);
 std::wstring GetCurrentUserSidString();
 std::wstring GetAppDataFolder();
 bool IsProcessElevated();
