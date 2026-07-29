@@ -29,6 +29,7 @@
 
 #include "../../include/app/theme.h"
 #include "../../include/app/ui_helpers.h"
+#include "registry/value_format.h"
 #include "../../resources/resource.h"
 
 namespace regkit {
@@ -39,17 +40,6 @@ struct TextDialogState {
   const wchar_t* title = nullptr;
   const wchar_t* label = nullptr;
   std::wstring text;
-  std::wstring value_name;
-  std::wstring value_type;
-  bool show_details = false;
-  HFONT ui_font = nullptr;
-};
-
-struct NumberDialogState {
-  const wchar_t* title = nullptr;
-  const wchar_t* label = nullptr;
-  int base = 16;
-  unsigned long long value = 0;
   std::wstring value_name;
   std::wstring value_type;
   bool show_details = false;
@@ -103,15 +93,13 @@ struct ExtendedValueDialogState {
   std::vector<BYTE> data;
   bool accepted = false;
   int number_base = 16;
+  int initial_number_base = 16;
   HFONT ui_font = nullptr;
 };
 
-bool ParseHexBytes(const std::wstring& text, std::vector<BYTE>* out);
 std::wstring FormatBinaryPreview(const std::vector<BYTE>& data, int group_bytes, bool unicode);
 std::wstring BinaryToHex(const std::vector<BYTE>& data);
 std::wstring RegDataToString(const std::vector<BYTE>& data);
-std::vector<BYTE> StringToRegData(const std::wstring& text);
-std::vector<BYTE> TextToMultiSz(const std::wstring& text);
 bool ParseNumberValue(const std::wstring& text, int base, unsigned long long* value);
 
 constexpr wchar_t kAppTitle[] = L"RegKit";
@@ -517,7 +505,7 @@ void UpdateBinaryPreviewEx(HWND dlg, BinaryGroupState* state, const BinaryGroupI
   }
   std::wstring text = ReadDialogText(dlg, ids.edit_id);
   std::vector<BYTE> parsed;
-  if (!ParseHexBytes(text, &parsed)) {
+  if (!value_format::ParseHex(text, &parsed)) {
     SetDlgItemTextW(dlg, ids.preview_id, L"Invalid hex input.");
     return;
   }
@@ -691,28 +679,6 @@ bool CountHexBytes(const std::wstring& text, size_t* out_bytes) {
   }
   *out_bytes = count;
   return true;
-}
-
-size_t StringByteCount(const std::wstring& text) {
-  return (text.size() + 1) * sizeof(wchar_t);
-}
-
-size_t MultiSzByteCount(const std::wstring& text) {
-  size_t chars = 1;
-  size_t current = 0;
-  for (wchar_t ch : text) {
-    if (ch == L'\r') {
-      continue;
-    }
-    if (ch == L'\n') {
-      chars += current + 1;
-      current = 0;
-      continue;
-    }
-    ++current;
-  }
-  chars += current + 1;
-  return chars * sizeof(wchar_t);
 }
 
 void UpdateBytesFromHexControl(HWND dlg, int id) {
@@ -986,22 +952,22 @@ INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM
       switch (type) {
       case REG_SZ: {
         std::wstring text = ReadDialogText(dlg, IDC_REG_SZ_EDIT);
-        data = StringToRegData(text);
+        data = value_format::StringData(text);
         break;
       }
       case REG_EXPAND_SZ: {
         std::wstring text = ReadDialogText(dlg, IDC_REG_EXPAND_EDIT);
-        data = StringToRegData(text);
+        data = value_format::StringData(text);
         break;
       }
       case REG_LINK: {
         std::wstring text = ReadDialogText(dlg, IDC_REG_SZ_EDIT);
-        data = StringToRegData(text);
+        data = value_format::StringData(text);
         break;
       }
       case REG_MULTI_SZ: {
         std::wstring text = ReadDialogText(dlg, IDC_REG_MULTI_EDIT);
-        data = TextToMultiSz(text);
+        data = value_format::MultiStringData(text);
         break;
       }
       case REG_DWORD: {
@@ -1039,19 +1005,19 @@ INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM
       }
       case REG_BINARY: {
         std::wstring text = ReadDialogText(dlg, IDC_REG_BINARY_EDIT);
-        ok = ParseHexBytes(text, &data);
+        ok = value_format::ParseHex(text, &data);
         break;
       }
       case REG_RESOURCE_LIST:
       case REG_FULL_RESOURCE_DESCRIPTOR:
       case REG_RESOURCE_REQUIREMENTS_LIST: {
         std::wstring text = ReadDialogText(dlg, IDC_REG_BINARY_EDIT);
-        ok = ParseHexBytes(text, &data);
+        ok = value_format::ParseHex(text, &data);
         break;
       }
       case REG_NONE: {
         std::wstring text = ReadDialogText(dlg, IDC_REG_NONE_EDIT);
-        ok = ParseHexBytes(text, &data);
+        ok = value_format::ParseHex(text, &data);
         break;
       }
       default:
@@ -1430,137 +1396,6 @@ INT_PTR CALLBACK TextDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lparam
   return FALSE;
 }
 
-INT_PTR CALLBACK NumberDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lparam) {
-  NumberDialogState* state = reinterpret_cast<NumberDialogState*>(GetWindowLongPtrW(dlg, DWLP_USER));
-
-  switch (msg) {
-  case WM_INITDIALOG: {
-    state = reinterpret_cast<NumberDialogState*>(lparam);
-    SetWindowLongPtrW(dlg, DWLP_USER, reinterpret_cast<LONG_PTR>(state));
-    if (state && state->title && *state->title) {
-      SetWindowTextW(dlg, state->title);
-    } else {
-      SetWindowTextW(dlg, L"Edit Value");
-    }
-    if (state->label) {
-      SetDlgItemTextW(dlg, IDC_LABEL, state->label);
-    }
-    ConfigureValueDetails(dlg, state->value_name, state->value_type, state->show_details, false, 20, {IDC_LABEL, IDC_EDIT, IDC_BASE_GROUP, IDC_HEX, IDC_DEC, IDC_BIN, IDOK, IDCANCEL});
-    std::wstring formatted = FormatNumberValue(state->value, state->base);
-    SetDlgItemTextW(dlg, IDC_EDIT, formatted.c_str());
-    ApplyThinEditBorder(dlg, IDC_EDIT);
-    CheckDlgButton(dlg, IDC_HEX, state->base == 16 ? BST_CHECKED : BST_UNCHECKED);
-    CheckDlgButton(dlg, IDC_DEC, state->base == 10 ? BST_CHECKED : BST_UNCHECKED);
-    CheckDlgButton(dlg, IDC_BIN, state->base == 2 ? BST_CHECKED : BST_UNCHECKED);
-    SendDlgItemMessageW(dlg, IDC_EDIT, EM_SETSEL, 0, -1);
-    state->ui_font = ui::DefaultUIFont();
-    ApplyDialogFonts(dlg, state->ui_font);
-    EnableShiftEnterForMultilineEdits(dlg);
-    CenterDialogToOwner(dlg);
-    Theme::Current().ApplyToWindow(dlg);
-    Theme::Current().ApplyToChildren(dlg);
-    return TRUE;
-  }
-  case WM_DESTROY:
-    if (state && state->ui_font) {
-      DeleteObject(state->ui_font);
-      state->ui_font = nullptr;
-    }
-    return TRUE;
-  case WM_SETTINGCHANGE: {
-    if (Theme::UpdateFromSystem()) {
-      Theme::Current().ApplyToWindow(dlg);
-      Theme::Current().ApplyToChildren(dlg);
-      InvalidateRect(dlg, nullptr, TRUE);
-    }
-    return TRUE;
-  }
-  case WM_ERASEBKGND: {
-    HDC hdc = reinterpret_cast<HDC>(wparam);
-    RECT rect = {};
-    GetClientRect(dlg, &rect);
-    FillRect(hdc, &rect, Theme::Current().BackgroundBrush());
-    return TRUE;
-  }
-  case WM_CTLCOLORDLG: {
-    HDC hdc = reinterpret_cast<HDC>(wparam);
-    return reinterpret_cast<INT_PTR>(Theme::Current().ControlColor(hdc, dlg, CTLCOLOR_DLG));
-  }
-  case WM_CTLCOLORSTATIC: {
-    HDC hdc = reinterpret_cast<HDC>(wparam);
-    HWND target = reinterpret_cast<HWND>(lparam);
-    return reinterpret_cast<INT_PTR>(Theme::Current().ControlColor(hdc, target, CTLCOLOR_STATIC));
-  }
-  case WM_CTLCOLOREDIT: {
-    HDC hdc = reinterpret_cast<HDC>(wparam);
-    HWND target = reinterpret_cast<HWND>(lparam);
-    return reinterpret_cast<INT_PTR>(Theme::Current().ControlColor(hdc, target, CTLCOLOR_EDIT));
-  }
-  case WM_CTLCOLORBTN: {
-    HDC hdc = reinterpret_cast<HDC>(wparam);
-    HWND target = reinterpret_cast<HWND>(lparam);
-    return reinterpret_cast<INT_PTR>(Theme::Current().ControlColor(hdc, target, CTLCOLOR_BTN));
-  }
-  case WM_COMMAND: {
-    switch (LOWORD(wparam)) {
-    case IDC_HEX:
-    case IDC_DEC:
-    case IDC_BIN: {
-      if (!state) {
-        return TRUE;
-      }
-      unsigned long long value = ReadNumberWithFallback(dlg, IDC_EDIT, state->base, state->value);
-      int new_base = 10;
-      if (LOWORD(wparam) == IDC_HEX) {
-        new_base = 16;
-      } else if (LOWORD(wparam) == IDC_BIN) {
-        new_base = 2;
-      }
-      state->base = new_base;
-      CheckDlgButton(dlg, IDC_HEX, state->base == 16 ? BST_CHECKED : BST_UNCHECKED);
-      CheckDlgButton(dlg, IDC_DEC, state->base == 10 ? BST_CHECKED : BST_UNCHECKED);
-      CheckDlgButton(dlg, IDC_BIN, state->base == 2 ? BST_CHECKED : BST_UNCHECKED);
-      state->value = value;
-      std::wstring formatted = FormatNumberValue(state->value, state->base);
-      SetDlgItemTextW(dlg, IDC_EDIT, formatted.c_str());
-      SendDlgItemMessageW(dlg, IDC_EDIT, EM_SETSEL, 0, -1);
-      return TRUE;
-    }
-    case IDOK: {
-      wchar_t buffer[128] = {};
-      GetDlgItemTextW(dlg, IDC_EDIT, buffer, static_cast<int>(_countof(buffer)));
-      unsigned long long value = 0;
-      int base = 10;
-      if (IsDlgButtonChecked(dlg, IDC_HEX) == BST_CHECKED) {
-        base = 16;
-      } else if (IsDlgButtonChecked(dlg, IDC_BIN) == BST_CHECKED) {
-        base = 2;
-      }
-      if (!ParseNumberValue(buffer, base, &value)) {
-        ui::ShowError(dlg, L"Invalid number.");
-        return TRUE;
-      }
-      if (state) {
-        state->base = base;
-        state->value = value;
-      }
-      EndDialog(dlg, IDOK);
-      return TRUE;
-    }
-    case IDCANCEL:
-      EndDialog(dlg, IDCANCEL);
-      return TRUE;
-    default:
-      break;
-    }
-    break;
-  }
-  default:
-    break;
-  }
-  return FALSE;
-}
-
 int FormatHexOffset(std::wstring* out, size_t offset, int width) {
   if (!out) {
     return 0;
@@ -1672,7 +1507,7 @@ void UpdateBinaryPreview(HWND dlg, BinaryDialogState* state) {
   state->text = text;
 
   std::vector<BYTE> parsed;
-  if (!ParseHexBytes(text, &parsed)) {
+  if (!value_format::ParseHex(text, &parsed)) {
     SetDlgItemTextW(dlg, IDC_BINARY_PREVIEW, L"Invalid hex input.");
     return;
   }
@@ -1942,7 +1777,12 @@ INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPAR
 
     if (id == IDOK) {
       std::wstring base_text = ReadDialogText(dlg, IDC_EDIT);
-      if (base_text == state->initial_text) {
+      const bool is_number = state->base_type == REG_DWORD ||
+                             state->base_type == REG_DWORD_BIG_ENDIAN ||
+                             state->base_type == REG_QWORD;
+      const bool unchanged = base_text == state->initial_text &&
+                             (!is_number || state->number_base == state->initial_number_base);
+      if (unchanged) {
         state->data = state->initial_data;
       } else {
         std::vector<BYTE> base_data;
@@ -1950,10 +1790,10 @@ INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPAR
         case REG_SZ:
         case REG_EXPAND_SZ:
         case REG_LINK:
-          base_data = StringToRegData(base_text);
+          base_data = value_format::StringData(base_text);
           break;
         case REG_MULTI_SZ:
-          base_data = TextToMultiSz(base_text);
+          base_data = value_format::MultiStringData(base_text);
           break;
         case REG_DWORD:
         case REG_DWORD_BIG_ENDIAN:
@@ -2019,96 +1859,6 @@ std::wstring BinaryToHex(const std::vector<BYTE>& data) {
   return stream.str();
 }
 
-bool ParseHexBytes(const std::wstring& text, std::vector<BYTE>* out) {
-  if (!out) {
-    return false;
-  }
-  out->clear();
-  int nibble = -1;
-  for (wchar_t ch : text) {
-    if (iswxdigit(ch)) {
-      int value = 0;
-      if (ch >= L'0' && ch <= L'9') {
-        value = ch - L'0';
-      } else if (ch >= L'a' && ch <= L'f') {
-        value = 10 + (ch - L'a');
-      } else if (ch >= L'A' && ch <= L'F') {
-        value = 10 + (ch - L'A');
-      }
-      if (nibble < 0) {
-        nibble = value;
-      } else {
-        out->push_back(static_cast<BYTE>((nibble << 4) | value));
-        nibble = -1;
-      }
-    }
-  }
-  return nibble < 0;
-}
-
-std::wstring MultiSzToText(const std::vector<BYTE>& data) {
-  if (data.empty()) {
-    return L"";
-  }
-  const wchar_t* ptr = reinterpret_cast<const wchar_t*>(data.data());
-  size_t count = data.size() / sizeof(wchar_t);
-  std::wstring text;
-  size_t offset = 0;
-  while (offset < count) {
-    const wchar_t* current = ptr + offset;
-    size_t len = wcsnlen_s(current, count - offset);
-    if (len == 0) {
-      break;
-    }
-    if (!text.empty()) {
-      text.append(L"\r\n");
-    }
-    text.append(current, len);
-    offset += len + 1;
-  }
-  return text;
-}
-
-std::vector<BYTE> TextToMultiSz(const std::wstring& text) {
-  std::vector<BYTE> data;
-  std::wstring normalized = text;
-  normalized.erase(std::remove(normalized.begin(), normalized.end(), L'\r'), normalized.end());
-
-  std::vector<std::wstring> parts;
-  std::wstring current;
-  for (wchar_t ch : normalized) {
-    if (ch == L'\n') {
-      parts.push_back(current);
-      current.clear();
-    } else {
-      current.push_back(ch);
-    }
-  }
-  parts.push_back(current);
-
-  size_t total_chars = 1;
-  for (const auto& part : parts) {
-    total_chars += part.size() + 1;
-  }
-  data.resize(total_chars * sizeof(wchar_t));
-  wchar_t* out = reinterpret_cast<wchar_t*>(data.data());
-  size_t offset = 0;
-  for (const auto& part : parts) {
-    wcsncpy_s(out + offset, total_chars - offset, part.c_str(), part.size());
-    offset += part.size();
-    out[offset++] = L'\0';
-  }
-  out[offset++] = L'\0';
-  data.resize(offset * sizeof(wchar_t));
-  return data;
-}
-
-std::vector<BYTE> StringToRegData(const std::wstring& text) {
-  std::vector<BYTE> data((text.size() + 1) * sizeof(wchar_t));
-  memcpy(data.data(), text.c_str(), data.size());
-  return data;
-}
-
 std::wstring RegDataToString(const std::vector<BYTE>& data) {
   if (data.empty()) {
     return L"";
@@ -2161,73 +1911,11 @@ bool PromptForBinary(HWND owner, const std::wstring& value_name, const std::vect
     return false;
   }
   std::vector<BYTE> parsed;
-  if (!ParseHexBytes(state.text, &parsed)) {
+  if (!value_format::ParseHex(state.text, &parsed)) {
     ui::ShowError(owner, L"Invalid hex input.");
     return false;
   }
   *out = std::move(parsed);
-  return true;
-}
-
-bool PromptForNumber(HWND owner, const std::wstring& value_name, DWORD type, const std::vector<BYTE>& initial, std::vector<BYTE>* out) {
-  if (!out) {
-    return false;
-  }
-  NumberDialogState state;
-  state.title = L"Edit Value";
-  state.label = L"Value:";
-  state.base = 16;
-  state.value_name = value_name.empty() ? L"(Default)" : value_name;
-  if (type == REG_QWORD) {
-    state.value_type = L"REG_QWORD";
-  } else if (type == REG_DWORD_BIG_ENDIAN) {
-    state.value_type = L"REG_DWORD_BIG_ENDIAN";
-  } else {
-    state.value_type = L"REG_DWORD";
-  }
-  state.show_details = true;
-  if (type == REG_QWORD && initial.size() >= sizeof(unsigned long long)) {
-    state.value = *reinterpret_cast<const unsigned long long*>(initial.data());
-  } else if (type == REG_DWORD_BIG_ENDIAN && initial.size() >= sizeof(DWORD)) {
-    state.value = ReadUnsignedFromBytesBigEndian(initial, sizeof(DWORD));
-  } else if (type == REG_DWORD && initial.size() >= sizeof(DWORD)) {
-    state.value = *reinterpret_cast<const DWORD*>(initial.data());
-  }
-  INT_PTR result = DialogBoxParamW(GetModuleHandleW(nullptr), MAKEINTRESOURCEW(IDD_NUMBER), owner, NumberDialogProc, reinterpret_cast<LPARAM>(&state));
-  if (result != IDOK) {
-    return false;
-  }
-  if (type == REG_QWORD) {
-    unsigned long long value = state.value;
-    out->resize(sizeof(unsigned long long));
-    memcpy(out->data(), &value, sizeof(unsigned long long));
-  } else if (type == REG_DWORD_BIG_ENDIAN) {
-    DWORD value = static_cast<DWORD>(state.value);
-    WriteUnsignedToBytesBigEndian(value, sizeof(DWORD), out);
-  } else {
-    DWORD value = static_cast<DWORD>(state.value);
-    out->resize(sizeof(DWORD));
-    memcpy(out->data(), &value, sizeof(DWORD));
-  }
-  return true;
-}
-
-bool PromptForMultiString(HWND owner, const std::wstring& value_name, const std::vector<BYTE>& initial, std::vector<BYTE>* out) {
-  if (!out) {
-    return false;
-  }
-  TextDialogState state;
-  state.title = L"Edit Value";
-  state.label = L"Strings (one per line):";
-  state.text = MultiSzToText(initial);
-  state.value_name = value_name.empty() ? L"(Default)" : value_name;
-  state.value_type = L"REG_MULTI_SZ";
-  state.show_details = true;
-  INT_PTR result = DialogBoxParamW(GetModuleHandleW(nullptr), MAKEINTRESOURCEW(IDD_MULTI), owner, TextDialogProc, reinterpret_cast<LPARAM>(&state));
-  if (result != IDOK) {
-    return false;
-  }
-  *out = TextToMultiSz(state.text);
   return true;
 }
 
@@ -2290,10 +1978,11 @@ bool PromptForFlaggedValue(HWND owner, const std::wstring& value_name, DWORD bas
   state.value_type = value_type;
   state.initial_data = initial;
   state.number_base = 16;
+  state.initial_number_base = state.number_base;
 
   switch (base_type) {
   case REG_MULTI_SZ:
-    state.initial_text = MultiSzToText(initial);
+    state.initial_text = value_format::MultiStringText(initial);
     break;
   case REG_DWORD: {
     DWORD value = 0;

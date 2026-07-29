@@ -33,8 +33,6 @@ struct ExportOptions {
 
 bool PromptForValueText(HWND owner, const std::wstring& value_name, const wchar_t* title, const wchar_t* label, std::wstring* text, const wchar_t* value_type = nullptr);
 bool PromptForBinary(HWND owner, const std::wstring& value_name, const std::vector<BYTE>& initial, std::vector<BYTE>* out, const wchar_t* value_type = L"REG_BINARY");
-bool PromptForNumber(HWND owner, const std::wstring& value_name, DWORD type, const std::vector<BYTE>& initial, std::vector<BYTE>* out);
-bool PromptForMultiString(HWND owner, const std::wstring& value_name, const std::vector<BYTE>& initial, std::vector<BYTE>* out);
 bool PromptForMultiLineText(HWND owner, const wchar_t* title, const wchar_t* label, std::wstring* text);
 bool PromptForComment(HWND owner, const std::wstring& initial, bool apply_all, std::wstring* out_text, bool* out_apply_all);
 bool PromptForCustomValue(HWND owner, const std::wstring& value_name, DWORD* type, std::vector<BYTE>* out);

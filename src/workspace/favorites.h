@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-namespace regkit {
+namespace regkit::workspace {
 
 class FavoritesStore {
 public:
@@ -33,4 +33,4 @@ public:
   static bool ImportFromRegedit(size_t* imported_count, std::wstring* error);
 };
 
-} // namespace regkit
+} // namespace regkit::workspace

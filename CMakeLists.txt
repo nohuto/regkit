@@ -3,60 +3,62 @@ project(RegKit LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-add_executable(RegKit WIN32
-    src/app_entry.cpp
-    src/app/app_window.cpp
-    src/app/app_window_commands.cpp
-    src/app/value_dialogs.cpp
-    src/app/registry_tree.cpp
-    src/app/value_list.cpp
-    src/app/theme.cpp
-    src/app/theme_presets.cpp
-    src/app/theme_presets_dialog.cpp
-    src/app/toolbar.cpp
-    src/app/favorites_store.cpp
-    src/app/font_dialog.cpp
-    src/app/registry_io.cpp
-    src/app/search_dialog.cpp
-    src/app/trace_dialog.cpp
-    src/app/replace_dialog.cpp
-    src/app/registry_security.cpp
-    src/app/ui_helpers.cpp
-    src/registry/registry_provider.cpp
-    src/registry/search_engine.cpp
-    src/win32/win32_helpers.cpp
-    src/win32/icon_resources.cpp
-    resources/app.rc
-)
+option(REGKIT_REPORT_COMPILE_TIME "Print MSVC front-end and back-end timing" OFF)
 
-target_include_directories(RegKit PRIVATE include resources)
-
-set_target_properties(RegKit PROPERTIES OUTPUT_NAME "regkit")
-
-target_compile_definitions(RegKit PRIVATE
+add_library(regkit_compile_settings INTERFACE)
+target_compile_features(regkit_compile_settings INTERFACE cxx_std_20)
+target_compile_definitions(regkit_compile_settings INTERFACE
     UNICODE
     _UNICODE
     NOMINMAX
     WIN32_LEAN_AND_MEAN
     _WIN32_IE=0x0600
 )
+if (MSVC)
+    target_compile_options(regkit_compile_settings INTERFACE
+        /EHsc
+        /FS
+        /W4
+        /permissive-
+    )
+    if (REGKIT_REPORT_COMPILE_TIME)
+        target_compile_options(regkit_compile_settings INTERFACE /Bt+)
+    endif()
+endif()
 
-target_link_libraries(RegKit PRIVATE
-    comctl32
-    comdlg32
-    aclui
-    advapi32
-    dwmapi
-    ole32
-    pathcch
-    shell32
-    shlwapi
-    userenv
-    uxtheme
-    wtsapi32
+include(cmake/RegKitTarget.cmake)
+include(cmake/VerifyTargetGraph.cmake)
+
+add_subdirectory(src)
+
+add_executable(RegKit WIN32
+    src/app_entry.cpp
+    resources/app.rc
 )
+regkit_configure_executable(RegKit)
+target_include_directories(RegKit PRIVATE
+    "${PROJECT_SOURCE_DIR}/resources"
+)
+target_link_libraries(RegKit PRIVATE
+    regkit_frame
+    regkit_registry_io
+    regkit_editors
+    regkit_appearance
+    regkit_win32
+    advapi32
+    comctl32
+    shell32
+)
+set_target_properties(RegKit PROPERTIES OUTPUT_NAME "regkit")
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT REGKIT_IPO_SUPPORTED OUTPUT REGKIT_IPO_ERROR)
+if (REGKIT_IPO_SUPPORTED)
+    set_property(TARGET RegKit PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+endif()
 
 add_custom_command(TARGET RegKit POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RegKit>/records"
@@ -86,6 +88,32 @@ add_custom_command(TARGET RegKit POST_BUILD
 )
 
 if (MSVC)
-    target_compile_options(RegKit PRIVATE /EHsc)
     target_link_options(RegKit PRIVATE "/MANIFEST:NO")
 endif()
+
+include(CTest)
+if (BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
+
+regkit_verify_dependency_order(
+    regkit_win32
+    regkit_records
+    regkit_work
+    regkit_registry
+    regkit_regfile
+    regkit_search
+    regkit_trace
+    regkit_defaults
+    regkit_changes
+    regkit_browse
+    regkit_workspace
+    regkit_appearance
+    regkit_editors
+    regkit_registry_io
+    regkit_search_dialogs
+    regkit_trace_dialog
+    regkit_security
+    regkit_frame
+    RegKit
+)

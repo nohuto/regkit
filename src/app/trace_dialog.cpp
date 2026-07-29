@@ -18,7 +18,6 @@
 
 #include <algorithm>
 #include <cwchar>
-#include <cwctype>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -29,6 +28,7 @@
 #include "../../include/app/theme.h"
 #include "../../include/app/ui_helpers.h"
 #include "../../include/win32/win32_helpers.h"
+#include "registry/registry_path.h"
 
 // Older SDKs omit the NMTVITEMCHANGE struct even though TVN_ITEMCHANGED is
 // defined.
@@ -82,7 +82,7 @@ struct TraceDialogState {
   HWND cancel_button = nullptr;
   HWND owner = nullptr;
   HFONT font = nullptr;
-  TraceSelection* out = nullptr;
+  trace::Selection* out = nullptr;
   bool accepted = false;
   bool owner_restored = false;
   bool loading_done = false;
@@ -124,52 +124,6 @@ void RestoreOwnerWindow(HWND owner, bool* restored) {
   *restored = true;
 }
 
-bool EqualsInsensitive(const std::wstring& left, const std::wstring& right) {
-  if (left.size() != right.size()) {
-    return false;
-  }
-  for (size_t i = 0; i < left.size(); ++i) {
-    if (towlower(left[i]) != towlower(right[i])) {
-      return false;
-    }
-  }
-  return true;
-}
-
-std::vector<std::wstring> SplitPath(const std::wstring& path) {
-  std::vector<std::wstring> parts;
-  std::wstring current;
-  for (wchar_t ch : path) {
-    if (ch == L'\\' || ch == L'/') {
-      if (!current.empty()) {
-        parts.push_back(current);
-        current.clear();
-      }
-    } else {
-      current.push_back(ch);
-    }
-  }
-  if (!current.empty()) {
-    parts.push_back(current);
-  }
-  return parts;
-}
-
-std::wstring JoinPathParts(const std::vector<std::wstring>& parts, size_t count) {
-  if (count == 0 || parts.empty()) {
-    return L"";
-  }
-  if (count > parts.size()) {
-    count = parts.size();
-  }
-  std::wstring out = parts[0];
-  for (size_t i = 1; i < count; ++i) {
-    out.append(L"\\");
-    out.append(parts[i]);
-  }
-  return out;
-}
-
 TraceNodeData* StoreNodeData(TraceDialogState* state, bool is_value, const std::wstring& key_path, const std::wstring& value_name) {
   auto node = std::make_unique<TraceNodeData>();
   node->is_value = is_value;
@@ -203,16 +157,17 @@ HTREEITEM EnsureKeyNode(HWND tree, TraceDialogState* state, const std::wstring& 
     return nullptr;
   }
   std::wstring tree_path = display_path.empty() ? key_path : display_path;
-  std::vector<std::wstring> tree_parts = SplitPath(tree_path);
+  std::vector<std::wstring> tree_parts = registry_path::Split(tree_path);
   if (tree_parts.empty()) {
     return nullptr;
   }
-  std::vector<std::wstring> key_parts = SplitPath(key_path);
+  std::vector<std::wstring> key_parts = registry_path::Split(key_path);
   size_t match_suffix = 0;
   while (match_suffix < tree_parts.size() && match_suffix < key_parts.size()) {
     size_t tree_index = tree_parts.size() - 1 - match_suffix;
     size_t key_index = key_parts.size() - 1 - match_suffix;
-    if (!EqualsInsensitive(tree_parts[tree_index], key_parts[key_index])) {
+    if (!registry_path::Equals(tree_parts[tree_index],
+                               key_parts[key_index])) {
       break;
     }
     ++match_suffix;
@@ -225,14 +180,15 @@ HTREEITEM EnsureKeyNode(HWND tree, TraceDialogState* state, const std::wstring& 
     }
     size_t part_count = 0;
     if (index < align_start_tree) {
-      if (index == 0 && EqualsInsensitive(tree_parts[0], L"REGISTRY")) {
+      if (index == 0 &&
+          registry_path::Equals(tree_parts[0], L"REGISTRY")) {
         return L"";
       }
       part_count = 1;
     } else {
       part_count = align_start_key + (index - align_start_tree) + 1;
     }
-    return JoinPathParts(key_parts, part_count);
+    return registry_path::JoinPrefix(key_parts, part_count);
   };
 
   std::wstring current_tree;
@@ -354,7 +310,9 @@ TraceNodeData* GetNodeData(HWND tree, HTREEITEM item) {
   return reinterpret_cast<TraceNodeData*>(info.lParam);
 }
 
-void AppendCheckedNodes(HWND tree, HTREEITEM item, TraceSelection* selection, std::unordered_set<std::wstring>* seen_keys) {
+void AppendCheckedNodes(HWND tree, HTREEITEM item,
+                        trace::Selection* selection,
+                        std::unordered_set<std::wstring>* seen_keys) {
   while (item) {
     TraceNodeData* data = GetNodeData(tree, item);
     if (data && TreeView_GetCheckState(tree, item)) {
@@ -451,7 +409,7 @@ void AcceptSelection(HWND hwnd, TraceDialogState* state, bool select_all) {
     return;
   }
 
-  TraceSelection selection = {};
+  trace::Selection selection = {};
   selection.select_all = false;
   selection.recursive = recursive;
   std::unordered_set<std::wstring> seen_keys;
@@ -594,12 +552,19 @@ LRESULT CALLBACK TraceDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
     }
     return 0;
   }
-  case WM_DESTROY:
+  case WM_DESTROY: {
+    MSG pending = {};
+    while (PeekMessageW(&pending, hwnd, kDialogAddEntriesMessage,
+                        kDialogAddEntriesMessage, PM_REMOVE)) {
+      delete reinterpret_cast<std::vector<KeyValueDialogEntry>*>(
+          pending.lParam);
+    }
     if (state && state->font) {
       DeleteObject(state->font);
       state->font = nullptr;
     }
     return 0;
+  }
   case WM_SIZE: {
     HFONT font = reinterpret_cast<HFONT>(SendMessageW(hwnd, WM_GETFONT, 0, 0));
     LayoutDialog(hwnd, state, font);
@@ -739,7 +704,9 @@ HWND CreateTraceDialogWindow(HINSTANCE instance, const std::wstring& title, HWND
 
 } // namespace
 
-bool ShowTraceDialog(HWND owner, const TraceDialogOptions& options, TraceSelection* selection, TraceDialogReadyCallback on_ready, void* context) {
+bool ShowTraceDialog(HWND owner, const TraceDialogOptions& options,
+                     trace::Selection* selection,
+                     TraceDialogReadyCallback on_ready, void* context) {
   if (!selection) {
     return false;
   }

@@ -68,23 +68,6 @@ HWND ValueList::hwnd() const {
   return hwnd_;
 }
 
-void ValueList::SetColumns(const std::vector<ColumnInfo>& columns) {
-  int count = Header_GetItemCount(ListView_GetHeader(hwnd_));
-  for (int i = count - 1; i >= 0; --i) {
-    ListView_DeleteColumn(hwnd_, i);
-  }
-
-  int index = 0;
-  for (const auto& column : columns) {
-    LVCOLUMNW col = {};
-    col.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_FMT;
-    col.pszText = const_cast<wchar_t*>(column.title.c_str());
-    col.cx = column.width;
-    col.fmt = column.fmt;
-    ListView_InsertColumn(hwnd_, index++, &col);
-  }
-}
-
 void ValueList::SetRows(std::vector<ListRow> rows) {
   rows_ = std::move(rows);
   filter_cache_.clear();

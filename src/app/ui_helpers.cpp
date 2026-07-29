@@ -27,6 +27,8 @@
 
 #include "../../include/app/theme.h"
 #include "../../include/win32/win32_helpers.h"
+#include "win32/file_text.h"
+#include "win32/shell_paths.h"
 
 namespace regkit::ui {
 
@@ -1317,14 +1319,6 @@ bool ConfirmDelete(HWND owner, const std::wstring& title, const std::wstring& na
     return clicked == IDYES;
   }
   return false;
-}
-
-int PromptYesNoCancel(HWND owner, const std::wstring& message, const std::wstring& title) {
-  int clicked = 0;
-  if (ShowTaskDialog(owner, title, message, TDCBF_YES_BUTTON | TDCBF_NO_BUTTON | TDCBF_CANCEL_BUTTON, &clicked, TD_WARNING_ICON)) {
-    return clicked;
-  }
-  return IDCANCEL;
 }
 
 int PromptChoice(HWND owner, const std::wstring& message, const std::wstring& title, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label) {

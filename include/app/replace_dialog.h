@@ -17,6 +17,7 @@
 #pragma once
 
 #include "../win32/windows_config.h"
+#include "search/replace.h"
 
 #include <windows.h>
 
@@ -24,15 +25,7 @@
 
 namespace regkit {
 
-struct ReplaceDialogResult {
-  std::wstring find_text;
-  std::wstring replace_text;
-  std::wstring start_key;
-  bool recursive = true;
-  bool match_case = false;
-  bool match_whole = false;
-  bool use_regex = false;
-};
+using ReplaceDialogResult = search::ReplaceOptions;
 
 bool ShowReplaceDialog(HWND owner, ReplaceDialogResult* result);
 

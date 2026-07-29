@@ -1,4 +1,4 @@
-// Copyright (C) 2026 Noverse (Nohuto)
+﻿// Copyright (C) 2026 Noverse (Nohuto)
 // This file is part of RegKit https://github.com/nohuto/regkit
 //
 // RegKit is free software: you can redistribute it and/or modify
@@ -26,18 +26,26 @@
 #include <unordered_set>
 
 #include "../../include/app/command_ids.h"
-#include "../../include/app/favorites_store.h"
+#include "workspace/favorites.h"
 #include "../../include/app/font_dialog.h"
 #include "../../include/app/registry_io.h"
 #include "../../include/app/theme.h"
 #include "../../include/app/ui_helpers.h"
 #include "../../include/app/value_dialogs.h"
 #include "../../include/registry/registry_provider.h"
-#include "../../include/registry/search_engine.h"
+#include "search/compare.h"
+#include "search/search.h"
 #include "../../include/win32/win32_helpers.h"
+#include "regfile/reg_file.h"
+#include "registry/registry_path.h"
+#include "registry/value_format.h"
+#include "win32/process_rights.h"
+#include "win32/shell_paths.h"
 #include "../../resources/resource.h"
 
 namespace regkit {
+
+using workspace::FavoritesStore;
 
 namespace {
 
@@ -173,6 +181,22 @@ const ListRow* SelectedValueRow(const ValueList& list, int* out_index) {
   return list.RowAt(index);
 }
 
+std::vector<ListRow> SelectedListRows(const ValueList& list) {
+  std::vector<ListRow> rows;
+  if (!list.hwnd()) {
+    return rows;
+  }
+  rows.reserve(static_cast<size_t>(ListView_GetSelectedCount(list.hwnd())));
+  int index = -1;
+  while ((index = ListView_GetNextItem(list.hwnd(), index, LVNI_SELECTED)) >= 0) {
+    const ListRow* row = list.RowAt(index);
+    if (row) {
+      rows.push_back(*row);
+    }
+  }
+  return rows;
+}
+
 bool GetValueEntry(const RegistryNode& node, const std::wstring& name, ValueEntry* out) {
   if (RegistryProvider::QueryValue(node, name, out)) {
     return true;
@@ -198,19 +222,9 @@ RegistryNode MakeChildNode(const RegistryNode& parent, const std::wstring& name)
 
 std::wstring LeafName(const RegistryNode& node) {
   if (node.subkey.empty()) {
-    return node.root_name.empty() ? RegistryProvider::RootName(node.root) : node.root_name;
+    return node.root_name.empty() ? registry_path::RootName(node.root) : node.root_name;
   }
-  size_t pos = node.subkey.rfind(L'\\');
-  if (pos == std::wstring::npos) {
-    return node.subkey;
-  }
-  return node.subkey.substr(pos + 1);
-}
-
-std::vector<BYTE> StringToRegData(const std::wstring& text) {
-  std::vector<BYTE> data((text.size() + 1) * sizeof(wchar_t));
-  memcpy(data.data(), text.c_str(), data.size());
-  return data;
+  return registry_path::Leaf(node.subkey);
 }
 
 bool SelectValueByName(ValueList& list, const std::wstring& name) {
@@ -434,39 +448,6 @@ struct CompareDialogState {
   HFONT ui_font = nullptr;
 };
 
-struct RegFileValue {
-  std::wstring name;
-  DWORD type = REG_NONE;
-  std::vector<BYTE> data;
-};
-
-struct RegFileKey {
-  std::wstring path;
-  std::unordered_map<std::wstring, RegFileValue> values;
-};
-
-struct RegFileData {
-  std::vector<std::wstring> key_order;
-  std::unordered_map<std::wstring, RegFileKey> keys;
-};
-
-struct CompareValueEntry {
-  std::wstring name;
-  DWORD type = REG_NONE;
-  std::vector<BYTE> data;
-};
-
-struct CompareKeyEntry {
-  std::wstring relative_path;
-  std::unordered_map<std::wstring, CompareValueEntry> values;
-};
-
-struct CompareSnapshot {
-  std::wstring base_path;
-  std::wstring label;
-  std::unordered_map<std::wstring, CompareKeyEntry> keys;
-};
-
 struct EditBorderState {
   bool hot = false;
   UINT dpi = 0;
@@ -638,280 +619,8 @@ void ApplyEditCustomBorder(HWND parent, int id) {
   SetWindowPos(ctrl, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 }
 
-bool ParseQuotedString(const std::wstring& text, std::wstring* out, size_t* end_pos) {
-  if (!out || text.empty() || text.front() != L'"') {
-    return false;
-  }
-  out->clear();
-  bool escape = false;
-  for (size_t i = 1; i < text.size(); ++i) {
-    wchar_t ch = text[i];
-    if (escape) {
-      switch (ch) {
-      case L'\\':
-        out->push_back(L'\\');
-        break;
-      case L'"':
-        out->push_back(L'"');
-        break;
-      case L'n':
-        out->push_back(L'\n');
-        break;
-      case L'r':
-        out->push_back(L'\r');
-        break;
-      case L't':
-        out->push_back(L'\t');
-        break;
-      case L'0':
-        out->push_back(L'\0');
-        break;
-      default:
-        out->push_back(ch);
-        break;
-      }
-      escape = false;
-      continue;
-    }
-    if (ch == L'\\') {
-      escape = true;
-      continue;
-    }
-    if (ch == L'"') {
-      if (end_pos) {
-        *end_pos = i + 1;
-      }
-      return true;
-    }
-    out->push_back(ch);
-  }
-  return false;
-}
-
-bool ParseHexBytes(const std::wstring& text, std::vector<BYTE>* out) {
-  if (!out) {
-    return false;
-  }
-  out->clear();
-  int nibble = -1;
-  for (wchar_t ch : text) {
-    if (iswxdigit(ch)) {
-      int value = 0;
-      if (ch >= L'0' && ch <= L'9') {
-        value = ch - L'0';
-      } else if (ch >= L'a' && ch <= L'f') {
-        value = 10 + (ch - L'a');
-      } else if (ch >= L'A' && ch <= L'F') {
-        value = 10 + (ch - L'A');
-      }
-      if (nibble < 0) {
-        nibble = value;
-      } else {
-        out->push_back(static_cast<BYTE>((nibble << 4) | value));
-        nibble = -1;
-      }
-    }
-  }
-  return nibble < 0;
-}
-
-bool ParseRegFile(const std::wstring& path, RegFileData* out, std::wstring* error) {
-  if (!out) {
-    return false;
-  }
-  out->keys.clear();
-  out->key_order.clear();
-  std::wstring content;
-  if (!util::ReadTextFile(path, &content, nullptr, 32ull * 1024ull * 1024ull)) {
-    if (error) {
-      *error = L"Failed to read registry file.";
-    }
-    return false;
-  }
-
-  std::vector<std::wstring> lines;
-  std::wstring current;
-  size_t start = 0;
-  while (start < content.size()) {
-    size_t end = content.find(L'\n', start);
-    if (end == std::wstring::npos) {
-      end = content.size();
-    }
-    std::wstring line = content.substr(start, end - start);
-    if (!line.empty() && line.back() == L'\r') {
-      line.pop_back();
-    }
-    start = end + 1;
-    if (current.empty()) {
-      current = line;
-    } else {
-      current.append(line);
-    }
-    std::wstring trimmed_right = current;
-    while (!trimmed_right.empty() && (trimmed_right.back() == L' ' || trimmed_right.back() == L'\t')) {
-      trimmed_right.pop_back();
-    }
-    if (!trimmed_right.empty() && trimmed_right.back() == L'\\') {
-      trimmed_right.pop_back();
-      current = trimmed_right;
-      continue;
-    }
-    lines.push_back(current);
-    current.clear();
-  }
-  if (!current.empty()) {
-    lines.push_back(current);
-  }
-
-  std::wstring current_key;
-  for (const auto& raw : lines) {
-    std::wstring line = TrimWhitespace(raw);
-    if (line.empty()) {
-      continue;
-    }
-    if (line[0] == L';') {
-      continue;
-    }
-    if (line.front() == L'[' && line.back() == L']') {
-      std::wstring key = line.substr(1, line.size() - 2);
-      key = TrimWhitespace(key);
-      bool delete_key = !key.empty() && key.front() == L'-';
-      if (delete_key) {
-        current_key.clear();
-        continue;
-      }
-      current_key = key;
-      if (!current_key.empty()) {
-        std::wstring key_lower = ToLower(current_key);
-        if (out->keys.find(key_lower) == out->keys.end()) {
-          RegFileKey entry;
-          entry.path = current_key;
-          out->keys.emplace(key_lower, std::move(entry));
-          out->key_order.push_back(current_key);
-        }
-      }
-      continue;
-    }
-    if (current_key.empty()) {
-      continue;
-    }
-    size_t eq = line.find(L'=');
-    if (eq == std::wstring::npos) {
-      continue;
-    }
-    std::wstring name_part = TrimWhitespace(line.substr(0, eq));
-    std::wstring data_part = TrimWhitespace(line.substr(eq + 1));
-    if (name_part.empty() || data_part.empty()) {
-      continue;
-    }
-    if (data_part == L"-") {
-      continue;
-    }
-
-    std::wstring value_name;
-    if (name_part == L"@") {
-      value_name.clear();
-    } else if (name_part.front() == L'"') {
-      size_t end_pos = 0;
-      if (!ParseQuotedString(name_part, &value_name, &end_pos)) {
-        continue;
-      }
-    } else {
-      continue;
-    }
-
-    RegFileValue value;
-    value.name = value_name;
-    if (data_part.front() == L'"') {
-      std::wstring text;
-      size_t end_pos = 0;
-      if (!ParseQuotedString(data_part, &text, &end_pos)) {
-        continue;
-      }
-      value.type = REG_SZ;
-      value.data = StringToRegData(text);
-    } else if (StartsWithInsensitive(data_part, L"dword:")) {
-      std::wstring hex = TrimWhitespace(data_part.substr(6));
-      if (hex.empty()) {
-        continue;
-      }
-      DWORD number = static_cast<DWORD>(wcstoul(hex.c_str(), nullptr, 16));
-      value.type = REG_DWORD;
-      value.data.resize(sizeof(DWORD));
-      memcpy(value.data.data(), &number, sizeof(DWORD));
-    } else if (StartsWithInsensitive(data_part, L"hex")) {
-      DWORD type = REG_BINARY;
-      size_t colon = data_part.find(L':');
-      if (colon == std::wstring::npos) {
-        continue;
-      }
-      size_t open = data_part.find(L'(');
-      size_t close = data_part.find(L')');
-      if (open != std::wstring::npos && close != std::wstring::npos && close > open) {
-        std::wstring code = data_part.substr(open + 1, close - open - 1);
-        unsigned long parsed = wcstoul(code.c_str(), nullptr, 16);
-        switch (parsed) {
-        case 0x0:
-          type = REG_NONE;
-          break;
-        case 0x1:
-          type = REG_SZ;
-          break;
-        case 0x2:
-          type = REG_EXPAND_SZ;
-          break;
-        case 0x3:
-          type = REG_BINARY;
-          break;
-        case 0x4:
-          type = REG_DWORD;
-          break;
-        case 0x5:
-          type = REG_DWORD_BIG_ENDIAN;
-          break;
-        case 0x7:
-          type = REG_MULTI_SZ;
-          break;
-        case 0x8:
-          type = REG_RESOURCE_LIST;
-          break;
-        case 0x9:
-          type = REG_FULL_RESOURCE_DESCRIPTOR;
-          break;
-        case 0xA:
-          type = REG_RESOURCE_REQUIREMENTS_LIST;
-          break;
-        case 0xB:
-          type = REG_QWORD;
-          break;
-        default:
-          type = REG_BINARY;
-          break;
-        }
-      }
-      std::wstring hex = data_part.substr(colon + 1);
-      std::vector<BYTE> bytes;
-      if (!ParseHexBytes(hex, &bytes)) {
-        continue;
-      }
-      value.type = type;
-      value.data = std::move(bytes);
-    } else {
-      continue;
-    }
-
-    std::wstring key_lower = ToLower(current_key);
-    auto it = out->keys.find(key_lower);
-    if (it == out->keys.end()) {
-      continue;
-    }
-    std::wstring name_lower = ToLower(value.name);
-    it->second.values[name_lower] = std::move(value);
-  }
-  return true;
-}
-
-std::vector<std::wstring> ExtractRegFileKeys(const RegFileData& data) {
+std::vector<std::wstring> ExtractRegFileKeys(
+    const regfile::Document& data) {
   std::vector<std::wstring> keys = data.key_order;
   if (keys.empty()) {
     keys.reserve(data.keys.size());
@@ -1144,9 +853,9 @@ INT_PTR CALLBACK CompareDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lpa
       if (file_path.empty()) {
         return;
       }
-      RegFileData data;
+      regfile::Document data;
       std::wstring error;
-      if (!ParseRegFile(file_path, &data, &error)) {
+      if (!regfile::Load(file_path, &data, &error)) {
         return;
       }
       std::vector<std::wstring> keys = ExtractRegFileKeys(data);
@@ -1238,9 +947,9 @@ INT_PTR CALLBACK CompareDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lpa
         return TRUE;
       }
       SetDialogText(dlg, left ? IDC_COMPARE_LEFT_FILE : IDC_COMPARE_RIGHT_FILE, path);
-      RegFileData data;
+      regfile::Document data;
       std::wstring error;
-      if (ParseRegFile(path, &data, &error)) {
+      if (regfile::Load(path, &data, &error)) {
         std::vector<std::wstring> keys = ExtractRegFileKeys(data);
         if (keys.empty()) {
           ui::ShowError(dlg, L"No registry keys were found in the .reg file.");
@@ -1279,9 +988,9 @@ INT_PTR CALLBACK CompareDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lpa
           ui::ShowError(dlg, L"Registry file path is required.");
           return false;
         }
-        RegFileData data;
+        regfile::Document data;
         std::wstring error;
-        if (!ParseRegFile(out->file_path, &data, &error)) {
+        if (!regfile::Load(out->file_path, &data, &error)) {
           ui::ShowError(dlg, error.empty() ? L"Failed to read registry file." : error);
           return false;
         }
@@ -1588,9 +1297,9 @@ void MainWindow::BuildMenus() {
   AppendMenuW(options_menu, MF_POPUP, reinterpret_cast<UINT_PTR>(icon_menu), L"Icons");
   AppendMenuW(options_menu, MF_STRING, cmd::kViewFont, L"Font...");
   AppendMenuW(options_menu, MF_SEPARATOR, 0, nullptr);
-  bool is_elevated = IsProcessElevated();
-  bool is_system = IsProcessSystem();
-  bool is_ti = IsProcessTrustedInstaller();
+  bool is_elevated = util::IsProcessElevated();
+  bool is_system = util::IsProcessSystem();
+  bool is_ti = util::IsProcessTrustedInstaller();
   UINT admin_flags = MF_STRING | (is_elevated ? MF_GRAYED : 0);
   AppendMenuW(options_menu, admin_flags, cmd::kOptionsRestartAdmin, L"Restart as Admin");
   AppendMenuW(options_menu, MF_STRING | (always_run_as_admin_ ? MF_CHECKED : MF_UNCHECKED), cmd::kOptionsAlwaysRunAdmin, L"Always run as Admin");
@@ -1633,20 +1342,6 @@ void MainWindow::BuildMenus() {
   AppendMenuW(window_menu, MF_STRING | (always_on_top_ ? MF_CHECKED : MF_UNCHECKED), cmd::kWindowAlwaysOnTop, L"Always on Top");
   AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(window_menu), L"Window");
 
-  HMENU research_menu = CreatePopupMenu();
-  append_menu(research_menu, MF_STRING, cmd::kResearchRecordsTable, L"Capture Table");
-  AppendMenuW(research_menu, MF_SEPARATOR, 0, nullptr);
-  append_menu(research_menu, MF_STRING, cmd::kResearchDxgKernel, L"DXG Kernel Values");
-  append_menu(research_menu, MF_STRING, cmd::kResearchSessionManager, L"Session Manager Values");
-  append_menu(research_menu, MF_STRING, cmd::kResearchPower, L"Power Values");
-  append_menu(research_menu, MF_STRING, cmd::kResearchDwm, L"DWM Values");
-  append_menu(research_menu, MF_STRING, cmd::kResearchUsb, L"USBFLAGS/USBHUB/USB/PnP Values");
-  append_menu(research_menu, MF_STRING, cmd::kResearchBcd, L"BCD Edits");
-  append_menu(research_menu, MF_STRING, cmd::kResearchIntelNic, L"Intel NIC Values");
-  append_menu(research_menu, MF_STRING, cmd::kResearchMmcss, L"MMCSS Values");
-  append_menu(research_menu, MF_STRING, cmd::kResearchStorNvme, L"StorNVMe Values");
-  append_menu(research_menu, MF_STRING, cmd::kResearchNotifications, L"Notification Values");
-
   HMENU trace_menu = CreatePopupMenu();
   auto has_label = [&](const wchar_t* label) -> bool {
     for (const auto& trace : active_traces_) {
@@ -1671,9 +1366,9 @@ void MainWindow::BuildMenus() {
   append_menu(trace_menu, MF_STRING | (trace_23h2 ? MF_CHECKED : MF_UNCHECKED), cmd::kTraceLoad23H2, L"23H2");
   append_menu(trace_menu, MF_STRING | (trace_24h2 ? MF_CHECKED : MF_UNCHECKED), cmd::kTraceLoad24H2, L"24H2");
   append_menu(trace_menu, MF_STRING | (trace_25h2 ? MF_CHECKED : MF_UNCHECKED), cmd::kTraceLoad25H2, L"25H2");
-  int recent_limit = std::min(static_cast<int>(recent_trace_paths_.size()), cmd::kTraceRecentMax - cmd::kTraceRecentBase + 1);
+  int recent_limit = std::min(static_cast<int>(recent_trace_paths_.items().size()), cmd::kTraceRecentMax - cmd::kTraceRecentBase + 1);
   for (int i = 0; i < recent_limit; ++i) {
-    const std::wstring& path = recent_trace_paths_[static_cast<size_t>(i)];
+    const std::wstring& path = recent_trace_paths_.items()[static_cast<size_t>(i)];
     if (path.empty()) {
       continue;
     }
@@ -1715,9 +1410,9 @@ void MainWindow::BuildMenus() {
     append_menu(default_menu, flags, cmd::kDefaultBundledBase + static_cast<int>(i), entry.label.c_str());
   }
   bool has_recent_default = false;
-  int default_recent_limit = std::min(static_cast<int>(recent_default_paths_.size()), cmd::kDefaultRecentMax - cmd::kDefaultRecentBase + 1);
+  int default_recent_limit = std::min(static_cast<int>(recent_default_paths_.items().size()), cmd::kDefaultRecentMax - cmd::kDefaultRecentBase + 1);
   for (int i = 0; i < default_recent_limit; ++i) {
-    const std::wstring& path = recent_default_paths_[static_cast<size_t>(i)];
+    const std::wstring& path = recent_default_paths_.items()[static_cast<size_t>(i)];
     if (path.empty()) {
       continue;
     }
@@ -1745,7 +1440,6 @@ void MainWindow::BuildMenus() {
   AppendMenuW(help_menu, MF_SEPARATOR, 0, nullptr);
   AppendMenuW(help_menu, MF_STRING, cmd::kHelpAbout, L"About RegKit");
 
-  AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(research_menu), L"Research");
   AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(trace_menu), L"Trace");
   AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(default_menu), L"Default");
   AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(help_menu), L"Help");
@@ -1829,8 +1523,8 @@ bool MainWindow::HandleMenuCommand(int command_id) {
   }
   if (command_id >= cmd::kDefaultRecentBase && command_id <= cmd::kDefaultRecentMax) {
     size_t index = static_cast<size_t>(command_id - cmd::kDefaultRecentBase);
-    if (index < recent_default_paths_.size()) {
-      std::wstring path = recent_default_paths_[index];
+    if (index < recent_default_paths_.items().size()) {
+      std::wstring path = recent_default_paths_.items()[index];
       std::wstring label = FileBaseName(path);
       if (label.empty()) {
         label = L"Default";
@@ -1848,8 +1542,8 @@ bool MainWindow::HandleMenuCommand(int command_id) {
   }
   if (command_id >= cmd::kTraceRecentBase && command_id <= cmd::kTraceRecentMax) {
     size_t index = static_cast<size_t>(command_id - cmd::kTraceRecentBase);
-    if (index < recent_trace_paths_.size()) {
-      std::wstring path = recent_trace_paths_[index];
+    if (index < recent_trace_paths_.items().size()) {
+      std::wstring path = recent_trace_paths_.items()[index];
       std::wstring label = FileBaseName(path);
       if (label.empty()) {
         label = L"Trace";
@@ -1968,7 +1662,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
         dedupe(&selected_values);
         dedupe(&selected_keys);
         std::wstring error;
-        std::wstring path = RegistryProvider::BuildPath(*current_node_);
+        std::wstring path = registry_path::Build(*current_node_);
         if (ExportRegFileSelection(hwnd_, path, selected_values, selected_keys, &error)) {
           HistoryEntry entry;
           entry.action = L"Export registry selection";
@@ -1982,7 +1676,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       }
     }
     std::wstring error;
-    std::wstring path = RegistryProvider::BuildPath(*current_node_);
+    std::wstring path = registry_path::Build(*current_node_);
     if (ExportRegFile(hwnd_, path, &error)) {
       HistoryEntry entry;
       entry.action = L"Export registry key";
@@ -2032,7 +1726,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       root = current_node_->root;
     }
     if (LoadHive(hwnd_, root, &error)) {
-      AppendHistoryEntry(L"Load hive", L"", RegistryProvider::RootName(root));
+      AppendHistoryEntry(L"Load hive", L"", registry_path::RootName(root));
       UpdateValueListForNode(current_node_);
     } else if (!error.empty()) {
       ui::ShowError(hwnd_, error);
@@ -2181,14 +1875,8 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     if (save_tree_state_) {
       StopTreeStateWorker();
       save_tree_state_ = false;
-      saved_tree_selected_path_.clear();
-      saved_tree_expanded_paths_.clear();
-      {
-        std::lock_guard<std::mutex> lock(tree_state_mutex_);
-        tree_state_selected_.clear();
-        tree_state_expanded_.clear();
-        tree_state_dirty_ = false;
-      }
+      saved_tree_state_.selected_path.clear();
+      saved_tree_state_.expanded_paths.clear();
     } else {
       save_tree_state_ = true;
       LoadTreeState();
@@ -2217,8 +1905,12 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     if (toolbar_.hwnd()) {
       SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditPaste, read_only_ ? 0 : TBSTATE_ENABLED);
       SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditDelete, read_only_ ? 0 : TBSTATE_ENABLED);
-      SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditUndo, read_only_ ? 0 : (undo_stack_.empty() ? 0 : TBSTATE_ENABLED));
-      SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditRedo, read_only_ ? 0 : (redo_stack_.empty() ? 0 : TBSTATE_ENABLED));
+      SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditUndo,
+                   !read_only_ && undo_stack_.CanUndo() ? TBSTATE_ENABLED
+                                                       : 0);
+      SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditRedo,
+                   !read_only_ && undo_stack_.CanRedo() ? TBSTATE_ENABLED
+                                                       : 0);
     }
     return true;
   case cmd::kOptionsCompareRegistries:
@@ -2310,39 +2002,6 @@ bool MainWindow::HandleMenuCommand(int command_id) {
   case cmd::kTraceGuide:
     ShellExecuteW(hwnd_, L"open", L"https://github.com/nohuto/regkit/blob/main/guides/wpr-wpa.md", nullptr, nullptr, SW_SHOWNORMAL);
     return true;
-  case cmd::kResearchRecordsTable:
-    ShellExecuteW(hwnd_, L"open", L"https://github.com/nohuto/regkit#capture-table", nullptr, nullptr, SW_SHOWNORMAL);
-    return true;
-  case cmd::kResearchDxgKernel:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/dxg-kernel-values/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
-    return true;
-  case cmd::kResearchSessionManager:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/kernel-values/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
-    return true;
-  case cmd::kResearchPower:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/power/power-values/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
-    return true;
-  case cmd::kResearchDwm:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/dwm-values/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
-    return true;
-  case cmd::kResearchUsb:
-    ShellExecuteW(hwnd_, L"open", L"https://github.com/nohuto/regkit#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
-    return true;
-  case cmd::kResearchBcd:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/bcd-edits/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
-    return true;
-  case cmd::kResearchIntelNic:
-    ShellExecuteW(hwnd_, L"open", L"https://github.com/nohuto/regkit#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
-    return true;
-  case cmd::kResearchMmcss:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/mmcss-values/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
-    return true;
-  case cmd::kResearchStorNvme:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/peripheral/stornvme-values/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
-    return true;
-  case cmd::kResearchNotifications:
-    ShellExecuteW(hwnd_, L"open", L"https://www.noverse.dev/docs/win-config/system/disable-notifications/#registry-values", nullptr, nullptr, SW_SHOWNORMAL);
-    return true;
   case cmd::kWindowNew:
     ui::LaunchNewInstance();
     return true;
@@ -2423,7 +2082,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     }
     SaveSettings();
     BuildMenus();
-    if (always_run_as_admin_ && !IsProcessElevated()) {
+    if (always_run_as_admin_ && !util::IsProcessElevated()) {
       RestartAsAdmin();
     }
     return true;
@@ -2438,7 +2097,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     }
     SaveSettings();
     BuildMenus();
-    if (always_run_as_system_ && !IsProcessSystem()) {
+    if (always_run_as_system_ && !util::IsProcessSystem()) {
       RestartAsSystem();
     }
     return true;
@@ -2453,7 +2112,8 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     }
     SaveSettings();
     BuildMenus();
-    if (always_run_as_trustedinstaller_ && !IsProcessTrustedInstaller()) {
+    if (always_run_as_trustedinstaller_ &&
+        !util::IsProcessTrustedInstaller()) {
       RestartAsTrustedInstaller();
     }
     return true;
@@ -2477,7 +2137,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     if (!has_target) {
       return true;
     }
-    std::wstring path = RegistryProvider::BuildPath(target);
+    std::wstring path = registry_path::Build(target);
     if (!CreateRegistryPath(path)) {
       ui::ShowError(hwnd_, L"Failed to create the key.");
       return true;
@@ -2506,7 +2166,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     return true;
   case cmd::kFavoritesAdd: {
     if (current_node_) {
-      if (FavoritesStore::Add(RegistryProvider::BuildPath(*current_node_))) {
+      if (FavoritesStore::Add(registry_path::Build(*current_node_))) {
         RefreshFavoritesCache();
         BuildMenus();
       }
@@ -2515,7 +2175,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
   }
   case cmd::kFavoritesRemove: {
     if (current_node_) {
-      if (FavoritesStore::Remove(RegistryProvider::BuildPath(*current_node_))) {
+      if (FavoritesStore::Remove(registry_path::Build(*current_node_))) {
         RefreshFavoritesCache();
         BuildMenus();
       }
@@ -2580,10 +2240,10 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     return true;
   }
   case cmd::kDefaultEditRecent: {
-    std::wstring content = JoinLines(recent_default_paths_);
+    std::wstring content = JoinLines(recent_default_paths_.items());
     if (PromptForMultiLineText(hwnd_, L"Edit Recent Defaults", L"One default path per line.", &content)) {
       std::vector<std::wstring> updated = SplitLines(content);
-      recent_default_paths_ = std::move(updated);
+      recent_default_paths_.Replace(std::move(updated));
       NormalizeRecentDefaultList();
       SaveSettings();
       BuildMenus();
@@ -2591,10 +2251,10 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     return true;
   }
   case cmd::kTraceEditRecent: {
-    std::wstring content = JoinLines(recent_trace_paths_);
+    std::wstring content = JoinLines(recent_trace_paths_.items());
     if (PromptForMultiLineText(hwnd_, L"Edit Recent Traces", L"One trace path per line.", &content)) {
       std::vector<std::wstring> updated = SplitLines(content);
-      recent_trace_paths_ = std::move(updated);
+      recent_trace_paths_.Replace(std::move(updated));
       NormalizeRecentTraceList();
       SaveSettings();
       BuildMenus();
@@ -2616,10 +2276,11 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     return true;
   }
   case cmd::kEditCopyValueName: {
-    const ListRow* row = SelectedValueRow(value_list_, nullptr);
-    if (!row || row->kind != rowkind::kValue) {
+    std::vector<ListRow> selected_rows = SelectedListRows(value_list_);
+    if (selected_rows.size() != 1 || selected_rows.front().kind != rowkind::kValue) {
       return true;
     }
+    const ListRow* row = &selected_rows.front();
     std::wstring name = row->extra.empty() ? L"(Default)" : row->extra;
     ui::CopyTextToClipboard(hwnd_, name);
     return true;
@@ -2640,7 +2301,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       ui::ShowError(hwnd_, L"Failed to read value.");
       return true;
     }
-    std::wstring data = RegistryProvider::FormatValueDataForDisplay(entry.type, entry.data.data(), static_cast<DWORD>(entry.data.size()));
+    std::wstring data = value_format::DisplayData(entry.type, entry.data.data(), static_cast<DWORD>(entry.data.size()));
     ui::CopyTextToClipboard(hwnd_, data);
     return true;
   }
@@ -2656,12 +2317,12 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       int index = -1;
       const ListRow* row = SelectedValueRow(value_list_, &index);
       if (row && row->kind == rowkind::kKey && current_node_) {
-        path = RegistryProvider::BuildPath(*current_node_);
+        path = registry_path::Build(*current_node_);
         if (!row->extra.empty()) {
           path += L"\\" + row->extra;
         }
       } else if (current_node_) {
-        path = RegistryProvider::BuildPath(*current_node_);
+        path = registry_path::Build(*current_node_);
       }
       return path;
     };
@@ -2722,7 +2383,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
             clipboard_.kind = ClipboardItem::Kind::kKey;
             clipboard_.source_parent = *current_node_;
             clipboard_.name = row->extra;
-            clipboard_.key_snapshot = CaptureKeySnapshot(child);
+            clipboard_.key_snapshot = changes::CaptureKey(child);
           }
         } else if (list == value_list_.hwnd()) {
           clipboard_.kind = ClipboardItem::Kind::kNone;
@@ -2753,12 +2414,12 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       clipboard_.kind = ClipboardItem::Kind::kKey;
       clipboard_.source_parent = *current_node_;
       clipboard_.name = row->extra;
-      clipboard_.key_snapshot = CaptureKeySnapshot(child);
-      ui::CopyTextToClipboard(hwnd_, RegistryProvider::BuildPath(child));
+      clipboard_.key_snapshot = changes::CaptureKey(child);
+      ui::CopyTextToClipboard(hwnd_, registry_path::Build(child));
       return true;
     }
     clipboard_.kind = ClipboardItem::Kind::kNone;
-    ui::CopyTextToClipboard(hwnd_, RegistryProvider::BuildPath(*current_node_));
+    ui::CopyTextToClipboard(hwnd_, registry_path::Build(*current_node_));
     return true;
   }
   case cmd::kEditGoTo:
@@ -2815,11 +2476,11 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       if (!RegistryProvider::SetValue(*current_node_, unique, new_value.type, new_value.data)) {
         ui::ShowError(hwnd_, L"Failed to paste value.");
       } else {
-        std::wstring data_text = RegistryProvider::FormatValueData(new_value.type, new_value.data.data(), static_cast<DWORD>(new_value.data.size()));
-        AppendHistoryEntry(L"Create value " + unique, L"", data_text);
+        std::wstring data_text = value_format::Data(new_value.type, new_value.data.data(), static_cast<DWORD>(new_value.data.size()));
+        AppendValueHistoryEntry(L"Create value " + unique, L"", data_text, *current_node_, unique, HistoryEntry::RevertKind::kDeleteValue);
         MarkOfflineDirty();
-        UndoOperation op;
-        op.type = UndoOperation::Type::kCreateValue;
+        changes::UndoOperation op;
+        op.type = changes::UndoOperation::Type::kCreateValue;
         op.node = *current_node_;
         op.name = unique;
         op.new_value = new_value;
@@ -2835,15 +2496,15 @@ bool MainWindow::HandleMenuCommand(int command_id) {
         base_name += L" - Copy";
       }
       std::wstring unique = MakeUniqueKeyName(*current_node_, base_name);
-      KeySnapshot snapshot = clipboard_.key_snapshot;
+      changes::KeySnapshot snapshot = clipboard_.key_snapshot;
       snapshot.name = unique;
-      if (!RestoreKeySnapshot(*current_node_, snapshot)) {
+      if (!changes::RestoreKey(*current_node_, snapshot)) {
         ui::ShowError(hwnd_, L"Failed to paste key.");
       } else {
         AppendHistoryEntry(L"Create key " + unique, L"", L"");
         MarkOfflineDirty();
-        UndoOperation op;
-        op.type = UndoOperation::Type::kCreateKey;
+        changes::UndoOperation op;
+        op.type = changes::UndoOperation::Type::kCreateKey;
         op.node = *current_node_;
         op.name = unique;
         op.key_snapshot = snapshot;
@@ -2861,7 +2522,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     }
     ReplaceDialogResult options = last_replace_;
     if (options.start_key.empty() && current_node_) {
-      options.start_key = RegistryProvider::BuildPath(*current_node_);
+      options.start_key = registry_path::Build(*current_node_);
     }
     if (ShowReplaceDialog(hwnd_, &options)) {
       last_replace_ = options;
@@ -2873,17 +2534,20 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     if (!EnsureWritable()) {
       return true;
     }
-    if (undo_stack_.empty()) {
+    auto operation = undo_stack_.TakeUndo();
+    if (!operation) {
       return true;
     }
-    UndoOperation op = undo_stack_.back();
-    undo_stack_.pop_back();
-    if (ApplyUndoOperation(op, false)) {
-      redo_stack_.push_back(std::move(op));
+    if (ApplyUndoOperation(*operation, false)) {
+      undo_stack_.CompleteUndo(std::move(*operation));
+    } else {
+      undo_stack_.CompleteRedo(std::move(*operation));
     }
     if (toolbar_.hwnd()) {
-      SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditUndo, undo_stack_.empty() ? 0 : TBSTATE_ENABLED);
-      SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditRedo, redo_stack_.empty() ? 0 : TBSTATE_ENABLED);
+      SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditUndo,
+                   undo_stack_.CanUndo() ? TBSTATE_ENABLED : 0);
+      SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditRedo,
+                   undo_stack_.CanRedo() ? TBSTATE_ENABLED : 0);
     }
     return true;
   }
@@ -2891,17 +2555,20 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     if (!EnsureWritable()) {
       return true;
     }
-    if (redo_stack_.empty()) {
+    auto operation = undo_stack_.TakeRedo();
+    if (!operation) {
       return true;
     }
-    UndoOperation op = redo_stack_.back();
-    redo_stack_.pop_back();
-    if (ApplyUndoOperation(op, true)) {
-      undo_stack_.push_back(std::move(op));
+    if (ApplyUndoOperation(*operation, true)) {
+      undo_stack_.CompleteRedo(std::move(*operation));
+    } else {
+      undo_stack_.CompleteUndo(std::move(*operation));
     }
     if (toolbar_.hwnd()) {
-      SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditUndo, undo_stack_.empty() ? 0 : TBSTATE_ENABLED);
-      SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditRedo, redo_stack_.empty() ? 0 : TBSTATE_ENABLED);
+      SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditUndo,
+                   undo_stack_.CanUndo() ? TBSTATE_ENABLED : 0);
+      SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditRedo,
+                   undo_stack_.CanRedo() ? TBSTATE_ENABLED : 0);
     }
     return true;
   }
@@ -2945,13 +2612,13 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     } else {
       AppendHistoryEntry(L"Create key " + name, L"", L"");
       MarkOfflineDirty();
-      UndoOperation op;
-      op.type = UndoOperation::Type::kCreateKey;
+      changes::UndoOperation op;
+      op.type = changes::UndoOperation::Type::kCreateKey;
       op.node = *current_node_;
       op.name = name;
       op.key_snapshot.name = name;
       PushUndo(std::move(op));
-      std::wstring path = RegistryProvider::BuildPath(*current_node_);
+      std::wstring path = registry_path::Build(*current_node_);
       if (!path.empty()) {
         path.append(L"\\");
         path.append(name);
@@ -2962,7 +2629,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
         ScheduleValueListRename(rowkind::kKey, name);
         UpdateValueListForNode(current_node_);
       } else {
-        std::wstring parent_path = RegistryProvider::BuildPath(*current_node_);
+        std::wstring parent_path = registry_path::Build(*current_node_);
         HTREEITEM parent_item = TreeView_GetSelection(tree_.hwnd());
         if (!parent_item && !parent_path.empty()) {
           SelectTreePath(parent_path);
@@ -3052,11 +2719,11 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     if (!RegistryProvider::SetValue(*current_node_, value_name, type, data)) {
       ui::ShowError(hwnd_, L"Failed to set value.");
     } else {
-      std::wstring data_text = RegistryProvider::FormatValueData(type, data.data(), static_cast<DWORD>(data.size()));
-      AppendHistoryEntry(L"Create value " + value_name, L"", data_text);
+      std::wstring data_text = value_format::Data(type, data.data(), static_cast<DWORD>(data.size()));
+      AppendValueHistoryEntry(L"Create value " + value_name, L"", data_text, *current_node_, value_name, HistoryEntry::RevertKind::kDeleteValue);
       MarkOfflineDirty();
-      UndoOperation op;
-      op.type = UndoOperation::Type::kCreateValue;
+      changes::UndoOperation op;
+      op.type = changes::UndoOperation::Type::kCreateValue;
       op.node = *current_node_;
       op.name = value_name;
       op.new_value.name = value_name;
@@ -3076,10 +2743,11 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     if (!current_node_) {
       return true;
     }
-    const ListRow* row = SelectedValueRow(value_list_, nullptr);
-    if (!row || row->kind != rowkind::kValue) {
+    std::vector<ListRow> selected_rows = SelectedListRows(value_list_);
+    if (selected_rows.size() != 1 || selected_rows.front().kind != rowkind::kValue) {
       return true;
     }
+    const ListRow* row = &selected_rows.front();
     ValueEntry entry;
     if (!GetValueEntry(*current_node_, row->extra, &entry)) {
       if (HasActiveTraces() && (row->type.empty() || EqualsInsensitive(row->type, L"TRACE"))) {
@@ -3090,7 +2758,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
           return true;
         }
         if (needs_create) {
-          std::wstring path = RegistryProvider::BuildPath(*current_node_);
+          std::wstring path = registry_path::Build(*current_node_);
           if (!CreateRegistryPath(path)) {
             ui::ShowError(hwnd_, L"Failed to create the key.");
             return true;
@@ -3102,11 +2770,11 @@ bool MainWindow::HandleMenuCommand(int command_id) {
           return true;
         }
         std::wstring display_name = row->extra.empty() ? L"(Default)" : row->extra;
-        std::wstring data_text = RegistryProvider::FormatValueData(type, data.data(), static_cast<DWORD>(data.size()));
-        AppendHistoryEntry(L"Create value " + display_name, L"", data_text);
+        std::wstring data_text = value_format::Data(type, data.data(), static_cast<DWORD>(data.size()));
+        AppendValueHistoryEntry(L"Create value " + display_name, L"", data_text, *current_node_, row->extra, HistoryEntry::RevertKind::kDeleteValue);
         MarkOfflineDirty();
-        UndoOperation op;
-        op.type = UndoOperation::Type::kCreateValue;
+        changes::UndoOperation op;
+        op.type = changes::UndoOperation::Type::kCreateValue;
         op.node = *current_node_;
         op.name = row->extra;
         op.new_value.name = row->extra;
@@ -3120,22 +2788,22 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       ui::ShowError(hwnd_, L"Failed to read value.");
       return true;
     }
-    std::wstring old_text = RegistryProvider::FormatValueData(entry.type, entry.data.data(), static_cast<DWORD>(entry.data.size()));
-    DWORD base_type = RegistryProvider::NormalizeValueType(entry.type);
+    std::wstring old_text = value_format::Data(entry.type, entry.data.data(), static_cast<DWORD>(entry.data.size()));
+    DWORD base_type = value_format::NormalizeType(entry.type);
     bool supports_extended_dialog = base_type == REG_SZ || base_type == REG_EXPAND_SZ || base_type == REG_MULTI_SZ || base_type == REG_DWORD || base_type == REG_DWORD_BIG_ENDIAN || base_type == REG_QWORD || base_type == REG_LINK;
     std::vector<BYTE> new_data;
     if (command_id == cmd::kEditModifyBinary || base_type == REG_BINARY || base_type == REG_NONE || base_type == REG_RESOURCE_LIST || base_type == REG_FULL_RESOURCE_DESCRIPTOR || base_type == REG_RESOURCE_REQUIREMENTS_LIST) {
-      std::wstring type_label = RegistryProvider::FormatValueType(entry.type);
+      std::wstring type_label = value_format::TypeName(entry.type);
       if (!PromptForBinary(hwnd_, entry.name, entry.data, &new_data, type_label.c_str())) {
         return true;
       }
     } else if (command_id == cmd::kEditModify && supports_extended_dialog) {
-      std::wstring type_label = RegistryProvider::FormatValueType(entry.type);
+      std::wstring type_label = value_format::TypeName(entry.type);
       if (!PromptForFlaggedValue(hwnd_, entry.name, base_type, entry.data, type_label, &new_data)) {
         return true;
       }
     } else {
-      std::wstring type_label = RegistryProvider::FormatValueType(entry.type);
+      std::wstring type_label = value_format::TypeName(entry.type);
       if (!PromptForBinary(hwnd_, entry.name, entry.data, &new_data, type_label.c_str())) {
         return true;
       }
@@ -3143,11 +2811,11 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     if (!RegistryProvider::SetValue(*current_node_, entry.name, entry.type, new_data)) {
       ui::ShowError(hwnd_, L"Failed to update value.");
     } else {
-      std::wstring new_text = RegistryProvider::FormatValueData(entry.type, new_data.data(), static_cast<DWORD>(new_data.size()));
-      AppendHistoryEntry(L"Modify value " + entry.name, old_text, new_text);
+      std::wstring new_text = value_format::Data(entry.type, new_data.data(), static_cast<DWORD>(new_data.size()));
+      AppendValueHistoryEntry(L"Modify value " + entry.name, old_text, new_text, *current_node_, entry.name, HistoryEntry::RevertKind::kSetValue, &entry);
       MarkOfflineDirty();
-      UndoOperation op;
-      op.type = UndoOperation::Type::kModifyValue;
+      changes::UndoOperation op;
+      op.type = changes::UndoOperation::Type::kModifyValue;
       op.node = *current_node_;
       op.old_value = entry;
       op.new_value = entry;
@@ -3161,14 +2829,16 @@ bool MainWindow::HandleMenuCommand(int command_id) {
     if (!current_node_) {
       return true;
     }
-    const ListRow* row = SelectedValueRow(value_list_, nullptr);
-    if (!row || row->kind != rowkind::kValue) {
+    std::vector<ListRow> selected_rows = SelectedListRows(value_list_);
+    if (selected_rows.empty()) {
       return true;
     }
-    if (row->simulated) {
+    if (std::any_of(selected_rows.begin(), selected_rows.end(), [](const ListRow& row) {
+          return row.kind != rowkind::kValue || row.simulated;
+        })) {
       return true;
     }
-    EditValueComment(*row);
+    EditValueComments(selected_rows);
     return true;
   }
   case cmd::kEditRename: {
@@ -3179,7 +2849,12 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       return true;
     }
     HWND focus = GetFocus();
-    const ListRow* row = SelectedValueRow(value_list_, nullptr);
+    std::vector<ListRow> selected_rows = SelectedListRows(value_list_);
+    if (focus == value_list_.hwnd() && selected_rows.size() > 1) {
+      return true;
+    }
+
+    const ListRow* row = selected_rows.empty() ? nullptr : &selected_rows.front();
     if (focus == tree_.hwnd() || (!row && current_node_)) {
       if (current_node_->subkey.empty()) {
         return true;
@@ -3202,7 +2877,7 @@ bool MainWindow::HandleMenuCommand(int command_id) {
         ListView_EditLabel(value_list_.hwnd(), index);
         return true;
       }
-      std::wstring path = RegistryProvider::BuildPath(*current_node_);
+      std::wstring path = registry_path::Build(*current_node_);
       if (!row->extra.empty()) {
         path.append(L"\\");
         path.append(row->extra);
@@ -3251,19 +2926,19 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       RegistryNode parent = target;
       size_t pos = parent.subkey.rfind(L'\\');
       parent.subkey = (pos == std::wstring::npos) ? L"" : parent.subkey.substr(0, pos);
-      KeySnapshot snapshot = CaptureKeySnapshot(target);
+      changes::KeySnapshot snapshot = changes::CaptureKey(target);
       if (!RegistryProvider::DeleteKey(target)) {
         ui::ShowError(hwnd_, L"Failed to delete key.");
       } else {
         AppendHistoryEntry(L"Delete key " + name, name, L"");
         MarkOfflineDirty();
-        UndoOperation op;
-        op.type = UndoOperation::Type::kDeleteKey;
+        changes::UndoOperation op;
+        op.type = changes::UndoOperation::Type::kDeleteKey;
         op.node = parent;
         op.name = name;
         op.key_snapshot = std::move(snapshot);
         PushUndo(std::move(op));
-        std::wstring parent_path = RegistryProvider::BuildPath(parent);
+        std::wstring parent_path = registry_path::Build(parent);
         bool selected_parent = false;
         if (!parent_path.empty()) {
           selected_parent = SelectTreePath(parent_path);
@@ -3276,20 +2951,73 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       return true;
     }
 
-    const ListRow* row = SelectedValueRow(value_list_, nullptr);
+    std::vector<ListRow> selected_rows = SelectedListRows(value_list_);
+    if (focus == value_list_.hwnd() && selected_rows.size() > 1) {
+      const bool all_values = std::all_of(selected_rows.begin(), selected_rows.end(), [](const ListRow& selected) {
+        return selected.kind == rowkind::kValue && !selected.simulated;
+      });
+      if (!all_values) {
+        ui::ShowWarning(hwnd_, L"Bulk deletion only supports registry values.");
+        return true;
+      }
+
+      std::vector<ValueEntry> entries;
+      entries.reserve(selected_rows.size());
+      for (const auto& selected : selected_rows) {
+        ValueEntry entry;
+        if (!GetValueEntry(*current_node_, selected.extra, &entry)) {
+          ui::ShowError(hwnd_, L"Failed to read all selected values.");
+          return true;
+        }
+        entries.push_back(std::move(entry));
+      }
+
+      std::wstring target = std::to_wstring(entries.size()) + L" selected values";
+      if (!ui::ConfirmDelete(hwnd_, L"Delete Values", target)) {
+        return true;
+      }
+
+      size_t deleted = 0;
+      for (auto& entry : entries) {
+        if (!RegistryProvider::DeleteValue(*current_node_, entry.name)) {
+          continue;
+        }
+        std::wstring display_name = entry.name.empty() ? L"(Default)" : entry.name;
+        AppendValueHistoryEntry(L"Delete value " + display_name, display_name, L"", *current_node_, entry.name, HistoryEntry::RevertKind::kSetValue, &entry);
+        changes::UndoOperation op;
+        op.type = changes::UndoOperation::Type::kDeleteValue;
+        op.node = *current_node_;
+        op.old_value = std::move(entry);
+        PushUndo(std::move(op));
+        ++deleted;
+      }
+
+      if (deleted > 0) {
+        MarkOfflineDirty();
+        UpdateValueListForNode(current_node_);
+      }
+      if (deleted != selected_rows.size()) {
+        std::wstring message = L"Deleted " + std::to_wstring(deleted) + L" of " +
+                               std::to_wstring(selected_rows.size()) + L" selected values.";
+        ui::ShowError(hwnd_, message);
+      }
+      return true;
+    }
+
+    const ListRow* row = selected_rows.empty() ? nullptr : &selected_rows.front();
     if (row && row->kind == rowkind::kKey) {
       if (!ui::ConfirmDelete(hwnd_, L"Delete Key", row->extra)) {
         return true;
       }
       RegistryNode child = MakeChildNode(*current_node_, row->extra);
-      KeySnapshot snapshot = CaptureKeySnapshot(child);
+      changes::KeySnapshot snapshot = changes::CaptureKey(child);
       if (!RegistryProvider::DeleteKey(child)) {
         ui::ShowError(hwnd_, L"Failed to delete key.");
       } else {
         AppendHistoryEntry(L"Delete key " + row->extra, row->extra, L"");
         MarkOfflineDirty();
-        UndoOperation op;
-        op.type = UndoOperation::Type::kDeleteKey;
+        changes::UndoOperation op;
+        op.type = changes::UndoOperation::Type::kDeleteKey;
         op.node = *current_node_;
         op.name = row->extra;
         op.key_snapshot = std::move(snapshot);
@@ -3303,7 +3031,8 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       if (row->simulated) {
         return true;
       }
-      if (!ui::ConfirmDelete(hwnd_, L"Delete Value", row->extra)) {
+      std::wstring display_name = row->extra.empty() ? L"(Default)" : row->extra;
+      if (!ui::ConfirmDelete(hwnd_, L"Delete Value", display_name)) {
         return true;
       }
       ValueEntry entry;
@@ -3314,10 +3043,10 @@ bool MainWindow::HandleMenuCommand(int command_id) {
       if (!RegistryProvider::DeleteValue(*current_node_, row->extra)) {
         ui::ShowError(hwnd_, L"Failed to delete value.");
       } else {
-        AppendHistoryEntry(L"Delete value " + row->extra, row->extra, L"");
+        AppendValueHistoryEntry(L"Delete value " + display_name, display_name, L"", *current_node_, row->extra, HistoryEntry::RevertKind::kSetValue, &entry);
         MarkOfflineDirty();
-        UndoOperation op;
-        op.type = UndoOperation::Type::kDeleteValue;
+        changes::UndoOperation op;
+        op.type = changes::UndoOperation::Type::kDeleteValue;
         op.node = *current_node_;
         op.old_value = std::move(entry);
         PushUndo(std::move(op));
@@ -3358,7 +3087,7 @@ void MainWindow::StartCompareRegistries() {
   left.recursive = true;
   right.recursive = true;
   if (current_node_) {
-    std::wstring root_name = current_node_->root_name.empty() ? RegistryProvider::RootName(current_node_->root) : current_node_->root_name;
+    std::wstring root_name = current_node_->root_name.empty() ? registry_path::RootName(current_node_->root) : current_node_->root_name;
     left.root = root_name;
     right.root = root_name;
     left.path = current_node_->subkey;
@@ -3408,352 +3137,58 @@ void MainWindow::StartCompareRegistries() {
     return true;
   };
 
-  auto build_registry_snapshot = [&](const CompareDialogSelection& sel, CompareSnapshot* out, std::wstring* error) -> bool {
-    if (!out) {
-      return false;
-    }
+  auto build_snapshot =
+      [&](const CompareDialogSelection& source,
+          search::compare::Snapshot* snapshot,
+          std::wstring* error) -> bool {
     std::wstring base;
-    if (!normalize_base(sel, &base)) {
+    if (!normalize_base(source, &base)) {
       if (error) {
         *error = L"Invalid registry path.";
       }
       return false;
     }
-    RegistryNode base_node;
-    if (!ResolvePathToNode(base, &base_node)) {
-      if (error) {
-        *error = L"Registry path not found: " + base;
-      }
-      return false;
+    if (source.type == CompareSourceType::kRegFile) {
+      return search::compare::LoadRegFile(
+          source.file_path, base, source.recursive,
+          [this](const std::wstring& path) {
+            return NormalizeRegistryPath(path);
+          },
+          snapshot, error);
     }
+
+    RegistryNode node;
     KeyInfo info = {};
-    if (!RegistryProvider::QueryKeyInfo(base_node, &info)) {
+    if (!ResolvePathToNode(base, &node) ||
+        !RegistryProvider::QueryKeyInfo(node, &info)) {
       if (error) {
         *error = L"Registry path not found: " + base;
       }
       return false;
     }
-    out->base_path = base;
-    out->label = base;
-    out->keys.clear();
-
-    std::vector<std::pair<RegistryNode, std::wstring>> stack;
-    stack.push_back({base_node, L""});
-    while (!stack.empty()) {
-      RegistryNode node = stack.back().first;
-      std::wstring rel = stack.back().second;
-      stack.pop_back();
-
-      CompareKeyEntry entry;
-      entry.relative_path = rel;
-      auto values = RegistryProvider::EnumValues(node);
-      entry.values.reserve(values.size());
-      for (const auto& value : values) {
-        CompareValueEntry val;
-        val.name = value.name;
-        val.type = value.type;
-        val.data = value.data;
-        entry.values[ToLower(val.name)] = std::move(val);
-      }
-      out->keys[ToLower(rel)] = std::move(entry);
-
-      if (sel.recursive) {
-        auto subkeys = RegistryProvider::EnumSubKeyNames(node, false);
-        for (const auto& name : subkeys) {
-          RegistryNode child = node;
-          child.subkey = node.subkey.empty() ? name : node.subkey + L"\\" + name;
-          std::wstring child_rel = rel.empty() ? name : rel + L"\\" + name;
-          stack.push_back({child, child_rel});
-        }
-      }
-    }
-    return true;
+    return search::compare::CaptureRegistry(
+        base, node, source.recursive, snapshot);
   };
 
-  auto build_regfile_snapshot = [&](const CompareDialogSelection& sel, CompareSnapshot* out, std::wstring* error) -> bool {
-    if (!out) {
-      return false;
-    }
-    std::wstring base;
-    if (!normalize_base(sel, &base)) {
-      if (error) {
-        *error = L"Invalid registry path.";
-      }
-      return false;
-    }
-    RegFileData data;
-    std::wstring parse_error;
-    if (!ParseRegFile(sel.file_path, &data, &parse_error)) {
-      if (error) {
-        *error = parse_error.empty() ? L"Failed to read registry file." : parse_error;
-      }
-      return false;
-    }
-    if (data.keys.empty()) {
-      if (error) {
-        *error = L"No registry keys were found in the .reg file.";
-      }
-      return false;
-    }
-
-    bool matched = false;
-    out->base_path = base;
-    out->label = FileNameOnly(sel.file_path);
-    if (!base.empty()) {
-      out->label += L": " + base;
-    }
-    out->keys.clear();
-
-    auto include_key = [&](const std::wstring& key_path) -> bool {
-      if (EqualsInsensitive(key_path, base)) {
-        return true;
-      }
-      if (!sel.recursive) {
-        return false;
-      }
-      if (key_path.size() <= base.size()) {
-        return false;
-      }
-      if (!_wcsnicmp(key_path.c_str(), base.c_str(), base.size())) {
-        return key_path[base.size()] == L'\\';
-      }
-      return false;
-    };
-
-    for (const auto& original_path : data.key_order) {
-      if (original_path.empty()) {
-        continue;
-      }
-      std::wstring normalized = NormalizeRegistryPath(original_path);
-      if (normalized.empty()) {
-        continue;
-      }
-      if (!include_key(normalized)) {
-        continue;
-      }
-      matched = true;
-      std::wstring rel;
-      if (normalized.size() > base.size()) {
-        rel = normalized.substr(base.size() + 1);
-      }
-      std::wstring key_lower = ToLower(normalized);
-      auto it = data.keys.find(ToLower(original_path));
-      if (it == data.keys.end()) {
-        it = data.keys.find(key_lower);
-      }
-      CompareKeyEntry entry;
-      entry.relative_path = rel;
-      if (it != data.keys.end()) {
-        for (const auto& pair : it->second.values) {
-          CompareValueEntry val;
-          val.name = pair.second.name;
-          val.type = pair.second.type;
-          val.data = pair.second.data;
-          entry.values[ToLower(val.name)] = std::move(val);
-        }
-      }
-      out->keys[ToLower(rel)] = std::move(entry);
-    }
-
-    if (!matched) {
-      if (error) {
-        *error = L"No matching keys were found for the selected path.";
-      }
-      return false;
-    }
-    return true;
-  };
-
-  CompareSnapshot left_snapshot;
-  CompareSnapshot right_snapshot;
+  search::compare::Snapshot left_snapshot;
+  search::compare::Snapshot right_snapshot;
   std::wstring error;
-  bool left_ok = false;
-  bool right_ok = false;
-  if (selection.left.type == CompareSourceType::kRegistry) {
-    left_ok = build_registry_snapshot(selection.left, &left_snapshot, &error);
-  } else {
-    left_ok = build_regfile_snapshot(selection.left, &left_snapshot, &error);
-  }
-  if (!left_ok) {
+  if (!build_snapshot(selection.left, &left_snapshot, &error)) {
     if (!error.empty()) {
       ui::ShowError(hwnd_, error);
     }
     return;
   }
   error.clear();
-  if (selection.right.type == CompareSourceType::kRegistry) {
-    right_ok = build_registry_snapshot(selection.right, &right_snapshot, &error);
-  } else {
-    right_ok = build_regfile_snapshot(selection.right, &right_snapshot, &error);
-  }
-  if (!right_ok) {
+  if (!build_snapshot(selection.right, &right_snapshot, &error)) {
     if (!error.empty()) {
       ui::ShowError(hwnd_, error);
     }
     return;
   }
 
-  std::vector<std::wstring> all_keys;
-  all_keys.reserve(left_snapshot.keys.size() + right_snapshot.keys.size());
-  std::unordered_set<std::wstring> seen;
-  for (const auto& pair : left_snapshot.keys) {
-    if (seen.insert(pair.first).second) {
-      all_keys.push_back(pair.first);
-    }
-  }
-  for (const auto& pair : right_snapshot.keys) {
-    if (seen.insert(pair.first).second) {
-      all_keys.push_back(pair.first);
-    }
-  }
-  auto key_display = [&](const std::wstring& key_lower) -> std::wstring {
-    auto lit = left_snapshot.keys.find(key_lower);
-    if (lit != left_snapshot.keys.end()) {
-      return lit->second.relative_path;
-    }
-    auto rit = right_snapshot.keys.find(key_lower);
-    if (rit != right_snapshot.keys.end()) {
-      return rit->second.relative_path;
-    }
-    return L"";
-  };
-  std::sort(all_keys.begin(), all_keys.end(), [&](const std::wstring& a, const std::wstring& b) { return _wcsicmp(key_display(a).c_str(), key_display(b).c_str()) < 0; });
-
-  auto combine_base = [](const std::wstring& base, const std::wstring& rel) -> std::wstring {
-    if (rel.empty()) {
-      return base;
-    }
-    if (base.empty()) {
-      return rel;
-    }
-    return base + L"\\" + rel;
-  };
-  auto display_value_name = [](const std::wstring& name) -> std::wstring { return name.empty() ? L"(Default)" : name; };
-  auto format_value_data = [](const CompareValueEntry& entry) -> std::wstring {
-    if (entry.data.empty()) {
-      return L"";
-    }
-    return RegistryProvider::FormatValueDataForDisplay(entry.type, entry.data.data(), static_cast<DWORD>(entry.data.size()));
-  };
-  auto size_text = [](const CompareValueEntry* left, const CompareValueEntry* right) -> std::wstring {
-    if (left && right) {
-      return L"First: " + std::to_wstring(left->data.size()) + L" bytes | Second: " + std::to_wstring(right->data.size()) + L" bytes";
-    }
-    if (left) {
-      return L"First: " + std::to_wstring(left->data.size()) + L" bytes";
-    }
-    if (right) {
-      return L"Second: " + std::to_wstring(right->data.size()) + L" bytes";
-    }
-    return L"";
-  };
-  auto entry_text = [&](const CompareValueEntry* entry) -> std::wstring {
-    if (!entry) {
-      return L"(Missing)";
-    }
-    std::wstring type = RegistryProvider::FormatValueType(entry->type);
-    std::wstring data = format_value_data(*entry);
-    if (data.empty()) {
-      return type;
-    }
-    return type + L": " + data;
-  };
-  auto leaf_from_path = [](const std::wstring& path) -> std::wstring {
-    if (path.empty()) {
-      return L"";
-    }
-    size_t pos = path.find_last_of(L"\\/");
-    if (pos == std::wstring::npos) {
-      return path;
-    }
-    return path.substr(pos + 1);
-  };
-
-  std::vector<SearchResult> results;
-  for (const auto& key_lower : all_keys) {
-    auto lit = left_snapshot.keys.find(key_lower);
-    auto rit = right_snapshot.keys.find(key_lower);
-    const CompareKeyEntry* left_key = (lit == left_snapshot.keys.end()) ? nullptr : &lit->second;
-    const CompareKeyEntry* right_key = (rit == right_snapshot.keys.end()) ? nullptr : &rit->second;
-    std::wstring rel = key_display(key_lower);
-    std::wstring left_path = combine_base(left_snapshot.base_path, rel);
-    std::wstring right_path = combine_base(right_snapshot.base_path, rel);
-
-    if (!left_key || !right_key) {
-      SearchResult result;
-      result.is_key = true;
-      result.key_path = left_key ? left_path : right_path;
-      result.key_name = leaf_from_path(result.key_path);
-      result.display_name = L"(Key)";
-      result.type_text = left_key ? L"Present" : L"(Missing)";
-      result.data = right_key ? L"Present" : L"(Missing)";
-      results.push_back(std::move(result));
-      continue;
-    }
-
-    std::vector<std::wstring> all_values;
-    all_values.reserve(left_key->values.size() + right_key->values.size());
-    std::unordered_set<std::wstring> seen_values;
-    for (const auto& pair : left_key->values) {
-      if (seen_values.insert(pair.first).second) {
-        all_values.push_back(pair.first);
-      }
-    }
-    for (const auto& pair : right_key->values) {
-      if (seen_values.insert(pair.first).second) {
-        all_values.push_back(pair.first);
-      }
-    }
-    std::sort(all_values.begin(), all_values.end(), [&](const std::wstring& a, const std::wstring& b) { return _wcsicmp(a.c_str(), b.c_str()) < 0; });
-
-    for (const auto& value_lower : all_values) {
-      const CompareValueEntry* left_val = nullptr;
-      const CompareValueEntry* right_val = nullptr;
-      auto lvit = left_key->values.find(value_lower);
-      auto rvit = right_key->values.find(value_lower);
-      if (lvit != left_key->values.end()) {
-        left_val = &lvit->second;
-      }
-      if (rvit != right_key->values.end()) {
-        right_val = &rvit->second;
-      }
-      if (!left_val || !right_val) {
-        SearchResult result;
-        result.key_path = left_path;
-        result.key_name = leaf_from_path(left_path);
-        result.value_name = left_val ? left_val->name : (right_val ? right_val->name : L"");
-        result.display_name = display_value_name(result.value_name);
-        result.type = left_val ? left_val->type : (right_val ? right_val->type : 0);
-        result.type_text = entry_text(left_val);
-        result.data = entry_text(right_val);
-        result.size_text = size_text(left_val, right_val);
-        results.push_back(std::move(result));
-        continue;
-      }
-
-      bool type_mismatch = left_val->type != right_val->type;
-      bool data_mismatch = left_val->data != right_val->data;
-      if (!type_mismatch && !data_mismatch) {
-        continue;
-      }
-      SearchResult result;
-      result.key_path = left_path;
-      result.key_name = leaf_from_path(left_path);
-      result.value_name = left_val->name;
-      result.display_name = display_value_name(result.value_name);
-      result.type = left_val->type;
-      if (type_mismatch) {
-        result.comment = L"Type mismatch";
-      } else {
-        result.comment = L"Data mismatch";
-      }
-      result.type_text = entry_text(left_val);
-      result.data = entry_text(right_val);
-      result.size_text = size_text(left_val, right_val);
-      results.push_back(std::move(result));
-    }
-  }
-
+  std::vector<search::Result> results =
+      search::compare::Diff(left_snapshot, right_snapshot);
   std::wstring tab_label = L"Registry Comparision";
 
   SearchTab tab;
@@ -4069,7 +3504,7 @@ void MainWindow::NavigateUp() {
   if (current_node_->subkey.empty()) {
     return;
   }
-  std::wstring path = RegistryProvider::BuildPath(*current_node_);
+  std::wstring path = registry_path::Build(*current_node_);
   size_t pos = path.rfind(L'\\');
   if (pos == std::wstring::npos) {
     return;
@@ -4201,6 +3636,10 @@ void MainWindow::ShowValueContextMenu(POINT screen_pt) {
   int index = ListView_HitTest(value_list_.hwnd(), &hit);
   const ListRow* row = nullptr;
   if (index >= 0) {
+    const UINT state = ListView_GetItemState(value_list_.hwnd(), index, LVIS_SELECTED);
+    if ((state & LVIS_SELECTED) == 0) {
+      ListView_SetItemState(value_list_.hwnd(), -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+    }
     ListView_SetItemState(value_list_.hwnd(), index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
     row = value_list_.RowAt(index);
   }
@@ -4273,21 +3712,31 @@ void MainWindow::ShowValueContextMenu(POINT screen_pt) {
       AppendMenuW(menu, delete_flags, cmd::kEditDelete, L"Delete");
     }
   } else if (row && row->kind == rowkind::kValue) {
-    bool can_modify = !read_only_ && !row->simulated;
+    std::vector<ListRow> selected_rows = SelectedListRows(value_list_);
+    const bool all_values = !selected_rows.empty() &&
+                            std::all_of(selected_rows.begin(), selected_rows.end(), [](const ListRow& selected) {
+                              return selected.kind == rowkind::kValue && !selected.simulated;
+                            });
+    const bool single_value = all_values && selected_rows.size() == 1;
+    bool can_modify = !read_only_ && single_value;
+    bool can_delete = !read_only_ && all_values;
+    bool can_comment = all_values;
     bool can_export = !row->simulated && current_node_ && !current_node_->simulated;
     UINT modify_flags = MF_STRING | (can_modify ? 0 : MF_GRAYED);
+    UINT delete_flags = MF_STRING | (can_delete ? 0 : MF_GRAYED);
+    UINT single_flags = MF_STRING | (single_value ? 0 : MF_GRAYED);
     UINT export_flags = MF_STRING | (can_export ? 0 : MF_GRAYED);
-    UINT comment_flags = MF_STRING | (row->simulated ? MF_GRAYED : 0);
+    UINT comment_flags = MF_STRING | (can_comment ? 0 : MF_GRAYED);
     AppendMenuW(menu, modify_flags, cmd::kEditModify, L"Modify...");
     AppendMenuW(menu, modify_flags, cmd::kEditModifyBinary, L"Modify Binary Data...");
     AppendMenuW(menu, comment_flags, cmd::kEditModifyComment, L"Modify Comment...");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(menu, MF_STRING, cmd::kEditCopyValueName, L"Copy Value Name");
-    AppendMenuW(menu, MF_STRING, cmd::kEditCopyValueData, L"Copy Value Data");
+    AppendMenuW(menu, single_flags, cmd::kEditCopyValueName, L"Copy Value Name");
+    AppendMenuW(menu, single_flags, cmd::kEditCopyValueData, L"Copy Value Data");
     AppendMenuW(menu, export_flags, cmd::kFileExport, L"Export...");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, modify_flags, cmd::kEditRename, L"Rename");
-    AppendMenuW(menu, modify_flags, cmd::kEditDelete, L"Delete");
+    AppendMenuW(menu, delete_flags, cmd::kEditDelete, L"Delete");
   } else {
     bool is_simulated = current_node_ && current_node_->simulated;
     bool can_modify = !read_only_;
@@ -4350,15 +3799,17 @@ void MainWindow::ShowHistoryContextMenu(POINT screen_pt) {
     item.iItem = index;
     if (ListView_GetItem(history_list_, &item)) {
       size_t history_index = static_cast<size_t>(item.lParam);
-      if (history_index < history_entries_.size()) {
-        entry = &history_entries_[history_index];
+      if (history_index < change_history_.entries().size()) {
+        entry = &change_history_.entries()[history_index];
       }
     }
   }
 
   HMENU menu = CreatePopupMenu();
+  HistoryEntry prepared_revert;
+  const bool can_revert = entry && PrepareHistoryRevert(*entry, &prepared_revert);
   UINT open_flags = MF_STRING | ((entry && !entry->key_path.empty()) ? 0 : MF_GRAYED);
-  UINT revert_flags = MF_STRING | ((entry && entry->revert_kind != HistoryEntry::RevertKind::kNone) ? 0 : MF_GRAYED);
+  UINT revert_flags = MF_STRING | (can_revert ? 0 : MF_GRAYED);
   AppendMenuW(menu, open_flags, cmd::kHistoryOpenTarget, L"Open Entry");
   AppendMenuW(menu, revert_flags, cmd::kHistoryRevert, L"Revert");
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
@@ -4414,7 +3865,7 @@ void MainWindow::ShowSearchResultContextMenu(POINT screen_pt) {
   }
 
   ListView_SetItemState(search_results_list_, index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-  const SearchResult& result = search_tabs_[static_cast<size_t>(search_index)].results[static_cast<size_t>(index)];
+  const search::Result& result = search_tabs_[static_cast<size_t>(search_index)].results[static_cast<size_t>(index)];
   std::wstring key_path = result.key_path;
   if (key_path.empty()) {
     return;

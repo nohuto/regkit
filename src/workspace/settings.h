@@ -1,0 +1,73 @@
+// Copyright (C) 2026 Noverse (Nohuto)
+// This file is part of RegKit https://github.com/nohuto/regkit
+//
+// RegKit is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+#pragma once
+
+#include <string>
+#include <vector>
+
+namespace regkit::workspace {
+
+struct Settings {
+  static constexpr int kCurrentVersion = 1;
+  int source_version = 1;
+
+  bool clear_history_on_exit = false;
+  bool clear_tabs_on_exit = false;
+  bool show_toolbar = true;
+  bool show_address_bar = true;
+  bool show_filter_bar = true;
+  bool show_tab_control = true;
+  bool show_tree = true;
+  bool show_history = true;
+  bool show_status_bar = true;
+  bool show_keys_in_list = true;
+  bool show_simulated_keys = true;
+  bool show_extra_hives = false;
+  bool save_tree_state = true;
+  bool save_tabs = true;
+  bool always_run_as_admin = false;
+  bool always_run_as_system = false;
+  bool always_run_as_trustedinstaller = false;
+  bool always_on_top = false;
+  bool replace_regedit = false;
+  bool single_instance = true;
+  bool read_only = false;
+
+  bool window_placement_present = false;
+  int window_x = 0;
+  int window_y = 0;
+  int window_width = 0;
+  int window_height = 0;
+  bool window_maximized = false;
+  int tree_width = 260;
+  int history_height = 160;
+
+  std::wstring theme_mode = L"system";
+  std::wstring theme_preset;
+  std::wstring icon_set = L"default";
+
+  bool use_custom_font = false;
+  std::wstring font_face;
+  int font_size = 0;
+  int font_weight = 400;
+  bool font_italic = false;
+
+  std::vector<std::wstring> recent_traces;
+  std::vector<std::wstring> recent_defaults;
+  std::vector<int> value_column_widths;
+  std::vector<bool> value_column_visible;
+};
+
+Settings ParseSettings(const std::wstring& content,
+                       Settings settings = {});
+std::wstring SerializeSettings(const Settings& settings);
+bool LoadSettings(const std::wstring& path, Settings* settings);
+bool SaveSettings(const std::wstring& path, const Settings& settings);
+
+} // namespace regkit::workspace

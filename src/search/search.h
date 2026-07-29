@@ -19,14 +19,45 @@
 #include <atomic>
 #include <cstdint>
 #include <functional>
+#include <regex>
 #include <string>
+#include <string_view>
 #include <vector>
 
-#include "registry_provider.h"
+#include "registry/registry_provider.h"
 
-namespace regkit {
+namespace regkit::search {
 
-struct SearchCriteria {
+struct TextOptions {
+  std::wstring query;
+  bool match_case = false;
+  bool match_whole = false;
+  bool use_regex = false;
+};
+
+struct Match {
+  bool matched = false;
+  size_t start = std::wstring::npos;
+  size_t length = 0;
+};
+
+class Matcher {
+public:
+  explicit Matcher(const TextOptions& options);
+
+  bool valid() const noexcept;
+  Match Find(std::wstring_view text) const;
+
+private:
+  std::wstring query_;
+  std::wregex regex_;
+  bool use_regex_ = false;
+  bool match_case_ = false;
+  bool match_whole_ = false;
+  bool valid_ = true;
+};
+
+struct Criteria {
   std::wstring query;
   bool search_keys = true;
   bool search_values = true;
@@ -48,14 +79,14 @@ struct SearchCriteria {
   std::vector<std::wstring> exclude_paths;
 };
 
-enum class SearchMatchField {
+enum class MatchField {
   kNone,
   kPath,
   kName,
   kData,
 };
 
-struct SearchResult {
+struct Result {
   std::wstring key_path;
   std::wstring key_name;
   std::wstring value_name;
@@ -68,13 +99,20 @@ struct SearchResult {
   std::wstring comment;
   bool is_key = false;
   bool data_loaded = true;
-  SearchMatchField match_field = SearchMatchField::kNone;
+  MatchField match_field = MatchField::kNone;
   int match_start = -1;
   int match_length = 0;
 };
 
-using SearchProgressCallback = std::function<void(uint64_t searched, uint64_t total)>;
+using ProgressCallback =
+    std::function<void(uint64_t searched, uint64_t total)>;
+using ResultCallback = std::function<bool(Result&& result)>;
 
-bool SearchRegistryStreaming(const SearchCriteria& criteria, std::atomic_bool* cancel_flag, const std::function<bool(const SearchResult&)>& callback, const SearchProgressCallback& progress, bool stop_on_first);
+bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
+         const ResultCallback& callback,
+         const ProgressCallback& progress, bool stop_on_first);
 
-} // namespace regkit
+void SortResults(std::vector<Result>* results, int column,
+                 bool ascending, bool compare);
+
+} // namespace regkit::search

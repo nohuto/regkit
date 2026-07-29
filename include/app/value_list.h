@@ -63,7 +63,6 @@ class ValueList {
 public:
   void Create(HWND parent, HINSTANCE instance, int control_id);
   HWND hwnd() const;
-  void SetColumns(const std::vector<ColumnInfo>& columns);
   void SetRows(std::vector<ListRow> rows);
   void SetImageList(HIMAGELIST image_list);
   void Clear();

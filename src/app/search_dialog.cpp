@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2026 Noverse (Nohuto)
+// Copyright (C) 2026 Noverse (Nohuto)
 // This file is part of RegKit https://github.com/nohuto/regkit
 //
 // RegKit is free software: you can redistribute it and/or modify
@@ -29,6 +29,10 @@
 #include "../../include/app/value_dialogs.h"
 #include "../../include/registry/registry_provider.h"
 #include "../../include/win32/win32_helpers.h"
+#include "registry/registry_path.h"
+#include "registry/value_format.h"
+#include "win32/file_text.h"
+#include "win32/shell_paths.h"
 
 namespace regkit {
 
@@ -111,7 +115,7 @@ std::vector<DataTypeItem> BuildDataTypeItems() {
   for (DWORD flag : kExtendedTypeFlags) {
     for (const auto& entry : kBaseDataTypes) {
       DWORD type = flag | entry.type;
-      items.push_back({type, RegistryProvider::FormatValueType(type)});
+      items.push_back({type, value_format::TypeName(type)});
     }
   }
   return items;
@@ -761,7 +765,7 @@ LRESULT CALLBACK BrowseDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
       if (hdr->code == TVN_SELCHANGEDW) {
         RegistryNode* node = state->tree.OnSelectionChanged(reinterpret_cast<NMTREEVIEWW*>(lparam));
         if (node) {
-          state->selected_path = RegistryProvider::BuildPath(*node);
+          state->selected_path = registry_path::Build(*node);
         }
         return 0;
       }

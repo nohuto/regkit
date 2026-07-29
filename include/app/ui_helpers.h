@@ -39,7 +39,6 @@ bool ConfirmRegFileMerge(HWND owner, const std::wstring& path);
 void ShowRegFileMergeSucceeded(HWND owner, const std::wstring& path);
 void ShowRegFileMergeFailed(HWND owner, const std::wstring& path, const std::wstring& detail);
 bool ConfirmDelete(HWND owner, const std::wstring& title, const std::wstring& name);
-int PromptYesNoCancel(HWND owner, const std::wstring& message, const std::wstring& title);
 int PromptChoice(HWND owner, const std::wstring& message, const std::wstring& title, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label);
 bool LaunchNewInstance();
 

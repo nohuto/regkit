@@ -27,6 +27,11 @@
 
 #include "../../include/app/value_dialogs.h"
 #include "../../include/win32/win32_helpers.h"
+#include "regfile/reg_file.h"
+#include "registry/registry_path.h"
+#include "win32/file_text.h"
+#include "win32/process_rights.h"
+#include "win32/shell_paths.h"
 
 namespace regkit {
 
@@ -121,61 +126,26 @@ bool RunRegCommand(const std::wstring& args, DWORD* exit_code, std::wstring* err
   return code == 0;
 }
 
-bool EqualsInsensitive(const std::wstring& left, const std::wstring& right) {
-  return _wcsicmp(left.c_str(), right.c_str()) == 0;
-}
-
 std::wstring NormalizeExportKeyPath(const std::wstring& key_path, std::wstring* error) {
-  std::wstring path = key_path;
-  if (path.empty()) {
-    return path;
-  }
-  for (auto& ch : path) {
-    if (ch == L'/') {
-      ch = L'\\';
-    }
-  }
-  while (!path.empty() && path.front() == L'\\') {
-    path.erase(path.begin());
-  }
-
-  if (path.size() >= 9 && _wcsnicmp(path.c_str(), L"REGISTRY\\", 9) == 0) {
-    path.erase(0, 9);
-  }
-  if (path.size() >= 9 && _wcsnicmp(path.c_str(), L"Registry\\", 9) == 0) {
-    path.erase(0, 9);
-  }
-
-  size_t slash = path.find(L'\\');
-  std::wstring root = (slash == std::wstring::npos) ? path : path.substr(0, slash);
-  std::wstring rest = (slash == std::wstring::npos) ? L"" : path.substr(slash + 1);
-
-  auto map_root = [&](const wchar_t* name, const wchar_t* mapped) -> bool {
-    if (_wcsicmp(root.c_str(), name) != 0) {
-      return false;
-    }
-    root = mapped;
-    return true;
-  };
-
-  map_root(L"HKLM", L"HKEY_LOCAL_MACHINE") || map_root(L"HKEY_LOCAL_MACHINE", L"HKEY_LOCAL_MACHINE") || map_root(L"HKCU", L"HKEY_CURRENT_USER") || map_root(L"HKEY_CURRENT_USER", L"HKEY_CURRENT_USER") || map_root(L"HKCR", L"HKEY_CLASSES_ROOT") || map_root(L"HKEY_CLASSES_ROOT", L"HKEY_CLASSES_ROOT") || map_root(L"HKU", L"HKEY_USERS") || map_root(L"HKEY_USERS", L"HKEY_USERS") || map_root(L"HKCC", L"HKEY_CURRENT_CONFIG") || map_root(L"HKEY_CURRENT_CONFIG", L"HKEY_CURRENT_CONFIG");
-
-  if (EqualsInsensitive(root, L"Machine")) {
-    root = L"HKEY_LOCAL_MACHINE";
-  } else if (EqualsInsensitive(root, L"User") || EqualsInsensitive(root, L"Users")) {
-    root = L"HKEY_USERS";
-  }
-
-  if (root.empty() || root == L"REGISTRY") {
+  const std::wstring path =
+      registry_path::Normalize(key_path, util::GetCurrentUserSidString());
+  const size_t split = path.find(L'\\');
+  const std::wstring_view root(path.data(),
+                               split == std::wstring::npos ? path.size()
+                                                          : split);
+  const bool standard =
+      registry_path::Equals(root, L"HKEY_LOCAL_MACHINE") ||
+      registry_path::Equals(root, L"HKEY_CURRENT_USER") ||
+      registry_path::Equals(root, L"HKEY_CLASSES_ROOT") ||
+      registry_path::Equals(root, L"HKEY_USERS") ||
+      registry_path::Equals(root, L"HKEY_CURRENT_CONFIG");
+  if (!standard) {
     if (error) {
       *error = L"Export supports standard hives only.";
     }
-    return L"";
+    return {};
   }
-  if (!rest.empty()) {
-    return root + L"\\" + rest;
-  }
-  return root;
+  return path;
 }
 
 bool PromptOpenFile(HWND owner, const wchar_t* filter, std::wstring* path) {
@@ -325,170 +295,77 @@ bool FilterExportedRegFile(const std::wstring& source, const std::wstring& targe
   return true;
 }
 
-bool FindFirstSection(const std::wstring& content, size_t* section_pos) {
-  if (section_pos) {
-    *section_pos = std::wstring::npos;
-  }
-  size_t pos = 0;
-  while (pos < content.size()) {
-    size_t end = content.find(L'\n', pos);
-    if (end == std::wstring::npos) {
-      end = content.size();
-    }
-    std::wstring line = content.substr(pos, end - pos);
-    if (!line.empty() && line.back() == L'\r') {
-      line.pop_back();
-    }
-    if (!line.empty() && line.front() == L'[' && line.back() == L']') {
-      if (section_pos) {
-        *section_pos = pos;
-      }
-      return true;
-    }
-    pos = end + 1;
-  }
-  return false;
-}
-
-bool AppendRegContent(const std::wstring& content, std::wstring* output) {
+bool AppendRegContent(const std::wstring& content,
+                      regfile::Document* output,
+                      std::wstring* error) {
   if (!output) {
     return false;
   }
-  if (output->empty()) {
-    output->append(content);
-    return true;
+  regfile::Document parsed;
+  if (!regfile::Parse(content, &parsed)) {
+    if (error) {
+      *error = L"Failed to parse exported registry data.";
+    }
+    return false;
   }
-  size_t section_pos = std::wstring::npos;
-  if (!FindFirstSection(content, &section_pos) || section_pos == std::wstring::npos) {
-    return true;
+  for (const auto& path : parsed.key_order) {
+    const std::wstring lower = ToLower(path);
+    auto source = parsed.keys.find(lower);
+    if (source == parsed.keys.end()) {
+      continue;
+    }
+    auto [target, inserted] =
+        output->keys.try_emplace(lower, std::move(source->second));
+    if (inserted) {
+      output->key_order.push_back(path);
+      continue;
+    }
+    for (auto& value : source->second.values) {
+      target->second.values[value.first] = std::move(value.second);
+    }
   }
-  output->append(content.substr(section_pos));
   return true;
 }
 
-bool ParseValueLine(const std::wstring& line, std::wstring* value_name) {
-  if (!value_name) {
-    return false;
-  }
-  value_name->clear();
-  if (line.empty()) {
-    return false;
-  }
-  if (line[0] == L'@') {
-    if (line.size() >= 2 && line[1] == L'=') {
-      return true;
+bool FilterRegFileValues(const std::wstring& content,
+                         const std::vector<std::wstring>& values,
+                         regfile::Document* output, std::wstring* error) {
+  if (!output || !regfile::Parse(content, output) ||
+      output->key_order.empty()) {
+    if (error) {
+      *error = L"Failed to parse exported registry data.";
     }
     return false;
   }
-  if (line[0] != L'"') {
-    return false;
-  }
-  bool escape = false;
-  for (size_t i = 1; i < line.size(); ++i) {
-    wchar_t ch = line[i];
-    if (escape) {
-      value_name->push_back(ch);
-      escape = false;
-      continue;
-    }
-    if (ch == L'\\') {
-      escape = true;
-      continue;
-    }
-    if (ch == L'"') {
-      return true;
-    }
-    value_name->push_back(ch);
-  }
-  value_name->clear();
-  return false;
-}
-
-bool FilterRegFileValues(const std::wstring& content, const std::vector<std::wstring>& values, std::wstring* output, std::wstring* error) {
-  if (!output) {
-    return false;
-  }
-
   std::unordered_set<std::wstring> wanted;
   wanted.reserve(values.size());
   for (const auto& value : values) {
     wanted.insert(ToLower(value));
   }
-
-  std::wstring out;
-  out.reserve(content.size());
-  bool in_section = false;
-  bool kept_value = false;
-  bool keep_continuation = false;
-  bool skip_continuation = false;
-
-  size_t pos = 0;
-  while (pos < content.size()) {
-    size_t end = content.find(L'\n', pos);
-    if (end == std::wstring::npos) {
-      end = content.size();
-    }
-    std::wstring line = content.substr(pos, end - pos);
-    if (!line.empty() && line.back() == L'\r') {
-      line.pop_back();
-    }
-    pos = end + 1;
-
-    if (!line.empty() && line.front() == L'[' && line.back() == L']') {
-      if (in_section) {
-        break;
-      }
-      in_section = true;
-      out.append(line);
-      out.append(L"\r\n");
-      continue;
-    }
-
-    if (!in_section) {
-      out.append(line);
-      out.append(L"\r\n");
-      continue;
-    }
-
-    if (keep_continuation) {
-      out.append(line);
-      out.append(L"\r\n");
-      if (line.empty() || line.back() != L'\\') {
-        keep_continuation = false;
-      }
-      continue;
-    }
-    if (skip_continuation) {
-      if (line.empty() || line.back() != L'\\') {
-        skip_continuation = false;
-      }
-      continue;
-    }
-
-    std::wstring value_name;
-    if (!ParseValueLine(line, &value_name)) {
-      continue;
-    }
-    std::wstring lower = ToLower(value_name);
-    if (wanted.find(lower) == wanted.end()) {
-      skip_continuation = !line.empty() && line.back() == L'\\';
-      continue;
-    }
-    out.append(line);
-    out.append(L"\r\n");
-    kept_value = true;
-    if (!line.empty() && line.back() == L'\\') {
-      keep_continuation = true;
+  const std::wstring first_path = output->key_order.front();
+  const std::wstring first_lower = ToLower(first_path);
+  auto first_key = output->keys.find(first_lower);
+  if (first_key == output->keys.end()) {
+    return false;
+  }
+  for (auto value = first_key->second.values.begin();
+       value != first_key->second.values.end();) {
+    if (wanted.find(value->first) == wanted.end()) {
+      value = first_key->second.values.erase(value);
+    } else {
+      ++value;
     }
   }
-
-  if (!kept_value) {
+  if (first_key->second.values.empty()) {
     if (error) {
       *error = L"No selected values were found in the export.";
     }
     return false;
   }
-  *output = std::move(out);
+  regfile::Key selected = std::move(first_key->second);
+  output->keys.clear();
+  output->key_order.assign(1, first_path);
+  output->keys.emplace(first_lower, std::move(selected));
   return true;
 }
 
@@ -579,14 +456,6 @@ std::wstring EnsureRegExtension(std::wstring path) {
 
 } // namespace
 
-bool ImportRegFile(HWND owner, std::wstring* error) {
-  std::wstring path;
-  if (!PromptOpenFile(owner, L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0", &path)) {
-    return false;
-  }
-  return ImportRegFileFromPath(path, error);
-}
-
 bool ImportRegFileFromPath(const std::wstring& path, std::wstring* error) {
   if (path.empty()) {
     return false;
@@ -673,7 +542,7 @@ bool ExportRegFileSelection(HWND owner, const std::wstring& base_key_path, const
   }
   path = EnsureRegExtension(path);
 
-  std::wstring output;
+  regfile::Document output_document;
   bool output_utf16 = false;
   bool output_utf16_set = false;
 
@@ -682,7 +551,7 @@ bool ExportRegFileSelection(HWND owner, const std::wstring& base_key_path, const
       output_utf16 = utf16;
       output_utf16_set = true;
     }
-    return AppendRegContent(content, &output);
+    return AppendRegContent(content, &output_document, error);
   };
 
   if (!value_names.empty()) {
@@ -691,11 +560,22 @@ bool ExportRegFileSelection(HWND owner, const std::wstring& base_key_path, const
     if (!ExportKeyToContent(base_key_path, false, &content, &utf16, error)) {
       return false;
     }
-    std::wstring filtered;
+    regfile::Document filtered;
     if (!FilterRegFileValues(content, value_names, &filtered, error)) {
       return false;
     }
-    append_content(filtered, utf16);
+    if (!output_utf16_set) {
+      output_utf16 = utf16;
+      output_utf16_set = true;
+    }
+    for (const auto& key_path : filtered.key_order) {
+      const std::wstring lower = ToLower(key_path);
+      auto key = filtered.keys.find(lower);
+      if (key != filtered.keys.end()) {
+        output_document.key_order.push_back(key_path);
+        output_document.keys.emplace(lower, std::move(key->second));
+      }
+    }
   }
 
   for (const auto& subkey : subkey_names) {
@@ -715,14 +595,15 @@ bool ExportRegFileSelection(HWND owner, const std::wstring& base_key_path, const
     append_content(content, utf16);
   }
 
-  if (output.empty()) {
+  if (output_document.key_order.empty()) {
     if (error) {
       *error = L"No data to export.";
     }
     return false;
   }
 
-  if (!util::WriteTextFile(path, output, output_utf16)) {
+  if (!util::WriteTextFile(path, regfile::Serialize(output_document),
+                           output_utf16)) {
     if (error) {
       *error = L"Failed to write exported registry file.";
     }

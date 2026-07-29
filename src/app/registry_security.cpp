@@ -16,6 +16,8 @@
 
 #include "../../include/app/registry_security.h"
 
+#include "registry/registry_path.h"
+
 #include <string>
 
 #include <accctrl.h>
@@ -143,7 +145,7 @@ private:
 } // namespace
 
 bool ShowRegistryPermissions(HWND owner, const RegistryNode& node) {
-  std::wstring path = RegistryProvider::BuildPath(node);
+  std::wstring path = registry_path::Build(node);
   if (path.empty()) {
     return false;
   }

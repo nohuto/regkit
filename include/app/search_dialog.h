@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include "../registry/search_engine.h"
+#include "search/search.h"
 
 namespace regkit {
 
@@ -38,7 +38,7 @@ enum class SearchResultMode {
 };
 
 struct SearchDialogResult {
-  SearchCriteria criteria;
+  search::Criteria criteria;
   std::wstring start_key;
   std::vector<std::wstring> exclude_paths;
   std::vector<std::wstring> root_paths;

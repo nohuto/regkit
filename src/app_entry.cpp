@@ -32,6 +32,9 @@
 #include "../include/app/theme_presets.h"
 #include "../include/app/ui_helpers.h"
 #include "../include/win32/win32_helpers.h"
+#include "win32/file_text.h"
+#include "win32/process_rights.h"
+#include "win32/shell_paths.h"
 
 namespace {
 
@@ -394,18 +397,6 @@ void ApplyStartupTheme(const StartupSettings& settings) {
   regkit::Theme::SetMode(settings.theme_mode);
 }
 
-bool IsProcessElevated() {
-  return util::IsProcessElevated();
-}
-
-bool IsProcessSystem() {
-  return util::IsProcessSystem();
-}
-
-bool IsProcessTrustedInstaller() {
-  return util::IsProcessTrustedInstaller();
-}
-
 bool RelaunchAsAdmin() {
   std::wstring exe_path = util::GetModulePath();
   if (exe_path.empty()) {
@@ -422,7 +413,7 @@ bool RestartAsSystem(std::wstring* error_message, bool* launched) {
   if (launched) {
     *launched = false;
   }
-  if (IsProcessSystem()) {
+  if (util::IsProcessSystem()) {
     return true;
   }
   std::wstring exe_path = util::GetModulePath();
@@ -432,7 +423,7 @@ bool RestartAsSystem(std::wstring* error_message, bool* launched) {
     }
     return false;
   }
-  if (!IsProcessElevated()) {
+  if (!util::IsProcessElevated()) {
     HINSTANCE result = ShellExecuteW(nullptr, L"runas", exe_path.c_str(), kRestartSystemArg, nullptr, SW_SHOWNORMAL);
     if (reinterpret_cast<INT_PTR>(result) <= 32) {
       if (error_message) {
@@ -476,7 +467,7 @@ bool RestartAsTrustedInstaller(std::wstring* error_message, bool* launched) {
   if (launched) {
     *launched = false;
   }
-  if (IsProcessTrustedInstaller()) {
+  if (util::IsProcessTrustedInstaller()) {
     return true;
   }
   std::wstring exe_path = util::GetModulePath();
@@ -486,7 +477,7 @@ bool RestartAsTrustedInstaller(std::wstring* error_message, bool* launched) {
     }
     return false;
   }
-  if (!IsProcessElevated()) {
+  if (!util::IsProcessElevated()) {
     HINSTANCE result = ShellExecuteW(nullptr, L"runas", exe_path.c_str(), kRestartTiArg, nullptr, SW_SHOWNORMAL);
     if (reinterpret_cast<INT_PTR>(result) <= 32) {
       if (error_message) {
@@ -567,7 +558,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
     } else if (!error.empty()) {
       regkit::ui::ShowError(nullptr, error);
     }
-  } else if (startup_settings.always_run_as_trustedinstaller && !IsProcessTrustedInstaller()) {
+  } else if (startup_settings.always_run_as_trustedinstaller &&
+             !util::IsProcessTrustedInstaller()) {
     std::wstring error;
     bool launched = false;
     if (RestartAsTrustedInstaller(&error, &launched)) {
@@ -577,7 +569,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
     } else if (!error.empty()) {
       regkit::ui::ShowError(nullptr, error);
     }
-  } else if (startup_settings.always_run_as_system && !IsProcessSystem()) {
+  } else if (startup_settings.always_run_as_system &&
+             !util::IsProcessSystem()) {
     std::wstring error;
     bool launched = false;
     if (RestartAsSystem(&error, &launched)) {
@@ -587,7 +580,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
     } else if (!error.empty()) {
       regkit::ui::ShowError(nullptr, error);
     }
-  } else if (startup_settings.always_run_as_admin && !IsProcessElevated()) {
+  } else if (startup_settings.always_run_as_admin &&
+             !util::IsProcessElevated()) {
     if (RelaunchAsAdmin()) {
       return 0;
     }

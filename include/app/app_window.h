@@ -22,12 +22,10 @@
 #include <commctrl.h>
 
 #include <atomic>
-#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <string>
-#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -41,32 +39,23 @@
 #include "trace_dialog.h"
 #include "value_list.h"
 #include "../registry/registry_provider.h"
-#include "../registry/search_engine.h"
+#include "search/search.h"
+#include "defaults/default_data.h"
+#include "trace/trace_data.h"
+#include "registry/virtual_registry.h"
+#include "changes/change_history.h"
+#include "changes/key_snapshot.h"
+#include "changes/undo_stack.h"
+#include "changes/value_comments.h"
+#include "workspace/recent_items.h"
+#include "workspace/tree_state.h"
+#include "work/session.h"
 #include "../win32/win32_helpers.h"
 
 struct IAutoComplete2;
 struct IEnumString;
 
 namespace regkit {
-
-struct HistoryEntry {
-  enum class RevertKind {
-    kNone,
-    kSetValue,
-    kDeleteValue,
-    kDeleteKey,
-  };
-
-  uint64_t timestamp = 0;
-  std::wstring time_text;
-  std::wstring action;
-  std::wstring old_data;
-  std::wstring new_data;
-  std::wstring key_path;
-  std::wstring value_name;
-  RevertKind revert_kind = RevertKind::kNone;
-  ValueEntry revert_value;
-};
 
 class MainWindow {
 public:
@@ -80,6 +69,8 @@ public:
   void ActivateRegeditCompatibilityMode();
 
 private:
+  friend class MainWindowBenchmarks;
+  friend class MainWindowCharacterization;
   friend class RegistryAddressEnum;
   enum class RegistryMode {
     kLocal,
@@ -95,12 +86,12 @@ private:
     kPowerShellProvider,
     kEscaped,
   };
-  struct TraceData;
-  struct DefaultData;
   struct TabEntry;
+  struct SearchTab;
   struct TraceParseSession;
   struct DefaultParseSession;
   struct StartupCachePayload;
+  struct ReplacePayload;
 
   static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
   static LRESULT CALLBACK AddressEditProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data);
@@ -114,6 +105,7 @@ private:
   bool OnCreate();
   void RunDeferredStartup();
   void OnDestroy();
+  void DiscardWorkerMessages();
   void OnSize(int width, int height);
   void OnPaint();
   void ApplyThemeToChildren();
@@ -155,10 +147,18 @@ private:
   void StartTraceLoadWorker();
   void StopTraceLoadWorker();
   void StartTraceParseThread(TraceParseSession* session);
+  void MergeTraceEntries(
+      TraceParseSession* session,
+      const std::vector<KeyValueDialogEntry>& entries,
+      std::unordered_set<std::wstring>* affected_keys);
   void StopTraceParseSessions();
   void StartDefaultLoadWorker();
   void StopDefaultLoadWorker();
   void StartDefaultParseThread(DefaultParseSession* session);
+  void MergeDefaultEntries(
+      DefaultParseSession* session,
+      const std::vector<KeyValueDialogEntry>& entries,
+      std::unordered_set<std::wstring>* affected_keys);
   void StopDefaultParseSessions();
   void StopRegFileParseSessions();
   static void StartTraceDialogLoad(HWND hwnd, void* context);
@@ -177,9 +177,14 @@ private:
   void StartPendingValueListRename();
   void StartSearch(const SearchDialogResult& options);
   void StartReplace(const ReplaceDialogResult& options);
+  void ApplyReplacePayload(ReplacePayload* payload);
+  void CommitReplacePayload(std::unique_ptr<ReplacePayload> payload,
+                            bool show_failures);
+  void StopReplace();
   void CancelSearch();
   bool IsSearchTabSelected() const;
   void UpdateSearchResultsView();
+  void SortSearchTabResults(SearchTab* tab);
   void CloseSearchTab(int tab_index);
   bool SwitchToLocalRegistry();
   bool SwitchToRemoteRegistry();
@@ -211,7 +216,6 @@ private:
   bool IsRegFileTabIndex(int index) const;
   bool IsRegFileTabSelected() const;
   int SearchIndexFromTab(int index) const;
-  int FindFirstSearchTabIndex() const;
   int FindFirstRegistryTabIndex() const;
   void UpdateTabHotState(HWND hwnd, POINT pt);
   void PaintTabControl(HWND hwnd, HDC hdc);
@@ -241,18 +245,15 @@ private:
   bool NavigateToResolvedExternalJump(const std::wstring& key_path, const std::wstring& value_name, bool sync_compat_controls);
   bool NavigateToExternalJump(const std::wstring& target);
   bool ResolveExternalJumpTarget(const std::wstring& target, std::wstring* key_path, std::wstring* value_name) const;
-  bool LoadTraceFromFile(const std::wstring& label, const std::wstring& path, const TraceSelection* selection_override = nullptr);
-  bool LoadBundledTrace(const std::wstring& label, const TraceSelection* selection_override = nullptr);
+  bool LoadTraceFromFile(const std::wstring& label, const std::wstring& path, const trace::Selection* selection_override = nullptr);
+  bool LoadBundledTrace(const std::wstring& label, const trace::Selection* selection_override = nullptr);
   std::wstring ResolveBundledTracePath(const std::wstring& label) const;
-  bool LoadTraceFromBuffer(const std::wstring& label, const std::wstring& source, const std::string& buffer, const TraceSelection* selection_override = nullptr);
   bool LoadTraceFromPrompt();
   void ClearTrace();
   bool LoadDefaultFromFile(const std::wstring& label, const std::wstring& path);
-  bool LoadBundledDefault(const std::wstring& label);
   std::wstring ResolveBundledDefaultPath(const std::wstring& label) const;
   bool LoadDefaultFromPrompt();
   void ClearDefaults();
-  bool ParseDefaultRegFile(const std::wstring& path, DefaultData* out, std::wstring* error) const;
   void RefreshFavoritesCache();
   void RefreshBundledDefaultsCache();
   void BuildMenus();
@@ -273,10 +274,11 @@ private:
   void ToggleSearchColumn(int column, bool visible);
   void AppendHistoryEntry(const std::wstring& action, const std::wstring& old_data, const std::wstring& new_data);
   void AppendHistoryEntry(HistoryEntry entry);
+  void AppendValueHistoryEntry(const std::wstring& action, const std::wstring& old_data, const std::wstring& new_data, const RegistryNode& node, const std::wstring& value_name, HistoryEntry::RevertKind revert_kind, const ValueEntry* revert_value = nullptr);
+  bool PrepareHistoryRevert(const HistoryEntry& entry, HistoryEntry* prepared) const;
   bool OpenHistoryTarget(const HistoryEntry& entry);
   bool RevertHistoryEntry(const HistoryEntry& entry);
-  std::wstring ResolveSearchComment(const SearchResult& result) const;
-  bool EnsureSearchResultDataLoaded(SearchResult* result);
+  bool EnsureSearchResultDataLoaded(search::Result* result);
   void ShowTreeContextMenu(POINT screen_pt);
   void ShowValueContextMenu(POINT screen_pt);
   void ShowHistoryContextMenu(POINT screen_pt);
@@ -312,7 +314,6 @@ private:
   bool InvertSelectionInFocusedList();
   bool IsCompareTabSelected() const;
   void StartCompareRegistries();
-  void LoadHistoryCache();
   void AppendHistoryCache(const HistoryEntry& entry);
   std::wstring CacheFolderPath() const;
   std::wstring HistoryCachePath() const;
@@ -322,8 +323,6 @@ private:
   void SaveTabs();
   void ClearTabsCache();
   bool EnsureSearchTabResultsLoaded(int search_index);
-  bool ReadSearchResults(const std::wstring& path, std::vector<SearchResult>* results) const;
-  bool WriteSearchResults(const std::wstring& path, const std::vector<SearchResult>& results) const;
   void LoadComments();
   void StartStartupCacheLoad(bool include_tree_state);
   void StopStartupCacheLoad();
@@ -333,10 +332,7 @@ private:
   bool ExportCommentsToFile(const std::wstring& path) const;
   void RefreshValueListComments();
   std::wstring CommentsPath() const;
-  bool EditValueComment(const ListRow& row);
-  bool IsProcessElevated() const;
-  bool IsProcessSystem() const;
-  bool IsProcessTrustedInstaller() const;
+  bool EditValueComments(const std::vector<ListRow>& rows);
   bool RestartAsAdmin();
   bool RestartAsSystem();
   bool RestartAsTrustedInstaller();
@@ -344,17 +340,13 @@ private:
   void SaveSettings() const;
   std::wstring SettingsPath() const;
   std::wstring ActiveTracesPath() const;
-  void LoadActiveTraces();
   void SaveActiveTraces() const;
   std::wstring ActiveDefaultsPath() const;
-  void LoadActiveDefaults();
   void SaveActiveDefaults() const;
   std::wstring TraceSettingsPath() const;
   void LoadTraceSettings();
   void SaveTraceSettings() const;
-  bool AddTraceFromFile(const std::wstring& label, const std::wstring& path, const TraceSelection* selection_override, bool prompt_for_selection = true, bool update_ui = true);
-  bool AddTraceFromBuffer(const std::wstring& label, const std::wstring& source, const std::string& buffer, const TraceSelection* selection_override, bool prompt_for_selection);
-  bool BuildTraceDataFromBuffer(const std::wstring& label, const std::wstring& source, const std::string& buffer, TraceData* out_data, std::wstring* error) const;
+  bool AddTraceFromFile(const std::wstring& label, const std::wstring& path, const trace::Selection* selection_override, bool prompt_for_selection = true, bool update_ui = true);
   bool RemoveTraceByPath(const std::wstring& path);
   bool RemoveTraceByLabel(const std::wstring& label);
   bool HasActiveTraces() const;
@@ -364,8 +356,6 @@ private:
   bool BuildRegFileContent(const TabEntry& entry, std::wstring* out) const;
   void ReleaseRegFileRoots(TabEntry* entry);
   bool RemoveDefaultByPath(const std::wstring& path);
-  bool RemoveDefaultByLabel(const std::wstring& label);
-  bool HasActiveDefaults() const;
   std::wstring TreeStatePath() const;
   void LoadTreeState();
   void StartTreeStateWorker();
@@ -385,34 +375,7 @@ private:
   void NormalizeRecentDefaultList();
   void AppendTraceChildren(const RegistryNode& node, const std::unordered_set<std::wstring>& existing_lower, std::vector<std::wstring>* out) const;
   std::wstring TracePathLowerForNode(const RegistryNode& node) const;
-  void NormalizeSelectionForTrace(const TraceData& trace, TraceSelection* selection) const;
   bool AllowTraceSimulation(const RegistryNode& node) const;
-
-  struct KeySnapshot {
-    std::wstring name;
-    std::vector<ValueEntry> values;
-    std::vector<KeySnapshot> children;
-  };
-
-  struct UndoOperation {
-    enum class Type {
-      kCreateKey,
-      kDeleteKey,
-      kRenameKey,
-      kCreateValue,
-      kDeleteValue,
-      kModifyValue,
-      kRenameValue,
-    };
-
-    Type type = Type::kCreateKey;
-    RegistryNode node;
-    std::wstring name;
-    std::wstring new_name;
-    ValueEntry old_value;
-    ValueEntry new_value;
-    KeySnapshot key_snapshot;
-  };
 
   struct ClipboardItem {
     enum class Kind {
@@ -425,14 +388,12 @@ private:
     RegistryNode source_parent;
     std::wstring name;
     ValueEntry value;
-    KeySnapshot key_snapshot;
+    changes::KeySnapshot key_snapshot;
   };
 
-  void PushUndo(UndoOperation operation);
+  void PushUndo(changes::UndoOperation operation);
   void ClearRedo();
-  bool ApplyUndoOperation(const UndoOperation& operation, bool redo);
-  KeySnapshot CaptureKeySnapshot(const RegistryNode& node);
-  bool RestoreKeySnapshot(const RegistryNode& parent, const KeySnapshot& snapshot);
+  bool ApplyUndoOperation(const changes::UndoOperation& operation, bool redo);
   bool SameNode(const RegistryNode& left, const RegistryNode& right) const;
   std::wstring MakeUniqueValueName(const RegistryNode& node, const std::wstring& base) const;
   std::wstring MakeUniqueKeyName(const RegistryNode& node, const std::wstring& base) const;
@@ -487,7 +448,7 @@ private:
   int history_sort_column_ = 0;
   bool history_sort_ascending_ = true;
   int history_max_rows_ = 500;
-  std::vector<HistoryEntry> history_entries_;
+  changes::ChangeHistory change_history_;
   RegistryMode registry_mode_ = RegistryMode::kLocal;
   std::wstring remote_machine_;
   HKEY remote_hklm_ = nullptr;
@@ -544,13 +505,7 @@ private:
   bool show_extra_hives_ = false;
   bool show_simulated_keys_ = true;
   bool save_tree_state_ = true;
-  std::mutex tree_state_mutex_;
-  std::condition_variable tree_state_cv_;
-  std::thread tree_state_thread_;
-  bool tree_state_stop_ = false;
-  bool tree_state_dirty_ = false;
-  std::wstring tree_state_selected_;
-  std::vector<std::wstring> tree_state_expanded_;
+  work::DebouncedTask<workspace::TreeState> tree_state_saver_;
   bool always_on_top_ = false;
   bool always_run_as_admin_ = false;
   bool always_run_as_system_ = false;
@@ -590,12 +545,11 @@ private:
   std::vector<std::unique_ptr<RegeditCompatTreeNode>> regedit_compat_nodes_;
   std::vector<std::wstring> regedit_compat_list_names_;
   std::unordered_map<std::wstring, std::wstring> hive_list_;
-  std::wstring saved_tree_selected_path_;
-  std::vector<std::wstring> saved_tree_expanded_paths_;
+  std::shared_ptr<const std::unordered_set<std::wstring>> hive_roots_;
+  workspace::TreeState saved_tree_state_;
   bool tree_state_restored_ = false;
   bool deferred_startup_complete_ = false;
-  std::thread startup_cache_thread_;
-  std::atomic_bool startup_cache_cancel_{false};
+  work::Session startup_cache_session_;
   bool startup_tree_restore_pending_ = false;
   bool applying_startup_tree_restore_ = false;
   bool window_placement_loaded_ = false;
@@ -605,14 +559,13 @@ private:
   int window_height_ = 0;
   bool window_maximized_ = false;
   ClipboardItem clipboard_;
-  std::vector<UndoOperation> undo_stack_;
-  std::vector<UndoOperation> redo_stack_;
+  changes::UndoStack undo_stack_;
   ReplaceDialogResult last_replace_;
   SearchDialogResult last_search_;
 
   struct SearchTab {
     std::wstring label;
-    std::vector<SearchResult> results;
+    std::vector<search::Result> results;
     std::wstring cache_file;
     bool results_loaded = true;
     uint64_t generation = 0;
@@ -620,6 +573,7 @@ private:
     size_t last_ui_count = 0;
     int sort_column = -1;
     bool sort_ascending = true;
+    bool sort_dirty = false;
   };
 
   struct TabEntry {
@@ -642,7 +596,7 @@ private:
     struct RegFileRoot {
       HKEY root = nullptr;
       std::wstring name;
-      std::shared_ptr<RegistryProvider::VirtualRegistryData> data;
+      std::shared_ptr<VirtualRegistryData> data;
     };
     std::vector<RegFileRoot> reg_file_roots;
     bool reg_file_dirty = false;
@@ -651,54 +605,19 @@ private:
 
   struct PendingSearchResult {
     uint64_t generation = 0;
-    SearchResult result;
+    search::Result result;
   };
 
-  struct TraceKeyValues {
-    std::unordered_set<std::wstring> values_lower;
-    std::vector<std::wstring> values_display;
-  };
-
-  struct TraceData {
-    std::wstring label;
-    std::wstring source_path;
-    std::unordered_map<std::wstring, TraceKeyValues> values_by_key;
-    std::unordered_map<std::wstring, std::vector<std::wstring>> children_by_key;
-    std::vector<std::wstring> key_paths;
-    std::vector<std::wstring> display_key_paths;
-    std::unordered_map<std::wstring, std::wstring> display_to_key;
-    std::shared_ptr<std::shared_mutex> mutex = std::make_shared<std::shared_mutex>();
-  };
   struct TraceLoadPayload;
 
-  struct DefaultValueEntry {
-    DWORD type = REG_NONE;
-    std::wstring data;
-  };
-
-  struct DefaultKeyValues {
-    std::unordered_map<std::wstring, DefaultValueEntry> values;
-  };
-
-  struct DefaultData {
-    std::unordered_map<std::wstring, DefaultKeyValues> values_by_key;
-    std::shared_ptr<std::shared_mutex> mutex = std::make_shared<std::shared_mutex>();
-  };
   struct DefaultLoadPayload;
 
-  struct CommentEntry {
-    std::wstring path;
-    std::wstring name;
-    DWORD type = 0;
-    std::wstring text;
-  };
   HWND search_results_list_ = nullptr;
   std::vector<TabEntry> tabs_;
   std::vector<SearchTab> search_tabs_;
   std::vector<PendingSearchResult> search_pending_;
   std::mutex search_mutex_;
   std::atomic_bool search_posted_{false};
-  std::atomic_bool search_cancel_{false};
   std::atomic<uint64_t> search_progress_searched_{0};
   std::atomic<uint64_t> search_progress_total_{0};
   std::atomic_bool search_progress_posted_{false};
@@ -708,9 +627,10 @@ private:
   uint64_t search_start_tick_ = 0;
   uint64_t search_duration_ms_ = 0;
   bool search_duration_valid_ = false;
-  std::thread search_thread_;
+  work::Session search_session_;
+  work::Session replace_session_;
+  bool replace_result_pending_ = false;
   bool search_running_ = false;
-  uint64_t search_generation_ = 0;
   int active_search_tab_index_ = -1;
   int search_results_view_tab_index_ = -1;
   int tab_hot_index_ = -1;
@@ -733,23 +653,22 @@ private:
   struct ActiveTrace {
     std::wstring label;
     std::wstring source_path;
-    std::shared_ptr<const TraceData> data;
-    TraceSelection selection;
+    std::shared_ptr<const trace::Data> data;
+    std::shared_ptr<const trace::Selection> selection;
   };
   struct ActiveDefault {
     std::wstring label;
     std::wstring source_path;
-    std::shared_ptr<const DefaultData> data;
-    KeyValueSelection selection;
+    std::shared_ptr<const defaults::Data> data;
+    std::shared_ptr<const trace::Selection> selection;
   };
   struct TraceParseSession {
     std::wstring label;
     std::wstring source_path;
     std::wstring source_lower;
-    std::shared_ptr<TraceData> data;
-    TraceSelection selection;
-    std::thread thread;
-    std::atomic_bool cancel{false};
+    std::shared_ptr<trace::Data> data;
+    trace::Selection selection;
+    work::Session work;
     HWND dialog = nullptr;
     bool added_to_active = false;
     bool parsing_done = false;
@@ -758,10 +677,9 @@ private:
     std::wstring label;
     std::wstring source_path;
     std::wstring source_lower;
-    std::shared_ptr<DefaultData> data;
-    KeyValueSelection selection;
-    std::thread thread;
-    std::atomic_bool cancel{false};
+    std::shared_ptr<defaults::Data> data;
+    trace::Selection selection;
+    work::Session work;
     HWND dialog = nullptr;
     bool added_to_active = false;
     bool parsing_done = false;
@@ -770,8 +688,7 @@ private:
   struct RegFileParseSession {
     std::wstring source_path;
     std::wstring source_lower;
-    std::thread thread;
-    std::atomic_bool cancel{false};
+    work::Session work;
   };
   struct TraceDialogStartContext {
     MainWindow* window = nullptr;
@@ -792,37 +709,26 @@ private:
     bool show_keys_in_list = false;
     bool include_details = false;
     bool show_simulated_keys = false;
+    bool include_all_value_data = false;
     HWND hwnd = nullptr;
     std::vector<ActiveTrace> trace_data_list;
     std::vector<ActiveDefault> default_data_list;
-    std::unordered_map<std::wstring, std::wstring> hive_list;
-    std::unordered_map<std::wstring, CommentEntry> value_comments;
-    std::unordered_map<std::wstring, CommentEntry> name_comments;
+    std::shared_ptr<const std::unordered_set<std::wstring>> hive_roots;
   };
   std::vector<ActiveTrace> active_traces_;
-  std::unordered_map<std::wstring, TraceSelection> trace_selection_cache_;
-  std::vector<std::wstring> recent_trace_paths_;
+  std::unordered_map<std::wstring, trace::Selection> trace_selection_cache_;
+  workspace::RecentItems recent_trace_paths_{10};
   std::vector<ActiveDefault> active_defaults_;
-  std::vector<std::wstring> recent_default_paths_;
-  std::mutex value_list_mutex_;
-  std::condition_variable value_list_cv_;
-  std::thread value_list_thread_;
-  bool value_list_stop_ = false;
-  bool value_list_pending_ = false;
-  std::unique_ptr<ValueListTask> value_list_task_;
-  std::thread trace_load_thread_;
-  std::atomic_bool trace_load_stop_{false};
-  std::atomic_bool trace_load_running_{false};
+  workspace::RecentItems recent_default_paths_{10};
+  work::LatestTask<ValueListTask> value_loader_;
+  work::Session trace_load_session_;
   std::unordered_map<std::wstring, std::unique_ptr<TraceParseSession>> trace_parse_sessions_;
-  std::thread default_load_thread_;
-  std::atomic_bool default_load_stop_{false};
-  std::atomic_bool default_load_running_{false};
+  work::Session default_load_session_;
   std::unordered_map<std::wstring, std::unique_ptr<DefaultParseSession>> default_parse_sessions_;
   std::unordered_map<std::wstring, std::unique_ptr<RegFileParseSession>> reg_file_parse_sessions_;
   uint64_t last_trace_refresh_tick_ = 0;
   uint64_t last_default_refresh_tick_ = 0;
-  std::unordered_map<std::wstring, CommentEntry> value_comments_;
-  std::unordered_map<std::wstring, CommentEntry> name_comments_;
+  changes::ValueComments value_comments_;
   util::UniqueHKey registry_root_;
   std::vector<std::wstring> favorites_cache_;
   bool favorites_loaded_ = false;

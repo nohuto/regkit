@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "../../include/app/favorites_store.h"
+#include "workspace/favorites.h"
 
 #include <algorithm>
 #include <cwchar>
@@ -26,8 +26,9 @@
 #include <shlobj.h>
 
 #include "../../include/win32/win32_helpers.h"
+#include "win32/shell_paths.h"
 
-namespace regkit {
+namespace regkit::workspace {
 
 namespace {
 
@@ -284,4 +285,4 @@ bool FavoritesStore::ImportFromRegedit(size_t* imported_count, std::wstring* err
   return true;
 }
 
-} // namespace regkit
+} // namespace regkit::workspace

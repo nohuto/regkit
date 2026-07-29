@@ -17,24 +17,14 @@
 #pragma once
 
 #include "../win32/windows_config.h"
+#include "trace/trace_data.h"
 
 #include <windows.h>
 
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 namespace regkit {
-
-struct KeyValueSelection {
-  bool select_all = false;
-  bool recursive = true;
-  std::vector<std::wstring> key_paths;
-  std::unordered_map<std::wstring, std::unordered_set<std::wstring>> values_by_key;
-};
-
-using TraceSelection = KeyValueSelection;
 
 struct KeyValueDialogEntry {
   std::wstring key_path;
@@ -53,7 +43,10 @@ struct TraceDialogOptions {
 
 using TraceDialogReadyCallback = void (*)(HWND hwnd, void* context);
 
-bool ShowTraceDialog(HWND owner, const TraceDialogOptions& options, TraceSelection* selection, TraceDialogReadyCallback on_ready = nullptr, void* context = nullptr);
+bool ShowTraceDialog(HWND owner, const TraceDialogOptions& options,
+                     trace::Selection* selection,
+                     TraceDialogReadyCallback on_ready = nullptr,
+                     void* context = nullptr);
 
 void TraceDialogPostEntries(HWND dialog, std::vector<KeyValueDialogEntry>* entries);
 void TraceDialogPostDone(HWND dialog, bool done);

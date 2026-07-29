@@ -16,11 +16,11 @@
 
 #include "../../include/app/theme_presets.h"
 
-#include <algorithm>
 #include <fstream>
 #include <sstream>
 
 #include "../../include/win32/win32_helpers.h"
+#include "win32/shell_paths.h"
 
 namespace regkit {
 
@@ -48,16 +48,6 @@ std::wstring Trim(const std::wstring& text) {
     --end;
   }
   return text.substr(start, end - start);
-}
-
-void AddPresetIfMissing(std::vector<ThemePreset>* presets, const ThemePreset& preset) {
-  if (!presets) {
-    return;
-  }
-  auto it = std::find_if(presets->begin(), presets->end(), [&](const ThemePreset& existing) { return _wcsicmp(existing.name.c_str(), preset.name.c_str()) == 0; });
-  if (it == presets->end()) {
-    presets->push_back(preset);
-  }
 }
 
 ThemeColors DarkDefaults() {

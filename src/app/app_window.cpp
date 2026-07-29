@@ -1,4 +1,4 @@
-// Copyright (C) 2026 Noverse (Nohuto)
+﻿// Copyright (C) 2026 Noverse (Nohuto)
 // This file is part of RegKit https://github.com/nohuto/regkit
 //
 // RegKit is free software: you can redistribute it and/or modify
@@ -47,28 +47,56 @@
 #include "../../include/registry/registry_provider.h"
 #include "../../include/win32/icon_resources.h"
 #include "../../include/win32/win32_helpers.h"
+#include "defaults/default_loader.h"
+#include "regfile/reg_file.h"
+#include "registry/registry_path.h"
+#include "registry/value_format.h"
+#include "search/result_file.h"
+#include "trace/trace_loader.h"
+#include "trace/trace_parser.h"
+#include "workspace/settings.h"
+#include "workspace/tab_state.h"
+#include "win32/file_text.h"
+#include "win32/process_rights.h"
+#include "win32/registry_native.h"
+#include "win32/shell_paths.h"
 #include "../../resources/resource.h"
 
 namespace regkit {
 
-struct MainWindow::TraceLoadPayload {
+struct MainWindow::TraceLoadPayload : work::MoveOnly {
+  uint64_t generation = 0;
   std::vector<ActiveTrace> traces;
-  std::unordered_map<std::wstring, TraceSelection> selection_cache;
+  std::unordered_map<std::wstring, trace::Selection> selection_cache;
 };
 
-struct MainWindow::DefaultLoadPayload {
+struct MainWindow::DefaultLoadPayload : work::MoveOnly {
+  uint64_t generation = 0;
   std::vector<ActiveDefault> defaults;
 };
 
-struct MainWindow::StartupCachePayload {
+struct MainWindow::StartupCachePayload : work::MoveOnly {
+  uint64_t generation = 0;
   std::vector<HistoryEntry> history_entries;
-  std::vector<CommentEntry> value_comments;
-  std::vector<CommentEntry> name_comments;
+  std::vector<changes::CommentEntry> value_comments;
+  std::vector<changes::CommentEntry> name_comments;
   std::wstring tree_selected_path;
   std::vector<std::wstring> tree_expanded_paths;
   bool history_loaded = false;
   bool comments_loaded = false;
   bool tree_state_loaded = false;
+};
+
+struct MainWindow::ReplacePayload : work::MoveOnly {
+  struct Change {
+    changes::UndoOperation undo;
+    HistoryEntry history;
+  };
+
+  uint64_t generation = 0;
+  std::vector<Change> changes;
+  int failures = 0;
+  bool cancelled = false;
 };
 
 namespace {
@@ -94,9 +122,6 @@ constexpr int kToolbarIconSize = 16;
 constexpr int kToolbarGlyphSize = 16;
 constexpr wchar_t kRestartSystemArg[] = L"--restart-system";
 constexpr wchar_t kRestartTiArg[] = L"--restart-ti";
-constexpr int kMaxRecentTraces = cmd::kTraceRecentMax - cmd::kTraceRecentBase + 1;
-constexpr int kMaxRecentDefaults = cmd::kDefaultRecentMax - cmd::kDefaultRecentBase + 1;
-
 template <typename T>
 T ClampValue(T value, T low, T high) {
   return value < low ? low : (high < value ? high : value);
@@ -141,6 +166,7 @@ constexpr UINT kDefaultParseBatchMessage = WM_APP + 32;
 constexpr UINT kRegFileLoadReadyMessage = WM_APP + 33;
 constexpr UINT kDeferredStartupMessage = WM_APP + 34;
 constexpr UINT kStartupCacheReadyMessage = WM_APP + 35;
+constexpr UINT kReplaceReadyMessage = WM_APP + 36;
 constexpr UINT_PTR kRegeditCompatApplyTimerId = 34;
 constexpr UINT kRegeditCompatApplyDelayMs = 75;
 constexpr ULONG_PTR kExternalJumpCopyDataId = 0x52474A54;
@@ -196,23 +222,27 @@ constexpr int kValueColDate = 6;
 constexpr int kValueColDetails = 7;
 constexpr int kValueColComment = 8;
 
-struct TraceParseBatch {
+struct TraceParseBatch : work::MoveOnly {
+  uint64_t generation = 0;
   std::wstring source_lower;
   std::vector<KeyValueDialogEntry> entries;
+  std::unordered_set<std::wstring> affected_keys;
   std::wstring error;
   bool done = false;
   bool cancelled = false;
 };
 
-struct DefaultParseBatch {
+struct DefaultParseBatch : work::MoveOnly {
+  uint64_t generation = 0;
   std::wstring source_lower;
   std::vector<KeyValueDialogEntry> entries;
+  std::unordered_set<std::wstring> affected_keys;
   std::wstring error;
   bool done = false;
   bool cancelled = false;
 };
 
-struct ValueListPayload {
+struct ValueListPayload : work::MoveOnly {
   uint64_t generation = 0;
   std::vector<ListRow> rows;
   int key_count = 0;
@@ -221,10 +251,6 @@ struct ValueListPayload {
 
 HBRUSH GetCachedBrush(COLORREF color);
 HPEN GetCachedPen(COLORREF color, int width = 1);
-std::vector<std::wstring> SplitPath(const std::wstring& path);
-std::wstring EscapeHistoryField(const std::wstring& text);
-std::wstring UnescapeHistoryField(const std::wstring& text);
-std::vector<std::wstring> SplitHistoryFields(const std::wstring& line);
 std::wstring NormalizeTraceKeyPathBasic(const std::wstring& text);
 std::wstring ResolveRegistryLinkPath(const std::wstring& path);
 
@@ -298,13 +324,13 @@ bool ListViewItemSelected(HWND list, int item_index) {
   return item_index >= 0 && (ListView_GetItemState(list, item_index, LVIS_SELECTED) & LVIS_SELECTED) != 0;
 }
 
-bool DrawSearchMatchSubItem(const SearchResult& result, int subitem, HDC hdc, const RECT& rect, HFONT font) {
+bool DrawSearchMatchSubItem(const search::Result& result, int subitem, HDC hdc, const RECT& rect, HFONT font) {
   bool match_subitem = false;
-  if (result.match_field == SearchMatchField::kPath && subitem == 0) {
+  if (result.match_field == search::MatchField::kPath && subitem == 0) {
     match_subitem = true;
-  } else if (result.match_field == SearchMatchField::kName && subitem == 1) {
+  } else if (result.match_field == search::MatchField::kName && subitem == 1) {
     match_subitem = true;
-  } else if (result.match_field == SearchMatchField::kData && subitem == 3) {
+  } else if (result.match_field == search::MatchField::kData && subitem == 3) {
     match_subitem = true;
   }
   if (!match_subitem || result.match_start < 0 || result.match_length <= 0) {
@@ -610,15 +636,6 @@ std::wstring TrimTrailingSeparators(const std::wstring& path) {
   return result;
 }
 
-std::wstring ParentPath(const std::wstring& path) {
-  std::wstring trimmed = TrimTrailingSeparators(path);
-  size_t pos = trimmed.find_last_of(L"\\/");
-  if (pos == std::wstring::npos) {
-    return L"";
-  }
-  return trimmed.substr(0, pos);
-}
-
 bool IsDirectoryPath(const std::wstring& path) {
   DWORD attrs = GetFileAttributesW(path.c_str());
   return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
@@ -649,7 +666,7 @@ std::wstring FindAssetsIconsRoot() {
     if (IsDirectoryPath(candidate)) {
       return candidate;
     }
-    base = ParentPath(base);
+    base = registry_path::Parent(base);
   }
   DWORD len = GetCurrentDirectoryW(0, nullptr);
   if (len > 0) {
@@ -668,7 +685,7 @@ std::wstring FindAssetsIconsRoot() {
         if (IsDirectoryPath(candidate)) {
           return candidate;
         }
-        base = ParentPath(base);
+        base = registry_path::Parent(base);
       }
     }
   }
@@ -925,52 +942,6 @@ bool FileExists(const std::wstring& path) {
   return attrs != INVALID_FILE_ATTRIBUTES && !(attrs & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-bool ReadFileBinary(const std::wstring& path, std::string* buffer) {
-  if (!buffer) {
-    return false;
-  }
-  buffer->clear();
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return false;
-  }
-  LARGE_INTEGER size = {};
-  if (!GetFileSizeEx(file, &size) || size.QuadPart <= 0 || size.QuadPart > static_cast<LONGLONG>(std::numeric_limits<int>::max())) {
-    CloseHandle(file);
-    return false;
-  }
-  std::string temp(static_cast<size_t>(size.QuadPart), '\0');
-  DWORD read = 0;
-  bool ok = ReadFile(file, MutableData(temp), static_cast<DWORD>(temp.size()), &read, nullptr) != 0;
-  CloseHandle(file);
-  if (!ok || read == 0) {
-    return false;
-  }
-  temp.resize(read);
-  *buffer = std::move(temp);
-  return true;
-}
-
-bool ReadFileUtf8(const std::wstring& path, std::wstring* content) {
-  if (!content) {
-    return false;
-  }
-  content->clear();
-  std::string buffer;
-  if (!ReadFileBinary(path, &buffer)) {
-    return false;
-  }
-  if (buffer.size() >= 3 && static_cast<unsigned char>(buffer[0]) == 0xEF && static_cast<unsigned char>(buffer[1]) == 0xBB && static_cast<unsigned char>(buffer[2]) == 0xBF) {
-    buffer.erase(0, 3);
-  }
-  std::wstring wide = util::Utf8ToWide(buffer);
-  if (wide.empty()) {
-    return false;
-  }
-  *content = std::move(wide);
-  return true;
-}
-
 bool EqualsInsensitive(const std::wstring& left, const std::wstring& right) {
   return _wcsicmp(left.c_str(), right.c_str()) == 0;
 }
@@ -1082,241 +1053,13 @@ bool LaunchDefaultRegeditProcess(const std::wstring& regedit_path, DWORD* error_
   return true;
 }
 
-void TrimHistoryEntriesToLimit(std::vector<HistoryEntry>* entries, size_t max_rows) {
-  if (!entries) {
-    return;
-  }
-  if (max_rows == 0) {
-    entries->clear();
-    return;
-  }
-  if (entries->size() <= max_rows) {
-    return;
-  }
-  auto cut = entries->end() - static_cast<ptrdiff_t>(max_rows);
-  std::nth_element(entries->begin(), cut, entries->end(), [](const HistoryEntry& left, const HistoryEntry& right) {
-    return left.timestamp < right.timestamp;
-  });
-  entries->erase(entries->begin(), cut);
-}
-
-bool ParseQuotedString(const std::wstring& text, std::wstring* out, size_t* end_pos) {
-  if (!out || text.empty() || text.front() != L'"') {
-    return false;
-  }
-  out->clear();
-  bool escape = false;
-  for (size_t i = 1; i < text.size(); ++i) {
-    wchar_t ch = text[i];
-    if (escape) {
-      switch (ch) {
-      case L'\\':
-        out->push_back(L'\\');
-        break;
-      case L'"':
-        out->push_back(L'"');
-        break;
-      case L'n':
-        out->push_back(L'\n');
-        break;
-      case L'r':
-        out->push_back(L'\r');
-        break;
-      case L't':
-        out->push_back(L'\t');
-        break;
-      case L'0':
-        out->push_back(L'\0');
-        break;
-      default:
-        out->push_back(ch);
-        break;
-      }
-      escape = false;
-      continue;
-    }
-    if (ch == L'\\') {
-      escape = true;
-      continue;
-    }
-    if (ch == L'"') {
-      if (end_pos) {
-        *end_pos = i + 1;
-      }
-      return true;
-    }
-    out->push_back(ch);
-  }
-  return false;
-}
-
-bool ParseHexBytes(const std::wstring& text, std::vector<BYTE>* out) {
-  if (!out) {
-    return false;
-  }
-  out->clear();
-  int nibble = -1;
-  for (wchar_t ch : text) {
-    if (iswxdigit(ch)) {
-      int value = 0;
-      if (ch >= L'0' && ch <= L'9') {
-        value = ch - L'0';
-      } else if (ch >= L'a' && ch <= L'f') {
-        value = 10 + (ch - L'a');
-      } else if (ch >= L'A' && ch <= L'F') {
-        value = 10 + (ch - L'A');
-      }
-      if (nibble < 0) {
-        nibble = value;
-      } else {
-        out->push_back(static_cast<BYTE>((nibble << 4) | value));
-        nibble = -1;
-      }
-    }
-  }
-  return nibble < 0;
-}
-
-std::vector<BYTE> StringToRegData(const std::wstring& text) {
-  std::vector<BYTE> data((text.size() + 1) * sizeof(wchar_t));
-  memcpy(data.data(), text.c_str(), data.size());
-  return data;
-}
-
-bool DecodeRegString(const std::vector<BYTE>& data, std::wstring* out) {
-  if (!out) {
-    return false;
-  }
-  out->clear();
-  if (data.empty()) {
-    return true;
-  }
-  if (data.size() % sizeof(wchar_t) != 0) {
-    return false;
-  }
-  size_t wchar_count = data.size() / sizeof(wchar_t);
-  const wchar_t* raw = reinterpret_cast<const wchar_t*>(data.data());
-  std::wstring text(raw, wchar_count);
-  while (!text.empty() && text.back() == L'\0') {
-    text.pop_back();
-  }
-  if (text.find(L'\0') != std::wstring::npos) {
-    return false;
-  }
-  *out = std::move(text);
-  return true;
-}
-
-std::wstring EscapeRegString(const std::wstring& text) {
-  std::wstring out;
-  out.reserve(text.size());
-  for (wchar_t ch : text) {
-    switch (ch) {
-    case L'\\':
-      out.append(L"\\\\");
-      break;
-    case L'"':
-      out.append(L"\\\"");
-      break;
-    case L'\n':
-      out.append(L"\\n");
-      break;
-    case L'\r':
-      out.append(L"\\r");
-      break;
-    case L'\t':
-      out.append(L"\\t");
-      break;
-    case L'\0':
-      out.append(L"\\0");
-      break;
-    default:
-      out.push_back(ch);
-      break;
-    }
-  }
-  return out;
-}
-
-std::wstring FormatHexBytes(const std::vector<BYTE>& data) {
-  std::wstring out;
-  if (!data.empty()) {
-    out.reserve(data.size() * 3);
-  }
-  for (size_t i = 0; i < data.size(); ++i) {
-    if (i > 0) {
-      out.push_back(L',');
-    }
-    wchar_t buffer[4] = {};
-    swprintf_s(buffer, L"%02x", data[i]);
-    out.append(buffer);
-  }
-  return out;
-}
-
-DWORD RegTypeCode(DWORD type) {
-  DWORD base = RegistryProvider::NormalizeValueType(type);
-  switch (base) {
-  case REG_NONE:
-    return 0x0;
-  case REG_SZ:
-    return 0x1;
-  case REG_EXPAND_SZ:
-    return 0x2;
-  case REG_BINARY:
-    return 0x3;
-  case REG_DWORD:
-    return 0x4;
-  case REG_DWORD_BIG_ENDIAN:
-    return 0x5;
-  case REG_LINK:
-    return 0x6;
-  case REG_MULTI_SZ:
-    return 0x7;
-  case REG_RESOURCE_LIST:
-    return 0x8;
-  case REG_FULL_RESOURCE_DESCRIPTOR:
-    return 0x9;
-  case REG_RESOURCE_REQUIREMENTS_LIST:
-    return 0xA;
-  case REG_QWORD:
-    return 0xB;
-  default:
-    return base;
-  }
-}
-
-std::wstring FormatRegValueData(DWORD type, const std::vector<BYTE>& data) {
-  DWORD base = RegistryProvider::NormalizeValueType(type);
-  if (base == REG_SZ) {
-    std::wstring text;
-    if (DecodeRegString(data, &text)) {
-      return L"\"" + EscapeRegString(text) + L"\"";
-    }
-  }
-  if (base == REG_DWORD && data.size() >= sizeof(DWORD)) {
-    DWORD value = 0;
-    memcpy(&value, data.data(), sizeof(DWORD));
-    wchar_t buffer[16] = {};
-    swprintf_s(buffer, L"dword:%08x", value);
-    return buffer;
-  }
-  std::wstring hex = FormatHexBytes(data);
-  if (base == REG_BINARY && type == REG_BINARY) {
-    return L"hex:" + hex;
-  }
-  DWORD code = RegTypeCode(type);
-  wchar_t type_buffer[16] = {};
-  swprintf_s(type_buffer, L"%x", code);
-  return L"hex(" + std::wstring(type_buffer) + L"):" + hex;
-}
-
 struct ParsedRegFileRoot {
   std::wstring name;
-  std::shared_ptr<RegistryProvider::VirtualRegistryData> data;
+  std::shared_ptr<VirtualRegistryData> data;
 };
 
-struct RegFileParsePayload {
+struct RegFileParsePayload : work::MoveOnly {
+  uint64_t generation = 0;
   std::wstring source_path;
   std::wstring source_lower;
   std::vector<ParsedRegFileRoot> roots;
@@ -1324,20 +1067,20 @@ struct RegFileParsePayload {
   bool cancelled = false;
 };
 
-RegistryProvider::VirtualRegistryKey* EnsureVirtualKey(RegistryProvider::VirtualRegistryKey* root, const std::wstring& subkey) {
+VirtualRegistryKey* EnsureVirtualKey(VirtualRegistryKey* root, const std::wstring& subkey) {
   if (!root) {
     return nullptr;
   }
   if (subkey.empty()) {
     return root;
   }
-  auto parts = SplitPath(subkey);
-  RegistryProvider::VirtualRegistryKey* current = root;
+  auto parts = registry_path::Split(subkey);
+  VirtualRegistryKey* current = root;
   for (const auto& part : parts) {
     std::wstring lower = ToLower(part);
     auto it = current->children.find(lower);
     if (it == current->children.end()) {
-      auto child = std::make_unique<RegistryProvider::VirtualRegistryKey>();
+      auto child = std::make_unique<VirtualRegistryKey>();
       child->name = part;
       it = current->children.emplace(lower, std::move(child)).first;
     }
@@ -1351,236 +1094,68 @@ bool ParseRegFileToVirtualRoots(const std::wstring& path, std::vector<ParsedRegF
     return false;
   }
   roots->clear();
-  if (cancelled) {
-    *cancelled = false;
-  }
-  auto is_cancelled = [&]() -> bool {
-    if (cancel && cancel->load()) {
-      if (cancelled) {
-        *cancelled = true;
-      }
-      return true;
-    }
-    return false;
-  };
-  if (is_cancelled()) {
-    return false;
-  }
-  std::wstring content;
-  if (!util::ReadTextFile(path, &content)) {
-    if (error) {
-      *error = L"Failed to read registry file.";
-    }
-    return false;
-  }
 
-  std::vector<std::wstring> lines;
-  std::wstring current;
-  size_t start = 0;
-  while (start < content.size()) {
-    if (is_cancelled()) {
-      return false;
-    }
-    size_t end = content.find(L'\n', start);
-    if (end == std::wstring::npos) {
-      end = content.size();
-    }
-    std::wstring line = content.substr(start, end - start);
-    if (!line.empty() && line.back() == L'\r') {
-      line.pop_back();
-    }
-    start = end + 1;
-    if (current.empty()) {
-      current = line;
-    } else {
-      current.append(line);
-    }
-    std::wstring trimmed_right = current;
-    while (!trimmed_right.empty() && (trimmed_right.back() == L' ' || trimmed_right.back() == L'\t')) {
-      trimmed_right.pop_back();
-    }
-    if (!trimmed_right.empty() && trimmed_right.back() == L'\\') {
-      trimmed_right.pop_back();
-      current = trimmed_right;
-      continue;
-    }
-    lines.push_back(current);
-    current.clear();
-  }
-  if (!current.empty()) {
-    lines.push_back(current);
+  regfile::Document document;
+  if (!regfile::Load(path, &document, error, cancel, cancelled)) {
+    return false;
   }
 
   std::unordered_map<std::wstring, size_t> root_lookup;
-  auto ensure_root = [&](const std::wstring& root_name) -> RegistryProvider::VirtualRegistryData* {
-    std::wstring lower = ToLower(root_name);
-    auto it = root_lookup.find(lower);
-    if (it != root_lookup.end()) {
-      return roots->at(it->second).data.get();
+  auto ensure_root = [&](const std::wstring& root_name) {
+    const std::wstring lower = ToLower(root_name);
+    auto existing = root_lookup.find(lower);
+    if (existing != root_lookup.end()) {
+      return roots->at(existing->second).data.get();
     }
     ParsedRegFileRoot root;
     root.name = root_name;
-    root.data = std::make_shared<RegistryProvider::VirtualRegistryData>();
+    root.data = std::make_shared<VirtualRegistryData>();
     root.data->root_name = root_name;
-    root.data->root = std::make_unique<RegistryProvider::VirtualRegistryKey>();
+    root.data->root = std::make_unique<VirtualRegistryKey>();
     root.data->root->name = root_name;
     roots->push_back(std::move(root));
     root_lookup.emplace(lower, roots->size() - 1);
     return roots->back().data.get();
   };
 
-  RegistryProvider::VirtualRegistryKey* current_key = nullptr;
-  for (const auto& raw : lines) {
-    if (is_cancelled()) {
+  for (const auto& source_path : document.key_order) {
+    if (cancel && cancel->load()) {
+      if (cancelled) {
+        *cancelled = true;
+      }
       return false;
     }
-    std::wstring line = TrimWhitespace(raw);
-    if (line.empty()) {
+    const std::wstring normalized = NormalizeTraceKeyPathBasic(source_path);
+    const std::wstring key_path = normalized.empty() ? source_path : normalized;
+    const size_t slash = key_path.find(L'\\');
+    const std::wstring root_name = key_path.substr(0, slash);
+    const std::wstring subkey = slash == std::wstring::npos
+                                    ? L""
+                                    : key_path.substr(slash + 1);
+    if (root_name.empty()) {
       continue;
     }
-    if (line[0] == L';') {
+    auto source = document.keys.find(ToLower(source_path));
+    if (source == document.keys.end()) {
       continue;
     }
-    if (StartsWithInsensitive(line, L"Windows Registry Editor") || StartsWithInsensitive(line, L"REGEDIT4")) {
+    VirtualRegistryData* root = ensure_root(root_name);
+    VirtualRegistryKey* target =
+        root ? EnsureVirtualKey(root->root.get(), subkey) : nullptr;
+    if (!target) {
       continue;
     }
-    if (line.front() == L'[' && line.back() == L']') {
-      std::wstring key = line.substr(1, line.size() - 2);
-      key = TrimWhitespace(key);
-      bool delete_key = !key.empty() && key.front() == L'-';
-      if (delete_key) {
-        current_key = nullptr;
-        continue;
-      }
-      std::wstring normalized = NormalizeTraceKeyPathBasic(key);
-      std::wstring key_path = normalized.empty() ? key : normalized;
-      size_t slash = key_path.find(L'\\');
-      std::wstring root_name = (slash == std::wstring::npos) ? key_path : key_path.substr(0, slash);
-      std::wstring subkey = (slash == std::wstring::npos) ? L"" : key_path.substr(slash + 1);
-      if (root_name.empty()) {
-        current_key = nullptr;
-        continue;
-      }
-      RegistryProvider::VirtualRegistryData* data = ensure_root(root_name);
-      current_key = data ? EnsureVirtualKey(data->root.get(), subkey) : nullptr;
-      continue;
+    target->values.reserve(source->second.values.size());
+    for (const auto& entry : source->second.values) {
+      VirtualRegistryValue value;
+      value.name = entry.second.name;
+      value.type = entry.second.type;
+      value.data = entry.second.data;
+      target->values.emplace(entry.first, std::move(value));
     }
-
-    if (!current_key) {
-      continue;
-    }
-    size_t eq = line.find(L'=');
-    if (eq == std::wstring::npos) {
-      continue;
-    }
-    std::wstring name_part = TrimWhitespace(line.substr(0, eq));
-    std::wstring data_part = TrimWhitespace(line.substr(eq + 1));
-    if (name_part.empty() || data_part.empty()) {
-      continue;
-    }
-    if (data_part == L"-") {
-      continue;
-    }
-
-    std::wstring value_name;
-    if (name_part == L"@") {
-      value_name.clear();
-    } else if (name_part.front() == L'"') {
-      size_t end_pos = 0;
-      if (!ParseQuotedString(name_part, &value_name, &end_pos)) {
-        continue;
-      }
-    } else {
-      continue;
-    }
-
-    DWORD type = REG_NONE;
-    std::vector<BYTE> data;
-    if (data_part.front() == L'"') {
-      std::wstring text;
-      size_t end_pos = 0;
-      if (!ParseQuotedString(data_part, &text, &end_pos)) {
-        continue;
-      }
-      type = REG_SZ;
-      data = StringToRegData(text);
-    } else if (StartsWithInsensitive(data_part, L"dword:")) {
-      std::wstring hex = TrimWhitespace(data_part.substr(6));
-      if (hex.empty()) {
-        continue;
-      }
-      DWORD number = static_cast<DWORD>(wcstoul(hex.c_str(), nullptr, 16));
-      type = REG_DWORD;
-      data.resize(sizeof(DWORD));
-      memcpy(data.data(), &number, sizeof(DWORD));
-    } else if (StartsWithInsensitive(data_part, L"hex")) {
-      type = REG_BINARY;
-      size_t colon = data_part.find(L':');
-      if (colon == std::wstring::npos) {
-        continue;
-      }
-      size_t open = data_part.find(L'(');
-      size_t close = data_part.find(L')');
-      if (open != std::wstring::npos && close != std::wstring::npos && close > open) {
-        std::wstring code = data_part.substr(open + 1, close - open - 1);
-        unsigned long parsed = wcstoul(code.c_str(), nullptr, 16);
-        switch (parsed) {
-        case 0x0:
-          type = REG_NONE;
-          break;
-        case 0x1:
-          type = REG_SZ;
-          break;
-        case 0x2:
-          type = REG_EXPAND_SZ;
-          break;
-        case 0x3:
-          type = REG_BINARY;
-          break;
-        case 0x4:
-          type = REG_DWORD;
-          break;
-        case 0x5:
-          type = REG_DWORD_BIG_ENDIAN;
-          break;
-        case 0x7:
-          type = REG_MULTI_SZ;
-          break;
-        case 0x8:
-          type = REG_RESOURCE_LIST;
-          break;
-        case 0x9:
-          type = REG_FULL_RESOURCE_DESCRIPTOR;
-          break;
-        case 0xA:
-          type = REG_RESOURCE_REQUIREMENTS_LIST;
-          break;
-        case 0xB:
-          type = REG_QWORD;
-          break;
-        default:
-          type = REG_BINARY;
-          break;
-        }
-      }
-      std::wstring hex = data_part.substr(colon + 1);
-      if (!ParseHexBytes(hex, &data)) {
-        continue;
-      }
-    } else {
-      continue;
-    }
-
-    RegistryProvider::VirtualRegistryValue value;
-    value.name = value_name;
-    value.type = type;
-    value.data = std::move(data);
-    std::wstring name_lower = ToLower(value_name);
-    current_key->values[name_lower] = std::move(value);
   }
   return true;
 }
-
 struct TextMatch {
   bool matched = false;
   size_t start = std::wstring::npos;
@@ -1667,57 +1242,6 @@ private:
   std::wregex regex_;
 };
 
-std::wstring KeyLeafFromPath(const std::wstring& path) {
-  if (path.empty()) {
-    return {};
-  }
-  size_t pos = path.find_last_of(L"\\/");
-  if (pos == std::wstring::npos) {
-    return path;
-  }
-  return path.substr(pos + 1);
-}
-
-#ifndef NT_SUCCESS
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
-#endif
-
-using NtOpenKeyFn = NTSTATUS(NTAPI*)(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES);
-
-NtOpenKeyFn LoadNtOpenKey() {
-  HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
-  if (!ntdll) {
-    return nullptr;
-  }
-  return reinterpret_cast<NtOpenKeyFn>(GetProcAddress(ntdll, "NtOpenKey"));
-}
-
-NtOpenKeyFn GetNtOpenKey() {
-  static NtOpenKeyFn open_fn = LoadNtOpenKey();
-  return open_fn;
-}
-
-util::UniqueHKey OpenRegistryRootKey() {
-  NtOpenKeyFn open_fn = GetNtOpenKey();
-  if (!open_fn) {
-    return util::UniqueHKey();
-  }
-  std::wstring path = L"\\REGISTRY";
-  UNICODE_STRING name = {};
-  name.Buffer = const_cast<PWSTR>(path.c_str());
-  name.Length = static_cast<USHORT>(path.size() * sizeof(wchar_t));
-  name.MaximumLength = name.Length;
-  OBJECT_ATTRIBUTES attrs = {};
-  InitializeObjectAttributes(&attrs, &name, OBJ_CASE_INSENSITIVE, nullptr, nullptr);
-
-  HANDLE handle = nullptr;
-  NTSTATUS status = open_fn(&handle, KEY_READ, &attrs);
-  if (!NT_SUCCESS(status) || !handle) {
-    return util::UniqueHKey();
-  }
-  return util::UniqueHKey(reinterpret_cast<HKEY>(handle));
-}
-
 std::wstring ResolveDevicePath(const std::wstring& path) {
   if (!StartsWithInsensitive(path, L"\\Device\\")) {
     return path;
@@ -1781,162 +1305,6 @@ std::wstring NormalizeHiveFilePath(const std::wstring& raw_path) {
   return path;
 }
 
-std::wstring StripOuterQuotes(const std::wstring& text) {
-  if (text.size() < 2) {
-    return text;
-  }
-  if ((text.front() == L'"' && text.back() == L'"') || (text.front() == L'\'' && text.back() == L'\'')) {
-    return text.substr(1, text.size() - 2);
-  }
-  return text;
-}
-
-std::wstring StripRegFileKeySyntax(const std::wstring& text) {
-  std::wstring trimmed = TrimWhitespace(text);
-  if (trimmed.empty()) {
-    return trimmed;
-  }
-  if (trimmed.front() == L'[' && trimmed.back() == L']' && trimmed.size() >= 2) {
-    std::wstring inner = trimmed.substr(1, trimmed.size() - 2);
-    inner = TrimWhitespace(inner);
-    if (!inner.empty() && inner.front() == L'-') {
-      inner.erase(inner.begin());
-      inner = TrimWhitespace(inner);
-    }
-    return inner;
-  }
-  if (!trimmed.empty() && trimmed.front() == L'-') {
-    trimmed.erase(trimmed.begin());
-    trimmed = TrimWhitespace(trimmed);
-  }
-  return trimmed;
-}
-
-std::wstring CollapseBackslashes(const std::wstring& text) {
-  if (text.empty()) {
-    return text;
-  }
-  std::wstring out;
-  out.reserve(text.size());
-  bool last_slash = false;
-  for (wchar_t ch : text) {
-    if (ch == L'\\') {
-      if (!last_slash) {
-        out.push_back(ch);
-      }
-      last_slash = true;
-    } else {
-      last_slash = false;
-      out.push_back(ch);
-    }
-  }
-  return out;
-}
-
-std::wstring EscapeBackslashes(const std::wstring& text) {
-  if (text.empty()) {
-    return text;
-  }
-  std::wstring out;
-  out.reserve(text.size() * 2);
-  for (wchar_t ch : text) {
-    if (ch == L'\\') {
-      out.push_back(L'\\');
-    }
-    out.push_back(ch);
-  }
-  return out;
-}
-
-std::wstring MapNativeRegistryPath(const std::wstring& path, const std::wstring& sid) {
-  if (!StartsWithInsensitive(path, L"REGISTRY")) {
-    return L"";
-  }
-  std::wstring rest = path.substr(wcslen(L"REGISTRY"));
-  while (!rest.empty() && rest.front() == L'\\') {
-    rest.erase(rest.begin());
-  }
-  if (rest.empty()) {
-    return L"REGISTRY";
-  }
-
-  auto strip_prefix = [&](const wchar_t* prefix) -> std::wstring {
-    size_t len = wcslen(prefix);
-    if (!StartsWithInsensitive(rest, prefix)) {
-      return L"";
-    }
-    std::wstring tail = rest.substr(len);
-    while (!tail.empty() && tail.front() == L'\\') {
-      tail.erase(tail.begin());
-    }
-    return tail;
-  };
-
-  std::wstring tail = strip_prefix(L"MACHINE");
-  if (!tail.empty() || StartsWithInsensitive(rest, L"MACHINE")) {
-    std::wstring machine_tail = tail;
-    const wchar_t* classes_prefix = L"SOFTWARE\\Classes";
-    if (StartsWithInsensitive(machine_tail, classes_prefix)) {
-      std::wstring classes_tail = machine_tail.substr(wcslen(classes_prefix));
-      while (!classes_tail.empty() && classes_tail.front() == L'\\') {
-        classes_tail.erase(classes_tail.begin());
-      }
-      return classes_tail.empty() ? L"HKEY_CLASSES_ROOT" : L"HKEY_CLASSES_ROOT\\" + classes_tail;
-    }
-    const wchar_t* cc_prefix = L"SYSTEM\\CurrentControlSet\\Hardware Profiles\\Current";
-    if (StartsWithInsensitive(machine_tail, cc_prefix)) {
-      std::wstring cc_tail = machine_tail.substr(wcslen(cc_prefix));
-      while (!cc_tail.empty() && cc_tail.front() == L'\\') {
-        cc_tail.erase(cc_tail.begin());
-      }
-      return cc_tail.empty() ? L"HKEY_CURRENT_CONFIG" : L"HKEY_CURRENT_CONFIG\\" + cc_tail;
-    }
-    return machine_tail.empty() ? L"HKEY_LOCAL_MACHINE" : L"HKEY_LOCAL_MACHINE\\" + machine_tail;
-  }
-
-  tail = strip_prefix(L"USER");
-  if (!tail.empty() || StartsWithInsensitive(rest, L"USER")) {
-    if (!sid.empty() && StartsWithInsensitive(tail, sid)) {
-      std::wstring user_tail = tail.substr(sid.size());
-      while (!user_tail.empty() && user_tail.front() == L'\\') {
-        user_tail.erase(user_tail.begin());
-      }
-      return user_tail.empty() ? L"HKEY_CURRENT_USER" : L"HKEY_CURRENT_USER\\" + user_tail;
-    }
-    return tail.empty() ? L"HKEY_USERS" : L"HKEY_USERS\\" + tail;
-  }
-
-  return L"REGISTRY\\" + rest;
-}
-
-std::wstring JoinPathParts(const std::vector<std::wstring>& parts) {
-  std::wstring out;
-  for (const auto& part : parts) {
-    if (part.empty()) {
-      continue;
-    }
-    if (!out.empty()) {
-      out.append(L"\\");
-    }
-    out.append(part);
-  }
-  return out;
-}
-
-std::wstring JoinPathPartsRange(const std::vector<std::wstring>& parts, size_t start) {
-  std::wstring out;
-  for (size_t i = start; i < parts.size(); ++i) {
-    if (parts[i].empty()) {
-      continue;
-    }
-    if (!out.empty()) {
-      out.append(L"\\");
-    }
-    out.append(parts[i]);
-  }
-  return out;
-}
-
 std::wstring CurrentControlSetSegment() {
   static std::wstring cached;
   static bool loaded = false;
@@ -1962,7 +1330,7 @@ std::wstring ReplaceControlSetSegment(const std::wstring& path, const std::wstri
   if (path.empty() || from.empty() || to.empty()) {
     return L"";
   }
-  std::vector<std::wstring> parts = SplitPath(path);
+  std::vector<std::wstring> parts = registry_path::Split(path);
   if (parts.size() < 3) {
     return L"";
   }
@@ -1978,7 +1346,7 @@ std::wstring ReplaceControlSetSegment(const std::wstring& path, const std::wstri
   for (size_t i = 0; i + 1 < parts.size(); ++i) {
     if (EqualsInsensitive(parts[i], L"SYSTEM") && EqualsInsensitive(parts[i + 1], from)) {
       parts[i + 1] = to;
-      return JoinPathParts(parts);
+      return registry_path::Join(parts);
     }
   }
   return L"";
@@ -2012,7 +1380,7 @@ std::wstring MapControlSetToCurrent(const std::wstring& path) {
   if (current.empty()) {
     return L"";
   }
-  std::vector<std::wstring> parts = SplitPath(path);
+  std::vector<std::wstring> parts = registry_path::Split(path);
   if (parts.size() < 3) {
     return L"";
   }
@@ -2031,42 +1399,14 @@ std::wstring MapControlSetToCurrent(const std::wstring& path) {
         return L"";
       }
       parts[i + 1] = current;
-      return JoinPathParts(parts);
+      return registry_path::Join(parts);
     }
   }
   return L"";
 }
 
 std::wstring CleanTraceKeyText(const std::wstring& text, const std::wstring& sid) {
-  std::wstring path = StripRegFileKeySyntax(text);
-  path = StripOuterQuotes(path);
-  path = TrimWhitespace(path);
-  if (path.empty()) {
-    return L"";
-  }
-  for (auto& ch : path) {
-    if (ch == L'/') {
-      ch = L'\\';
-    }
-  }
-  path = CollapseBackslashes(path);
-  if (StartsWithInsensitive(path, L"Registry::")) {
-    path.erase(0, wcslen(L"Registry::"));
-  }
-  while (!path.empty() && path.front() == L'\\') {
-    path.erase(path.begin());
-  }
-  if (StartsWithInsensitive(path, L"Computer\\")) {
-    path.erase(0, wcslen(L"Computer\\"));
-  }
-  wchar_t machine[MAX_COMPUTERNAME_LENGTH + 1] = {};
-  DWORD machine_len = static_cast<DWORD>(_countof(machine));
-  if (GetComputerNameW(machine, &machine_len) && machine_len > 0) {
-    std::wstring prefix = std::wstring(machine, machine_len) + L"\\";
-    if (StartsWithInsensitive(path, prefix)) {
-      path.erase(0, prefix.size());
-    }
-  }
+  std::wstring path = text;
   if (!sid.empty()) {
     const std::wstring marker = L"<CURRENT_USER_SID>";
     size_t pos = path.find(marker);
@@ -2075,93 +1415,37 @@ std::wstring CleanTraceKeyText(const std::wstring& text, const std::wstring& sid
       pos = path.find(marker, pos + sid.size());
     }
   }
+  path = registry_path::Clean(path);
+  if (path.empty()) {
+    return {};
+  }
+  wchar_t machine[MAX_COMPUTERNAME_LENGTH + 1] = {};
+  DWORD machine_len = static_cast<DWORD>(_countof(machine));
+  if (GetComputerNameW(machine, &machine_len) && machine_len > 0) {
+    const std::wstring prefix = std::wstring(machine, machine_len) + L"\\";
+    if (registry_path::StartsWith(path, prefix)) {
+      path.erase(0, prefix.size());
+    }
+  }
   return path;
 }
 
 std::wstring NormalizeTraceKeyPathBasic(const std::wstring& text) {
-  std::wstring sid = util::GetCurrentUserSidString();
+  const std::wstring sid = util::GetCurrentUserSidString();
   std::wstring path = CleanTraceKeyText(text, sid);
   if (path.empty()) {
     return L"";
   }
-
-  std::wstring native_mapped = MapNativeRegistryPath(path, sid);
-  if (!native_mapped.empty()) {
-    path = native_mapped;
+  path = registry_path::Normalize(path, sid);
+  const std::wstring current_user = L"HKEY_USERS\\" + sid;
+  if (!sid.empty() &&
+      (registry_path::Equals(path, current_user) ||
+       registry_path::StartsWith(path, current_user + L"\\"))) {
+    path.replace(0, current_user.size(), L"HKEY_CURRENT_USER");
   }
-
-  auto map_root = [&](const std::wstring& root, const std::wstring& rest) -> std::wstring {
-    std::wstring mapped;
-    if (EqualsInsensitive(root, L"HKLM") || EqualsInsensitive(root, L"HKEY_LOCAL_MACHINE")) {
-      mapped = L"HKEY_LOCAL_MACHINE";
-    } else if (EqualsInsensitive(root, L"HKCU") || EqualsInsensitive(root, L"HKEY_CURRENT_USER")) {
-      mapped = L"HKEY_CURRENT_USER";
-    } else if (EqualsInsensitive(root, L"HKCR") || EqualsInsensitive(root, L"HKEY_CLASSES_ROOT")) {
-      mapped = L"HKEY_CLASSES_ROOT";
-    } else if (EqualsInsensitive(root, L"HKU") || EqualsInsensitive(root, L"HKEY_USERS")) {
-      if (!sid.empty() && StartsWithInsensitive(rest, sid)) {
-        std::wstring tail = rest.substr(sid.size());
-        if (!tail.empty() && tail.front() == L'\\') {
-          tail.erase(tail.begin());
-        }
-        mapped = L"HKEY_CURRENT_USER";
-        if (!tail.empty()) {
-          mapped += L"\\" + tail;
-        }
-        return mapped;
-      }
-      mapped = L"HKEY_USERS";
-    } else if (EqualsInsensitive(root, L"HKCC") || EqualsInsensitive(root, L"HKEY_CURRENT_CONFIG")) {
-      mapped = L"HKEY_CURRENT_CONFIG";
-    } else if (EqualsInsensitive(root, L"Machine")) {
-      mapped = L"HKEY_LOCAL_MACHINE";
-    } else if (EqualsInsensitive(root, L"User") || EqualsInsensitive(root, L"Users")) {
-      if (!sid.empty() && StartsWithInsensitive(rest, sid)) {
-        std::wstring tail = rest.substr(sid.size());
-        if (!tail.empty() && tail.front() == L'\\') {
-          tail.erase(tail.begin());
-        }
-        mapped = L"HKEY_CURRENT_USER";
-        if (!tail.empty()) {
-          mapped += L"\\" + tail;
-        }
-        return mapped;
-      }
-      mapped = L"HKEY_USERS";
-    } else {
-      return L"";
-    }
-    if (rest.empty()) {
-      return mapped;
-    }
-    return mapped + L"\\" + rest;
-  };
-
-  std::wstring without_prefix = path;
-  if (StartsWithInsensitive(without_prefix, L"Registry\\")) {
-    without_prefix.erase(0, wcslen(L"Registry\\"));
-  }
-  size_t slash = without_prefix.find(L'\\');
-  std::wstring root = (slash == std::wstring::npos) ? without_prefix : without_prefix.substr(0, slash);
-  std::wstring rest = (slash == std::wstring::npos) ? L"" : without_prefix.substr(slash + 1);
-  std::wstring mapped = map_root(root, rest);
-  if (!mapped.empty()) {
-    return NormalizeCurrentControlSet(mapped);
-  }
-
-  slash = path.find(L'\\');
-  root = (slash == std::wstring::npos) ? path : path.substr(0, slash);
-  rest = (slash == std::wstring::npos) ? L"" : path.substr(slash + 1);
-  mapped = map_root(root, rest);
-  if (!mapped.empty()) {
-    return NormalizeCurrentControlSet(mapped);
-  }
-  if (StartsWithInsensitive(path, L"REGISTRY")) {
-    std::wstring tail = path.substr(wcslen(L"REGISTRY"));
-    while (!tail.empty() && tail.front() == L'\\') {
-      tail.erase(tail.begin());
-    }
-    return tail.empty() ? L"REGISTRY" : L"REGISTRY\\" + tail;
+  RegistryNode node;
+  if (registry_path::ParseRoot(path, &node)) {
+    return NormalizeCurrentControlSet(path);
   }
   return L"";
 }
@@ -2190,46 +1474,15 @@ std::wstring NormalizeTraceSelectionPath(const std::wstring& text) {
   return path;
 }
 
-bool SelectionIncludesKey(const KeyValueSelection& selection, const std::wstring& key_lower) {
-  if (selection.select_all) {
-    return true;
-  }
-  if (key_lower.empty()) {
-    return true;
-  }
-  if (!selection.key_paths.empty()) {
-    for (const auto& path : selection.key_paths) {
-      std::wstring selection_lower = ToLower(path);
-      if (selection_lower.empty()) {
-        continue;
-      }
-      if (key_lower == selection_lower) {
-        return true;
-      }
-      if (key_lower.size() < selection_lower.size() && selection_lower.compare(0, key_lower.size(), key_lower) == 0 && selection_lower[key_lower.size()] == L'\\') {
-        return true;
-      }
-      if (selection.recursive && key_lower.size() > selection_lower.size() && key_lower.compare(0, selection_lower.size(), selection_lower) == 0 && key_lower[selection_lower.size()] == L'\\') {
-        return true;
-      }
-    }
-    return false;
-  }
-  if (!selection.values_by_key.empty()) {
-    return selection.values_by_key.find(key_lower) != selection.values_by_key.end();
-  }
-  return true;
-}
-
-bool SelectionIncludesValue(const KeyValueSelection& selection, const std::wstring& key_lower, const std::wstring& value_lower) {
-  if (selection.select_all) {
-    return true;
-  }
-  auto it = selection.values_by_key.find(key_lower);
-  if (it == selection.values_by_key.end() || it->second.empty()) {
-    return true;
-  }
-  return it->second.find(value_lower) != it->second.end();
+trace::Normalizers TraceNormalizers() {
+  trace::Normalizers normalizers;
+  normalizers.key = [](const std::wstring& path) {
+    return NormalizeTraceKeyPath(path);
+  };
+  normalizers.display = [](const std::wstring& path) {
+    return NormalizeTraceSelectionPath(path);
+  };
+  return normalizers;
 }
 
 struct LinkTargetCache {
@@ -2247,46 +1500,11 @@ bool ParseRegistryRoot(const std::wstring& input, RegistryNode* node, std::wstri
   if (!node || !root_label) {
     return false;
   }
-  std::wstring path = input;
-  while (!path.empty() && (path.front() == L'\\' || path.front() == L'/')) {
-    path.erase(path.begin());
-  }
-  if (path.empty()) {
+  if (!registry_path::ParseRoot(input, node)) {
     return false;
   }
-  size_t slash = path.find_first_of(L"\\/");
-  std::wstring root = (slash == std::wstring::npos) ? path : path.substr(0, slash);
-  std::wstring rest = (slash == std::wstring::npos) ? L"" : path.substr(slash + 1);
-  auto set_root = [&](const wchar_t* label, HKEY root_key) -> bool {
-    *root_label = label;
-    node->root = root_key;
-    node->root_name = label;
-    node->subkey = rest;
-    return true;
-  };
-  if (EqualsInsensitive(root, L"REGISTRY")) {
-    *root_label = L"REGISTRY";
-    node->root = nullptr;
-    node->root_name = L"REGISTRY";
-    node->subkey = rest;
-    return true;
-  }
-  if (EqualsInsensitive(root, L"HKLM") || EqualsInsensitive(root, L"HKEY_LOCAL_MACHINE")) {
-    return set_root(L"HKEY_LOCAL_MACHINE", HKEY_LOCAL_MACHINE);
-  }
-  if (EqualsInsensitive(root, L"HKCU") || EqualsInsensitive(root, L"HKEY_CURRENT_USER")) {
-    return set_root(L"HKEY_CURRENT_USER", HKEY_CURRENT_USER);
-  }
-  if (EqualsInsensitive(root, L"HKCR") || EqualsInsensitive(root, L"HKEY_CLASSES_ROOT")) {
-    return set_root(L"HKEY_CLASSES_ROOT", HKEY_CLASSES_ROOT);
-  }
-  if (EqualsInsensitive(root, L"HKU") || EqualsInsensitive(root, L"HKEY_USERS")) {
-    return set_root(L"HKEY_USERS", HKEY_USERS);
-  }
-  if (EqualsInsensitive(root, L"HKCC") || EqualsInsensitive(root, L"HKEY_CURRENT_CONFIG")) {
-    return set_root(L"HKEY_CURRENT_CONFIG", HKEY_CURRENT_CONFIG);
-  }
-  return false;
+  *root_label = node->root_name;
+  return true;
 }
 
 bool QueryLinkTargetCached(const std::wstring& path, const RegistryNode& node, std::wstring* target) {
@@ -2337,7 +1555,7 @@ std::wstring ResolveRegistryLinkPath(const std::wstring& path) {
     if (!ParseRegistryRoot(current, &root_node, &root_label)) {
       break;
     }
-    std::vector<std::wstring> parts = SplitPath(root_node.subkey);
+    std::vector<std::wstring> parts = registry_path::Split(root_node.subkey);
     if (parts.empty()) {
       break;
     }
@@ -2363,7 +1581,7 @@ std::wstring ResolveRegistryLinkPath(const std::wstring& path) {
       if (mapped_target.empty()) {
         continue;
       }
-      std::wstring remaining = JoinPathPartsRange(parts, i + 1);
+      std::wstring remaining = registry_path::Join(parts, i + 1);
       std::wstring next = mapped_target;
       if (!remaining.empty()) {
         next.append(L"\\");
@@ -2540,7 +1758,7 @@ std::wstring ResolveOfflineRootName(const std::wstring& path, bool is_dir, const
     }
   }
   if (current_node && (current_node->root == HKEY_LOCAL_MACHINE || current_node->root == HKEY_USERS)) {
-    std::wstring root_name = RegistryProvider::RootName(current_node->root);
+    std::wstring root_name = registry_path::RootName(current_node->root);
     if (!root_name.empty()) {
       return root_name;
     }
@@ -2626,25 +1844,6 @@ void DrawToolbarButtonBackground(HDC hdc, const RECT& rect, COLORREF fill, COLOR
   SelectObject(hdc, old_brush);
 }
 
-std::vector<std::wstring> SplitPath(const std::wstring& path) {
-  std::vector<std::wstring> parts;
-  std::wstring current;
-  for (wchar_t ch : path) {
-    if (ch == L'\\' || ch == L'/') {
-      if (!current.empty()) {
-        parts.push_back(current);
-        current.clear();
-      }
-    } else {
-      current.push_back(ch);
-    }
-  }
-  if (!current.empty()) {
-    parts.push_back(current);
-  }
-  return parts;
-}
-
 RegistryNode MakeChildNode(const RegistryNode& parent, const std::wstring& name) {
   RegistryNode child = parent;
   if (child.subkey.empty()) {
@@ -2657,13 +1856,9 @@ RegistryNode MakeChildNode(const RegistryNode& parent, const std::wstring& name)
 
 std::wstring LeafName(const RegistryNode& node) {
   if (node.subkey.empty()) {
-    return node.root_name.empty() ? RegistryProvider::RootName(node.root) : node.root_name;
+    return node.root_name.empty() ? registry_path::RootName(node.root) : node.root_name;
   }
-  size_t pos = node.subkey.rfind(L'\\');
-  if (pos == std::wstring::npos) {
-    return node.subkey;
-  }
-  return node.subkey.substr(pos + 1);
+  return registry_path::Leaf(node.subkey);
 }
 
 bool UseBinaryValueIcon(DWORD type) {
@@ -2709,95 +1904,6 @@ std::wstring FormatFileTime(const FILETIME& filetime) {
   return buffer;
 }
 
-std::wstring EscapeHistoryField(const std::wstring& text) {
-  std::wstring out;
-  out.reserve(text.size());
-  for (wchar_t ch : text) {
-    switch (ch) {
-    case L'\\':
-      out.append(L"\\\\");
-      break;
-    case L'\t':
-      out.append(L"\\t");
-      break;
-    case L'\r':
-      out.append(L"\\r");
-      break;
-    case L'\n':
-      out.append(L"\\n");
-      break;
-    default:
-      out.push_back(ch);
-      break;
-    }
-  }
-  return out;
-}
-
-std::wstring UnescapeHistoryField(const std::wstring& text) {
-  std::wstring out;
-  out.reserve(text.size());
-  for (size_t i = 0; i < text.size(); ++i) {
-    wchar_t ch = text[i];
-    if (ch == L'\\' && i + 1 < text.size()) {
-      wchar_t next = text[i + 1];
-      switch (next) {
-      case L'\\':
-        out.push_back(L'\\');
-        ++i;
-        continue;
-      case L't':
-        out.push_back(L'\t');
-        ++i;
-        continue;
-      case L'r':
-        out.push_back(L'\r');
-        ++i;
-        continue;
-      case L'n':
-        out.push_back(L'\n');
-        ++i;
-        continue;
-      default:
-        break;
-      }
-    }
-    out.push_back(ch);
-  }
-  return out;
-}
-
-std::vector<std::wstring> SplitHistoryFields(const std::wstring& line) {
-  std::vector<std::wstring> fields;
-  std::wstring current;
-  for (wchar_t ch : line) {
-    if (ch == L'\t') {
-      fields.push_back(current);
-      current.clear();
-    } else {
-      current.push_back(ch);
-    }
-  }
-  fields.push_back(current);
-  return fields;
-}
-
-std::wstring MakeValueCommentKey(const std::wstring& path, const std::wstring& name, DWORD type) {
-  std::wstring key = ToLower(path);
-  key.push_back(L'\t');
-  key.append(ToLower(name));
-  key.push_back(L'\t');
-  key.append(std::to_wstring(type));
-  return key;
-}
-
-std::wstring MakeNameCommentKey(const std::wstring& name, DWORD type) {
-  std::wstring key = ToLower(name);
-  key.push_back(L'\t');
-  key.append(std::to_wstring(type));
-  return key;
-}
-
 std::wstring FormatCommentDisplay(const std::wstring& text) {
   std::wstring out;
   out.reserve(text.size());
@@ -2818,149 +1924,6 @@ std::wstring FormatCommentDisplay(const std::wstring& text) {
   }
   return out;
 }
-
-std::vector<std::wstring> MultiSzToVector(const std::vector<BYTE>& data) {
-  std::vector<std::wstring> items;
-  if (data.empty()) {
-    return items;
-  }
-  const wchar_t* ptr = reinterpret_cast<const wchar_t*>(data.data());
-  size_t count = data.size() / sizeof(wchar_t);
-  size_t offset = 0;
-  while (offset < count) {
-    const wchar_t* current = ptr + offset;
-    size_t len = wcsnlen_s(current, count - offset);
-    if (len == 0) {
-      break;
-    }
-    items.emplace_back(current, len);
-    offset += len + 1;
-  }
-  return items;
-}
-
-std::vector<BYTE> VectorToMultiSz(const std::vector<std::wstring>& items) {
-  size_t total_chars = 1;
-  for (const auto& item : items) {
-    total_chars += item.size() + 1;
-  }
-  std::vector<BYTE> data(total_chars * sizeof(wchar_t));
-  wchar_t* out = reinterpret_cast<wchar_t*>(data.data());
-  size_t offset = 0;
-  for (const auto& item : items) {
-    wcsncpy_s(out + offset, total_chars - offset, item.c_str(), item.size());
-    offset += item.size();
-    out[offset++] = L'\0';
-  }
-  out[offset++] = L'\0';
-  data.resize(offset * sizeof(wchar_t));
-  return data;
-}
-
-class ReplaceMatcher {
-public:
-  explicit ReplaceMatcher(const ReplaceDialogResult& options, bool* ok) : query_(options.find_text), replacement_(options.replace_text), use_regex_(options.use_regex), match_case_(options.match_case), match_whole_(options.match_whole) {
-    if (query_.empty()) {
-      if (ok) {
-        *ok = false;
-      }
-      return;
-    }
-    if (use_regex_) {
-      try {
-        auto flags = std::regex_constants::ECMAScript;
-        if (!match_case_) {
-          flags |= std::regex_constants::icase;
-        }
-        regex_ = std::wregex(query_, flags);
-      } catch (const std::regex_error&) {
-        if (ok) {
-          *ok = false;
-        }
-      }
-    }
-  }
-
-  bool Replace(const std::wstring& text, std::wstring* out) const {
-    if (!out || query_.empty()) {
-      return false;
-    }
-    if (use_regex_) {
-      if (match_whole_) {
-        if (!std::regex_match(text, regex_)) {
-          return false;
-        }
-      } else {
-        if (!std::regex_search(text, regex_)) {
-          return false;
-        }
-      }
-      *out = std::regex_replace(text, regex_, replacement_);
-      return true;
-    }
-
-    if (match_whole_) {
-      bool match = false;
-      if (match_case_) {
-        match = (text == query_);
-      } else {
-        match = CompareStringOrdinal(text.c_str(), static_cast<int>(text.size()), query_.c_str(), static_cast<int>(query_.size()), TRUE) == CSTR_EQUAL;
-      }
-      if (!match) {
-        return false;
-      }
-      *out = replacement_;
-      return true;
-    }
-
-    if (match_case_) {
-      size_t pos = text.find(query_);
-      if (pos == std::wstring::npos) {
-        return false;
-      }
-      std::wstring result;
-      size_t cursor = 0;
-      while (pos != std::wstring::npos) {
-        result.append(text, cursor, pos - cursor);
-        result.append(replacement_);
-        cursor = pos + query_.size();
-        pos = text.find(query_, cursor);
-      }
-      result.append(text, cursor, std::wstring::npos);
-      *out = std::move(result);
-      return true;
-    }
-
-    size_t cursor = 0;
-    std::wstring result;
-    bool matched = false;
-    while (cursor < text.size()) {
-      int pos = FindStringOrdinal(FIND_FROMSTART, text.c_str() + cursor, static_cast<int>(text.size() - cursor), query_.c_str(), static_cast<int>(query_.size()), TRUE);
-      if (pos < 0) {
-        break;
-      }
-      size_t match_pos = cursor + static_cast<size_t>(pos);
-      result.append(text, cursor, match_pos - cursor);
-      result.append(replacement_);
-      cursor = match_pos + query_.size();
-      matched = true;
-    }
-    if (!matched) {
-      return false;
-    }
-    result.append(text, cursor, std::wstring::npos);
-    *out = std::move(result);
-    return true;
-  }
-
-private:
-  std::wstring query_;
-  std::wstring replacement_;
-  bool use_regex_ = false;
-  bool match_case_ = false;
-  bool match_whole_ = false;
-  std::wregex regex_;
-};
 
 uint64_t FileTimeToUint64(const FILETIME& filetime) {
   ULARGE_INTEGER value = {};
@@ -3042,80 +2005,6 @@ void SortValueRows(std::vector<ListRow>* rows, int column, bool ascending) {
   }
   std::stable_sort(rows->begin(), rows->end(), [column, ascending](const ListRow& left, const ListRow& right) {
     int result = CompareValueRow(left, right, column);
-    if (result == 0) {
-      return false;
-    }
-    return ascending ? (result < 0) : (result > 0);
-  });
-}
-
-int CompareHistoryEntry(const HistoryEntry& left, const HistoryEntry& right, int column) {
-  switch (column) {
-  case 0:
-    return CompareUint64(left.timestamp, right.timestamp);
-  case 1:
-    return CompareTextInsensitive(left.action, right.action);
-  case 2:
-    return CompareTextInsensitive(left.old_data, right.old_data);
-  case 3:
-    return CompareTextInsensitive(left.new_data, right.new_data);
-  default:
-    return CompareUint64(left.timestamp, right.timestamp);
-  }
-}
-
-void SortHistoryEntries(std::vector<HistoryEntry>* entries, int column, bool ascending) {
-  if (!entries || entries->size() < 2) {
-    return;
-  }
-  std::stable_sort(entries->begin(), entries->end(), [column, ascending](const HistoryEntry& left, const HistoryEntry& right) {
-    int result = CompareHistoryEntry(left, right, column);
-    if (result == 0) {
-      return false;
-    }
-    return ascending ? (result < 0) : (result > 0);
-  });
-}
-
-int CompareSearchResult(const SearchResult& left, const SearchResult& right, int column, bool compare) {
-  if (compare) {
-    switch (column) {
-    case 0:
-      return CompareTextInsensitive(left.key_path, right.key_path);
-    case 1:
-      return CompareTextInsensitive(left.display_name, right.display_name);
-    case 2:
-      return CompareTextInsensitive(left.type_text, right.type_text);
-    case 3:
-      return CompareTextInsensitive(left.data, right.data);
-    default:
-      return CompareTextInsensitive(left.key_path, right.key_path);
-    }
-  }
-  switch (column) {
-  case 0:
-    return CompareTextInsensitive(left.key_path, right.key_path);
-  case 1:
-    return CompareTextInsensitive(left.display_name, right.display_name);
-  case 2:
-    return CompareTextInsensitive(left.type_text, right.type_text);
-  case 3:
-    return CompareTextInsensitive(left.data, right.data);
-  case 4:
-    return CompareTextInsensitive(left.size_text, right.size_text);
-  case 5:
-    return CompareTextInsensitive(left.date_text, right.date_text);
-  default:
-    return CompareTextInsensitive(left.key_path, right.key_path);
-  }
-}
-
-void SortSearchResultEntries(std::vector<SearchResult>* entries, int column, bool ascending, bool compare) {
-  if (!entries || entries->size() < 2) {
-    return;
-  }
-  std::stable_sort(entries->begin(), entries->end(), [column, ascending, compare](const SearchResult& left, const SearchResult& right) {
-    int result = CompareSearchResult(left, right, column, compare);
     if (result == 0) {
       return false;
     }
@@ -3595,11 +2484,11 @@ bool MainWindow::Create(HINSTANCE instance) {
 
   std::wstring title = L"RegKit V";
   title.append(REGKIT_VERSION_STR_W);
-  if (IsProcessTrustedInstaller()) {
+  if (util::IsProcessTrustedInstaller()) {
     title.append(L" - [TrustedInstaller]");
-  } else if (IsProcessSystem()) {
+  } else if (util::IsProcessSystem()) {
     title.append(L" - [SYSTEM]");
-  } else if (IsProcessElevated()) {
+  } else if (util::IsProcessElevated()) {
     title.append(L" - [Administrator]");
   }
   hwnd_ = CreateWindowExW(0, wc.lpszClassName, title.c_str(), WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, 1200, 800, nullptr, nullptr, instance, this);
@@ -3808,18 +2697,28 @@ void MainWindow::UpdateRegeditCompatList(const std::wstring& key_path) {
   if (!ResolvePathToNode(key_path, &node)) {
     return;
   }
-  auto values = RegistryProvider::EnumValueInfo(node);
-  regedit_compat_list_names_.reserve(values.size());
+  RegistryProvider::KeyEnumResult enum_result;
+  bool names_reserved = false;
   int index = 0;
-  for (const auto& value : values) {
-    std::wstring display_name = value.name.empty() ? L"(Default)" : value.name;
-    regedit_compat_list_names_.push_back(value.name);
-    LVITEMW item = {};
-    item.mask = LVIF_TEXT;
-    item.iItem = index++;
-    item.pszText = const_cast<wchar_t*>(display_name.c_str());
-    ListView_InsertItem(regedit_compat_list_, &item);
-  }
+  RegistryProvider::EnumKeyStreaming(
+      node, true, false, false, &enum_result,
+      [&](const ValueInfo& value, const BYTE*, DWORD) {
+        if (!names_reserved) {
+          if (enum_result.info_valid) {
+            regedit_compat_list_names_.reserve(enum_result.info.value_count);
+          }
+          names_reserved = true;
+        }
+        std::wstring display_name = value.name.empty() ? L"(Default)" : value.name;
+        regedit_compat_list_names_.push_back(value.name);
+        LVITEMW item = {};
+        item.mask = LVIF_TEXT;
+        item.iItem = index++;
+        item.pszText = display_name.data();
+        ListView_InsertItem(regedit_compat_list_, &item);
+        return true;
+      },
+      {});
 }
 
 HTREEITEM MainWindow::FindRegeditCompatItemByPath(const std::wstring& key_path) {
@@ -3830,7 +2729,7 @@ HTREEITEM MainWindow::FindRegeditCompatItemByPath(const std::wstring& key_path) 
   if (!current) {
     return nullptr;
   }
-  std::vector<std::wstring> parts = SplitPath(key_path);
+  std::vector<std::wstring> parts = registry_path::Split(key_path);
   if (!parts.empty() && EqualsInsensitive(parts.front(), L"Computer")) {
     parts.erase(parts.begin());
   }
@@ -4759,6 +3658,9 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
   }
   case kSearchResultsMessage: {
     uint64_t generation = static_cast<uint64_t>(wparam);
+    if (!search_session_.IsCurrent(generation)) {
+      return 0;
+    }
     std::vector<PendingSearchResult> pending;
     {
       std::lock_guard<std::mutex> lock(search_mutex_);
@@ -4768,9 +3670,6 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
       }
       pending.swap(search_pending_);
       search_posted_.store(false);
-    }
-    if (generation != search_generation_) {
-      return 0;
     }
     bool should_refresh = false;
     if (IsSearchTabIndex(active_search_tab_index_)) {
@@ -4793,12 +3692,7 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
         }
         auto& tab = search_tabs_[static_cast<size_t>(index)];
         if (processed > 0 && tab.sort_column >= 0) {
-          if (!tab.is_compare && tab.sort_column == 3) {
-            for (auto& result : tab.results) {
-              EnsureSearchResultDataLoaded(&result);
-            }
-          }
-          SortSearchResultEntries(&tab.results, tab.sort_column, tab.sort_ascending, tab.is_compare);
+          tab.sort_dirty = true;
         }
         if (stop_at < pending.size()) {
           std::vector<PendingSearchResult> remainder;
@@ -4842,20 +3736,37 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
   }
   case kSearchProgressMessage: {
     uint64_t generation = static_cast<uint64_t>(wparam);
-    search_progress_posted_.store(false);
-    if (generation != search_generation_) {
+    if (!search_session_.IsCurrent(generation)) {
       return 0;
     }
+    search_progress_posted_.store(false);
     UpdateStatus();
     return 0;
   }
   case kSearchFinishedMessage: {
     uint64_t generation = static_cast<uint64_t>(wparam);
-    if (generation != search_generation_) {
+    if (!search_session_.IsCurrent(generation)) {
       return 0;
     }
+    bool results_pending = search_posted_.load();
+    {
+      std::lock_guard<std::mutex> lock(search_mutex_);
+      results_pending = results_pending || !search_pending_.empty();
+    }
+    if (results_pending) {
+      PostMessageW(hwnd_, kSearchFinishedMessage, wparam, 0);
+      return 0;
+    }
+    search_session_.Join();
     search_running_ = false;
-    if (!search_cancel_.load() && search_start_tick_ != 0) {
+    for (auto& search_tab : search_tabs_) {
+      if (search_tab.generation == generation && search_tab.sort_dirty) {
+        SortSearchTabResults(&search_tab);
+        break;
+      }
+    }
+    if (search_session_.IsCurrent(generation) &&
+        search_start_tick_ != 0) {
       search_duration_ms_ = GetTickCount64() - search_start_tick_;
       search_duration_valid_ = true;
     } else {
@@ -4872,9 +3783,10 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
   }
   case kSearchFailedMessage: {
     uint64_t generation = static_cast<uint64_t>(wparam);
-    if (generation != search_generation_ || search_cancel_.load()) {
+    if (!search_session_.IsCurrent(generation)) {
       return 0;
     }
+    search_session_.Join();
     search_running_ = false;
     search_duration_ms_ = 0;
     search_duration_valid_ = false;
@@ -4883,6 +3795,9 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
     UpdateStatus();
     return 0;
   }
+  case kReplaceReadyMessage:
+    ApplyReplacePayload(reinterpret_cast<ReplacePayload*>(lparam));
+    return 0;
   case kLoadTracesMessage:
     StartTraceLoadWorker();
     return 0;
@@ -4895,6 +3810,10 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
       return 0;
     }
     std::unique_ptr<TraceLoadPayload> owned(payload);
+    if (!trace_load_session_.IsCurrent(owned->generation)) {
+      return 0;
+    }
+    trace_load_session_.Join();
     active_traces_ = std::move(owned->traces);
     trace_selection_cache_ = std::move(owned->selection_cache);
     BuildMenus();
@@ -4908,6 +3827,10 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
       return 0;
     }
     std::unique_ptr<DefaultLoadPayload> owned(payload);
+    if (!default_load_session_.IsCurrent(owned->generation)) {
+      return 0;
+    }
+    default_load_session_.Join();
     active_defaults_ = std::move(owned->defaults);
     BuildMenus();
     UpdateValueListForNode(current_node_);
@@ -4929,9 +3852,11 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
     if (session_it == reg_file_parse_sessions_.end()) {
       return 0;
     }
-    if (session_it->second && session_it->second->thread.joinable()) {
-      session_it->second->thread.join();
+    if (!session_it->second ||
+        !session_it->second->work.IsCurrent(owned->generation)) {
+      return 0;
     }
+    session_it->second->work.Join();
     reg_file_parse_sessions_.erase(session_it);
     if (owned->cancelled) {
       return 0;
@@ -4998,51 +3923,13 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
       return 0;
     }
     TraceParseSession* session = it->second.get();
-    bool touches_current = false;
-    std::wstring current_key_lower;
-    if (current_node_) {
-      current_key_lower = TracePathLowerForNode(*current_node_);
+    if (!session || !session->work.IsCurrent(owned->generation)) {
+      return 0;
     }
-    if (session->data && !owned->entries.empty()) {
-      std::unique_lock<std::shared_mutex> data_lock(*session->data->mutex);
-      for (const auto& entry : owned->entries) {
-        if (entry.key_path.empty()) {
-          continue;
-        }
-        std::wstring key_lower = ToLower(entry.key_path);
-        if (!current_key_lower.empty() && key_lower == current_key_lower) {
-          touches_current = true;
-        }
-        auto map_it = session->data->values_by_key.find(key_lower);
-        if (map_it == session->data->values_by_key.end()) {
-          map_it = session->data->values_by_key.emplace(key_lower, TraceKeyValues()).first;
-          session->data->key_paths.push_back(entry.key_path);
-          std::vector<std::wstring> parts = SplitPath(entry.key_path);
-          if (parts.size() > 1) {
-            std::wstring current = parts.front();
-            for (size_t i = 1; i < parts.size(); ++i) {
-              std::wstring parent_lower = ToLower(current);
-              session->data->children_by_key[parent_lower].push_back(parts[i]);
-              current.append(L"\\");
-              current.append(parts[i]);
-            }
-          }
-        }
-        if (!entry.display_path.empty()) {
-          std::wstring display_lower = ToLower(entry.display_path);
-          if (session->data->display_to_key.find(display_lower) == session->data->display_to_key.end()) {
-            session->data->display_to_key.emplace(display_lower, entry.key_path);
-            session->data->display_key_paths.push_back(entry.display_path);
-          }
-        }
-        if (entry.has_value) {
-          std::wstring value_lower = ToLower(entry.value_name);
-          if (map_it->second.values_lower.insert(value_lower).second) {
-            map_it->second.values_display.push_back(entry.value_name);
-          }
-        }
-      }
-    }
+    const bool touches_current =
+        current_node_ &&
+        owned->affected_keys.find(TracePathLowerForNode(*current_node_)) !=
+            owned->affected_keys.end();
     if (session->dialog && IsWindow(session->dialog) && !owned->entries.empty()) {
       auto dialog_entries = std::make_unique<std::vector<KeyValueDialogEntry>>(std::move(owned->entries));
       TraceDialogPostEntries(session->dialog, dialog_entries.release());
@@ -5058,16 +3945,15 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
       session->parsing_done = true;
       if (session->data) {
         std::unique_lock<std::shared_mutex> data_lock(*session->data->mutex);
-        std::sort(session->data->key_paths.begin(), session->data->key_paths.end(), [](const std::wstring& left, const std::wstring& right) { return _wcsicmp(left.c_str(), right.c_str()) < 0; });
-        std::sort(session->data->display_key_paths.begin(), session->data->display_key_paths.end(), [](const std::wstring& left, const std::wstring& right) { return _wcsicmp(left.c_str(), right.c_str()) < 0; });
-        TraceSelection normalized = session->selection;
-        NormalizeSelectionForTrace(*session->data, &normalized);
+        trace::Selection normalized = session->selection;
+        trace::NormalizeSelection(*session->data, &normalized);
         session->selection = normalized;
         trace_selection_cache_[session->source_lower] = normalized;
         if (session->added_to_active) {
           for (auto& trace : active_traces_) {
             if (EqualsInsensitive(trace.source_path, session->source_path)) {
-              trace.selection = normalized;
+              trace.selection =
+                  std::make_shared<trace::Selection>(normalized);
               break;
             }
           }
@@ -5096,9 +3982,7 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
       if (session->added_to_active && current_node_) {
         UpdateValueListForNode(current_node_);
       }
-      if (session->thread.joinable()) {
-        session->thread.join();
-      }
+      session->work.Join();
       if (!session->dialog || !IsWindow(session->dialog)) {
         trace_parse_sessions_.erase(it);
       }
@@ -5116,44 +4000,19 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
       return 0;
     }
     DefaultParseSession* session = it->second.get();
+    if (!session || !session->work.IsCurrent(owned->generation)) {
+      return 0;
+    }
     bool touches_current = false;
-    std::wstring current_key_lower;
     if (current_node_) {
-      std::wstring path = RegistryProvider::BuildPath(*current_node_);
+      std::wstring path = registry_path::Build(*current_node_);
       std::wstring normalized = NormalizeTraceKeyPathBasic(path);
       if (normalized.empty()) {
         normalized = path;
       }
-      current_key_lower = ToLower(normalized);
-    }
-    if (session->data && !owned->entries.empty()) {
-      std::unique_lock<std::shared_mutex> data_lock(*session->data->mutex);
-      for (const auto& entry : owned->entries) {
-        if (entry.key_path.empty()) {
-          continue;
-        }
-        std::wstring key_lower = ToLower(entry.key_path);
-        if (!current_key_lower.empty() && key_lower == current_key_lower) {
-          touches_current = true;
-        }
-        auto& key_values = session->data->values_by_key[key_lower];
-        if (entry.has_value) {
-          std::wstring value_lower = ToLower(entry.value_name);
-          DefaultValueEntry value_entry;
-          value_entry.type = entry.value_type;
-          value_entry.data = entry.value_data;
-          key_values.values[value_lower] = value_entry;
-          std::wstring alias_path = MapControlSetToCurrent(entry.key_path);
-          if (!alias_path.empty()) {
-            std::wstring alias_lower = ToLower(alias_path);
-            auto& alias_values = session->data->values_by_key[alias_lower];
-            alias_values.values[value_lower] = value_entry;
-            if (!current_key_lower.empty() && alias_lower == current_key_lower) {
-              touches_current = true;
-            }
-          }
-        }
-      }
+      touches_current =
+          owned->affected_keys.find(ToLower(normalized)) !=
+          owned->affected_keys.end();
     }
     if (session->dialog && IsWindow(session->dialog) && !owned->entries.empty()) {
       auto dialog_entries = std::make_unique<std::vector<KeyValueDialogEntry>>(std::move(owned->entries));
@@ -5190,9 +4049,7 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
       if (session->added_to_active && current_node_) {
         UpdateValueListForNode(current_node_);
       }
-      if (session->thread.joinable()) {
-        session->thread.join();
-      }
+      session->work.Join();
       if (!session->dialog || !IsWindow(session->dialog)) {
         default_parse_sessions_.erase(it);
       }
@@ -5213,6 +4070,7 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
       SendMessageW(list_hwnd, WM_SETREDRAW, FALSE, 0);
     }
     value_list_.SetRows(std::move(payload->rows));
+    RefreshValueListComments();
     current_key_count_ = payload->key_count;
     current_value_count_ = payload->value_count;
     if (list_hwnd && !jump_ui_batch_active_) {
@@ -5223,7 +4081,7 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
     UpdateStatus();
     StartPendingValueListRename();
     if (!pending_external_value_name_.empty() && current_node_) {
-      std::wstring current_path = RegistryProvider::BuildPath(*current_node_);
+      std::wstring current_path = registry_path::Build(*current_node_);
       if (EqualsInsensitive(current_path, pending_external_value_key_path_)) {
         SelectValueByName(pending_external_value_name_);
         pending_external_value_key_path_.clear();
@@ -5338,6 +4196,15 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
     HMENU menu = reinterpret_cast<HMENU>(wparam);
     UINT state = current_node_ ? MF_ENABLED : MF_GRAYED;
     EnableMenuItem(menu, cmd::kEditPermissions, MF_BYCOMMAND | state);
+    const int selected_count = value_list_.hwnd() ? ListView_GetSelectedCount(value_list_.hwnd()) : 0;
+    const int selected_index = selected_count == 1 ? ListView_GetNextItem(value_list_.hwnd(), -1, LVNI_SELECTED) : -1;
+    const ListRow* selected_row = selected_index >= 0 ? value_list_.RowAt(selected_index) : nullptr;
+    const bool can_modify_value = !read_only_ && selected_row &&
+                                  selected_row->kind == rowkind::kValue &&
+                                  !selected_row->simulated;
+    const UINT modify_state = can_modify_value ? MF_ENABLED : MF_GRAYED;
+    EnableMenuItem(menu, cmd::kEditModify, MF_BYCOMMAND | modify_state);
+    EnableMenuItem(menu, cmd::kEditModifyBinary, MF_BYCOMMAND | modify_state);
     return 0;
   }
   case WM_CTLCOLOREDIT: {
@@ -5372,7 +4239,16 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
     if (HIWORD(wparam) == EN_CHANGE && LOWORD(wparam) == kFilterEditId) {
       wchar_t buffer[256] = {};
       GetWindowTextW(filter_edit_, buffer, static_cast<int>(_countof(buffer)));
+      bool needs_full_data = buffer[0] != L'\0';
+      if (needs_full_data) {
+        needs_full_data = std::any_of(value_list_.rows().begin(), value_list_.rows().end(), [](const ListRow& row) {
+          return row.kind == rowkind::kValue && !row.data_ready;
+        });
+      }
       value_list_.SetFilter(buffer);
+      if (needs_full_data && current_node_) {
+        UpdateValueListForNode(current_node_);
+      }
       UpdateStatus();
       return 0;
     }
@@ -5664,8 +4540,8 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
           size_t pos = parent.subkey.rfind(L'\\');
           parent.subkey = (pos == std::wstring::npos) ? L"" : parent.subkey.substr(0, pos);
         }
-        UndoOperation op;
-        op.type = UndoOperation::Type::kRenameKey;
+        changes::UndoOperation op;
+        op.type = changes::UndoOperation::Type::kRenameKey;
         op.node = parent;
         op.name = old_name;
         op.new_name = new_name;
@@ -5875,8 +4751,8 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
         }
         AppendHistoryEntry(L"Rename key " + old_name, old_name, new_name);
         MarkOfflineDirty();
-        UndoOperation op;
-        op.type = UndoOperation::Type::kRenameKey;
+        changes::UndoOperation op;
+        op.type = changes::UndoOperation::Type::kRenameKey;
         op.node = *current_node_;
         op.name = old_name;
         op.new_name = new_name;
@@ -5891,8 +4767,8 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
       }
       AppendHistoryEntry(L"Rename value " + old_name, old_name, new_name);
       MarkOfflineDirty();
-      UndoOperation op;
-      op.type = UndoOperation::Type::kRenameValue;
+      changes::UndoOperation op;
+      op.type = changes::UndoOperation::Type::kRenameValue;
       op.node = *current_node_;
       op.name = old_name;
       op.new_name = new_name;
@@ -5903,7 +4779,7 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
     }
     if (header->hwndFrom == search_results_list_ && header->code == LVN_GETDISPINFOW) {
       auto* disp = reinterpret_cast<NMLVDISPINFOW*>(lparam);
-      SearchResult* result = nullptr;
+      search::Result* result = nullptr;
       int sel = TabCtrl_GetCurSel(tab_);
       int index = SearchIndexFromTab(sel);
       if (index >= 0 && static_cast<size_t>(index) < search_tabs_.size()) {
@@ -6044,7 +4920,7 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
 
         if (row && row->kind == rowkind::kKey) {
           if (fast_activate) {
-            std::wstring path = RegistryProvider::BuildPath(*current_node_);
+            std::wstring path = registry_path::Build(*current_node_);
             if (!row->extra.empty()) {
               path.append(L"\\");
               path.append(row->extra);
@@ -6055,7 +4931,7 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
         }
         if (row && row->kind == rowkind::kValue) {
           if (activate->iSubItem == kValueColComment) {
-            EditValueComment(*row);
+            HandleMenuCommand(cmd::kEditModifyComment);
           } else {
             HandleMenuCommand(cmd::kEditModify);
           }
@@ -6099,7 +4975,7 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
           int sel_tab = TabCtrl_GetCurSel(tab_);
           int tab_index = SearchIndexFromTab(sel_tab);
           if (item_index >= 0 && tab_index >= 0 && static_cast<size_t>(tab_index) < search_tabs_.size() && static_cast<size_t>(item_index) < search_tabs_[static_cast<size_t>(tab_index)].results.size()) {
-            const SearchResult& result = search_tabs_[static_cast<size_t>(tab_index)].results[static_cast<size_t>(item_index)];
+            const search::Result& result = search_tabs_[static_cast<size_t>(tab_index)].results[static_cast<size_t>(item_index)];
             bool selected = ListViewItemSelected(search_results_list_, item_index);
             if (!selected && DrawSearchMatchSubItem(result, draw->iSubItem, draw->nmcd.hdc, draw->nmcd.rc, ui_font_)) {
               return CDRF_SKIPDEFAULT;
@@ -6297,148 +5173,83 @@ void MainWindow::RunDeferredStartup() {
 
 void MainWindow::StartStartupCacheLoad(bool include_tree_state) {
   StopStartupCacheLoad();
-  startup_cache_cancel_.store(false);
+  const bool load_tree_state = include_tree_state && save_tree_state_;
   int history_max_rows = history_max_rows_;
   int history_sort_column = history_sort_column_;
   bool history_sort_ascending = history_sort_ascending_;
-  startup_cache_thread_ = std::thread([this, include_tree_state, history_max_rows, history_sort_column, history_sort_ascending]() {
+  const HWND hwnd = hwnd_;
+  startup_cache_session_.Start(
+      [this, load_tree_state, history_max_rows, history_sort_column,
+       history_sort_ascending, hwnd](
+          uint64_t generation, const std::atomic_bool& cancel) {
     auto payload = std::make_unique<StartupCachePayload>();
+    payload->generation = generation;
 
     std::wstring comments_path = CommentsPath();
     std::wstring comments_content;
-    if (!comments_path.empty() && ReadFileUtf8(comments_path, &comments_content)) {
-      size_t start = 0;
-      while (start < comments_content.size()) {
-        size_t end = comments_content.find(L'\n', start);
-        if (end == std::wstring::npos) {
-          end = comments_content.size();
-        }
-        std::wstring line = comments_content.substr(start, end - start);
-        if (!line.empty() && line.back() == L'\r') {
-          line.pop_back();
-        }
-        start = end + 1;
-        if (line.empty()) {
-          continue;
-        }
-        std::vector<std::wstring> parts = SplitHistoryFields(line);
-        if (parts.size() < 5) {
-          continue;
-        }
-        DWORD type = static_cast<DWORD>(_wtoi(parts[3].c_str()));
-        std::wstring text = UnescapeHistoryField(parts[4]);
-        if (IsWhitespaceOnly(text)) {
-          continue;
-        }
-        CommentEntry entry;
-        entry.path = UnescapeHistoryField(parts[1]);
-        entry.name = UnescapeHistoryField(parts[2]);
-        entry.type = type;
-        entry.text = std::move(text);
-        if (_wcsicmp(parts[0].c_str(), L"value") == 0) {
-          payload->value_comments.push_back(std::move(entry));
-        } else if (_wcsicmp(parts[0].c_str(), L"name") == 0) {
-          payload->name_comments.push_back(std::move(entry));
-        }
-      }
+    if (!comments_path.empty() &&
+        util::ReadTextFile(
+            comments_path, &comments_content, nullptr,
+            static_cast<uint64_t>(std::numeric_limits<int>::max()))) {
+      changes::CommentDocument comments =
+          changes::ParseComments(comments_content);
+      payload->value_comments = std::move(comments.value_entries);
+      payload->name_comments = std::move(comments.name_entries);
       payload->comments_loaded = true;
+    }
+    if (cancel.load()) {
+      return;
     }
 
     std::wstring history_path = HistoryCachePath();
     std::wstring history_content;
-    if (!history_path.empty() && ReadFileUtf8(history_path, &history_content)) {
-      size_t start = 0;
-      while (start < history_content.size()) {
-        size_t end = history_content.find(L'\n', start);
-        if (end == std::wstring::npos) {
-          end = history_content.size();
-        }
-        std::wstring line = history_content.substr(start, end - start);
-        if (!line.empty() && line.back() == L'\r') {
-          line.pop_back();
-        }
-        start = end + 1;
-        if (line.empty()) {
-          continue;
-        }
-        std::vector<std::wstring> parts = SplitHistoryFields(line);
-        if (parts.size() < 5) {
-          continue;
-        }
-        HistoryEntry entry;
-        try {
-          entry.timestamp = std::stoull(parts[0]);
-        } catch (const std::exception&) {
-          continue;
-        }
-        entry.time_text = UnescapeHistoryField(parts[1]);
-        entry.action = UnescapeHistoryField(parts[2]);
-        entry.old_data = UnescapeHistoryField(parts[3]);
-        entry.new_data = UnescapeHistoryField(parts[4]);
-        if (parts.size() >= 7) {
-          entry.key_path = UnescapeHistoryField(parts[5]);
-          entry.value_name = UnescapeHistoryField(parts[6]);
-        }
-        payload->history_entries.push_back(std::move(entry));
-      }
-      TrimHistoryEntriesToLimit(&payload->history_entries, static_cast<size_t>(history_max_rows));
-      SortHistoryEntries(&payload->history_entries, history_sort_column, history_sort_ascending);
+    if (!history_path.empty() &&
+        util::ReadTextFile(
+            history_path, &history_content, nullptr,
+            static_cast<uint64_t>(std::numeric_limits<int>::max()))) {
+      changes::ChangeHistory history;
+      history.Replace(
+          std::move(changes::ParseHistory(history_content).entries),
+          static_cast<size_t>(history_max_rows));
+      history.Sort(history_sort_column, history_sort_ascending);
+      payload->history_entries = std::move(history.entries());
       payload->history_loaded = true;
     } else {
       payload->history_loaded = true;
     }
+    if (cancel.load()) {
+      return;
+    }
 
-    if (include_tree_state && save_tree_state_) {
+    if (load_tree_state) {
       std::wstring tree_path = TreeStatePath();
       std::wstring tree_content;
-      if (!tree_path.empty() && ReadFileUtf8(tree_path, &tree_content)) {
-        size_t start = 0;
-        while (start < tree_content.size()) {
-          size_t end = tree_content.find(L'\n', start);
-          if (end == std::wstring::npos) {
-            end = tree_content.size();
-          }
-          std::wstring line = tree_content.substr(start, end - start);
-          if (!line.empty() && line.back() == L'\r') {
-            line.pop_back();
-          }
-          start = end + 1;
-          if (line.empty() || line.front() == L'#') {
-            continue;
-          }
-          size_t sep = line.find(L'=');
-          if (sep == std::wstring::npos) {
-            continue;
-          }
-          std::wstring key = TrimWhitespace(line.substr(0, sep));
-          std::wstring value = line.substr(sep + 1);
-          if (EqualsInsensitive(key, L"selected")) {
-            payload->tree_selected_path = UnescapeHistoryField(value);
-          } else if (EqualsInsensitive(key, L"expanded")) {
-            std::wstring path_value = UnescapeHistoryField(value);
-            if (!path_value.empty()) {
-              payload->tree_expanded_paths.push_back(std::move(path_value));
-            }
-          }
-        }
+      if (!tree_path.empty() &&
+          util::ReadTextFile(
+              tree_path, &tree_content, nullptr,
+              static_cast<uint64_t>(std::numeric_limits<int>::max()))) {
+        workspace::TreeState state =
+            workspace::ParseTreeState(tree_content);
+        payload->tree_selected_path = std::move(state.selected_path);
+        payload->tree_expanded_paths = std::move(state.expanded_paths);
       }
       payload->tree_state_loaded = true;
     }
 
-    if (startup_cache_cancel_.load()) {
+    if (cancel.load()) {
       return;
     }
-    if (hwnd_ && IsWindow(hwnd_)) {
-      PostMessageW(hwnd_, kStartupCacheReadyMessage, 0, reinterpret_cast<LPARAM>(payload.release()));
+    if (hwnd && IsWindow(hwnd) &&
+        PostMessageW(hwnd, kStartupCacheReadyMessage,
+                     static_cast<WPARAM>(generation),
+                     reinterpret_cast<LPARAM>(payload.get()))) {
+      ReleasePostedPayload(payload);
     }
   });
 }
 
 void MainWindow::StopStartupCacheLoad() {
-  startup_cache_cancel_.store(true);
-  if (startup_cache_thread_.joinable()) {
-    startup_cache_thread_.join();
-  }
+  startup_cache_session_.CancelAndJoin();
 }
 
 void MainWindow::ApplyStartupCachePayload(StartupCachePayload* payload) {
@@ -6446,39 +5257,45 @@ void MainWindow::ApplyStartupCachePayload(StartupCachePayload* payload) {
     return;
   }
   std::unique_ptr<StartupCachePayload> owned(payload);
+  if (!startup_cache_session_.IsCurrent(owned->generation)) {
+    return;
+  }
+  startup_cache_session_.Join();
 
   if (owned->comments_loaded) {
-    std::unordered_map<std::wstring, CommentEntry> merged_value_comments;
-    std::unordered_map<std::wstring, CommentEntry> merged_name_comments;
+    std::unordered_map<std::wstring, changes::CommentEntry>
+        merged_value_comments;
+    std::unordered_map<std::wstring, changes::CommentEntry>
+        merged_name_comments;
     for (auto& entry : owned->value_comments) {
-      merged_value_comments[MakeValueCommentKey(entry.path, entry.name, entry.type)] = std::move(entry);
+      merged_value_comments[changes::ValueComments::ValueKey(entry.path, entry.name, entry.type)] = std::move(entry);
     }
     for (auto& entry : owned->name_comments) {
-      merged_name_comments[MakeNameCommentKey(entry.name, entry.type)] = std::move(entry);
+      merged_name_comments[changes::ValueComments::NameKey(entry.name, entry.type)] = std::move(entry);
     }
-    for (auto& pair : value_comments_) {
+    for (auto& pair : value_comments_.value_entries()) {
       merged_value_comments[pair.first] = std::move(pair.second);
     }
-    for (auto& pair : name_comments_) {
+    for (auto& pair : value_comments_.name_entries()) {
       merged_name_comments[pair.first] = std::move(pair.second);
     }
-    value_comments_ = std::move(merged_value_comments);
-    name_comments_ = std::move(merged_name_comments);
+    value_comments_.value_entries() = std::move(merged_value_comments);
+    value_comments_.name_entries() = std::move(merged_name_comments);
     RefreshValueListComments();
     UpdateSearchResultsView();
   }
 
   if (owned->history_loaded) {
     std::vector<HistoryEntry> pending_session_entries;
-    if (!history_loaded_ && !history_entries_.empty()) {
-      pending_session_entries = history_entries_;
+    if (!history_loaded_ && !change_history_.entries().empty()) {
+      pending_session_entries = change_history_.entries();
     }
-    if (!history_entries_.empty()) {
-      owned->history_entries.insert(owned->history_entries.end(), history_entries_.begin(), history_entries_.end());
+    if (!change_history_.entries().empty()) {
+      owned->history_entries.insert(owned->history_entries.end(), change_history_.entries().begin(), change_history_.entries().end());
     }
-    TrimHistoryEntriesToLimit(&owned->history_entries, static_cast<size_t>(history_max_rows_));
-    SortHistoryEntries(&owned->history_entries, history_sort_column_, history_sort_ascending_);
-    history_entries_ = std::move(owned->history_entries);
+    change_history_.Replace(std::move(owned->history_entries),
+                            static_cast<size_t>(history_max_rows_));
+    change_history_.Sort(history_sort_column_, history_sort_ascending_);
     history_loaded_ = true;
     for (const auto& entry : pending_session_entries) {
       AppendHistoryCache(entry);
@@ -6487,8 +5304,9 @@ void MainWindow::ApplyStartupCachePayload(StartupCachePayload* payload) {
   }
 
   if (owned->tree_state_loaded) {
-    saved_tree_selected_path_ = std::move(owned->tree_selected_path);
-    saved_tree_expanded_paths_ = std::move(owned->tree_expanded_paths);
+    saved_tree_state_.selected_path = std::move(owned->tree_selected_path);
+    saved_tree_state_.expanded_paths =
+        std::move(owned->tree_expanded_paths);
     if (startup_tree_restore_pending_ && !tree_state_restored_) {
       applying_startup_tree_restore_ = true;
       RestoreTreeState();
@@ -6507,6 +5325,7 @@ void MainWindow::OnDestroy() {
   }
   EndJumpUiBatch();
   StopStartupCacheLoad();
+  StopReplace();
   StopTraceParseSessions();
   StopDefaultParseSessions();
   StopRegFileParseSessions();
@@ -6515,6 +5334,7 @@ void MainWindow::OnDestroy() {
   StopValueListWorker();
   StopTreeStateWorker();
   CancelSearch();
+  DiscardWorkerMessages();
   for (auto& entry : tabs_) {
     if (entry.kind == TabEntry::Kind::kRegFile) {
       ReleaseRegFileRoots(&entry);
@@ -6568,6 +5388,50 @@ void MainWindow::OnDestroy() {
     accelerators_ = nullptr;
   }
   menu_items_.clear();
+}
+
+void MainWindow::DiscardWorkerMessages() {
+  if (!hwnd_) {
+    return;
+  }
+  MSG message = {};
+  const UINT payload_messages[] = {
+      kTraceLoadReadyMessage,    kDefaultLoadReadyMessage,
+      kStartupCacheReadyMessage, kRegFileLoadReadyMessage,
+      kTraceParseBatchMessage,   kDefaultParseBatchMessage,
+      kValueListReadyMessage,    kReplaceReadyMessage};
+  for (const UINT id : payload_messages) {
+    while (PeekMessageW(&message, hwnd_, id, id, PM_REMOVE)) {
+      switch (id) {
+      case kTraceLoadReadyMessage:
+        delete reinterpret_cast<TraceLoadPayload*>(message.lParam);
+        break;
+      case kDefaultLoadReadyMessage:
+        delete reinterpret_cast<DefaultLoadPayload*>(message.lParam);
+        break;
+      case kStartupCacheReadyMessage:
+        delete reinterpret_cast<StartupCachePayload*>(message.lParam);
+        break;
+      case kRegFileLoadReadyMessage:
+        delete reinterpret_cast<RegFileParsePayload*>(message.lParam);
+        break;
+      case kTraceParseBatchMessage:
+        delete reinterpret_cast<TraceParseBatch*>(message.lParam);
+        break;
+      case kDefaultParseBatchMessage:
+        delete reinterpret_cast<DefaultParseBatch*>(message.lParam);
+        break;
+      case kValueListReadyMessage:
+        delete reinterpret_cast<ValueListPayload*>(message.lParam);
+        break;
+      case kReplaceReadyMessage:
+        delete reinterpret_cast<ReplacePayload*>(message.lParam);
+        break;
+      default:
+        break;
+      }
+    }
+  }
 }
 
 void MainWindow::OnSize(int width, int height) {
@@ -7346,6 +6210,7 @@ void MainWindow::ApplyTabSelection(int index) {
 void MainWindow::ResetHiveListCache() {
   hive_list_loaded_ = false;
   hive_list_.clear();
+  hive_roots_.reset();
 }
 
 void MainWindow::EnsureHiveListLoaded() {
@@ -7354,6 +6219,8 @@ void MainWindow::EnsureHiveListLoaded() {
   }
   hive_list_loaded_ = true;
   hive_list_.clear();
+  auto hive_roots = std::make_shared<std::unordered_set<std::wstring>>();
+  hive_roots_ = hive_roots;
 
   HKEY hklm = nullptr;
   for (const auto& root : roots_) {
@@ -7403,7 +6270,9 @@ void MainWindow::EnsureHiveListLoaded() {
     if (data.empty()) {
       continue;
     }
-    hive_list_.emplace(ToLower(name), std::move(data));
+    std::wstring name_lower = ToLower(name);
+    hive_list_.emplace(name_lower, std::move(data));
+    hive_roots->insert(std::move(name_lower));
   }
 }
 
@@ -7415,7 +6284,7 @@ std::wstring MainWindow::LookupHivePath(const RegistryNode& node, bool* is_root)
   if (hive_list_.empty()) {
     return L"";
   }
-  std::wstring nt_path = RegistryProvider::BuildNtPath(node);
+  std::wstring nt_path = registry_path::BuildNative(node);
   if (nt_path.empty() && !node.root_name.empty()) {
     auto equals_root = [&](const wchar_t* name) -> bool { return EqualsInsensitive(node.root_name, name); };
     if (equals_root(L"REGISTRY")) {
@@ -8156,7 +7025,7 @@ void MainWindow::UpdateValueListForNode(RegistryNode* node) {
   }
 
   RegistryNode snapshot = *node;
-  std::wstring path = RegistryProvider::BuildPath(snapshot);
+  std::wstring path = registry_path::Build(snapshot);
   RecordNavigation(path);
   std::wstring trace_path = NormalizeTraceKeyPath(path);
   if (trace_path.empty()) {
@@ -8172,8 +7041,6 @@ void MainWindow::UpdateValueListForNode(RegistryNode* node) {
   auto trace_data_list = is_reg_file ? std::vector<ActiveTrace>() : active_traces_;
   auto default_data_list = is_reg_file ? std::vector<ActiveDefault>() : active_defaults_;
   bool show_simulated_keys = show_simulated_keys_ && !is_reg_file;
-  auto value_comments = value_comments_;
-  auto name_comments = name_comments_;
   constexpr size_t kDateColumn = static_cast<size_t>(kValueColDate);
   bool include_dates = (value_sort_column_ == static_cast<int>(kDateColumn));
   if (kDateColumn < value_column_visible_.size() && value_column_visible_[kDateColumn]) {
@@ -8196,12 +7063,10 @@ void MainWindow::UpdateValueListForNode(RegistryNode* node) {
   int sort_column = value_sort_column_;
   bool sort_ascending = value_sort_ascending_;
   bool show_keys_in_list = show_keys_in_list_;
-  std::unordered_map<std::wstring, std::wstring> hive_list;
   if (show_keys_in_list) {
     EnsureHiveListLoaded();
-    hive_list = hive_list_;
   }
-  if (!value_list_thread_.joinable()) {
+  if (!value_loader_.running()) {
     StartValueListWorker();
   }
   auto task = std::make_unique<ValueListTask>();
@@ -8215,18 +7080,12 @@ void MainWindow::UpdateValueListForNode(RegistryNode* node) {
   task->show_keys_in_list = show_keys_in_list;
   task->include_details = include_details;
   task->show_simulated_keys = show_simulated_keys;
+  task->include_all_value_data = sort_column == kValueColData || value_list_.HasFilter();
   task->hwnd = hwnd_;
   task->trace_data_list = std::move(trace_data_list);
   task->default_data_list = std::move(default_data_list);
-  task->hive_list = std::move(hive_list);
-  task->value_comments = std::move(value_comments);
-  task->name_comments = std::move(name_comments);
-  {
-    std::lock_guard<std::mutex> lock(value_list_mutex_);
-    value_list_task_ = std::move(task);
-    value_list_pending_ = true;
-  }
-  value_list_cv_.notify_one();
+  task->hive_roots = show_keys_in_list ? hive_roots_ : nullptr;
+  value_loader_.Submit(std::move(task));
 }
 
 void MainWindow::ScheduleValueListRename(LPARAM kind, const std::wstring& name) {
@@ -8256,6 +7115,7 @@ void MainWindow::StartPendingValueListRename() {
   }
   if (index >= 0 && IsWindowVisible(value_list_.hwnd())) {
     SetFocus(value_list_.hwnd());
+    ListView_SetItemState(value_list_.hwnd(), -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
     ListView_SetItemState(value_list_.hwnd(), index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
     ListView_EnsureVisible(value_list_.hwnd(), index, FALSE);
     ListView_EditLabel(value_list_.hwnd(), index);
@@ -8288,10 +7148,10 @@ void MainWindow::EnsureValueRowData(ListRow* row) {
 
   row->value_type = entry.type;
   row->value_data_size = static_cast<DWORD>(entry.data.size());
-  row->data = RegistryProvider::FormatValueDataForDisplay(entry.type, entry.data.data(), static_cast<DWORD>(entry.data.size()));
+  row->data = value_format::DisplayData(entry.type, entry.data.data(), static_cast<DWORD>(entry.data.size()));
   row->data_ready = true;
   if (row->type.empty()) {
-    row->type = RegistryProvider::FormatValueType(entry.type);
+    row->type = value_format::TypeName(entry.type);
   }
   row->size_value = row->value_data_size;
   row->has_size = true;
@@ -8305,7 +7165,7 @@ void MainWindow::UpdateAddressBar(RegistryNode* node) {
   if (!node || !address_edit_) {
     return;
   }
-  std::wstring path = RegistryProvider::BuildPath(*node);
+  std::wstring path = registry_path::Build(*node);
   SetWindowTextW(address_edit_, path.c_str());
   AddAddressHistory(path);
 }
@@ -8434,186 +7294,66 @@ void MainWindow::ApplyAutoCompleteTheme() {
 }
 
 std::wstring MainWindow::NormalizeRegistryPath(const std::wstring& input) const {
-  std::wstring path = StripRegFileKeySyntax(input);
-  path = StripOuterQuotes(path);
-  path = TrimWhitespace(path);
-  if (path.empty()) {
-    return path;
-  }
-  for (auto& ch : path) {
-    if (ch == L'/') {
-      ch = L'\\';
+  const std::wstring sid = util::GetCurrentUserSidString();
+  std::wstring path = registry_path::Normalize(input, sid);
+  auto strip_context = [&](const std::wstring& label) {
+    if (label.empty()) {
+      return;
     }
-  }
-  path = CollapseBackslashes(path);
-  if (StartsWithInsensitive(path, L"Registry::")) {
-    path.erase(0, wcslen(L"Registry::"));
-  }
-  while (!path.empty() && path.front() == L'\\') {
-    path.erase(path.begin());
-  }
-
-  if (StartsWithInsensitive(path, L"Computer\\")) {
-    path.erase(0, wcslen(L"Computer\\"));
-  }
-  std::wstring root_label = TreeRootLabel();
-  if (!root_label.empty()) {
-    std::wstring prefix = root_label + L"\\";
-    if (StartsWithInsensitive(path, prefix)) {
+    const std::wstring prefix = label + L"\\";
+    if (registry_path::StartsWith(path, prefix)) {
       path.erase(0, prefix.size());
     }
-  }
-  if (registry_mode_ == RegistryMode::kRemote && !remote_machine_.empty()) {
-    std::wstring machine = StripMachinePrefix(remote_machine_);
-    if (!machine.empty()) {
-      std::wstring prefix = machine + L"\\";
-      if (StartsWithInsensitive(path, prefix)) {
-        path.erase(0, prefix.size());
-      }
-    }
-  }
-
-  std::wstring sid = util::GetCurrentUserSidString();
-  std::wstring native_mapped = MapNativeRegistryPath(path, sid);
-  if (!native_mapped.empty()) {
-    path = native_mapped;
-  }
-
-  size_t split = path.find_first_of(L":\\");
-  std::wstring prefix = (split == std::wstring::npos) ? path : path.substr(0, split);
-  std::wstring rest = (split == std::wstring::npos) ? L"" : path.substr(split);
-
-  auto normalize_rest = [&]() {
-    if (!rest.empty() && rest.front() == L':') {
-      rest.erase(rest.begin());
-    }
-    while (!rest.empty() && rest.front() == L'\\') {
-      rest.erase(rest.begin());
-    }
   };
-
-  auto map_prefix = [&](const wchar_t* short_name, const wchar_t* full_name) -> bool {
-    if (_wcsicmp(prefix.c_str(), short_name) == 0) {
-      prefix = full_name;
-      normalize_rest();
-      return true;
-    }
-    return false;
-  };
-
-  map_prefix(L"REGISTRY", L"REGISTRY") || map_prefix(L"HKCR", L"HKEY_CLASSES_ROOT") || map_prefix(L"HKCU", L"HKEY_CURRENT_USER") || map_prefix(L"HKLM", L"HKEY_LOCAL_MACHINE") || map_prefix(L"HKU", L"HKEY_USERS") || map_prefix(L"HKCC", L"HKEY_CURRENT_CONFIG") || map_prefix(L"HKEY_CLASSES_ROOT", L"HKEY_CLASSES_ROOT") || map_prefix(L"HKEY_CURRENT_USER", L"HKEY_CURRENT_USER") || map_prefix(L"HKEY_LOCAL_MACHINE", L"HKEY_LOCAL_MACHINE") || map_prefix(L"HKEY_USERS", L"HKEY_USERS") || map_prefix(L"HKEY_CURRENT_CONFIG", L"HKEY_CURRENT_CONFIG");
-
-  if (!rest.empty()) {
-    return prefix + L"\\" + rest;
+  strip_context(TreeRootLabel());
+  if (registry_mode_ == RegistryMode::kRemote) {
+    strip_context(StripMachinePrefix(remote_machine_));
   }
-  return prefix;
+  return registry_path::Normalize(path, sid);
 }
 
 std::wstring MainWindow::FormatRegistryPath(const std::wstring& path, RegistryPathFormat format) const {
-  std::wstring normalized = NormalizeRegistryPath(path);
+  const std::wstring normalized = NormalizeRegistryPath(path);
   if (normalized.empty()) {
-    return normalized;
+    return {};
   }
-
-  size_t slash = normalized.find(L'\\');
-  std::wstring root = (slash == std::wstring::npos) ? normalized : normalized.substr(0, slash);
-  std::wstring rest = (slash == std::wstring::npos) ? L"" : normalized.substr(slash + 1);
-
-  auto abbrev_root = [&](const std::wstring& full) -> std::wstring {
-    if (EqualsInsensitive(full, L"HKEY_CLASSES_ROOT")) {
-      return L"HKCR";
-    }
-    if (EqualsInsensitive(full, L"HKEY_CURRENT_USER")) {
-      return L"HKCU";
-    }
-    if (EqualsInsensitive(full, L"HKEY_LOCAL_MACHINE")) {
-      return L"HKLM";
-    }
-    if (EqualsInsensitive(full, L"HKEY_USERS")) {
-      return L"HKU";
-    }
-    if (EqualsInsensitive(full, L"HKEY_CURRENT_CONFIG")) {
-      return L"HKCC";
-    }
-    if (EqualsInsensitive(full, L"REGISTRY")) {
-      return L"REGISTRY";
-    }
-    return full;
-  };
-
-  auto join = [&](const std::wstring& prefix, const std::wstring& suffix) -> std::wstring {
-    if (suffix.empty()) {
-      return prefix;
-    }
-    return prefix + L"\\" + suffix;
-  };
-
+  std::wstring tree_root =
+      registry_mode_ == RegistryMode::kLocal ? L"Computer" : TreeRootLabel();
+  registry_path::Style style = registry_path::Style::kFull;
   switch (format) {
   case RegistryPathFormat::kAbbrev:
-    return join(abbrev_root(root), rest);
-  case RegistryPathFormat::kRegedit: {
-    std::wstring label = (registry_mode_ == RegistryMode::kLocal) ? L"Computer" : TreeRootLabel();
-    if (label.empty()) {
-      label = L"Computer";
-    }
-    return join(label, join(root, rest));
-  }
-  case RegistryPathFormat::kRegFile: {
-    std::wstring inner = join(root, rest);
-    return L"[" + inner + L"]";
-  }
-  case RegistryPathFormat::kPowerShellDrive: {
-    std::wstring drive = abbrev_root(root);
-    std::wstring combined = drive + L":";
-    if (!rest.empty()) {
-      combined += L"\\" + rest;
-    }
-    return combined;
-  }
-  case RegistryPathFormat::kPowerShellProvider: {
-    std::wstring inner = join(root, rest);
-    return L"Registry::" + inner;
-  }
-  case RegistryPathFormat::kEscaped: {
-    return EscapeBackslashes(join(root, rest));
-  }
+    style = registry_path::Style::kAbbreviated;
+    break;
+  case RegistryPathFormat::kRegedit:
+    style = registry_path::Style::kRegeditAddress;
+    break;
+  case RegistryPathFormat::kRegFile:
+    style = registry_path::Style::kRegFileHeader;
+    break;
+  case RegistryPathFormat::kPowerShellDrive:
+    style = registry_path::Style::kPowerShellDrive;
+    break;
+  case RegistryPathFormat::kPowerShellProvider:
+    style = registry_path::Style::kPowerShellProvider;
+    break;
+  case RegistryPathFormat::kEscaped:
+    style = registry_path::Style::kEscaped;
+    break;
   case RegistryPathFormat::kFull:
-  default:
-    return join(root, rest);
-  }
-}
-
-bool MainWindow::FindNearestExistingPath(const std::wstring& path, std::wstring* nearest_path) const {
-  if (!nearest_path) {
-    return false;
-  }
-  RegistryNode node;
-  if (!ResolvePathToNode(path, &node)) {
-    return false;
-  }
-  if (node.subkey.empty()) {
-    *nearest_path = node.root_name;
-    return true;
-  }
-  std::vector<std::wstring> parts = SplitPath(node.subkey);
-  std::wstring existing;
-  for (const auto& part : parts) {
-    std::wstring candidate = existing.empty() ? part : existing + L"\\" + part;
-    RegistryNode test = node;
-    test.subkey = candidate;
-    KeyInfo info = {};
-    if (RegistryProvider::QueryKeyInfo(test, &info)) {
-      existing = candidate;
-      continue;
-    }
     break;
   }
-  if (existing.empty()) {
-    *nearest_path = node.root_name;
-    return true;
-  }
-  *nearest_path = node.root_name + L"\\" + existing;
-  return true;
+  return registry_path::Format(normalized, style, tree_root);
+}
+bool MainWindow::FindNearestExistingPath(const std::wstring& path, std::wstring* nearest_path) const {
+  return changes::FindNearestExistingPath(
+      path,
+      [this](const std::wstring& candidate) {
+        RegistryNode node;
+        KeyInfo info = {};
+        return ResolvePathToNode(candidate, &node) &&
+               RegistryProvider::QueryKeyInfo(node, &info);
+      },
+      nearest_path);
 }
 
 bool MainWindow::CreateRegistryPath(const std::wstring& path) {
@@ -8624,7 +7364,7 @@ bool MainWindow::CreateRegistryPath(const std::wstring& path) {
   if (node.subkey.empty()) {
     return true;
   }
-  std::vector<std::wstring> parts = SplitPath(node.subkey);
+  std::vector<std::wstring> parts = registry_path::Split(node.subkey);
   RegistryNode current = node;
   current.subkey.clear();
   bool created = false;
@@ -8720,7 +7460,7 @@ void MainWindow::UpdateStatus() {
   std::wstring selected_text;
   std::wstring path_text;
   if (current_node_) {
-    path_text = RegistryProvider::BuildPath(*current_node_);
+    path_text = registry_path::Build(*current_node_);
   }
   swprintf_s(buffer, L"Keys: %d", current_key_count_);
   keys_text = buffer;
@@ -8812,15 +7552,6 @@ int MainWindow::SearchIndexFromTab(int index) const {
     return -1;
   }
   return tabs_[static_cast<size_t>(index)].search_index;
-}
-
-int MainWindow::FindFirstSearchTabIndex() const {
-  for (size_t i = 0; i < tabs_.size(); ++i) {
-    if (tabs_[i].kind == TabEntry::Kind::kSearch) {
-      return static_cast<int>(i);
-    }
-  }
-  return -1;
 }
 
 int MainWindow::FindFirstRegistryTabIndex() const {
@@ -8931,7 +7662,7 @@ void MainWindow::StartSearch(const SearchDialogResult& options) {
       registry_scope_path = options.start_key;
       scope_path = NormalizeRegistryPath(options.start_key);
     } else if (current_node_) {
-      registry_scope_path = RegistryProvider::BuildPath(*current_node_);
+      registry_scope_path = registry_path::Build(*current_node_);
       scope_path = NormalizeRegistryPath(registry_scope_path);
     } else {
       ui::ShowError(hwnd_, L"Select a starting key first.");
@@ -9019,7 +7750,7 @@ void MainWindow::StartSearch(const SearchDialogResult& options) {
 
   CancelSearch();
 
-  SearchCriteria criteria = options.criteria;
+  search::Criteria criteria = options.criteria;
   criteria.start_nodes = start_nodes;
   criteria.exclude_paths = options.exclude_paths;
 
@@ -9054,6 +7785,7 @@ void MainWindow::StartSearch(const SearchDialogResult& options) {
     tab.results.clear();
     tab.last_ui_count = 0;
     tab.is_compare = false;
+    tab.sort_dirty = false;
     TCITEMW item = {};
     item.mask = TCIF_TEXT;
     item.pszText = const_cast<wchar_t*>(tab.label.c_str());
@@ -9076,7 +7808,6 @@ void MainWindow::StartSearch(const SearchDialogResult& options) {
   TabCtrl_SetCurSel(tab_, tab_index);
   active_search_tab_index_ = tab_index;
   search_results_view_tab_index_ = -1;
-  search_cancel_.store(false);
   search_progress_searched_.store(0);
   search_progress_total_.store(0);
   search_progress_percent_ = 0;
@@ -9091,9 +7822,6 @@ void MainWindow::StartSearch(const SearchDialogResult& options) {
   search_duration_ms_ = 0;
   search_duration_valid_ = false;
   search_running_ = true;
-  search_generation_ += 1;
-  uint64_t generation = search_generation_;
-  search_tabs_[static_cast<size_t>(search_index)].generation = generation;
 
   if (search_progress_) {
     SendMessageW(search_progress_, PBM_SETMARQUEE, TRUE, 30);
@@ -9110,8 +7838,11 @@ void MainWindow::StartSearch(const SearchDialogResult& options) {
   bool trace_enabled = want_trace;
   bool registry_enabled = want_registry && !criteria.start_nodes.empty();
 
-  search_thread_ = std::thread([this, criteria, traces, exclude_paths, scope_lower, scope_recursive, trace_enabled, registry_enabled, generation, matcher]() mutable {
-    auto should_stop = [&]() { return search_cancel_.load(); };
+  const uint64_t generation = search_session_.Start(
+      [this, criteria, traces, exclude_paths, scope_lower, scope_recursive,
+       trace_enabled, registry_enabled, matcher](
+          uint64_t generation, std::atomic_bool& cancel) mutable {
+    auto should_stop = [&]() { return cancel.load(); };
 
     std::vector<PendingSearchResult> batch;
     batch.reserve(kSearchQueueBatch);
@@ -9128,6 +7859,7 @@ void MainWindow::StartSearch(const SearchDialogResult& options) {
       }
       {
         std::lock_guard<std::mutex> lock(search_mutex_);
+        search_pending_.reserve(search_pending_.size() + pending.size());
         for (auto& item : pending) {
           search_pending_.push_back(std::move(item));
         }
@@ -9137,7 +7869,7 @@ void MainWindow::StartSearch(const SearchDialogResult& options) {
       }
     };
 
-    auto queue_result = [&](SearchResult&& result) {
+    auto queue_result = [&](search::Result&& result) {
       bool should_flush = false;
       {
         std::lock_guard<std::mutex> lock(batch_mutex);
@@ -9206,24 +7938,25 @@ void MainWindow::StartSearch(const SearchDialogResult& options) {
             continue;
           }
           std::wstring key_lower = ToLower(key_path);
-          if (!SelectionIncludesKey(trace.selection, key_lower)) {
+          if (!trace.selection ||
+              !trace::IncludesKey(*trace.selection, key_lower)) {
             continue;
           }
           if (!key_in_scope(key_lower)) {
             continue;
           }
-          std::wstring key_name = KeyLeafFromPath(key_path);
+          std::wstring key_name = registry_path::Leaf(key_path);
 
           if (criteria.search_keys) {
             TextMatch match = matcher.Match(key_name);
             if (match.matched) {
-              SearchResult result;
+              search::Result result;
               result.key_path = key_path;
               result.key_name = key_name;
               result.type_text = L"Trace Key";
               result.is_key = true;
               size_t path_start = key_path.size() >= key_name.size() ? key_path.size() - key_name.size() : 0;
-              result.match_field = SearchMatchField::kPath;
+              result.match_field = search::MatchField::kPath;
               result.match_start = static_cast<int>(path_start + match.start);
               result.match_length = static_cast<int>(match.length);
               queue_result(std::move(result));
@@ -9238,7 +7971,9 @@ void MainWindow::StartSearch(const SearchDialogResult& options) {
                   break;
                 }
                 std::wstring value_lower = ToLower(value_name);
-                if (!SelectionIncludesValue(trace.selection, key_lower, value_lower)) {
+                if (!trace.selection ||
+                    !trace::IncludesValue(*trace.selection, key_lower,
+                                          value_lower)) {
                   continue;
                 }
                 std::wstring display = value_name.empty() ? L"(Default)" : value_name;
@@ -9246,14 +7981,14 @@ void MainWindow::StartSearch(const SearchDialogResult& options) {
                 if (!match.matched) {
                   continue;
                 }
-                SearchResult result;
+                search::Result result;
                 result.key_path = key_path;
                 result.key_name = key_name;
                 result.value_name = value_name;
                 result.display_name = display;
                 result.type_text = L"Trace Value";
                 result.is_key = false;
-                result.match_field = SearchMatchField::kName;
+                result.match_field = search::MatchField::kName;
                 result.match_start = static_cast<int>(match.start);
                 result.match_length = static_cast<int>(match.length);
                 queue_result(std::move(result));
@@ -9281,14 +8016,13 @@ void MainWindow::StartSearch(const SearchDialogResult& options) {
           }
         }
       };
-      bool ok = SearchRegistryStreaming(
-          criteria, &search_cancel_,
-          [&](const SearchResult& result) -> bool {
+      bool ok = search::Run(
+          criteria, &cancel,
+          [&](search::Result&& result) -> bool {
             if (should_stop()) {
               return false;
             }
-            SearchResult copy = result;
-            queue_result(std::move(copy));
+            queue_result(std::move(result));
             return !should_stop();
           },
           progress_cb, false);
@@ -9302,6 +8036,7 @@ void MainWindow::StartSearch(const SearchDialogResult& options) {
     flush();
     PostMessageW(hwnd_, kSearchFinishedMessage, static_cast<WPARAM>(generation), 0);
   });
+  search_tabs_[static_cast<size_t>(search_index)].generation = generation;
 }
 
 void MainWindow::StartReplace(const ReplaceDialogResult& options) {
@@ -9326,118 +8061,225 @@ void MainWindow::StartReplace(const ReplaceDialogResult& options) {
     return;
   }
 
-  bool matcher_ok = true;
-  ReplaceMatcher matcher(options, &matcher_ok);
-  if (!matcher_ok) {
+  search::Replacer matcher(options);
+  if (!matcher.valid()) {
     ui::ShowError(hwnd_, L"Invalid replace pattern.");
     return;
   }
 
-  std::vector<RegistryNode> stack;
-  stack.push_back(start);
-  int replaced = 0;
-  int failures = 0;
+  if (replace_result_pending_) {
+    ui::ShowWarning(hwnd_, L"Replace is already running.");
+    return;
+  }
 
-  while (!stack.empty()) {
-    RegistryNode node = std::move(stack.back());
-    stack.pop_back();
+  const HWND hwnd = hwnd_;
+  replace_result_pending_ = true;
+  replace_session_.Start(
+      [this, start, options, matcher, hwnd](
+          uint64_t generation, std::atomic_bool& cancel) mutable {
+        auto payload = std::make_unique<ReplacePayload>();
+        payload->generation = generation;
+        std::vector<RegistryNode> stack;
+        stack.push_back(start);
 
-    auto values = RegistryProvider::EnumValues(node);
-    for (const auto& value : values) {
-      std::wstring current_name = value.name;
-      std::wstring replaced_name;
-      if (!current_name.empty() && matcher.Replace(current_name, &replaced_name) && replaced_name != current_name) {
-        if (replaced_name.empty()) {
-          continue;
-        }
-        std::wstring unique = MakeUniqueValueName(node, replaced_name);
-        if (!RegistryProvider::RenameValue(node, current_name, unique)) {
-          ++failures;
-        } else {
-          UndoOperation op;
-          op.type = UndoOperation::Type::kRenameValue;
-          op.node = node;
-          op.name = current_name;
-          op.new_name = unique;
-          PushUndo(std::move(op));
-          AppendHistoryEntry(L"Rename value " + current_name, current_name, unique);
-          MarkOfflineDirty();
-          current_name = unique;
-          ++replaced;
-        }
-      }
+        while (!stack.empty() && !cancel.load()) {
+          RegistryNode node = std::move(stack.back());
+          stack.pop_back();
 
-      if (value.type == REG_SZ || value.type == REG_EXPAND_SZ || value.type == REG_MULTI_SZ) {
-        std::vector<BYTE> new_data = value.data;
-        bool changed = false;
-        if (value.type == REG_MULTI_SZ) {
-          auto parts = MultiSzToVector(value.data);
-          for (auto& part : parts) {
-            std::wstring updated;
-            if (matcher.Replace(part, &updated) && updated != part) {
-              part = std::move(updated);
-              changed = true;
+          std::vector<ValueEntry> values;
+          RegistryProvider::KeyEnumResult enum_result;
+          bool values_reserved = false;
+          RegistryProvider::EnumKeyStreaming(
+              node, true, true, false, &enum_result,
+              [&](const ValueInfo& info, const BYTE* data, DWORD data_size) {
+                if (!values_reserved) {
+                  if (enum_result.info_valid) {
+                    values.reserve(enum_result.info.value_count);
+                  }
+                  values_reserved = true;
+                }
+                ValueEntry value;
+                value.name = info.name;
+                value.type = info.type;
+                if (data_size > 0 && data) {
+                  value.data.assign(data, data + data_size);
+                }
+                values.push_back(std::move(value));
+                return !cancel.load();
+              },
+              {});
+
+          for (const auto& value : values) {
+            if (cancel.load()) {
+              break;
             }
-          }
-          if (changed) {
-            new_data = VectorToMultiSz(parts);
-          }
-        } else {
-          std::wstring text = RegistryProvider::FormatValueData(value.type, value.data.data(), static_cast<DWORD>(value.data.size()));
-          std::wstring updated;
-          if (matcher.Replace(text, &updated) && updated != text) {
-            new_data = StringToRegData(updated);
-            changed = true;
-          }
-        }
 
-        if (changed) {
-          if (!RegistryProvider::SetValue(node, current_name, value.type, new_data)) {
-            ++failures;
-          } else {
+            std::wstring current_name = value.name;
+            std::wstring replaced_name;
+            if (!current_name.empty() &&
+                matcher.Replace(current_name, &replaced_name) &&
+                replaced_name != current_name) {
+              if (replaced_name.empty()) {
+                continue;
+              }
+              std::wstring unique =
+                  MakeUniqueValueName(node, replaced_name);
+              if (!RegistryProvider::RenameValue(node, current_name, unique)) {
+                ++payload->failures;
+              } else {
+                ReplacePayload::Change change;
+                change.undo.type =
+                    changes::UndoOperation::Type::kRenameValue;
+                change.undo.node = node;
+                change.undo.name = current_name;
+                change.undo.new_name = unique;
+                change.history.action = L"Rename value " + current_name;
+                change.history.old_data = current_name;
+                change.history.new_data = unique;
+                change.history.key_path = registry_path::Build(node);
+                change.history.value_name = unique;
+                payload->changes.push_back(std::move(change));
+                current_name = unique;
+              }
+            }
+
+            if (value.type != REG_SZ &&
+                value.type != REG_EXPAND_SZ &&
+                value.type != REG_MULTI_SZ) {
+              continue;
+            }
+
+            std::vector<BYTE> new_data = value.data;
+            bool changed = false;
+            if (value.type == REG_MULTI_SZ) {
+              auto parts = value_format::MultiStringItems(value.data);
+              for (auto& part : parts) {
+                std::wstring updated;
+                if (matcher.Replace(part, &updated) && updated != part) {
+                  part = std::move(updated);
+                  changed = true;
+                }
+              }
+              if (changed) {
+                new_data = value_format::MultiStringData(parts);
+              }
+            } else {
+              const std::wstring text = value_format::Data(
+                  value.type, value.data.data(),
+                  static_cast<DWORD>(value.data.size()));
+              std::wstring updated;
+              if (matcher.Replace(text, &updated) && updated != text) {
+                new_data = value_format::StringData(updated);
+                changed = true;
+              }
+            }
+
+            if (!changed) {
+              continue;
+            }
+            if (!RegistryProvider::SetValue(node, current_name, value.type,
+                                            new_data)) {
+              ++payload->failures;
+              continue;
+            }
+
             ValueEntry old_value = value;
             old_value.name = current_name;
             ValueEntry new_value = value;
             new_value.name = current_name;
             new_value.data = new_data;
-            UndoOperation op;
-            op.type = UndoOperation::Type::kModifyValue;
-            op.node = node;
-            op.old_value = old_value;
-            op.new_value = new_value;
-            PushUndo(std::move(op));
-            std::wstring old_text = RegistryProvider::FormatValueData(value.type, value.data.data(), static_cast<DWORD>(value.data.size()));
-            std::wstring new_text = RegistryProvider::FormatValueData(value.type, new_data.data(), static_cast<DWORD>(new_data.size()));
-            AppendHistoryEntry(L"Modify value " + current_name, old_text, new_text);
-            MarkOfflineDirty();
-            ++replaced;
+            ReplacePayload::Change change;
+            change.undo.type =
+                changes::UndoOperation::Type::kModifyValue;
+            change.undo.node = node;
+            change.undo.old_value = old_value;
+            change.undo.new_value = new_value;
+            change.history.action = L"Modify value " + current_name;
+            change.history.old_data = value_format::Data(
+                value.type, value.data.data(),
+                static_cast<DWORD>(value.data.size()));
+            change.history.new_data = value_format::Data(
+                value.type, new_data.data(),
+                static_cast<DWORD>(new_data.size()));
+            change.history.key_path = registry_path::Build(node);
+            change.history.value_name = current_name;
+            change.history.revert_kind =
+                HistoryEntry::RevertKind::kSetValue;
+            change.history.revert_value = std::move(old_value);
+            payload->changes.push_back(std::move(change));
+          }
+
+          if (options.recursive && !cancel.load()) {
+            auto subkeys =
+                RegistryProvider::EnumSubKeyNames(node, false);
+            for (const auto& name : subkeys) {
+              stack.push_back(MakeChildNode(node, name));
+            }
           }
         }
-      }
-    }
 
-    if (options.recursive) {
-      auto subkeys = RegistryProvider::EnumSubKeyNames(node, false);
-      for (const auto& name : subkeys) {
-        stack.push_back(MakeChildNode(node, name));
-      }
-    }
+        payload->cancelled = cancel.load();
+        if (hwnd && IsWindow(hwnd) &&
+            PostMessageW(hwnd, kReplaceReadyMessage,
+                         static_cast<WPARAM>(generation),
+                         reinterpret_cast<LPARAM>(payload.get()))) {
+          ReleasePostedPayload(payload);
+        }
+      });
+}
+
+void MainWindow::ApplyReplacePayload(ReplacePayload* payload) {
+  if (!payload) {
+    return;
   }
+  std::unique_ptr<ReplacePayload> owned(payload);
+  if (!replace_session_.IsCurrent(owned->generation)) {
+    return;
+  }
+  replace_session_.Join();
+  replace_result_pending_ = false;
+  CommitReplacePayload(std::move(owned), true);
+}
 
+void MainWindow::CommitReplacePayload(
+    std::unique_ptr<ReplacePayload> payload, bool show_failures) {
+  if (!payload) {
+    return;
+  }
+  for (auto& change : payload->changes) {
+    PushUndo(std::move(change.undo));
+    AppendHistoryEntry(std::move(change.history));
+  }
+  if (!payload->changes.empty()) {
+    MarkOfflineDirty();
+  }
   if (current_node_) {
     UpdateValueListForNode(current_node_);
   }
-  if (failures > 0) {
-    std::wstring message = L"Replace finished with some failures.\nReplaced: " + std::to_wstring(replaced) + L"\nFailed: " + std::to_wstring(failures);
+  if (show_failures && payload->failures > 0) {
+    const std::wstring message =
+        L"Replace finished with some failures.\nReplaced: " +
+        std::to_wstring(payload->changes.size()) + L"\nFailed: " +
+        std::to_wstring(payload->failures);
     ui::ShowError(hwnd_, message);
   }
 }
 
-void MainWindow::CancelSearch() {
-  search_cancel_.store(true);
-  if (search_thread_.joinable()) {
-    search_thread_.join();
+void MainWindow::StopReplace() {
+  replace_session_.CancelAndJoin();
+  MSG message = {};
+  while (PeekMessageW(&message, hwnd_, kReplaceReadyMessage,
+                      kReplaceReadyMessage, PM_REMOVE)) {
+    CommitReplacePayload(
+        std::unique_ptr<ReplacePayload>(
+            reinterpret_cast<ReplacePayload*>(message.lParam)),
+        false);
   }
+  replace_result_pending_ = false;
+}
+
+void MainWindow::CancelSearch() {
+  search_session_.CancelAndJoin();
   search_running_ = false;
   search_start_tick_ = 0;
   search_duration_ms_ = 0;
@@ -9563,7 +8405,7 @@ void MainWindow::SortHistoryList(int column, bool toggle) {
     history_sort_column_ = column;
   }
 
-  SortHistoryEntries(&history_entries_, history_sort_column_, history_sort_ascending_);
+  change_history_.Sort(history_sort_column_, history_sort_ascending_);
   RebuildHistoryList();
 
   HWND header = ListView_GetHeader(history_list_);
@@ -9571,6 +8413,23 @@ void MainWindow::SortHistoryList(int column, bool toggle) {
     UpdateListViewSort(history_list_, history_sort_column_, history_sort_ascending_);
     InvalidateRect(header, nullptr, TRUE);
   }
+}
+
+void MainWindow::SortSearchTabResults(SearchTab* tab) {
+  if (!tab || tab->sort_column < 0) {
+    if (tab) {
+      tab->sort_dirty = false;
+    }
+    return;
+  }
+  if (!tab->is_compare && tab->sort_column == 3) {
+    for (auto& result : tab->results) {
+      EnsureSearchResultDataLoaded(&result);
+    }
+  }
+  search::SortResults(&tab->results, tab->sort_column,
+                      tab->sort_ascending, tab->is_compare);
+  tab->sort_dirty = false;
 }
 
 void MainWindow::SortSearchResults(int column, bool toggle) {
@@ -9584,11 +8443,6 @@ void MainWindow::SortSearchResults(int column, bool toggle) {
   }
   EnsureSearchTabResultsLoaded(index);
   auto& tab = search_tabs_[static_cast<size_t>(index)];
-  if (!tab.is_compare && column == 3) {
-    for (auto& result : tab.results) {
-      EnsureSearchResultDataLoaded(&result);
-    }
-  }
   if (toggle) {
     if (tab.sort_column == column) {
       tab.sort_ascending = !tab.sort_ascending;
@@ -9599,7 +8453,7 @@ void MainWindow::SortSearchResults(int column, bool toggle) {
   } else {
     tab.sort_column = column;
   }
-  SortSearchResultEntries(&tab.results, tab.sort_column, tab.sort_ascending, tab.is_compare);
+  SortSearchTabResults(&tab);
   UpdateListViewSort(search_results_list_, tab.sort_column, tab.sort_ascending);
   HWND header = ListView_GetHeader(search_results_list_);
   if (header) {
@@ -9612,7 +8466,7 @@ void MainWindow::ClearHistoryItems(bool delete_cache) {
   if (!history_list_) {
     return;
   }
-  history_entries_.clear();
+  change_history_.entries().clear();
   ListView_DeleteAllItems(history_list_);
 
   if (delete_cache) {
@@ -9631,7 +8485,7 @@ void MainWindow::RebuildHistoryList() {
   ListView_DeleteAllItems(history_list_);
 
   int index = 0;
-  for (const auto& entry : history_entries_) {
+  for (const auto& entry : change_history_.entries()) {
     LVITEMW item = {};
     item.mask = LVIF_TEXT | LVIF_PARAM;
     item.iItem = index;
@@ -9790,7 +8644,8 @@ void MainWindow::CloseTab(int tab_index) {
       std::wstring lower = ToLower(entry.reg_file_path);
       auto it = reg_file_parse_sessions_.find(lower);
       if (it != reg_file_parse_sessions_.end() && it->second) {
-        it->second->cancel.store(true);
+        it->second->work.CancelAndJoin();
+        reg_file_parse_sessions_.erase(it);
       }
     }
     ReleaseRegFileRoots(&entry);
@@ -10217,7 +9072,7 @@ bool MainWindow::UseRegeditVisibleTreeLayout() const {
 }
 
 std::vector<std::wstring> MainWindow::BuildVisibleTreePathParts(const std::wstring& path) const {
-  std::vector<std::wstring> parts = SplitPath(path);
+  std::vector<std::wstring> parts = registry_path::Split(path);
   if (parts.empty()) {
     return parts;
   }
@@ -10408,7 +9263,8 @@ void MainWindow::SelectDefaultTreeItem() {
 }
 
 void MainWindow::CaptureRegistryTabState(int index) {
-  if (index < 0 || static_cast<size_t>(index) >= tabs_.size()) {
+  if (!tree_.hwnd() || index < 0 ||
+      static_cast<size_t>(index) >= tabs_.size()) {
     return;
   }
   TabEntry& entry = tabs_[static_cast<size_t>(index)];
@@ -10539,7 +9395,7 @@ void MainWindow::AppendRealRegistryRoot(std::vector<RegistryRootEntry>* roots) {
     return;
   }
   if (!registry_root_.get()) {
-    registry_root_ = OpenRegistryRootKey();
+    registry_root_ = util::OpenNativeRegistryRoot();
   }
   if (!registry_root_.get()) {
     return;
@@ -10936,13 +9792,15 @@ bool MainWindow::ResolveExternalJumpTarget(const std::wstring& target, std::wstr
     if (candidate_value.empty()) {
       return false;
     }
-    auto values = RegistryProvider::EnumValueInfo(candidate);
-    for (const auto& value : values) {
-      if (value.name == candidate_value) {
-        return true;
-      }
-    }
-    return false;
+    bool found = false;
+    RegistryProvider::EnumKeyStreaming(
+        candidate, true, false, false, nullptr,
+        [&](const ValueInfo& value, const BYTE*, DWORD) {
+          found = found || EqualsInsensitive(value.name, candidate_value);
+          return true;
+        },
+        {});
+    return found;
   };
   if (ResolvePathToNode(normalized, &node)) {
     KeyInfo info = {};
@@ -11057,7 +9915,21 @@ void MainWindow::AppendHistoryEntry(const std::wstring& action, const std::wstri
   entry.old_data = old_data;
   entry.new_data = new_data;
   if (current_node_) {
-    entry.key_path = RegistryProvider::BuildPath(*current_node_);
+    entry.key_path = registry_path::Build(*current_node_);
+  }
+  AppendHistoryEntry(std::move(entry));
+}
+
+void MainWindow::AppendValueHistoryEntry(const std::wstring& action, const std::wstring& old_data, const std::wstring& new_data, const RegistryNode& node, const std::wstring& value_name, HistoryEntry::RevertKind revert_kind, const ValueEntry* revert_value) {
+  HistoryEntry entry;
+  entry.action = action;
+  entry.old_data = old_data;
+  entry.new_data = new_data;
+  entry.key_path = registry_path::Build(node);
+  entry.value_name = value_name;
+  entry.revert_kind = revert_kind;
+  if (revert_value) {
+    entry.revert_value = *revert_value;
   }
   AppendHistoryEntry(std::move(entry));
 }
@@ -11067,60 +9939,70 @@ void MainWindow::AppendHistoryEntry(HistoryEntry entry) {
     return;
   }
 
-  if (entry.timestamp == 0 || entry.time_text.empty()) {
-    SYSTEMTIME st = {};
-    GetLocalTime(&st);
-    wchar_t time_buffer[64] = {};
-    swprintf_s(time_buffer, L"%d/%d/%d %d:%02d:%02d", st.wMonth, st.wDay, st.wYear, st.wHour, st.wMinute, st.wSecond);
-
-    FILETIME now = {};
-    GetSystemTimeAsFileTime(&now);
-    entry.timestamp = FileTimeToUint64(now);
-    entry.time_text = time_buffer;
-  }
-  history_entries_.push_back(entry);
+  const HistoryEntry appended =
+      change_history_.Append(std::move(entry),
+                             static_cast<size_t>(history_max_rows_));
   if (history_loaded_) {
-    AppendHistoryCache(entry);
+    AppendHistoryCache(appended);
   }
-
-  TrimHistoryEntriesToLimit(&history_entries_, static_cast<size_t>(history_max_rows_));
-
-  SortHistoryEntries(&history_entries_, history_sort_column_, history_sort_ascending_);
+  change_history_.Sort(history_sort_column_, history_sort_ascending_);
   RebuildHistoryList();
+}
+
+bool MainWindow::PrepareHistoryRevert(const HistoryEntry& entry, HistoryEntry* prepared) const {
+  return changes::PrepareRevert(
+      entry,
+      [this](const std::wstring& path, const std::wstring& name,
+             ValueEntry* value) {
+        RegistryNode node;
+        return ResolvePathToNode(path, &node) &&
+               RegistryProvider::QueryValue(node, name, value);
+      },
+      prepared);
 }
 
 bool MainWindow::OpenHistoryTarget(const HistoryEntry& entry) {
   if (entry.key_path.empty()) {
     return false;
   }
-  return NavigateToResolvedExternalJump(entry.key_path, entry.value_name, true);
+  RegistryNode node;
+  std::wstring target = entry.key_path;
+  KeyInfo info = {};
+  if (!ResolvePathToNode(target, &node) || !RegistryProvider::QueryKeyInfo(node, &info)) {
+    if (!FindNearestExistingPath(target, &target) || target.empty()) {
+      return false;
+    }
+    return NavigateToResolvedExternalJump(target, L"", true);
+  }
+  return NavigateToResolvedExternalJump(target, entry.value_name, true);
 }
 
 bool MainWindow::RevertHistoryEntry(const HistoryEntry& entry) {
-  if (!EnsureWritable() || entry.key_path.empty() || entry.revert_kind == HistoryEntry::RevertKind::kNone) {
+  HistoryEntry prepared;
+  if (!EnsureWritable() || !PrepareHistoryRevert(entry, &prepared)) {
     return false;
   }
 
   bool ok = false;
   is_replaying_ = true;
-  switch (entry.revert_kind) {
+  switch (prepared.revert_kind) {
   case HistoryEntry::RevertKind::kSetValue: {
     RegistryNode node;
-    if (ResolvePathToNode(entry.key_path, &node)) {
-      ok = RegistryProvider::SetValue(node, entry.revert_value.name, entry.revert_value.type, entry.revert_value.data);
+    if (ResolvePathToNode(prepared.key_path, &node)) {
+      ok = RegistryProvider::SetValue(node, prepared.revert_value.name, prepared.revert_value.type, prepared.revert_value.data);
     }
     break;
   }
   case HistoryEntry::RevertKind::kDeleteValue: {
     RegistryNode node;
-    if (ResolvePathToNode(entry.key_path, &node)) {
-      ok = RegistryProvider::DeleteValue(node, entry.value_name);
+    if (ResolvePathToNode(prepared.key_path, &node)) {
+      ok = RegistryProvider::DeleteValue(node, prepared.value_name);
     }
     break;
   }
   case HistoryEntry::RevertKind::kDeleteKey: {
     RegistryNode node;
-    if (ResolvePathToNode(entry.key_path, &node)) {
+    if (ResolvePathToNode(prepared.key_path, &node)) {
       std::wstring name = LeafName(node);
       if (!name.empty() && ui::ConfirmDelete(hwnd_, L"Revert Key Creation", name)) {
         ok = RegistryProvider::DeleteKey(node);
@@ -11138,10 +10020,11 @@ bool MainWindow::RevertHistoryEntry(const HistoryEntry& entry) {
     return false;
   }
 
+  MarkOfflineDirty();
   HistoryEntry revert_entry;
   revert_entry.action = L"Revert: " + entry.action;
-  revert_entry.key_path = entry.key_path;
-  revert_entry.value_name = entry.value_name;
+  revert_entry.key_path = prepared.key_path;
+  revert_entry.value_name = prepared.value_name;
   AppendHistoryEntry(std::move(revert_entry));
   RefreshTreeSelection();
   if (current_node_) {
@@ -11150,27 +10033,7 @@ bool MainWindow::RevertHistoryEntry(const HistoryEntry& entry) {
   return true;
 }
 
-std::wstring MainWindow::ResolveSearchComment(const SearchResult& result) const {
-  if (result.is_key) {
-    return L"";
-  }
-
-  std::wstring value_key = MakeValueCommentKey(result.key_path, result.value_name, result.type);
-  auto it = value_comments_.find(value_key);
-  if (it != value_comments_.end()) {
-    return FormatCommentDisplay(it->second.text);
-  }
-
-  std::wstring name_key = MakeNameCommentKey(result.value_name, result.type);
-  auto it2 = name_comments_.find(name_key);
-  if (it2 != name_comments_.end()) {
-    return FormatCommentDisplay(it2->second.text);
-  }
-
-  return L"";
-}
-
-bool MainWindow::EnsureSearchResultDataLoaded(SearchResult* result) {
+bool MainWindow::EnsureSearchResultDataLoaded(search::Result* result) {
   if (!result || result->is_key || result->data_loaded) {
     return true;
   }
@@ -11189,104 +10052,19 @@ bool MainWindow::EnsureSearchResultDataLoaded(SearchResult* result) {
   }
 
   result->type = entry.type;
-  result->type_text = RegistryProvider::FormatValueType(entry.type);
+  result->type_text = value_format::TypeName(entry.type);
   result->size_text = std::to_wstring(entry.data.size());
   constexpr size_t kMaxDisplaySize = 1024 * 1024;
   if (entry.data.size() > kMaxDisplaySize) {
     result->data.clear();
     return true;
   }
-  result->data = RegistryProvider::FormatValueDataForDisplay(entry.type, entry.data.data(), static_cast<DWORD>(entry.data.size()));
+  result->data = value_format::DisplayData(entry.type, entry.data.data(), static_cast<DWORD>(entry.data.size()));
   return true;
 }
 
-void MainWindow::LoadHistoryCache() {
-  if (history_loaded_) {
-    return;
-  }
-  std::wstring path = HistoryCachePath();
-  if (path.empty()) {
-    history_loaded_ = true;
-    return;
-  }
-  std::wstring content;
-  if (!ReadFileUtf8(path, &content)) {
-    history_loaded_ = true;
-    return;
-  }
-
-  size_t start = 0;
-  while (start < content.size()) {
-    size_t end = content.find(L'\n', start);
-    if (end == std::wstring::npos) {
-      end = content.size();
-    }
-    std::wstring line = content.substr(start, end - start);
-    if (!line.empty() && line.back() == L'\r') {
-      line.pop_back();
-    }
-    start = end + 1;
-    if (line.empty()) {
-      continue;
-    }
-    std::vector<std::wstring> parts = SplitHistoryFields(line);
-    if (parts.size() < 5) {
-      continue;
-    }
-    HistoryEntry entry;
-    try {
-      entry.timestamp = std::stoull(parts[0]);
-    } catch (const std::exception&) {
-      continue;
-    }
-    entry.time_text = UnescapeHistoryField(parts[1]);
-    entry.action = UnescapeHistoryField(parts[2]);
-    entry.old_data = UnescapeHistoryField(parts[3]);
-    entry.new_data = UnescapeHistoryField(parts[4]);
-    if (parts.size() >= 7) {
-      entry.key_path = UnescapeHistoryField(parts[5]);
-      entry.value_name = UnescapeHistoryField(parts[6]);
-    }
-    history_entries_.push_back(std::move(entry));
-  }
-
-  TrimHistoryEntriesToLimit(&history_entries_, static_cast<size_t>(history_max_rows_));
-  SortHistoryEntries(&history_entries_, history_sort_column_, history_sort_ascending_);
-  RebuildHistoryList();
-  history_loaded_ = true;
-}
-
 void MainWindow::AppendHistoryCache(const HistoryEntry& entry) {
-  std::wstring path = HistoryCachePath();
-  if (path.empty()) {
-    return;
-  }
-  std::wstring line = std::to_wstring(entry.timestamp);
-  line.push_back(L'\t');
-  line.append(EscapeHistoryField(entry.time_text));
-  line.push_back(L'\t');
-  line.append(EscapeHistoryField(entry.action));
-  line.push_back(L'\t');
-  line.append(EscapeHistoryField(entry.old_data));
-  line.push_back(L'\t');
-  line.append(EscapeHistoryField(entry.new_data));
-  line.push_back(L'\t');
-  line.append(EscapeHistoryField(entry.key_path));
-  line.push_back(L'\t');
-  line.append(EscapeHistoryField(entry.value_name));
-  line.push_back(L'\n');
-
-  std::string utf8 = util::WideToUtf8(line);
-  if (utf8.empty()) {
-    return;
-  }
-  HANDLE file = CreateFileW(path.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return;
-  }
-  DWORD written = 0;
-  WriteFile(file, utf8.data(), static_cast<DWORD>(utf8.size()), &written, nullptr);
-  CloseHandle(file);
+  changes::AppendHistoryFile(HistoryCachePath(), entry);
 }
 
 std::wstring MainWindow::CacheFolderPath() const {
@@ -11344,162 +10122,19 @@ bool MainWindow::EnsureSearchTabResultsLoaded(int search_index) {
   }
 
   std::wstring result_path = SearchTabCachePath(tab.cache_file);
-  std::vector<SearchResult> loaded_results;
-  bool ok = ReadSearchResults(result_path, &loaded_results);
+  std::vector<search::Result> loaded_results;
+  bool ok = search::LoadResults(result_path, &loaded_results);
   if (!ok) {
     tab.results.clear();
     return false;
   }
   tab.results = std::move(loaded_results);
   if (tab.sort_column >= 0) {
-    SortSearchResultEntries(&tab.results, tab.sort_column, tab.sort_ascending, tab.is_compare);
+    search::SortResults(&tab.results, tab.sort_column,
+                        tab.sort_ascending, tab.is_compare);
   }
+  tab.sort_dirty = false;
   tab.results_loaded = true;
-  return true;
-}
-
-bool MainWindow::ReadSearchResults(const std::wstring& path, std::vector<SearchResult>* results) const {
-  if (!results) {
-    return false;
-  }
-  results->clear();
-  if (path.empty()) {
-    return false;
-  }
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return false;
-  }
-  LARGE_INTEGER size = {};
-  if (!GetFileSizeEx(file, &size) || size.QuadPart < 0 || size.QuadPart > static_cast<LONGLONG>(std::numeric_limits<int>::max())) {
-    CloseHandle(file);
-    return false;
-  }
-  std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
-  DWORD read = 0;
-  bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
-  CloseHandle(file);
-  if (!ok) {
-    return false;
-  }
-  if (read == 0) {
-    return true;
-  }
-  buffer.resize(read);
-  if (buffer.size() >= 3 && static_cast<unsigned char>(buffer[0]) == 0xEF && static_cast<unsigned char>(buffer[1]) == 0xBB && static_cast<unsigned char>(buffer[2]) == 0xBF) {
-    buffer.erase(0, 3);
-  }
-  std::wstring content = util::Utf8ToWide(buffer);
-  if (content.empty()) {
-    return true;
-  }
-
-  size_t start = 0;
-  while (start < content.size()) {
-    size_t end = content.find(L'\n', start);
-    if (end == std::wstring::npos) {
-      end = content.size();
-    }
-    std::wstring line = content.substr(start, end - start);
-    if (!line.empty() && line.back() == L'\r') {
-      line.pop_back();
-    }
-    start = end + 1;
-    if (line.empty()) {
-      continue;
-    }
-    std::vector<std::wstring> parts = SplitHistoryFields(line);
-    if (parts.size() < 13) {
-      continue;
-    }
-    SearchResult result;
-    result.key_path = UnescapeHistoryField(parts[0]);
-    result.key_name = UnescapeHistoryField(parts[1]);
-    result.value_name = UnescapeHistoryField(parts[2]);
-    result.display_name = UnescapeHistoryField(parts[3]);
-    result.type_text = UnescapeHistoryField(parts[4]);
-    result.type = static_cast<DWORD>(_wtoi(parts[5].c_str()));
-    result.data = UnescapeHistoryField(parts[6]);
-    result.size_text = UnescapeHistoryField(parts[7]);
-    result.date_text = UnescapeHistoryField(parts[8]);
-    size_t base_index = 9;
-    if (parts.size() >= 14) {
-      result.comment = UnescapeHistoryField(parts[9]);
-      base_index = 10;
-    }
-    result.is_key = (_wtoi(parts[base_index].c_str()) != 0);
-    int match_field = _wtoi(parts[base_index + 1].c_str());
-    if (match_field < 0 || match_field > static_cast<int>(SearchMatchField::kData)) {
-      result.match_field = SearchMatchField::kNone;
-    } else {
-      result.match_field = static_cast<SearchMatchField>(match_field);
-    }
-    result.match_start = _wtoi(parts[base_index + 2].c_str());
-    result.match_length = _wtoi(parts[base_index + 3].c_str());
-    if (parts.size() > base_index + 4) {
-      result.data_loaded = (_wtoi(parts[base_index + 4].c_str()) != 0);
-    }
-    results->push_back(std::move(result));
-  }
-  return true;
-}
-
-bool MainWindow::WriteSearchResults(const std::wstring& path, const std::vector<SearchResult>& results) const {
-  if (path.empty()) {
-    return false;
-  }
-  if (results.empty()) {
-    HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (file == INVALID_HANDLE_VALUE) {
-      return false;
-    }
-    CloseHandle(file);
-    return true;
-  }
-  std::wstring content;
-  for (const auto& result : results) {
-    content.append(EscapeHistoryField(result.key_path));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(result.key_name));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(result.value_name));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(result.display_name));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(result.type_text));
-    content.push_back(L'\t');
-    content.append(std::to_wstring(result.type));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(result.data));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(result.size_text));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(result.date_text));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(result.comment));
-    content.push_back(L'\t');
-    content.append(result.is_key ? L"1" : L"0");
-    content.push_back(L'\t');
-    content.append(std::to_wstring(static_cast<int>(result.match_field)));
-    content.push_back(L'\t');
-    content.append(std::to_wstring(result.match_start));
-    content.push_back(L'\t');
-    content.append(std::to_wstring(result.match_length));
-    content.push_back(L'\t');
-    content.append(result.data_loaded ? L"1" : L"0");
-    content.push_back(L'\n');
-  }
-  std::string utf8 = util::WideToUtf8(content);
-  if (utf8.empty()) {
-    return false;
-  }
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return false;
-  }
-  DWORD written = 0;
-  WriteFile(file, utf8.data(), static_cast<DWORD>(utf8.size()), &written, nullptr);
-  CloseHandle(file);
   return true;
 }
 
@@ -11540,88 +10175,42 @@ void MainWindow::LoadTabs() {
   int active_index = 0;
   bool loaded = false;
   if (save_tabs_) {
-    std::wstring path = TabsCachePath();
-    if (!path.empty()) {
-      HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-      if (file != INVALID_HANDLE_VALUE) {
-        LARGE_INTEGER size = {};
-        if (GetFileSizeEx(file, &size) && size.QuadPart >= 0 && size.QuadPart <= static_cast<LONGLONG>(std::numeric_limits<int>::max())) {
-          std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
-          DWORD read = 0;
-          if (ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0) {
-            buffer.resize(read);
-            if (buffer.size() >= 3 && static_cast<unsigned char>(buffer[0]) == 0xEF && static_cast<unsigned char>(buffer[1]) == 0xBB && static_cast<unsigned char>(buffer[2]) == 0xBF) {
-              buffer.erase(0, 3);
-            }
-            std::wstring content = util::Utf8ToWide(buffer);
-            size_t start = 0;
-            while (start < content.size()) {
-              size_t end = content.find(L'\n', start);
-              if (end == std::wstring::npos) {
-                end = content.size();
-              }
-              std::wstring line = content.substr(start, end - start);
-              if (!line.empty() && line.back() == L'\r') {
-                line.pop_back();
-              }
-              start = end + 1;
-              if (line.empty()) {
-                continue;
-              }
-              if (line.rfind(L"active=", 0) == 0) {
-                active_index = _wtoi(line.substr(7).c_str());
-                continue;
-              }
-              std::vector<std::wstring> parts = SplitHistoryFields(line);
-              if (parts.size() < 3) {
-                continue;
-              }
-              if (_wcsicmp(parts[0].c_str(), L"tab") != 0) {
-                continue;
-              }
-              std::wstring type = parts[1];
-              std::wstring label = UnescapeHistoryField(parts[2]);
-              if (_wcsicmp(type.c_str(), L"registry") == 0) {
-                if (label.empty()) {
-                  label = L"Local Registry";
-                }
-                TCITEMW item = {};
-                item.mask = TCIF_TEXT;
-                item.pszText = const_cast<wchar_t*>(label.c_str());
-                TabCtrl_InsertItem(tab_, TabCtrl_GetItemCount(tab_), &item);
-                TabEntry entry;
-                entry.kind = TabEntry::Kind::kRegistry;
-                entry.registry_mode = RegistryMode::kLocal;
-                if (parts.size() >= 4) {
-                  entry.selected_path = UnescapeHistoryField(parts[3]);
-                }
-                for (size_t part_index = 4; part_index < parts.size(); ++part_index) {
-                  std::wstring expanded = UnescapeHistoryField(parts[part_index]);
-                  if (!expanded.empty()) {
-                    entry.expanded_paths.push_back(std::move(expanded));
-                  }
-                }
-                tabs_.push_back(std::move(entry));
-              } else if (_wcsicmp(type.c_str(), L"search") == 0 && parts.size() >= 4) {
-                std::wstring cache_file = UnescapeHistoryField(parts[3]);
-                SearchTab search_tab;
-                search_tab.label = label.empty() ? L"Find" : label;
-                search_tab.cache_file = std::move(cache_file);
-                search_tab.results_loaded = search_tab.cache_file.empty();
-                search_tab.is_compare = StartsWithInsensitive(search_tab.label, L"Compare:");
-                search_tabs_.push_back(std::move(search_tab));
-                int search_index = static_cast<int>(search_tabs_.size() - 1);
-                TCITEMW item = {};
-                item.mask = TCIF_TEXT;
-                item.pszText = const_cast<wchar_t*>(search_tabs_.back().label.c_str());
-                TabCtrl_InsertItem(tab_, TabCtrl_GetItemCount(tab_), &item);
-                tabs_.push_back({TabEntry::Kind::kSearch, search_index});
-              }
-            }
-            loaded = true;
+    workspace::TabState state;
+    loaded = workspace::LoadTabs(TabsCachePath(), &state);
+    if (loaded) {
+      active_index = state.active_index;
+      for (workspace::PersistedTab& saved : state.tabs) {
+        std::wstring label = std::move(saved.label);
+        if (saved.kind == workspace::PersistedTab::Kind::kRegistry) {
+          if (label.empty()) {
+            label = L"Local Registry";
           }
+          TCITEMW item = {};
+          item.mask = TCIF_TEXT;
+          item.pszText = label.data();
+          TabCtrl_InsertItem(tab_, TabCtrl_GetItemCount(tab_), &item);
+          TabEntry entry;
+          entry.kind = TabEntry::Kind::kRegistry;
+          entry.registry_mode = RegistryMode::kLocal;
+          entry.selected_path = std::move(saved.selected_path);
+          entry.expanded_paths = std::move(saved.expanded_paths);
+          tabs_.push_back(std::move(entry));
+        } else {
+          SearchTab search_tab;
+          search_tab.label = label.empty() ? L"Find" : std::move(label);
+          search_tab.cache_file = std::move(saved.search_cache_file);
+          search_tab.results_loaded = search_tab.cache_file.empty();
+          search_tab.is_compare =
+              StartsWithInsensitive(search_tab.label, L"Compare:");
+          search_tabs_.push_back(std::move(search_tab));
+          const int search_index =
+              static_cast<int>(search_tabs_.size() - 1);
+          TCITEMW item = {};
+          item.mask = TCIF_TEXT;
+          item.pszText = search_tabs_.back().label.data();
+          TabCtrl_InsertItem(tab_, TabCtrl_GetItemCount(tab_), &item);
+          tabs_.push_back({TabEntry::Kind::kSearch, search_index});
         }
-        CloseHandle(file);
       }
     }
   }
@@ -11669,12 +10258,9 @@ void MainWindow::SaveTabs() {
       reserved_files.insert(search_tab.cache_file);
     }
   }
-  std::wstring content;
+  workspace::TabState state;
   int active_index = TabCtrl_GetCurSel(tab_);
   int saved_active_index = -1;
-  content.append(L"active=");
-  content.append(std::to_wstring(active_index));
-  content.push_back(L'\n');
 
   int search_file_index = 0;
   int tab_count = TabCtrl_GetItemCount(tab_);
@@ -11715,18 +10301,17 @@ void MainWindow::SaveTabs() {
       }
       if (search_tab.results_loaded) {
         std::wstring result_path = SearchTabCachePath(file_name);
-        WriteSearchResults(result_path, search_tab.results);
+        search::SaveResults(result_path, search_tab.results);
       }
       referenced_files.insert(file_name);
       if (label.empty()) {
         label = search_tab.label;
       }
-      content.append(L"tab\t");
-      content.append(L"search\t");
-      content.append(EscapeHistoryField(label));
-      content.push_back(L'\t');
-      content.append(EscapeHistoryField(file_name));
-      content.push_back(L'\n');
+      workspace::PersistedTab saved;
+      saved.kind = workspace::PersistedTab::Kind::kSearch;
+      saved.label = std::move(label);
+      saved.search_cache_file = std::move(file_name);
+      state.tabs.push_back(std::move(saved));
     } else {
       const TabEntry& registry_entry = tabs_[static_cast<size_t>(i)];
       if (label.empty()) {
@@ -11736,38 +10321,20 @@ void MainWindow::SaveTabs() {
           label = L"Local Registry";
         }
       }
-      content.append(L"tab\t");
-      content.append(L"registry\t");
-      content.append(EscapeHistoryField(label));
-      content.push_back(L'\t');
-      content.append(EscapeHistoryField(registry_entry.selected_path));
-      for (const auto& expanded : registry_entry.expanded_paths) {
-        content.push_back(L'\t');
-        content.append(EscapeHistoryField(expanded));
-      }
-      content.push_back(L'\n');
+      workspace::PersistedTab saved;
+      saved.kind = workspace::PersistedTab::Kind::kRegistry;
+      saved.label = std::move(label);
+      saved.selected_path = registry_entry.selected_path;
+      saved.expanded_paths = registry_entry.expanded_paths;
+      state.tabs.push_back(std::move(saved));
     }
     ++saved_index;
   }
   if (saved_active_index < 0) {
     saved_active_index = 0;
   }
-  size_t newline = content.find(L'\n');
-  if (newline != std::wstring::npos) {
-    std::wstring header = L"active=" + std::to_wstring(saved_active_index);
-    content.replace(0, newline, header);
-  }
-
-  std::string utf8 = util::WideToUtf8(content);
-  if (!utf8.empty()) {
-    std::wstring tabs_path = TabsCachePath();
-    HANDLE file = CreateFileW(tabs_path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (file != INVALID_HANDLE_VALUE) {
-      DWORD written = 0;
-      WriteFile(file, utf8.data(), static_cast<DWORD>(utf8.size()), &written, nullptr);
-      CloseHandle(file);
-    }
-  }
+  state.active_index = saved_active_index;
+  workspace::SaveTabs(TabsCachePath(), state);
 
   std::wstring pattern = util::JoinPath(folder, L"search_*.tsv");
   WIN32_FIND_DATAW data = {};
@@ -11796,271 +10363,31 @@ std::wstring MainWindow::CommentsPath() const {
 }
 
 void MainWindow::LoadComments() {
-  value_comments_.clear();
-  name_comments_.clear();
-  std::wstring path = CommentsPath();
-  if (path.empty()) {
-    return;
-  }
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return;
-  }
-  LARGE_INTEGER size = {};
-  if (!GetFileSizeEx(file, &size) || size.QuadPart <= 0 || size.QuadPart > static_cast<LONGLONG>(std::numeric_limits<int>::max())) {
-    CloseHandle(file);
-    return;
-  }
-  std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
-  DWORD read = 0;
-  bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
-  CloseHandle(file);
-  if (!ok || read == 0) {
-    return;
-  }
-  buffer.resize(read);
-  if (buffer.size() >= 3 && static_cast<unsigned char>(buffer[0]) == 0xEF && static_cast<unsigned char>(buffer[1]) == 0xBB && static_cast<unsigned char>(buffer[2]) == 0xBF) {
-    buffer.erase(0, 3);
-  }
-  std::wstring content = util::Utf8ToWide(buffer);
-  if (content.empty()) {
-    return;
-  }
-
-  size_t start = 0;
-  while (start < content.size()) {
-    size_t end = content.find(L'\n', start);
-    if (end == std::wstring::npos) {
-      end = content.size();
-    }
-    std::wstring line = content.substr(start, end - start);
-    if (!line.empty() && line.back() == L'\r') {
-      line.pop_back();
-    }
-    start = end + 1;
-    if (line.empty()) {
-      continue;
-    }
-    std::vector<std::wstring> parts = SplitHistoryFields(line);
-    if (parts.size() < 5) {
-      continue;
-    }
-    std::wstring scope = parts[0];
-    std::wstring path_field = UnescapeHistoryField(parts[1]);
-    std::wstring name_field = UnescapeHistoryField(parts[2]);
-    DWORD type = static_cast<DWORD>(_wtoi(parts[3].c_str()));
-    std::wstring text = UnescapeHistoryField(parts[4]);
-    if (IsWhitespaceOnly(text)) {
-      continue;
-    }
-    if (_wcsicmp(scope.c_str(), L"value") == 0) {
-      CommentEntry entry;
-      entry.path = path_field;
-      entry.name = name_field;
-      entry.type = type;
-      entry.text = text;
-      value_comments_[MakeValueCommentKey(path_field, name_field, type)] = std::move(entry);
-    } else if (_wcsicmp(scope.c_str(), L"name") == 0) {
-      CommentEntry entry;
-      entry.name = name_field;
-      entry.type = type;
-      entry.text = text;
-      name_comments_[MakeNameCommentKey(name_field, type)] = std::move(entry);
-    }
-  }
+  value_comments_.Load(CommentsPath());
 }
 
 void MainWindow::SaveComments() const {
-  std::wstring path = CommentsPath();
-  if (path.empty()) {
-    return;
-  }
-  std::wstring content;
-  for (const auto& pair : value_comments_) {
-    const auto& entry = pair.second;
-    if (IsWhitespaceOnly(entry.text)) {
-      continue;
-    }
-    content.append(L"value\t");
-    content.append(EscapeHistoryField(entry.path));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(entry.name));
-    content.push_back(L'\t');
-    content.append(std::to_wstring(entry.type));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(entry.text));
-    content.push_back(L'\n');
-  }
-  for (const auto& pair : name_comments_) {
-    const auto& entry = pair.second;
-    if (IsWhitespaceOnly(entry.text)) {
-      continue;
-    }
-    content.append(L"name\t");
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(entry.name));
-    content.push_back(L'\t');
-    content.append(std::to_wstring(entry.type));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(entry.text));
-    content.push_back(L'\n');
-  }
-  if (content.empty()) {
-    HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (file != INVALID_HANDLE_VALUE) {
-      CloseHandle(file);
-    }
-    return;
-  }
-  std::string utf8 = util::WideToUtf8(content);
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return;
-  }
-  DWORD written = 0;
-  WriteFile(file, utf8.data(), static_cast<DWORD>(utf8.size()), &written, nullptr);
-  CloseHandle(file);
+  value_comments_.Save(CommentsPath());
 }
 
 bool MainWindow::ImportCommentsFromFile(const std::wstring& path) {
-  if (path.empty()) {
+  if (!value_comments_.Import(path)) {
     return false;
   }
-  value_comments_.clear();
-  name_comments_.clear();
-  std::wstring original = CommentsPath();
-  if (!original.empty() && _wcsicmp(path.c_str(), original.c_str()) == 0) {
-    LoadComments();
-  } else {
-    HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (file == INVALID_HANDLE_VALUE) {
-      return false;
-    }
-    LARGE_INTEGER size = {};
-    if (!GetFileSizeEx(file, &size) || size.QuadPart <= 0 || size.QuadPart > static_cast<LONGLONG>(std::numeric_limits<int>::max())) {
-      CloseHandle(file);
-      return false;
-    }
-    std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
-    DWORD read = 0;
-    bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
-    CloseHandle(file);
-    if (!ok || read == 0) {
-      return false;
-    }
-    buffer.resize(read);
-    if (buffer.size() >= 3 && static_cast<unsigned char>(buffer[0]) == 0xEF && static_cast<unsigned char>(buffer[1]) == 0xBB && static_cast<unsigned char>(buffer[2]) == 0xBF) {
-      buffer.erase(0, 3);
-    }
-    std::wstring content = util::Utf8ToWide(buffer);
-    if (content.empty()) {
-      return false;
-    }
-    size_t start = 0;
-    while (start < content.size()) {
-      size_t end = content.find(L'\n', start);
-      if (end == std::wstring::npos) {
-        end = content.size();
-      }
-      std::wstring line = content.substr(start, end - start);
-      if (!line.empty() && line.back() == L'\r') {
-        line.pop_back();
-      }
-      start = end + 1;
-      if (line.empty()) {
-        continue;
-      }
-      std::vector<std::wstring> parts = SplitHistoryFields(line);
-      if (parts.size() < 5) {
-        continue;
-      }
-      std::wstring scope = parts[0];
-      std::wstring path_field = UnescapeHistoryField(parts[1]);
-      std::wstring name_field = UnescapeHistoryField(parts[2]);
-      DWORD type = static_cast<DWORD>(_wtoi(parts[3].c_str()));
-      std::wstring text = UnescapeHistoryField(parts[4]);
-      if (IsWhitespaceOnly(text)) {
-        continue;
-      }
-      if (_wcsicmp(scope.c_str(), L"value") == 0) {
-        CommentEntry entry;
-        entry.path = path_field;
-        entry.name = name_field;
-        entry.type = type;
-        entry.text = text;
-        value_comments_[MakeValueCommentKey(path_field, name_field, type)] = std::move(entry);
-      } else if (_wcsicmp(scope.c_str(), L"name") == 0) {
-        CommentEntry entry;
-        entry.name = name_field;
-        entry.type = type;
-        entry.text = text;
-        name_comments_[MakeNameCommentKey(name_field, type)] = std::move(entry);
-      }
-    }
-  }
-  SaveComments();
+  value_comments_.Save(CommentsPath());
   RefreshValueListComments();
   return true;
 }
 
 bool MainWindow::ExportCommentsToFile(const std::wstring& path) const {
-  if (path.empty()) {
-    return false;
-  }
-  std::wstring content;
-  for (const auto& pair : value_comments_) {
-    const auto& entry = pair.second;
-    if (IsWhitespaceOnly(entry.text)) {
-      continue;
-    }
-    content.append(L"value\t");
-    content.append(EscapeHistoryField(entry.path));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(entry.name));
-    content.push_back(L'\t');
-    content.append(std::to_wstring(entry.type));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(entry.text));
-    content.push_back(L'\n');
-  }
-  for (const auto& pair : name_comments_) {
-    const auto& entry = pair.second;
-    if (IsWhitespaceOnly(entry.text)) {
-      continue;
-    }
-    content.append(L"name\t");
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(entry.name));
-    content.push_back(L'\t');
-    content.append(std::to_wstring(entry.type));
-    content.push_back(L'\t');
-    content.append(EscapeHistoryField(entry.text));
-    content.push_back(L'\n');
-  }
-  if (content.empty()) {
-    HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (file == INVALID_HANDLE_VALUE) {
-      return false;
-    }
-    CloseHandle(file);
-    return true;
-  }
-  std::string utf8 = util::WideToUtf8(content);
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return false;
-  }
-  DWORD written = 0;
-  WriteFile(file, utf8.data(), static_cast<DWORD>(utf8.size()), &written, nullptr);
-  CloseHandle(file);
-  return true;
+  return value_comments_.Export(path);
 }
 
 void MainWindow::RefreshValueListComments() {
   if (!current_node_) {
     return;
   }
-  std::wstring path = RegistryProvider::BuildPath(*current_node_);
+  std::wstring path = registry_path::Build(*current_node_);
   bool changed = false;
   for (auto& row : value_list_.rows()) {
     if (row.kind != rowkind::kValue) {
@@ -12070,15 +10397,15 @@ void MainWindow::RefreshValueListComments() {
       }
       continue;
     }
-    std::wstring value_key = MakeValueCommentKey(path, row.extra, row.value_type);
+    std::wstring value_key = changes::ValueComments::ValueKey(path, row.extra, row.value_type);
     std::wstring text;
-    auto it = value_comments_.find(value_key);
-    if (it != value_comments_.end()) {
+    auto it = value_comments_.value_entries().find(value_key);
+    if (it != value_comments_.value_entries().end()) {
       text = it->second.text;
     } else {
-      std::wstring name_key = MakeNameCommentKey(row.extra, row.value_type);
-      auto it2 = name_comments_.find(name_key);
-      if (it2 != name_comments_.end()) {
+      std::wstring name_key = changes::ValueComments::NameKey(row.extra, row.value_type);
+      auto it2 = value_comments_.name_entries().find(name_key);
+      if (it2 != value_comments_.name_entries().end()) {
         text = it2->second.text;
       }
     }
@@ -12102,23 +10429,58 @@ void MainWindow::RefreshValueListComments() {
   }
 }
 
-bool MainWindow::EditValueComment(const ListRow& row) {
-  if (!current_node_ || row.kind != rowkind::kValue) {
+bool MainWindow::EditValueComments(const std::vector<ListRow>& rows) {
+  if (!current_node_ || rows.empty()) {
     return false;
   }
-  std::wstring path = RegistryProvider::BuildPath(*current_node_);
-  std::wstring value_key = MakeValueCommentKey(path, row.extra, row.value_type);
-  std::wstring name_key = MakeNameCommentKey(row.extra, row.value_type);
-  bool has_value = (value_comments_.find(value_key) != value_comments_.end());
-  bool has_name = (name_comments_.find(name_key) != name_comments_.end());
+  std::wstring path = registry_path::Build(*current_node_);
+
+  auto resolve_comment = [&](const ListRow& row, bool* from_name) {
+    std::wstring value_key = changes::ValueComments::ValueKey(path, row.extra, row.value_type);
+    auto value_it = value_comments_.value_entries().find(value_key);
+    if (value_it != value_comments_.value_entries().end()) {
+      if (from_name) {
+        *from_name = false;
+      }
+      return value_it->second.text;
+    }
+    std::wstring name_key = changes::ValueComments::NameKey(row.extra, row.value_type);
+    auto name_it = value_comments_.name_entries().find(name_key);
+    if (name_it != value_comments_.name_entries().end()) {
+      if (from_name) {
+        *from_name = true;
+      }
+      return name_it->second.text;
+    }
+    if (from_name) {
+      *from_name = false;
+    }
+    return std::wstring();
+  };
+
   std::wstring initial;
-  bool apply_all = false;
-  if (has_value) {
-    initial = value_comments_[value_key].text;
-  } else if (has_name) {
-    initial = name_comments_[name_key].text;
-    apply_all = true;
+  bool apply_all = true;
+  bool have_initial = false;
+  bool comments_match = true;
+  for (const auto& row : rows) {
+    if (row.kind != rowkind::kValue || row.simulated) {
+      return false;
+    }
+    bool from_name = false;
+    std::wstring comment = resolve_comment(row, &from_name);
+    if (!have_initial) {
+      initial = std::move(comment);
+      have_initial = true;
+    } else if (comment != initial) {
+      comments_match = false;
+    }
+    apply_all = apply_all && from_name;
   }
+  if (!comments_match) {
+    initial.clear();
+    apply_all = false;
+  }
+
   std::wstring updated = initial;
   bool apply_all_out = apply_all;
   if (!PromptForComment(hwnd_, updated, apply_all_out, &updated, &apply_all_out)) {
@@ -12127,23 +10489,28 @@ bool MainWindow::EditValueComment(const ListRow& row) {
   if (IsWhitespaceOnly(updated)) {
     updated.clear();
   }
-  if (updated.empty()) {
-    value_comments_.erase(value_key);
-    name_comments_.erase(name_key);
-  } else if (apply_all_out) {
-    CommentEntry entry;
-    entry.name = row.extra;
-    entry.type = row.value_type;
-    entry.text = updated;
-    name_comments_[name_key] = std::move(entry);
-    value_comments_.erase(value_key);
-  } else {
-    CommentEntry entry;
-    entry.path = path;
-    entry.name = row.extra;
-    entry.type = row.value_type;
-    entry.text = updated;
-    value_comments_[value_key] = std::move(entry);
+
+  for (const auto& row : rows) {
+    std::wstring value_key = changes::ValueComments::ValueKey(path, row.extra, row.value_type);
+    std::wstring name_key = changes::ValueComments::NameKey(row.extra, row.value_type);
+    if (updated.empty()) {
+      value_comments_.value_entries().erase(value_key);
+      value_comments_.name_entries().erase(name_key);
+    } else if (apply_all_out) {
+      changes::CommentEntry entry;
+      entry.name = row.extra;
+      entry.type = row.value_type;
+      entry.text = updated;
+      value_comments_.name_entries()[name_key] = std::move(entry);
+      value_comments_.value_entries().erase(value_key);
+    } else {
+      changes::CommentEntry entry;
+      entry.path = path;
+      entry.name = row.extra;
+      entry.type = row.value_type;
+      entry.text = updated;
+      value_comments_.value_entries()[value_key] = std::move(entry);
+    }
   }
   SaveComments();
   RefreshValueListComments();
@@ -12151,425 +10518,186 @@ bool MainWindow::EditValueComment(const ListRow& row) {
 }
 
 void MainWindow::LoadSettings() {
-  std::wstring path = SettingsPath();
-  if (path.empty()) {
-    return;
-  }
-  bool font_size_set = false;
-  int font_size = 0;
-  auto parse_indexed_key = [](const std::wstring& key, const wchar_t* prefix, int* index) -> bool {
-    size_t prefix_len = wcslen(prefix);
-    if (_wcsnicmp(key.c_str(), prefix, prefix_len) != 0) {
-      return false;
-    }
-    const wchar_t* start = key.c_str() + prefix_len;
-    if (*start == L'\0') {
-      return false;
-    }
-    wchar_t* end = nullptr;
-    long value = wcstol(start, &end, 10);
-    if (end == start || *end != L'\0' || value < 0) {
-      return false;
-    }
-    if (index) {
-      *index = static_cast<int>(value);
-    }
-    return true;
-  };
-  auto parse_bool = [](const std::wstring& value) -> bool { return (_wcsicmp(value.c_str(), L"1") == 0 || _wcsicmp(value.c_str(), L"true") == 0 || _wcsicmp(value.c_str(), L"yes") == 0); };
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return;
-  }
-  LARGE_INTEGER size = {};
-  if (!GetFileSizeEx(file, &size) || size.QuadPart <= 0 || size.QuadPart > static_cast<LONGLONG>(std::numeric_limits<int>::max())) {
-    CloseHandle(file);
-    return;
-  }
-  std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
-  DWORD read = 0;
-  bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
-  CloseHandle(file);
-  if (!ok || read == 0) {
-    return;
-  }
-  buffer.resize(read);
-  if (buffer.size() >= 3 && static_cast<unsigned char>(buffer[0]) == 0xEF && static_cast<unsigned char>(buffer[1]) == 0xBB && static_cast<unsigned char>(buffer[2]) == 0xBF) {
-    buffer.erase(0, 3);
-  }
-  std::wstring content = util::Utf8ToWide(buffer);
-  if (content.empty()) {
+  workspace::Settings settings;
+  settings.clear_history_on_exit = clear_history_on_exit_;
+  settings.clear_tabs_on_exit = clear_tabs_on_exit_;
+  settings.show_toolbar = show_toolbar_;
+  settings.show_address_bar = show_address_bar_;
+  settings.show_filter_bar = show_filter_bar_;
+  settings.show_tab_control = show_tab_control_;
+  settings.show_tree = show_tree_;
+  settings.show_history = show_history_;
+  settings.show_status_bar = show_status_bar_;
+  settings.show_keys_in_list = show_keys_in_list_;
+  settings.show_simulated_keys = show_simulated_keys_;
+  settings.show_extra_hives = show_extra_hives_;
+  settings.save_tree_state = save_tree_state_;
+  settings.save_tabs = save_tabs_;
+  settings.always_run_as_admin = always_run_as_admin_;
+  settings.always_run_as_system = always_run_as_system_;
+  settings.always_run_as_trustedinstaller = always_run_as_trustedinstaller_;
+  settings.always_on_top = always_on_top_;
+  settings.replace_regedit = replace_regedit_;
+  settings.single_instance = single_instance_;
+  settings.read_only = read_only_;
+  settings.window_x = window_x_;
+  settings.window_y = window_y_;
+  settings.window_width = window_width_;
+  settings.window_height = window_height_;
+  settings.window_maximized = window_maximized_;
+  settings.tree_width = tree_width_;
+  settings.history_height = history_height_;
+  settings.theme_preset = active_theme_preset_;
+  settings.icon_set = icon_set_;
+  settings.use_custom_font = use_custom_font_;
+  settings.font_face = custom_font_.lfFaceName;
+  settings.font_size = FontPointSize(custom_font_);
+  settings.font_weight = custom_font_.lfWeight;
+  settings.font_italic = custom_font_.lfItalic != FALSE;
+  settings.value_column_widths = saved_value_column_widths_;
+  settings.value_column_visible = saved_value_column_visible_;
+
+  if (!workspace::LoadSettings(SettingsPath(), &settings)) {
     return;
   }
 
-  size_t start = 0;
-  while (start < content.size()) {
-    size_t end = content.find(L'\n', start);
-    if (end == std::wstring::npos) {
-      end = content.size();
-    }
-    std::wstring line = content.substr(start, end - start);
-    if (!line.empty() && line.back() == L'\r') {
-      line.pop_back();
-    }
-    start = end + 1;
-    if (line.empty()) {
-      continue;
-    }
-    size_t sep = line.find(L'=');
-    if (sep == std::wstring::npos) {
-      continue;
-    }
-    std::wstring key = TrimWhitespace(line.substr(0, sep));
-    std::wstring value = TrimWhitespace(line.substr(sep + 1));
-    int column_index = -1;
-    if (_wcsicmp(key.c_str(), L"clear_history_on_exit") == 0) {
-      clear_history_on_exit_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"clear_tabs_on_exit") == 0) {
-      clear_tabs_on_exit_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"view_toolbar") == 0) {
-      show_toolbar_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"view_address_bar") == 0) {
-      show_address_bar_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"view_filter_bar") == 0) {
-      show_filter_bar_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"view_tab_control") == 0) {
-      show_tab_control_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"view_tree") == 0) {
-      show_tree_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"view_history") == 0) {
-      show_history_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"view_status_bar") == 0) {
-      show_status_bar_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"view_keys_in_list") == 0) {
-      show_keys_in_list_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"view_simulated_keys") == 0) {
-      show_simulated_keys_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"view_extra_hives") == 0) {
-      show_extra_hives_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"save_tree_state") == 0) {
-      save_tree_state_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"save_tabs") == 0) {
-      save_tabs_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"window_x") == 0) {
-      window_x_ = _wtoi(value.c_str());
-      window_placement_loaded_ = true;
-    } else if (_wcsicmp(key.c_str(), L"window_y") == 0) {
-      window_y_ = _wtoi(value.c_str());
-      window_placement_loaded_ = true;
-    } else if (_wcsicmp(key.c_str(), L"window_width") == 0) {
-      window_width_ = _wtoi(value.c_str());
-      window_placement_loaded_ = true;
-    } else if (_wcsicmp(key.c_str(), L"window_height") == 0) {
-      window_height_ = _wtoi(value.c_str());
-      window_placement_loaded_ = true;
-    } else if (_wcsicmp(key.c_str(), L"window_maximized") == 0) {
-      window_maximized_ = parse_bool(value);
-      window_placement_loaded_ = true;
-    } else if (_wcsicmp(key.c_str(), L"always_on_top") == 0) {
-      always_on_top_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"replace_regedit") == 0) {
-      replace_regedit_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"single_instance") == 0) {
-      single_instance_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"read_only") == 0) {
-      read_only_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"always_run_as_admin") == 0) {
-      always_run_as_admin_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"always_run_as_system") == 0) {
-      always_run_as_system_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"always_run_as_trustedinstaller") == 0) {
-      always_run_as_trustedinstaller_ = parse_bool(value);
-    } else if (_wcsicmp(key.c_str(), L"theme_mode") == 0) {
-      if (_wcsicmp(value.c_str(), L"dark") == 0) {
-        theme_mode_ = ThemeMode::kDark;
-      } else if (_wcsicmp(value.c_str(), L"light") == 0) {
-        theme_mode_ = ThemeMode::kLight;
-      } else if (_wcsicmp(value.c_str(), L"custom") == 0) {
-        theme_mode_ = ThemeMode::kCustom;
-      } else {
-        theme_mode_ = ThemeMode::kSystem;
-      }
-    } else if (_wcsicmp(key.c_str(), L"theme_preset") == 0) {
-      active_theme_preset_ = value;
-    } else if (_wcsicmp(key.c_str(), L"icon_set") == 0) {
-      if (IsIconSetName(value, kIconSetDefault)) {
-        icon_set_ = kIconSetDefault;
-      } else if (IsIconSetName(value, kIconSetLucide)) {
-        icon_set_ = kIconSetDefault;
-      } else if (IsIconSetName(value, kIconSetTabler)) {
-        icon_set_ = kIconSetTabler;
-      } else if (IsIconSetName(value, kIconSetFluentUi)) {
-        icon_set_ = kIconSetFluentUi;
-      } else if (IsIconSetName(value, kIconSetMaterialSymbols)) {
-        icon_set_ = kIconSetMaterialSymbols;
-      } else if (IsIconSetName(value, kIconSetCustom)) {
-        icon_set_ = kIconSetCustom;
-      } else {
-        icon_set_ = kIconSetDefault;
-      }
-    } else if (_wcsicmp(key.c_str(), L"tree_width") == 0) {
-      int width = _wtoi(value.c_str());
-      if (width > 0) {
-        tree_width_ = width;
-      }
-    } else if (_wcsicmp(key.c_str(), L"history_height") == 0) {
-      int height = _wtoi(value.c_str());
-      if (height > 0) {
-        history_height_ = height;
-      }
-    } else if (parse_indexed_key(key, L"value_column_width_", &column_index)) {
-      int width = _wtoi(value.c_str());
-      if (column_index >= 0 && width >= 0) {
-        if (static_cast<size_t>(column_index) >= saved_value_column_widths_.size()) {
-          saved_value_column_widths_.resize(static_cast<size_t>(column_index) + 1, 0);
-        }
-        saved_value_column_widths_[static_cast<size_t>(column_index)] = width;
-        saved_value_columns_loaded_ = true;
-      }
-    } else if (parse_indexed_key(key, L"value_column_visible_", &column_index)) {
-      bool visible = parse_bool(value);
-      if (column_index >= 0) {
-        if (static_cast<size_t>(column_index) >= saved_value_column_visible_.size()) {
-          saved_value_column_visible_.resize(static_cast<size_t>(column_index) + 1, true);
-        }
-        saved_value_column_visible_[static_cast<size_t>(column_index)] = visible;
-        saved_value_columns_loaded_ = true;
-      }
-    } else if (_wcsicmp(key.c_str(), L"font_use_default") == 0) {
-      bool use_default = parse_bool(value);
-      use_custom_font_ = !use_default;
-    } else if (_wcsicmp(key.c_str(), L"font_face") == 0) {
-      if (!value.empty()) {
-        wcsncpy_s(custom_font_.lfFaceName, value.c_str(), _TRUNCATE);
-      }
-    } else if (_wcsicmp(key.c_str(), L"font_size") == 0) {
-      int parsed_size = _wtoi(value.c_str());
-      if (parsed_size > 0) {
-        font_size = parsed_size;
-        font_size_set = true;
-      }
-    } else if (_wcsicmp(key.c_str(), L"font_weight") == 0) {
-      int weight = _wtoi(value.c_str());
-      if (weight > 0) {
-        custom_font_.lfWeight = weight;
-      }
-    } else if (_wcsicmp(key.c_str(), L"font_italic") == 0) {
-      bool italic = parse_bool(value);
-      custom_font_.lfItalic = italic ? TRUE : FALSE;
-    } else if (parse_indexed_key(key, L"trace_recent_", &column_index)) {
-      if (column_index >= 0) {
-        if (static_cast<size_t>(column_index) >= recent_trace_paths_.size()) {
-          recent_trace_paths_.resize(static_cast<size_t>(column_index) + 1);
-        }
-        recent_trace_paths_[static_cast<size_t>(column_index)] = value;
-      }
-    } else if (parse_indexed_key(key, L"default_recent_", &column_index)) {
-      if (column_index >= 0) {
-        if (static_cast<size_t>(column_index) >= recent_default_paths_.size()) {
-          recent_default_paths_.resize(static_cast<size_t>(column_index) + 1);
-        }
-        recent_default_paths_[static_cast<size_t>(column_index)] = value;
-      }
-    }
+  clear_history_on_exit_ = settings.clear_history_on_exit;
+  clear_tabs_on_exit_ = settings.clear_tabs_on_exit;
+  show_toolbar_ = settings.show_toolbar;
+  show_address_bar_ = settings.show_address_bar;
+  show_filter_bar_ = settings.show_filter_bar;
+  show_tab_control_ = settings.show_tab_control;
+  show_tree_ = settings.show_tree;
+  show_history_ = settings.show_history;
+  show_status_bar_ = settings.show_status_bar;
+  show_keys_in_list_ = settings.show_keys_in_list;
+  show_simulated_keys_ = settings.show_simulated_keys;
+  show_extra_hives_ = settings.show_extra_hives;
+  save_tree_state_ = settings.save_tree_state;
+  save_tabs_ = settings.save_tabs;
+  always_run_as_admin_ = settings.always_run_as_admin;
+  always_run_as_system_ = settings.always_run_as_system;
+  always_run_as_trustedinstaller_ = settings.always_run_as_trustedinstaller;
+  always_on_top_ = settings.always_on_top;
+  replace_regedit_ = settings.replace_regedit;
+  single_instance_ = settings.single_instance;
+  read_only_ = settings.read_only;
+  window_placement_loaded_ = settings.window_placement_present;
+  window_x_ = settings.window_x;
+  window_y_ = settings.window_y;
+  window_width_ = settings.window_width;
+  window_height_ = settings.window_height;
+  window_maximized_ = settings.window_maximized;
+  tree_width_ = settings.tree_width;
+  history_height_ = settings.history_height;
+  if (_wcsicmp(settings.theme_mode.c_str(), L"dark") == 0) {
+    theme_mode_ = ThemeMode::kDark;
+  } else if (_wcsicmp(settings.theme_mode.c_str(), L"light") == 0) {
+    theme_mode_ = ThemeMode::kLight;
+  } else if (_wcsicmp(settings.theme_mode.c_str(), L"custom") == 0) {
+    theme_mode_ = ThemeMode::kCustom;
+  } else {
+    theme_mode_ = ThemeMode::kSystem;
   }
-  if (always_run_as_trustedinstaller_) {
-    always_run_as_system_ = false;
-    always_run_as_admin_ = false;
-  } else if (always_run_as_system_) {
-    always_run_as_admin_ = false;
+  active_theme_preset_ = std::move(settings.theme_preset);
+  icon_set_ = IsKnownIconSetName(settings.icon_set) &&
+                      !IsIconSetName(settings.icon_set, kIconSetLucide)
+                  ? std::move(settings.icon_set)
+                  : kIconSetDefault;
+  use_custom_font_ = settings.use_custom_font;
+  if (!settings.font_face.empty()) {
+    wcsncpy_s(custom_font_.lfFaceName, settings.font_face.c_str(), _TRUNCATE);
   }
+  if (settings.font_size > 0) {
+    custom_font_.lfHeight = FontHeightFromPointSize(settings.font_size);
+  }
+  custom_font_.lfWeight = settings.font_weight;
+  custom_font_.lfItalic = settings.font_italic ? TRUE : FALSE;
+  recent_trace_paths_.Replace(std::move(settings.recent_traces));
+  recent_default_paths_.Replace(std::move(settings.recent_defaults));
+  saved_value_column_widths_ = std::move(settings.value_column_widths);
+  saved_value_column_visible_ = std::move(settings.value_column_visible);
+  saved_value_columns_loaded_ = !saved_value_column_widths_.empty() ||
+                                !saved_value_column_visible_.empty();
   if (!save_tree_state_) {
-    saved_tree_selected_path_.clear();
-    saved_tree_expanded_paths_.clear();
+    saved_tree_state_.Clear();
   }
-  if (font_size_set) {
-    custom_font_.lfHeight = FontHeightFromPointSize(font_size);
-  }
-  NormalizeRecentTraceList();
-  NormalizeRecentDefaultList();
 }
-
 void MainWindow::SaveSettings() const {
-  std::wstring path = SettingsPath();
-  if (path.empty()) {
-    return;
-  }
-  int window_x = window_x_;
-  int window_y = window_y_;
-  int window_w = window_width_;
-  int window_h = window_height_;
-  bool window_max = window_maximized_;
+  workspace::Settings settings;
+  settings.clear_history_on_exit = clear_history_on_exit_;
+  settings.clear_tabs_on_exit = clear_tabs_on_exit_;
+  settings.show_toolbar = show_toolbar_;
+  settings.show_address_bar = show_address_bar_;
+  settings.show_filter_bar = show_filter_bar_;
+  settings.show_tab_control = show_tab_control_;
+  settings.show_tree = show_tree_;
+  settings.show_history = show_history_;
+  settings.show_status_bar = show_status_bar_;
+  settings.show_keys_in_list = show_keys_in_list_;
+  settings.show_simulated_keys = show_simulated_keys_;
+  settings.show_extra_hives = show_extra_hives_;
+  settings.save_tree_state = save_tree_state_;
+  settings.save_tabs = save_tabs_;
+  settings.always_run_as_admin = always_run_as_admin_;
+  settings.always_run_as_system = always_run_as_system_;
+  settings.always_run_as_trustedinstaller = always_run_as_trustedinstaller_;
+  settings.always_on_top = always_on_top_;
+  settings.replace_regedit = replace_regedit_;
+  settings.single_instance = single_instance_;
+  settings.read_only = read_only_;
+  settings.window_x = window_x_;
+  settings.window_y = window_y_;
+  settings.window_width = window_width_;
+  settings.window_height = window_height_;
+  settings.window_maximized = window_maximized_;
   if (hwnd_ && IsWindow(hwnd_)) {
     WINDOWPLACEMENT placement = {};
     placement.length = sizeof(placement);
     if (GetWindowPlacement(hwnd_, &placement)) {
-      RECT normal = placement.rcNormalPosition;
-      int width = normal.right - normal.left;
-      int height = normal.bottom - normal.top;
+      const RECT& normal = placement.rcNormalPosition;
+      const int width = normal.right - normal.left;
+      const int height = normal.bottom - normal.top;
       if (width > 0 && height > 0) {
-        window_x = normal.left;
-        window_y = normal.top;
-        window_w = width;
-        window_h = height;
+        settings.window_x = normal.left;
+        settings.window_y = normal.top;
+        settings.window_width = width;
+        settings.window_height = height;
       }
-      window_max = (placement.showCmd == SW_SHOWMAXIMIZED);
+      settings.window_maximized = placement.showCmd == SW_SHOWMAXIMIZED;
     }
   }
-  std::wstring content = L"clear_history_on_exit=";
-  content += clear_history_on_exit_ ? L"1\n" : L"0\n";
-  content += L"clear_tabs_on_exit=";
-  content += clear_tabs_on_exit_ ? L"1\n" : L"0\n";
-  content += L"view_toolbar=";
-  content += show_toolbar_ ? L"1\n" : L"0\n";
-  content += L"view_address_bar=";
-  content += show_address_bar_ ? L"1\n" : L"0\n";
-  content += L"view_filter_bar=";
-  content += show_filter_bar_ ? L"1\n" : L"0\n";
-  content += L"view_tab_control=";
-  content += show_tab_control_ ? L"1\n" : L"0\n";
-  content += L"view_tree=";
-  content += show_tree_ ? L"1\n" : L"0\n";
-  content += L"view_history=";
-  content += show_history_ ? L"1\n" : L"0\n";
-  content += L"view_status_bar=";
-  content += show_status_bar_ ? L"1\n" : L"0\n";
-  content += L"view_keys_in_list=";
-  content += show_keys_in_list_ ? L"1\n" : L"0\n";
-  content += L"view_simulated_keys=";
-  content += show_simulated_keys_ ? L"1\n" : L"0\n";
-  content += L"view_extra_hives=";
-  content += show_extra_hives_ ? L"1\n" : L"0\n";
-  content += L"save_tree_state=";
-  content += save_tree_state_ ? L"1\n" : L"0\n";
-  content += L"save_tabs=";
-  content += save_tabs_ ? L"1\n" : L"0\n";
-  content += L"always_run_as_admin=";
-  content += always_run_as_admin_ ? L"1\n" : L"0\n";
-  content += L"always_run_as_system=";
-  content += always_run_as_system_ ? L"1\n" : L"0\n";
-  content += L"always_run_as_trustedinstaller=";
-  content += always_run_as_trustedinstaller_ ? L"1\n" : L"0\n";
-  if (window_w > 0 && window_h > 0) {
-    content += L"window_x=";
-    content += std::to_wstring(window_x);
-    content.push_back(L'\n');
-    content += L"window_y=";
-    content += std::to_wstring(window_y);
-    content.push_back(L'\n');
-    content += L"window_width=";
-    content += std::to_wstring(window_w);
-    content.push_back(L'\n');
-    content += L"window_height=";
-    content += std::to_wstring(window_h);
-    content.push_back(L'\n');
-    content += L"window_maximized=";
-    content += window_max ? L"1\n" : L"0\n";
+  settings.tree_width = tree_width_;
+  settings.history_height = history_height_;
+  switch (theme_mode_) {
+  case ThemeMode::kDark:
+    settings.theme_mode = L"dark";
+    break;
+  case ThemeMode::kLight:
+    settings.theme_mode = L"light";
+    break;
+  case ThemeMode::kCustom:
+    settings.theme_mode = L"custom";
+    break;
+  default:
+    settings.theme_mode = L"system";
+    break;
   }
-  content += L"always_on_top=";
-  content += always_on_top_ ? L"1\n" : L"0\n";
-  content += L"replace_regedit=";
-  content += replace_regedit_ ? L"1\n" : L"0\n";
-  content += L"single_instance=";
-  content += single_instance_ ? L"1\n" : L"0\n";
-  content += L"read_only=";
-  content += read_only_ ? L"1\n" : L"0\n";
-  content += L"theme_mode=";
-  if (theme_mode_ == ThemeMode::kDark) {
-    content += L"dark\n";
-  } else if (theme_mode_ == ThemeMode::kLight) {
-    content += L"light\n";
-  } else if (theme_mode_ == ThemeMode::kCustom) {
-    content += L"custom\n";
-  } else {
-    content += L"system\n";
-  }
-  content += L"theme_preset=";
-  content += active_theme_preset_;
-  content.push_back(L'\n');
-  content += L"icon_set=";
-  if (IsKnownIconSetName(icon_set_)) {
-    content += icon_set_;
-  } else {
-    content += kIconSetDefault;
-  }
-  content.push_back(L'\n');
-  content += L"tree_width=";
-  content += std::to_wstring(tree_width_);
-  content.push_back(L'\n');
-  content += L"history_height=";
-  content += std::to_wstring(history_height_);
-  content.push_back(L'\n');
-  content += L"font_use_default=";
-  content += use_custom_font_ ? L"0\n" : L"1\n";
-  if (custom_font_.lfFaceName[0] != L'\0') {
-    content += L"font_face=";
-    content += custom_font_.lfFaceName;
-    content.push_back(L'\n');
-  }
-  int font_size = FontPointSize(custom_font_);
-  if (font_size > 0) {
-    content += L"font_size=";
-    content += std::to_wstring(font_size);
-    content.push_back(L'\n');
-  }
-  content += L"font_weight=";
-  content += std::to_wstring(custom_font_.lfWeight);
-  content.push_back(L'\n');
-  content += L"font_italic=";
-  content += custom_font_.lfItalic ? L"1\n" : L"0\n";
-  for (size_t i = 0; i < recent_trace_paths_.size(); ++i) {
-    if (recent_trace_paths_[i].empty()) {
-      continue;
-    }
-    content += L"trace_recent_";
-    content += std::to_wstring(i);
-    content.push_back(L'=');
-    content += recent_trace_paths_[i];
-    content.push_back(L'\n');
-  }
-  for (size_t i = 0; i < recent_default_paths_.size(); ++i) {
-    if (recent_default_paths_[i].empty()) {
-      continue;
-    }
-    content += L"default_recent_";
-    content += std::to_wstring(i);
-    content.push_back(L'=');
-    content += recent_default_paths_[i];
-    content.push_back(L'\n');
-  }
-  for (size_t i = 0; i < value_columns_.size(); ++i) {
-    int width = 0;
-    if (i < value_column_widths_.size()) {
-      width = value_column_widths_[i];
-    }
-    content += L"value_column_width_";
-    content += std::to_wstring(i);
-    content.push_back(L'=');
-    content += std::to_wstring(width);
-    content.push_back(L'\n');
-    bool visible = true;
-    if (i < value_column_visible_.size()) {
-      visible = value_column_visible_[i];
-    }
-    content += L"value_column_visible_";
-    content += std::to_wstring(i);
-    content.push_back(L'=');
-    content += visible ? L"1\n" : L"0\n";
-  }
-  std::string utf8 = util::WideToUtf8(content);
-  if (utf8.empty()) {
-    return;
-  }
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return;
-  }
-  DWORD written = 0;
-  WriteFile(file, utf8.data(), static_cast<DWORD>(utf8.size()), &written, nullptr);
-  CloseHandle(file);
+  settings.theme_preset = active_theme_preset_;
+  settings.icon_set = IsKnownIconSetName(icon_set_) ? icon_set_ : kIconSetDefault;
+  settings.use_custom_font = use_custom_font_;
+  settings.font_face = custom_font_.lfFaceName;
+  settings.font_size = FontPointSize(custom_font_);
+  settings.font_weight = custom_font_.lfWeight;
+  settings.font_italic = custom_font_.lfItalic != FALSE;
+  settings.recent_traces = recent_trace_paths_.items();
+  settings.recent_defaults = recent_default_paths_.items();
+  settings.value_column_widths = value_column_widths_;
+  settings.value_column_visible = value_column_visible_;
+  settings.value_column_widths.resize(value_columns_.size(), 0);
+  settings.value_column_visible.resize(value_columns_.size(), true);
+  workspace::SaveSettings(SettingsPath(), settings);
 }
-
 std::wstring MainWindow::SettingsPath() const {
   std::wstring folder = util::GetAppDataFolder();
   if (folder.empty()) {
@@ -12587,163 +10715,48 @@ std::wstring MainWindow::TreeStatePath() const {
 }
 
 void MainWindow::LoadTreeState() {
-  saved_tree_selected_path_.clear();
-  saved_tree_expanded_paths_.clear();
+  saved_tree_state_.Clear();
   if (!save_tree_state_) {
     return;
   }
-  std::wstring path = TreeStatePath();
-  if (path.empty()) {
-    return;
-  }
-
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return;
-  }
-  LARGE_INTEGER size = {};
-  if (!GetFileSizeEx(file, &size) || size.QuadPart <= 0 || size.QuadPart > static_cast<LONGLONG>(std::numeric_limits<int>::max())) {
-    CloseHandle(file);
-    return;
-  }
-  std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
-  DWORD read = 0;
-  bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
-  CloseHandle(file);
-  if (!ok || read == 0) {
-    return;
-  }
-  buffer.resize(read);
-  if (buffer.size() >= 3 && static_cast<unsigned char>(buffer[0]) == 0xEF && static_cast<unsigned char>(buffer[1]) == 0xBB && static_cast<unsigned char>(buffer[2]) == 0xBF) {
-    buffer.erase(0, 3);
-  }
-  std::wstring content = util::Utf8ToWide(buffer);
-  if (content.empty()) {
-    return;
-  }
-
-  size_t start = 0;
-  while (start < content.size()) {
-    size_t end = content.find(L'\n', start);
-    if (end == std::wstring::npos) {
-      end = content.size();
-    }
-    std::wstring line = content.substr(start, end - start);
-    if (!line.empty() && line.back() == L'\r') {
-      line.pop_back();
-    }
-    start = end + 1;
-    if (line.empty()) {
-      continue;
-    }
-    if (line.front() == L'#') {
-      continue;
-    }
-    size_t sep = line.find(L'=');
-    if (sep == std::wstring::npos) {
-      continue;
-    }
-    std::wstring key = TrimWhitespace(line.substr(0, sep));
-    std::wstring value = line.substr(sep + 1);
-    if (EqualsInsensitive(key, L"selected")) {
-      saved_tree_selected_path_ = UnescapeHistoryField(value);
-    } else if (EqualsInsensitive(key, L"expanded")) {
-      std::wstring path_value = UnescapeHistoryField(value);
-      if (!path_value.empty()) {
-        saved_tree_expanded_paths_.push_back(std::move(path_value));
-      }
-    }
-  }
+  workspace::LoadTreeState(TreeStatePath(), &saved_tree_state_);
 }
 
 void MainWindow::StartTreeStateWorker() {
-  if (!save_tree_state_ || tree_state_thread_.joinable()) {
+  if (!save_tree_state_ || tree_state_saver_.running()) {
     return;
   }
-  tree_state_stop_ = false;
-  tree_state_thread_ = std::thread([this]() {
-    for (;;) {
-      std::unique_lock<std::mutex> lock(tree_state_mutex_);
-      tree_state_cv_.wait_for(lock, std::chrono::seconds(2), [this]() { return tree_state_stop_ || tree_state_dirty_; });
-      if (tree_state_stop_) {
-        break;
-      }
-      if (!tree_state_dirty_) {
-        continue;
-      }
-      std::wstring selected = tree_state_selected_;
-      std::vector<std::wstring> expanded = tree_state_expanded_;
-      tree_state_dirty_ = false;
-      lock.unlock();
-      SaveTreeStateFile(selected, expanded);
-    }
-  });
+  tree_state_saver_.Start(
+      std::chrono::seconds(2),
+      [this](workspace::TreeState state) {
+        SaveTreeStateFile(state.selected_path, state.expanded_paths);
+      });
 }
 
 void MainWindow::StopTreeStateWorker() {
+  tree_state_saver_.Stop();
   if (save_tree_state_ && tree_.hwnd() && IsWindow(tree_.hwnd())) {
     std::wstring selected;
     std::vector<std::wstring> expanded;
     CaptureTreeState(&selected, &expanded);
     SaveTreeStateFile(selected, expanded);
   }
-  {
-    std::lock_guard<std::mutex> lock(tree_state_mutex_);
-    tree_state_stop_ = true;
-  }
-  tree_state_cv_.notify_one();
-  if (tree_state_thread_.joinable()) {
-    tree_state_thread_.join();
-  }
 }
 
 void MainWindow::StartValueListWorker() {
-  if (value_list_thread_.joinable()) {
+  if (value_loader_.running()) {
     return;
   }
-  value_list_stop_ = false;
-  value_list_thread_ = std::thread([this]() {
-    for (;;) {
-      std::unique_ptr<ValueListTask> task;
-      {
-        std::unique_lock<std::mutex> lock(value_list_mutex_);
-        value_list_cv_.wait(lock, [this]() { return value_list_stop_ || value_list_pending_; });
-        if (value_list_stop_) {
-          break;
-        }
-        task = std::move(value_list_task_);
-        value_list_pending_ = false;
-      }
-      if (!task) {
-        continue;
-      }
-      if (task->generation != value_list_generation_.load()) {
-        continue;
+  value_loader_.Start(
+      [this](std::unique_ptr<ValueListTask> task,
+             const std::atomic_bool& stopping) {
+      if (!task || stopping.load() ||
+          task->generation != value_list_generation_.load()) {
+        return;
       }
 
       auto payload = std::make_unique<ValueListPayload>();
       payload->generation = task->generation;
-      std::wstring node_path = RegistryProvider::BuildPath(task->snapshot);
-
-      auto resolve_comment = [&](const std::wstring& name, DWORD type) -> std::wstring {
-        std::wstring value_key = MakeValueCommentKey(node_path, name, type);
-        auto it = task->value_comments.find(value_key);
-        if (it != task->value_comments.end()) {
-          return it->second.text;
-        }
-        std::wstring name_key = MakeNameCommentKey(name, type);
-        auto it2 = task->name_comments.find(name_key);
-        if (it2 != task->name_comments.end()) {
-          return it2->second.text;
-        }
-        return {};
-      };
-
-      std::unordered_set<std::wstring> hive_roots;
-      hive_roots.reserve(task->hive_list.size());
-      for (const auto& entry : task->hive_list) {
-        hive_roots.insert(entry.first);
-      }
       struct KeyMetadata {
         int image_index = kFolderIconIndex;
         bool is_link = false;
@@ -12758,7 +10771,7 @@ void MainWindow::StartValueListWorker() {
         if (node.simulated) {
           return kFolderSimIconIndex;
         }
-        std::wstring cache_key = RegistryProvider::BuildPath(node);
+        std::wstring cache_key = registry_path::Build(node);
         auto cached = key_metadata_cache.find(cache_key);
         if (cached != key_metadata_cache.end()) {
           if (is_link) {
@@ -12767,8 +10780,8 @@ void MainWindow::StartValueListWorker() {
           return cached->second.image_index;
         }
         KeyMetadata metadata;
-        std::wstring nt_path = RegistryProvider::BuildNtPath(node);
-        if (!nt_path.empty() && hive_roots.find(ToLower(nt_path)) != hive_roots.end()) {
+        std::wstring nt_path = registry_path::BuildNative(node);
+        if (!nt_path.empty() && task->hive_roots && task->hive_roots->find(ToLower(nt_path)) != task->hive_roots->end()) {
           metadata.image_index = kDatabaseIconIndex;
           key_metadata_cache.emplace(std::move(cache_key), metadata);
           return metadata.image_index;
@@ -12808,7 +10821,7 @@ void MainWindow::StartValueListWorker() {
         if (!node.root_name.empty() && EqualsInsensitive(node.root_name, L"REGISTRY")) {
           return;
         }
-        std::wstring path = RegistryProvider::BuildPath(node);
+        std::wstring path = registry_path::Build(node);
         std::wstring trace_path = NormalizeTraceKeyPath(path);
         if (trace_path.empty()) {
           trace_path = path;
@@ -12820,7 +10833,8 @@ void MainWindow::StartValueListWorker() {
             continue;
           }
           std::shared_lock<std::shared_mutex> trace_lock(*trace.data->mutex);
-          if (!SelectionIncludesKey(trace.selection, key_lower)) {
+          if (!trace.selection ||
+              !trace::IncludesKey(*trace.selection, key_lower)) {
             continue;
           }
           auto it = trace.data->children_by_key.find(key_lower);
@@ -12849,8 +10863,8 @@ void MainWindow::StartValueListWorker() {
 
       struct TraceMatch {
         std::wstring label;
-        TraceKeyValues values;
-        const TraceSelection* selection = nullptr;
+        trace::KeyValues values;
+        const trace::Selection* selection = nullptr;
       };
       std::vector<TraceMatch> trace_matches;
       if (!task->trace_data_list.empty()) {
@@ -12859,7 +10873,9 @@ void MainWindow::StartValueListWorker() {
             continue;
           }
           std::shared_lock<std::shared_mutex> trace_lock(*trace.data->mutex);
-          if (!SelectionIncludesKey(trace.selection, task->trace_path_lower)) {
+          if (!trace.selection ||
+              !trace::IncludesKey(*trace.selection,
+                                  task->trace_path_lower)) {
             continue;
           }
           auto it = trace.data->values_by_key.find(task->trace_path_lower);
@@ -12869,14 +10885,14 @@ void MainWindow::StartValueListWorker() {
           TraceMatch match;
           match.label = trace.label.empty() ? L"Trace" : trace.label;
           match.values = it->second;
-          match.selection = &trace.selection;
+          match.selection = trace.selection.get();
           trace_matches.push_back(std::move(match));
         }
       }
 
       struct DefaultMatch {
-        DefaultKeyValues values;
-        const KeyValueSelection* selection = nullptr;
+        defaults::Key values;
+        const trace::Selection* selection = nullptr;
       };
       std::vector<DefaultMatch> default_keys;
       if (!task->default_data_list.empty() && !task->default_path_lower.empty()) {
@@ -12886,14 +10902,16 @@ void MainWindow::StartValueListWorker() {
             continue;
           }
           std::shared_lock<std::shared_mutex> defaults_lock(*defaults.data->mutex);
-          if (!SelectionIncludesKey(defaults.selection, task->default_path_lower)) {
+          if (!defaults.selection ||
+              !trace::IncludesKey(*defaults.selection,
+                                  task->default_path_lower)) {
             continue;
           }
           auto it = defaults.data->values_by_key.find(task->default_path_lower);
           if (it == defaults.data->values_by_key.end()) {
             continue;
           }
-          default_keys.push_back({it->second, &defaults.selection});
+          default_keys.push_back({it->second, defaults.selection.get()});
         }
       }
       auto resolve_default_data = [&](const std::wstring& value_name) -> std::wstring {
@@ -12903,7 +10921,10 @@ void MainWindow::StartValueListWorker() {
         std::wstring value_lower = ToLower(value_name);
         bool applies = false;
         for (const auto& match : default_keys) {
-          if (match.selection && !SelectionIncludesValue(*match.selection, task->default_path_lower, value_lower)) {
+          if (match.selection &&
+              !trace::IncludesValue(*match.selection,
+                                    task->default_path_lower,
+                                    value_lower)) {
             continue;
           }
           applies = true;
@@ -12974,7 +10995,10 @@ void MainWindow::StartValueListWorker() {
         std::vector<std::wstring> labels;
         for (const auto& match : trace_matches) {
           if (match.values.values_lower.find(value_lower) != match.values.values_lower.end()) {
-            if (match.selection && !SelectionIncludesValue(*match.selection, task->trace_path_lower, value_lower)) {
+            if (match.selection &&
+                !trace::IncludesValue(*match.selection,
+                                      task->trace_path_lower,
+                                      value_lower)) {
               continue;
             }
             labels.push_back(match.label);
@@ -13012,13 +11036,9 @@ void MainWindow::StartValueListWorker() {
 
       bool has_default = false;
       bool has_symbolic_value = false;
-      auto values = RegistryProvider::EnumValues(task->snapshot);
-      payload->value_count = static_cast<int>(values.size());
-      if (track_existing) {
-        existing_values.reserve(values.size());
-      }
-      payload->rows.reserve(payload->rows.size() + values.size());
-      for (const auto& value : values) {
+      constexpr DWORD kEagerValueDataLimit = 64u * 1024u;
+      const DWORD max_data_size = task->include_all_value_data ? MAXDWORD : kEagerValueDataLimit;
+      auto append_value = [&](const ValueInfo& value, const BYTE* data, DWORD data_size) -> bool {
         if (value.name.empty()) {
           has_default = true;
         }
@@ -13027,17 +11047,20 @@ void MainWindow::StartValueListWorker() {
         }
         ListRow row;
         row.name = value.name.empty() ? L"(Default)" : value.name;
-        row.type = RegistryProvider::FormatValueType(value.type);
-        row.data = RegistryProvider::FormatValueDataForDisplay(value.type, value.data.data(), static_cast<DWORD>(value.data.size()));
-        row.data_ready = true;
+        row.type = value_format::TypeName(value.type);
+        row.data_ready = data_size == 0 || data != nullptr;
+        if (row.data_ready && data_size > 0) {
+          row.data = value_format::DisplayData(value.type, data, data_size);
+        }
         row.default_data = resolve_default_data(value.name);
         row.image_index = UseBinaryValueIcon(value.type) ? kBinaryIconIndex : kValueIconIndex;
         row.kind = rowkind::kValue;
         row.extra = value.name;
-        row.size_value = static_cast<uint64_t>(value.data.size());
+        row.size = std::to_wstring(data_size);
+        row.size_value = data_size;
         row.has_size = true;
         row.value_type = value.type;
-        row.comment = FormatCommentDisplay(resolve_comment(value.name, value.type));
+        row.value_data_size = data_size;
         if (!have_traces) {
           row.read_on_boot.clear();
         } else {
@@ -13048,7 +11071,11 @@ void MainWindow::StartValueListWorker() {
           }
         }
         payload->rows.emplace_back(std::move(row));
-      }
+        ++payload->value_count;
+        return !stopping.load() &&
+               task->generation == value_list_generation_.load();
+      };
+      RegistryProvider::EnumKeyStreaming(task->snapshot, true, true, false, nullptr, append_value, RegistryProvider::SubkeyStreamCallback(), max_data_size);
 
       if (!has_symbolic_value && has_link && !link_target.empty()) {
         ListRow row;
@@ -13061,6 +11088,7 @@ void MainWindow::StartValueListWorker() {
         row.extra = L"SymbolicLinkValue";
         row.default_data = resolve_default_data(row.extra);
         DWORD link_bytes = static_cast<DWORD>((link_target.size() + 1) * sizeof(wchar_t));
+        row.size = std::to_wstring(link_bytes);
         row.size_value = link_bytes;
         row.value_data_size = link_bytes;
         row.has_size = true;
@@ -13080,10 +11108,10 @@ void MainWindow::StartValueListWorker() {
         row.kind = rowkind::kValue;
         row.extra = L"";
         row.default_data = resolve_default_data(row.extra);
+        row.size = L"0";
         row.size_value = 0;
         row.has_size = true;
         row.value_type = REG_SZ;
-        row.comment = FormatCommentDisplay(resolve_comment(L"", REG_SZ));
         if (!have_traces) {
           row.read_on_boot.clear();
         } else {
@@ -13102,7 +11130,10 @@ void MainWindow::StartValueListWorker() {
           payload->rows.reserve(payload->rows.size() + match.values.values_display.size());
           for (const auto& value_name : match.values.values_display) {
             std::wstring value_lower = ToLower(value_name);
-            if (match.selection && !SelectionIncludesValue(*match.selection, task->trace_path_lower, value_lower)) {
+            if (match.selection &&
+                !trace::IncludesValue(*match.selection,
+                                      task->trace_path_lower,
+                                      value_lower)) {
               continue;
             }
             if (existing_values.find(value_lower) != existing_values.end()) {
@@ -13118,7 +11149,6 @@ void MainWindow::StartValueListWorker() {
             row.extra = value_name;
             row.data_ready = true;
             row.default_data = resolve_default_data(value_name);
-            row.comment = FormatCommentDisplay(resolve_comment(value_name, 0));
             payload->rows.emplace_back(std::move(row));
             ++trace_added;
             existing_values.insert(value_lower);
@@ -13127,45 +11157,86 @@ void MainWindow::StartValueListWorker() {
         payload->value_count += static_cast<int>(trace_added);
       }
 
-      SortValueRows(&payload->rows, task->sort_column, task->sort_ascending);
-      if (task->generation != value_list_generation_.load()) {
-        continue;
+      if (task->sort_column != kValueColComment) {
+        SortValueRows(&payload->rows, task->sort_column, task->sort_ascending);
+      }
+      if (stopping.load() ||
+          task->generation != value_list_generation_.load()) {
+        return;
       }
       if (PostMessageW(task->hwnd, kValueListReadyMessage, static_cast<WPARAM>(task->generation), reinterpret_cast<LPARAM>(payload.get())) != 0) {
         ReleasePostedPayload(payload);
       }
-    }
   });
 }
 
 void MainWindow::StopValueListWorker() {
-  {
-    std::lock_guard<std::mutex> lock(value_list_mutex_);
-    value_list_stop_ = true;
-    value_list_pending_ = false;
-    value_list_task_.reset();
+  value_loader_.Stop();
+}
+
+void MainWindow::MergeTraceEntries(
+    TraceParseSession* session,
+    const std::vector<KeyValueDialogEntry>& entries,
+    std::unordered_set<std::wstring>* affected_keys) {
+  if (!session || !session->data || entries.empty()) {
+    return;
   }
-  value_list_cv_.notify_one();
-  if (value_list_thread_.joinable()) {
-    value_list_thread_.join();
+  std::vector<trace::Entry> parsed;
+  parsed.reserve(entries.size());
+  for (const auto& entry : entries) {
+    trace::Entry value;
+    value.key_path = entry.key_path;
+    value.display_path = entry.display_path;
+    value.has_value = entry.has_value;
+    value.value_name = entry.value_name;
+    parsed.push_back(std::move(value));
   }
+  trace::Merge(session->data.get(), parsed, affected_keys);
+}
+
+void MainWindow::MergeDefaultEntries(
+    DefaultParseSession* session,
+    const std::vector<KeyValueDialogEntry>& entries,
+    std::unordered_set<std::wstring>* affected_keys) {
+  if (!session || !session->data || entries.empty()) {
+    return;
+  }
+  std::vector<defaults::Entry> parsed;
+  parsed.reserve(entries.size());
+  for (const auto& entry : entries) {
+    defaults::Entry value;
+    value.key_path = entry.key_path;
+    value.has_value = entry.has_value;
+    value.value_name = entry.value_name;
+    value.type = entry.value_type;
+    value.data = entry.value_data;
+    parsed.push_back(std::move(value));
+  }
+  defaults::Merge(session->data.get(), parsed,
+                  [](const std::wstring& path) {
+                    return MapControlSetToCurrent(path);
+                  },
+                  affected_keys);
 }
 
 void MainWindow::StartTraceParseThread(TraceParseSession* session) {
-  if (!session || session->thread.joinable()) {
+  if (!session || session->work.running()) {
     return;
   }
-  session->cancel.store(false);
   HWND hwnd = hwnd_;
   std::wstring source = session->source_path;
   std::wstring source_lower = session->source_lower;
-  session->thread = std::thread([this, session, hwnd, source, source_lower]() {
+  session->work.Start(
+      [this, session, hwnd, source, source_lower](
+          uint64_t generation, std::atomic_bool& cancel) {
     constexpr size_t kBatchSize = 256;
     constexpr DWORD kBatchMs = 50;
     auto post_batch = [&](std::vector<KeyValueDialogEntry>* entries, bool done, const std::wstring& error, bool cancelled) {
       auto payload = std::make_unique<TraceParseBatch>();
+      payload->generation = generation;
       payload->source_lower = source_lower;
       if (entries) {
+        MergeTraceEntries(session, *entries, &payload->affected_keys);
         payload->entries = std::move(*entries);
       }
       payload->done = done;
@@ -13177,116 +11248,61 @@ void MainWindow::StartTraceParseThread(TraceParseSession* session) {
       ReleasePostedPayload(payload);
     };
 
-    std::string buffer;
-    if (!ReadFileBinary(source, &buffer)) {
-      post_batch(nullptr, true, L"Failed to read trace file.", false);
-      return;
-    }
-    if (buffer.empty()) {
-      post_batch(nullptr, true, L"Trace file is empty or too large to load.", false);
-      return;
-    }
-    if (buffer.size() >= 3 && static_cast<unsigned char>(buffer[0]) == 0xEF && static_cast<unsigned char>(buffer[1]) == 0xBB && static_cast<unsigned char>(buffer[2]) == 0xBF) {
-      buffer.erase(0, 3);
-    }
-    std::wstring content = util::Utf8ToWide(buffer);
-    if (content.empty()) {
-      post_batch(nullptr, true, L"Trace file has no readable entries.", false);
-      return;
-    }
-
     std::vector<KeyValueDialogEntry> entries;
     entries.reserve(kBatchSize);
     uint64_t last_post = GetTickCount64();
-    size_t start = 0;
-    while (start < content.size()) {
-      if (session->cancel.load()) {
-        post_batch(nullptr, true, L"", true);
-        return;
-      }
-      size_t end = content.find(L'\n', start);
-      if (end == std::wstring::npos) {
-        end = content.size();
-      }
-      std::wstring line = content.substr(start, end - start);
-      if (!line.empty() && line.back() == L'\r') {
-        line.pop_back();
-      }
-      start = end + 1;
-      line = TrimWhitespace(line);
-      if (line.empty()) {
-        continue;
-      }
-      size_t sep = line.rfind(L" : ");
-      size_t sep_len = 0;
-      if (sep != std::wstring::npos) {
-        sep_len = 3;
-      } else {
-        sep = line.rfind(L':');
-        sep_len = (sep == std::wstring::npos) ? 0 : 1;
-      }
-      if (sep == std::wstring::npos) {
-        continue;
-      }
-      std::wstring key_text = TrimWhitespace(line.substr(0, sep));
-      std::wstring value_text = TrimWhitespace(line.substr(sep + sep_len));
-      if (key_text.empty()) {
-        continue;
-      }
-      std::wstring selection_path = NormalizeTraceSelectionPath(key_text);
-      if (selection_path.empty()) {
-        continue;
-      }
-      std::wstring key_path = NormalizeTraceKeyPath(key_text);
-      if (key_path.empty()) {
-        key_path = selection_path;
-      }
-      std::wstring value_name = value_text;
-      if (EqualsInsensitive(value_name, L"(Default)")) {
-        value_name.clear();
-      }
-      KeyValueDialogEntry entry;
-      entry.key_path = key_path;
-      entry.display_path = selection_path;
-      entry.has_value = true;
-      entry.value_name = value_name;
-      entries.push_back(std::move(entry));
-
-      uint64_t now = GetTickCount64();
-      if (entries.size() >= kBatchSize || (now - last_post) >= kBatchMs) {
-        post_batch(&entries, false, L"", false);
-        entries.clear();
-        last_post = now;
-      }
-    }
-
-    if (session->cancel.load()) {
-      post_batch(nullptr, true, L"", true);
+    std::wstring parse_error;
+    const bool parsed = trace::LoadEntries(
+        source, TraceNormalizers(),
+        [&](trace::Entry&& parsed_entry) {
+          KeyValueDialogEntry entry;
+          entry.key_path = std::move(parsed_entry.key_path);
+          entry.display_path = std::move(parsed_entry.display_path);
+          entry.has_value = true;
+          entry.value_name = std::move(parsed_entry.value_name);
+          entries.push_back(std::move(entry));
+          const uint64_t now = GetTickCount64();
+          if (entries.size() >= kBatchSize ||
+              now - last_post >= kBatchMs) {
+            post_batch(&entries, false, L"", false);
+            entries.clear();
+            last_post = now;
+          }
+          return !cancel.load();
+        },
+        &parse_error, &cancel);
+    if (!parsed) {
+      post_batch(nullptr, true, cancel.load() ? L"" : parse_error,
+                 cancel.load());
       return;
     }
     if (!entries.empty()) {
       post_batch(&entries, false, L"", false);
       entries.clear();
     }
+    trace::Sort(session->data.get());
     post_batch(nullptr, true, L"", false);
   });
 }
 
 void MainWindow::StartDefaultParseThread(DefaultParseSession* session) {
-  if (!session || session->thread.joinable()) {
+  if (!session || session->work.running()) {
     return;
   }
-  session->cancel.store(false);
   HWND hwnd = hwnd_;
   std::wstring source = session->source_path;
   std::wstring source_lower = session->source_lower;
-  session->thread = std::thread([this, session, hwnd, source, source_lower]() {
+  session->work.Start(
+      [this, session, hwnd, source, source_lower](
+          uint64_t generation, std::atomic_bool& cancel) {
     constexpr size_t kBatchSize = 256;
     constexpr DWORD kBatchMs = 50;
     auto post_batch = [&](std::vector<KeyValueDialogEntry>* entries, bool done, const std::wstring& error, bool cancelled) {
       auto payload = std::make_unique<DefaultParseBatch>();
+      payload->generation = generation;
       payload->source_lower = source_lower;
       if (entries) {
+        MergeDefaultEntries(session, *entries, &payload->affected_keys);
         payload->entries = std::move(*entries);
       }
       payload->done = done;
@@ -13298,238 +11314,77 @@ void MainWindow::StartDefaultParseThread(DefaultParseSession* session) {
       ReleasePostedPayload(payload);
     };
 
-    std::wstring content;
-    if (!util::ReadTextFile(source, &content)) {
-      post_batch(nullptr, true, L"Failed to read registry file.", false);
-      return;
-    }
-    if (content.empty()) {
-      post_batch(nullptr, true, L"Default file contains no usable entries.", false);
+    std::vector<defaults::Entry> parsed_entries;
+    std::wstring parse_error;
+    if (!defaults::Load(
+            source,
+            [](const std::wstring& path) {
+              return NormalizeTraceKeyPathBasic(path);
+            },
+            nullptr, &parsed_entries, &parse_error, &cancel)) {
+      post_batch(nullptr, true, cancel.load() ? L"" : parse_error,
+                 cancel.load());
       return;
     }
 
     std::vector<KeyValueDialogEntry> entries;
     entries.reserve(kBatchSize);
     uint64_t last_post = GetTickCount64();
-    std::wstring current_key;
-    std::wstring current_display;
-    std::wstring current;
-    bool saw_entry = false;
-
-    size_t start = 0;
-    while (start < content.size()) {
-      if (session->cancel.load()) {
-        post_batch(nullptr, true, L"", true);
-        return;
-      }
-      size_t end = content.find(L'\n', start);
-      if (end == std::wstring::npos) {
-        end = content.size();
-      }
-      std::wstring line = content.substr(start, end - start);
-      if (!line.empty() && line.back() == L'\r') {
-        line.pop_back();
-      }
-      start = end + 1;
-      if (current.empty()) {
-        current = line;
-      } else {
-        current.append(line);
-      }
-      std::wstring trimmed_right = current;
-      while (!trimmed_right.empty() && (trimmed_right.back() == L' ' || trimmed_right.back() == L'\t')) {
-        trimmed_right.pop_back();
-      }
-      if (!trimmed_right.empty() && trimmed_right.back() == L'\\') {
-        trimmed_right.pop_back();
-        current = trimmed_right;
-        continue;
-      }
-
-      std::wstring raw = TrimWhitespace(current);
-      current.clear();
-      if (raw.empty() || raw.front() == L';') {
-        continue;
-      }
-
-      if (raw.front() == L'[' && raw.back() == L']') {
-        std::wstring key = raw.substr(1, raw.size() - 2);
-        key = TrimWhitespace(key);
-        bool delete_key = !key.empty() && key.front() == L'-';
-        if (delete_key) {
-          current_key.clear();
-          current_display.clear();
-          continue;
-        }
-        std::wstring normalized = NormalizeTraceKeyPathBasic(key);
-        current_key = normalized.empty() ? key : normalized;
-        current_display = NormalizeTraceSelectionPath(key);
-        if (current_display.empty()) {
-          current_display = current_key;
-        }
-        if (!current_key.empty()) {
-          KeyValueDialogEntry entry;
-          entry.key_path = current_key;
-          entry.display_path = current_display;
-          entry.has_value = false;
-          entries.push_back(std::move(entry));
-          saw_entry = true;
-        }
-      } else {
-        if (current_key.empty()) {
-          continue;
-        }
-        size_t eq = raw.find(L'=');
-        if (eq == std::wstring::npos) {
-          continue;
-        }
-        std::wstring name_part = TrimWhitespace(raw.substr(0, eq));
-        std::wstring data_part = TrimWhitespace(raw.substr(eq + 1));
-        if (name_part.empty() || data_part.empty() || data_part == L"-") {
-          continue;
-        }
-
-        std::wstring value_name;
-        if (name_part == L"@") {
-          value_name.clear();
-        } else if (name_part.front() == L'\"') {
-          size_t end_pos = 0;
-          if (!ParseQuotedString(name_part, &value_name, &end_pos)) {
-            continue;
-          }
-        } else {
-          continue;
-        }
-
-        DWORD type = REG_NONE;
-        std::vector<BYTE> data;
-        if (data_part.front() == L'\"') {
-          std::wstring text;
-          size_t end_pos = 0;
-          if (!ParseQuotedString(data_part, &text, &end_pos)) {
-            continue;
-          }
-          type = REG_SZ;
-          data = StringToRegData(text);
-        } else if (StartsWithInsensitive(data_part, L"dword:")) {
-          std::wstring hex = TrimWhitespace(data_part.substr(6));
-          if (hex.empty()) {
-            continue;
-          }
-          DWORD number = static_cast<DWORD>(wcstoul(hex.c_str(), nullptr, 16));
-          type = REG_DWORD;
-          data.resize(sizeof(DWORD));
-          memcpy(data.data(), &number, sizeof(DWORD));
-        } else if (StartsWithInsensitive(data_part, L"hex")) {
-          type = REG_BINARY;
-          size_t colon = data_part.find(L':');
-          if (colon == std::wstring::npos) {
-            continue;
-          }
-          size_t open = data_part.find(L'(');
-          size_t close = data_part.find(L')');
-          if (open != std::wstring::npos && close != std::wstring::npos && close > open) {
-            std::wstring code = data_part.substr(open + 1, close - open - 1);
-            unsigned long parsed = wcstoul(code.c_str(), nullptr, 16);
-            switch (parsed) {
-            case 0x0:
-              type = REG_NONE;
-              break;
-            case 0x1:
-              type = REG_SZ;
-              break;
-            case 0x2:
-              type = REG_EXPAND_SZ;
-              break;
-            case 0x3:
-              type = REG_BINARY;
-              break;
-            case 0x4:
-              type = REG_DWORD;
-              break;
-            case 0x5:
-              type = REG_DWORD_BIG_ENDIAN;
-              break;
-            case 0x7:
-              type = REG_MULTI_SZ;
-              break;
-            case 0x8:
-              type = REG_RESOURCE_LIST;
-              break;
-            case 0x9:
-              type = REG_FULL_RESOURCE_DESCRIPTOR;
-              break;
-            case 0xA:
-              type = REG_RESOURCE_REQUIREMENTS_LIST;
-              break;
-            case 0xB:
-              type = REG_QWORD;
-              break;
-            default:
-              type = REG_BINARY;
-              break;
-            }
-          }
-          std::wstring hex = data_part.substr(colon + 1);
-          if (!ParseHexBytes(hex, &data)) {
-            continue;
-          }
-        } else {
-          continue;
-        }
-
-        KeyValueDialogEntry entry;
-        entry.key_path = current_key;
-        entry.display_path = current_display;
-        entry.has_value = true;
-        entry.value_name = value_name;
-        entry.value_type = type;
-        entry.value_data = RegistryProvider::FormatValueDataForDisplay(type, data.empty() ? nullptr : data.data(), static_cast<DWORD>(data.size()));
-        entries.push_back(std::move(entry));
-        saw_entry = true;
-      }
-
-      uint64_t now = GetTickCount64();
-      if (entries.size() >= kBatchSize || (now - last_post) >= kBatchMs) {
+    auto flush_if_needed = [&] {
+      const uint64_t now = GetTickCount64();
+      if (entries.size() >= kBatchSize || now - last_post >= kBatchMs) {
         post_batch(&entries, false, L"", false);
         entries.clear();
         last_post = now;
       }
+    };
+
+    for (auto& parsed : parsed_entries) {
+      if (cancel.load()) {
+        post_batch(nullptr, true, L"", true);
+        return;
+      }
+      KeyValueDialogEntry entry;
+      entry.key_path = std::move(parsed.key_path);
+      entry.display_path =
+          NormalizeTraceSelectionPath(parsed.source_path);
+      if (entry.display_path.empty()) {
+        entry.display_path = entry.key_path;
+      }
+      entry.has_value = parsed.has_value;
+      entry.value_name = std::move(parsed.value_name);
+      entry.value_type = parsed.type;
+      entry.value_data = std::move(parsed.data);
+      entries.push_back(std::move(entry));
+      flush_if_needed();
     }
 
-    if (session->cancel.load()) {
-      post_batch(nullptr, true, L"", true);
-      return;
-    }
     if (!entries.empty()) {
       post_batch(&entries, false, L"", false);
-      entries.clear();
-    }
-    if (!saw_entry) {
-      post_batch(nullptr, true, L"Default file contains no usable entries.", false);
-      return;
     }
     post_batch(nullptr, true, L"", false);
   });
 }
 
 void MainWindow::StartTraceLoadWorker() {
-  if (trace_load_running_.exchange(true)) {
+  if (trace_load_session_.running()) {
     return;
   }
-  trace_load_stop_.store(false);
   LoadTraceSettings();
-  std::unordered_map<std::wstring, TraceSelection> selection_cache = trace_selection_cache_;
+  std::unordered_map<std::wstring, trace::Selection> selection_cache =
+      trace_selection_cache_;
   std::wstring active_path = ActiveTracesPath();
-  if (trace_load_thread_.joinable()) {
-    trace_load_thread_.join();
-  }
-  trace_load_thread_ = std::thread([this, selection_cache = std::move(selection_cache), active_path]() mutable {
+  const HWND hwnd = hwnd_;
+  trace_load_session_.StartIfIdle(
+      [this, selection_cache = std::move(selection_cache), active_path, hwnd](
+          uint64_t generation, const std::atomic_bool& cancel) mutable {
     auto payload = std::make_unique<TraceLoadPayload>();
+    payload->generation = generation;
     payload->selection_cache = std::move(selection_cache);
     std::wstring content;
-    if (!ReadFileUtf8(active_path, &content)) {
-      trace_load_running_.store(false);
+    if (!util::ReadTextFile(
+            active_path, &content, nullptr,
+            static_cast<uint64_t>(std::numeric_limits<int>::max()))) {
       return;
     }
 
@@ -13560,8 +11415,7 @@ void MainWindow::StartTraceLoadWorker() {
 
     std::unordered_set<std::wstring> loaded;
     for (const auto& entry : entries) {
-      if (trace_load_stop_.load()) {
-        trace_load_running_.store(false);
+      if (cancel.load()) {
         return;
       }
       std::wstring source = entry;
@@ -13585,44 +11439,40 @@ void MainWindow::StartTraceLoadWorker() {
       if (!loaded.insert(source_lower).second) {
         continue;
       }
-      std::string buffer;
-      if (!ReadFileBinary(source, &buffer)) {
+      trace::Data data;
+      if (!trace::Load(use_label, source, TraceNormalizers(), &data,
+                       nullptr, &cancel)) {
         continue;
       }
-      TraceData data;
-      if (!this->BuildTraceDataFromBuffer(use_label, source, buffer, &data, nullptr)) {
-        continue;
-      }
-      std::shared_ptr<const TraceData> trace = std::make_shared<TraceData>(std::move(data));
-      TraceSelection selection = {};
+      std::shared_ptr<const trace::Data> trace_data =
+          std::make_shared<trace::Data>(std::move(data));
+      trace::Selection selection = {};
       selection.select_all = true;
       selection.recursive = true;
       auto it = payload->selection_cache.find(source_lower);
       if (it != payload->selection_cache.end()) {
         selection = it->second;
       }
-      NormalizeSelectionForTrace(*trace, &selection);
+      trace::NormalizeSelection(*trace_data, &selection);
       payload->selection_cache[source_lower] = selection;
-      payload->traces.push_back({trace->label, source, trace, selection});
+      payload->traces.push_back(
+          {trace_data->label, source, trace_data,
+           std::make_shared<trace::Selection>(selection)});
     }
 
-    if (trace_load_stop_.load()) {
-      trace_load_running_.store(false);
+    if (cancel.load()) {
       return;
     }
-    if (hwnd_ && IsWindow(hwnd_)) {
-      PostMessageW(hwnd_, kTraceLoadReadyMessage, 0, reinterpret_cast<LPARAM>(payload.release()));
+    if (hwnd && IsWindow(hwnd) &&
+        PostMessageW(hwnd, kTraceLoadReadyMessage, 0,
+                     reinterpret_cast<LPARAM>(payload.get()))) {
+      ReleasePostedPayload(payload);
     }
-    trace_load_running_.store(false);
   });
 }
 
 void MainWindow::StopTraceLoadWorker() {
-  trace_load_stop_.store(true);
-  if (trace_load_thread_.joinable()) {
-    trace_load_thread_.join();
-  }
-  trace_load_running_.store(false);
+  trace_load_session_.CancelAndJoin();
 }
 
 void MainWindow::StopTraceParseSessions() {
@@ -13630,28 +11480,26 @@ void MainWindow::StopTraceParseSessions() {
     if (!entry.second) {
       continue;
     }
-    entry.second->cancel.store(true);
-    if (entry.second->thread.joinable()) {
-      entry.second->thread.join();
-    }
+    entry.second->work.CancelAndJoin();
   }
   trace_parse_sessions_.clear();
 }
 
 void MainWindow::StartDefaultLoadWorker() {
-  if (default_load_running_.exchange(true)) {
+  if (default_load_session_.running()) {
     return;
   }
-  default_load_stop_.store(false);
   std::wstring active_path = ActiveDefaultsPath();
-  if (default_load_thread_.joinable()) {
-    default_load_thread_.join();
-  }
-  default_load_thread_ = std::thread([this, active_path]() {
+  const HWND hwnd = hwnd_;
+  default_load_session_.StartIfIdle(
+      [this, active_path, hwnd](uint64_t generation,
+                                const std::atomic_bool& cancel) {
     auto payload = std::make_unique<DefaultLoadPayload>();
+    payload->generation = generation;
     std::wstring content;
-    if (!ReadFileUtf8(active_path, &content)) {
-      default_load_running_.store(false);
+    if (!util::ReadTextFile(
+            active_path, &content, nullptr,
+            static_cast<uint64_t>(std::numeric_limits<int>::max()))) {
       return;
     }
 
@@ -13682,8 +11530,7 @@ void MainWindow::StartDefaultLoadWorker() {
 
     std::unordered_set<std::wstring> loaded;
     for (const auto& entry : entries) {
-      if (default_load_stop_.load()) {
-        default_load_running_.store(false);
+      if (cancel.load()) {
         return;
       }
       std::wstring source = entry;
@@ -13707,34 +11554,39 @@ void MainWindow::StartDefaultLoadWorker() {
       if (!loaded.insert(source_lower).second) {
         continue;
       }
-      DefaultData data;
-      if (!this->ParseDefaultRegFile(source, &data, nullptr)) {
+      defaults::Data data;
+      if (!defaults::Load(
+              source,
+              [](const std::wstring& path) {
+                return NormalizeTraceKeyPathBasic(path);
+              },
+              &data, nullptr, nullptr,
+              &cancel)) {
         continue;
       }
-      std::shared_ptr<const DefaultData> defaults = std::make_shared<DefaultData>(std::move(data));
-      KeyValueSelection selection = {};
+      std::shared_ptr<const defaults::Data> default_data =
+          std::make_shared<defaults::Data>(std::move(data));
+      trace::Selection selection = {};
       selection.select_all = true;
       selection.recursive = true;
-      payload->defaults.push_back({use_label, source, defaults, selection});
+      payload->defaults.push_back(
+          {use_label, source, default_data,
+           std::make_shared<trace::Selection>(selection)});
     }
 
-    if (default_load_stop_.load()) {
-      default_load_running_.store(false);
+    if (cancel.load()) {
       return;
     }
-    if (hwnd_ && IsWindow(hwnd_)) {
-      PostMessageW(hwnd_, kDefaultLoadReadyMessage, 0, reinterpret_cast<LPARAM>(payload.release()));
+    if (hwnd && IsWindow(hwnd) &&
+        PostMessageW(hwnd, kDefaultLoadReadyMessage, 0,
+                     reinterpret_cast<LPARAM>(payload.get()))) {
+      ReleasePostedPayload(payload);
     }
-    default_load_running_.store(false);
   });
 }
 
 void MainWindow::StopDefaultLoadWorker() {
-  default_load_stop_.store(true);
-  if (default_load_thread_.joinable()) {
-    default_load_thread_.join();
-  }
-  default_load_running_.store(false);
+  default_load_session_.CancelAndJoin();
 }
 
 void MainWindow::StopDefaultParseSessions() {
@@ -13742,10 +11594,7 @@ void MainWindow::StopDefaultParseSessions() {
     if (!entry.second) {
       continue;
     }
-    entry.second->cancel.store(true);
-    if (entry.second->thread.joinable()) {
-      entry.second->thread.join();
-    }
+    entry.second->work.CancelAndJoin();
   }
   default_parse_sessions_.clear();
 }
@@ -13755,10 +11604,7 @@ void MainWindow::StopRegFileParseSessions() {
     if (!entry.second) {
       continue;
     }
-    entry.second->cancel.store(true);
-    if (entry.second->thread.joinable()) {
-      entry.second->thread.join();
-    }
+    entry.second->work.CancelAndJoin();
   }
   reg_file_parse_sessions_.clear();
 }
@@ -13770,46 +11616,17 @@ void MainWindow::MarkTreeStateDirty() {
   std::wstring selected;
   std::vector<std::wstring> expanded;
   CaptureTreeState(&selected, &expanded);
-  {
-    std::lock_guard<std::mutex> lock(tree_state_mutex_);
-    tree_state_selected_ = std::move(selected);
-    tree_state_expanded_ = std::move(expanded);
-    tree_state_dirty_ = true;
-  }
-  tree_state_cv_.notify_one();
+  workspace::TreeState state;
+  state.selected_path = std::move(selected);
+  state.expanded_paths = std::move(expanded);
+  tree_state_saver_.Submit(std::move(state));
 }
 
 void MainWindow::SaveTreeStateFile(const std::wstring& selected, const std::vector<std::wstring>& expanded) const {
-  std::wstring path = TreeStatePath();
-  if (path.empty()) {
-    return;
-  }
-
-  std::wstring content;
-  if (!selected.empty()) {
-    content += L"selected=";
-    content += EscapeHistoryField(selected);
-    content.push_back(L'\n');
-  }
-  for (const auto& entry : expanded) {
-    if (entry.empty()) {
-      continue;
-    }
-    content += L"expanded=";
-    content += EscapeHistoryField(entry);
-    content.push_back(L'\n');
-  }
-  std::string utf8 = util::WideToUtf8(content);
-  if (utf8.empty()) {
-    return;
-  }
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return;
-  }
-  DWORD written = 0;
-  WriteFile(file, utf8.data(), static_cast<DWORD>(utf8.size()), &written, nullptr);
-  CloseHandle(file);
+  workspace::TreeState state;
+  state.selected_path = selected;
+  state.expanded_paths = expanded;
+  workspace::SaveTreeState(TreeStatePath(), state);
 }
 
 std::wstring MainWindow::ActiveTracesPath() const {
@@ -13868,7 +11685,7 @@ void MainWindow::LoadTraceSettings() {
     return;
   }
 
-  TraceSelection selection = {};
+  trace::Selection selection = {};
   selection.select_all = true;
   selection.recursive = true;
   std::wstring current_path;
@@ -13996,7 +11813,7 @@ void MainWindow::SaveTraceSettings() const {
   }
   std::wstring content;
   for (const auto& trace : active_traces_) {
-    if (!trace.data) {
+    if (!trace.data || !trace.selection) {
       continue;
     }
     content.append(L"[trace]\n");
@@ -14011,10 +11828,10 @@ void MainWindow::SaveTraceSettings() const {
       content.push_back(L'\n');
     }
     content.append(L"select_all=");
-    content.append(trace.selection.select_all ? L"1\n" : L"0\n");
+    content.append(trace.selection->select_all ? L"1\n" : L"0\n");
     content.append(L"recursive=");
-    content.append(trace.selection.recursive ? L"1\n" : L"0\n");
-    for (const auto& key_path : trace.selection.key_paths) {
+    content.append(trace.selection->recursive ? L"1\n" : L"0\n");
+    for (const auto& key_path : trace.selection->key_paths) {
       if (key_path.empty()) {
         continue;
       }
@@ -14022,7 +11839,7 @@ void MainWindow::SaveTraceSettings() const {
       content.append(key_path);
       content.push_back(L'\n');
     }
-    for (const auto& entry : trace.selection.values_by_key) {
+    for (const auto& entry : trace.selection->values_by_key) {
       if (entry.first.empty()) {
         continue;
       }
@@ -14050,110 +11867,6 @@ void MainWindow::SaveTraceSettings() const {
     WriteFile(file, utf8.data(), static_cast<DWORD>(utf8.size()), &written, nullptr);
   }
   CloseHandle(file);
-}
-
-void MainWindow::LoadActiveTraces() {
-  active_traces_.clear();
-  LoadTraceSettings();
-  std::wstring path = ActiveTracesPath();
-  if (path.empty()) {
-    return;
-  }
-  HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) {
-    return;
-  }
-  LARGE_INTEGER size = {};
-  if (!GetFileSizeEx(file, &size) || size.QuadPart <= 0 || size.QuadPart > static_cast<LONGLONG>(std::numeric_limits<int>::max())) {
-    CloseHandle(file);
-    return;
-  }
-  std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
-  DWORD read = 0;
-  bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
-  CloseHandle(file);
-  if (!ok || read == 0) {
-    return;
-  }
-  buffer.resize(read);
-  if (buffer.size() >= 3 && static_cast<unsigned char>(buffer[0]) == 0xEF && static_cast<unsigned char>(buffer[1]) == 0xBB && static_cast<unsigned char>(buffer[2]) == 0xBF) {
-    buffer.erase(0, 3);
-  }
-  std::wstring content = util::Utf8ToWide(buffer);
-  if (content.empty()) {
-    return;
-  }
-
-  size_t start = 0;
-  while (start < content.size()) {
-    size_t end = content.find(L'\n', start);
-    if (end == std::wstring::npos) {
-      end = content.size();
-    }
-    std::wstring line = content.substr(start, end - start);
-    if (!line.empty() && line.back() == L'\r') {
-      line.pop_back();
-    }
-    start = end + 1;
-    line = TrimWhitespace(line);
-    if (line.empty()) {
-      continue;
-    }
-    if (line.front() == L'#') {
-      continue;
-    }
-    if (StartsWithInsensitive(line, L"trace=")) {
-      line.erase(0, wcslen(L"trace="));
-    }
-    line = TrimWhitespace(line);
-    if (line.empty()) {
-      continue;
-    }
-    AddTraceFromFile(L"", line, nullptr, false, false);
-  }
-
-  BuildMenus();
-  RefreshTreeSelection();
-  UpdateValueListForNode(current_node_);
-}
-
-void MainWindow::LoadActiveDefaults() {
-  active_defaults_.clear();
-  std::wstring path = ActiveDefaultsPath();
-  if (path.empty()) {
-    return;
-  }
-  std::wstring content;
-  if (!ReadFileUtf8(path, &content)) {
-    return;
-  }
-  size_t start = 0;
-  while (start < content.size()) {
-    size_t end = content.find(L'\n', start);
-    if (end == std::wstring::npos) {
-      end = content.size();
-    }
-    std::wstring line = content.substr(start, end - start);
-    if (!line.empty() && line.back() == L'\r') {
-      line.pop_back();
-    }
-    start = end + 1;
-    line = TrimWhitespace(line);
-    if (line.empty() || line.front() == L'#') {
-      continue;
-    }
-    if (StartsWithInsensitive(line, L"default=")) {
-      line.erase(0, wcslen(L"default="));
-    }
-    line = TrimWhitespace(line);
-    if (line.empty()) {
-      continue;
-    }
-    AddDefaultFromFile(L"", line, false, false, false);
-  }
-
-  BuildMenus();
-  UpdateValueListForNode(current_node_);
 }
 
 void MainWindow::SaveActiveTraces() const {
@@ -14242,10 +11955,7 @@ bool MainWindow::RemoveTraceByPath(const std::wstring& path) {
   auto session_it = trace_parse_sessions_.find(target_lower);
   if (session_it != trace_parse_sessions_.end()) {
     if (session_it->second) {
-      session_it->second->cancel.store(true);
-      if (session_it->second->thread.joinable()) {
-        session_it->second->thread.join();
-      }
+      session_it->second->work.CancelAndJoin();
     }
     trace_parse_sessions_.erase(session_it);
   }
@@ -14278,10 +11988,7 @@ bool MainWindow::RemoveTraceByLabel(const std::wstring& label) {
   }
   for (auto it = trace_parse_sessions_.begin(); it != trace_parse_sessions_.end();) {
     if (it->second && _wcsicmp(it->second->label.c_str(), label.c_str()) == 0) {
-      it->second->cancel.store(true);
-      if (it->second->thread.joinable()) {
-        it->second->thread.join();
-      }
+      it->second->work.CancelAndJoin();
       it = trace_parse_sessions_.erase(it);
       continue;
     }
@@ -14303,7 +12010,9 @@ bool MainWindow::RemoveTraceByLabel(const std::wstring& label) {
   trace_selection_cache_.clear();
   for (const auto& trace : active_traces_) {
     if (!trace.source_path.empty()) {
-      trace_selection_cache_[ToLower(trace.source_path)] = trace.selection;
+      if (trace.selection) {
+        trace_selection_cache_[ToLower(trace.source_path)] = *trace.selection;
+      }
     }
   }
   SaveActiveTraces();
@@ -14313,10 +12022,6 @@ bool MainWindow::RemoveTraceByLabel(const std::wstring& label) {
   UpdateValueListForNode(current_node_);
   SaveSettings();
   return true;
-}
-
-bool MainWindow::HasActiveDefaults() const {
-  return !active_defaults_.empty();
 }
 
 bool MainWindow::RemoveDefaultByPath(const std::wstring& path) {
@@ -14331,10 +12036,7 @@ bool MainWindow::RemoveDefaultByPath(const std::wstring& path) {
   auto session_it = default_parse_sessions_.find(target_lower);
   if (session_it != default_parse_sessions_.end()) {
     if (session_it->second) {
-      session_it->second->cancel.store(true);
-      if (session_it->second->thread.joinable()) {
-        session_it->second->thread.join();
-      }
+      session_it->second->work.CancelAndJoin();
     }
     default_parse_sessions_.erase(session_it);
   }
@@ -14358,55 +12060,8 @@ bool MainWindow::RemoveDefaultByPath(const std::wstring& path) {
   return true;
 }
 
-bool MainWindow::RemoveDefaultByLabel(const std::wstring& label) {
-  if (label.empty()) {
-    return false;
-  }
-  for (auto it = default_parse_sessions_.begin(); it != default_parse_sessions_.end();) {
-    if (it->second && _wcsicmp(it->second->label.c_str(), label.c_str()) == 0) {
-      it->second->cancel.store(true);
-      if (it->second->thread.joinable()) {
-        it->second->thread.join();
-      }
-      it = default_parse_sessions_.erase(it);
-      continue;
-    }
-    ++it;
-  }
-  size_t removed = 0;
-  active_defaults_.erase(std::remove_if(active_defaults_.begin(), active_defaults_.end(),
-                                        [&](const ActiveDefault& defaults) {
-                                          if (_wcsicmp(defaults.label.c_str(), label.c_str()) != 0) {
-                                            return false;
-                                          }
-                                          ++removed;
-                                          return true;
-                                        }),
-                         active_defaults_.end());
-  if (removed == 0) {
-    return false;
-  }
-  SaveActiveDefaults();
-  BuildMenus();
-  UpdateValueListForNode(current_node_);
-  SaveSettings();
-  return true;
-}
-
 void MainWindow::ShowPermissionsDialog(const RegistryNode& node) {
   ShowRegistryPermissions(hwnd_, node);
-}
-
-bool MainWindow::IsProcessElevated() const {
-  return util::IsProcessElevated();
-}
-
-bool MainWindow::IsProcessSystem() const {
-  return util::IsProcessSystem();
-}
-
-bool MainWindow::IsProcessTrustedInstaller() const {
-  return util::IsProcessTrustedInstaller();
 }
 
 bool MainWindow::RestartAsAdmin() {
@@ -14431,7 +12086,7 @@ bool MainWindow::RestartAsSystem() {
     return false;
   }
 
-  if (!IsProcessElevated()) {
+  if (!util::IsProcessElevated()) {
     HINSTANCE result = ShellExecuteW(hwnd_, L"runas", exe_path.c_str(), kRestartSystemArg, nullptr, SW_SHOWNORMAL);
     if (reinterpret_cast<INT_PTR>(result) <= 32) {
       ui::ShowError(hwnd_, L"Failed to request SYSTEM restart.");
@@ -14468,7 +12123,7 @@ bool MainWindow::RestartAsTrustedInstaller() {
     return false;
   }
 
-  if (!IsProcessElevated()) {
+  if (!util::IsProcessElevated()) {
     HINSTANCE result = ShellExecuteW(hwnd_, L"runas", exe_path.c_str(), kRestartTiArg, nullptr, SW_SHOWNORMAL);
     if (reinterpret_cast<INT_PTR>(result) <= 32) {
       ui::ShowError(hwnd_, L"Failed to request TrustedInstaller restart.");
@@ -14631,7 +12286,8 @@ void MainWindow::ReplaceRegedit(bool enable) {
 }
 
 bool MainWindow::OpenDefaultRegedit() {
-  if (!IsProcessElevated() && !IsProcessSystem() && !IsProcessTrustedInstaller()) {
+  if (!util::IsProcessElevated() && !util::IsProcessSystem() &&
+      !util::IsProcessTrustedInstaller()) {
     ui::ShowError(hwnd_, L"Administrator rights are required to open the default Regedit.");
     return false;
   }
@@ -14847,7 +12503,7 @@ void MainWindow::CaptureTreeState(std::wstring* selected_path, std::vector<std::
       }
     }
     if (node) {
-      *selected_path = RegistryProvider::BuildPath(*node);
+      *selected_path = registry_path::Build(*node);
     }
   }
   if (!expanded_paths) {
@@ -14868,7 +12524,7 @@ void MainWindow::CaptureTreeState(std::wstring* selected_path, std::vector<std::
         if (ancestors_expanded && expanded) {
           RegistryNode* node = reinterpret_cast<RegistryNode*>(tvi.lParam);
           if (node) {
-            expanded_paths->push_back(RegistryProvider::BuildPath(*node));
+            expanded_paths->push_back(registry_path::Build(*node));
           }
         }
       }
@@ -14896,30 +12552,13 @@ void MainWindow::RestoreTreeState() {
   if (!tree_.hwnd()) {
     return;
   }
-  std::vector<std::wstring> expanded;
-  expanded.reserve(saved_tree_expanded_paths_.size());
-  std::unordered_set<std::wstring> seen;
-  seen.reserve(saved_tree_expanded_paths_.size());
-  for (const auto& path : saved_tree_expanded_paths_) {
-    if (path.empty()) {
-      continue;
-    }
-    std::wstring key = ToLower(path);
-    if (seen.insert(key).second) {
-      expanded.push_back(path);
-    }
-  }
-  std::sort(expanded.begin(), expanded.end(), [](const std::wstring& left, const std::wstring& right) {
-    if (left.size() != right.size()) {
-      return left.size() < right.size();
-    }
-    return _wcsicmp(left.c_str(), right.c_str()) < 0;
-  });
-  for (const auto& path : expanded) {
+  workspace::TreeState state = saved_tree_state_;
+  state.Normalize();
+  for (const auto& path : state.expanded_paths) {
     ExpandTreePath(path);
   }
-  if (!saved_tree_selected_path_.empty()) {
-    SelectTreePath(saved_tree_selected_path_);
+  if (!state.selected_path.empty()) {
+    SelectTreePath(state.selected_path);
   }
 }
 
@@ -14962,37 +12601,39 @@ bool MainWindow::ExpandTreePath(const std::wstring& path) {
   return false;
 }
 
-void MainWindow::PushUndo(UndoOperation operation) {
+void MainWindow::PushUndo(changes::UndoOperation operation) {
   if (is_replaying_) {
     return;
   }
-  undo_stack_.push_back(std::move(operation));
-  ClearRedo();
+  undo_stack_.Push(std::move(operation));
   if (toolbar_.hwnd()) {
-    SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditUndo, undo_stack_.empty() ? 0 : TBSTATE_ENABLED);
-    SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditRedo, redo_stack_.empty() ? 0 : TBSTATE_ENABLED);
+    SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditUndo,
+                 undo_stack_.CanUndo() ? TBSTATE_ENABLED : 0);
+    SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditRedo, 0);
   }
 }
 
 void MainWindow::ClearRedo() {
-  redo_stack_.clear();
+  undo_stack_.ClearRedo();
   if (toolbar_.hwnd()) {
-    SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditUndo, undo_stack_.empty() ? 0 : TBSTATE_ENABLED);
-    SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditRedo, TBSTATE_ENABLED * (!redo_stack_.empty()));
+    SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditUndo,
+                 undo_stack_.CanUndo() ? TBSTATE_ENABLED : 0);
+    SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditRedo, 0);
   }
 }
 
-bool MainWindow::ApplyUndoOperation(const UndoOperation& operation, bool redo) {
+bool MainWindow::ApplyUndoOperation(const changes::UndoOperation& operation,
+                                    bool redo) {
   if (!current_node_) {
     return false;
   }
   bool ok = false;
   is_replaying_ = true;
   switch (operation.type) {
-  case UndoOperation::Type::kCreateKey: {
+  case changes::UndoOperation::Type::kCreateKey: {
     if (redo) {
       if (!operation.key_snapshot.name.empty()) {
-        ok = RestoreKeySnapshot(operation.node, operation.key_snapshot);
+        ok = changes::RestoreKey(operation.node, operation.key_snapshot);
       } else {
         ok = RegistryProvider::CreateKey(operation.node, operation.name);
       }
@@ -15008,7 +12649,7 @@ bool MainWindow::ApplyUndoOperation(const UndoOperation& operation, bool redo) {
     }
     break;
   }
-  case UndoOperation::Type::kDeleteKey: {
+  case changes::UndoOperation::Type::kDeleteKey: {
     if (redo) {
       RegistryNode child = MakeChildNode(operation.node, operation.name);
       ok = RegistryProvider::DeleteKey(child);
@@ -15016,21 +12657,21 @@ bool MainWindow::ApplyUndoOperation(const UndoOperation& operation, bool redo) {
         RefreshTreeSelection();
       }
     } else {
-      ok = RestoreKeySnapshot(operation.node, operation.key_snapshot);
+      ok = changes::RestoreKey(operation.node, operation.key_snapshot);
       if (ok) {
         RefreshTreeSelection();
       }
     }
     break;
   }
-  case UndoOperation::Type::kRenameKey: {
+  case changes::UndoOperation::Type::kRenameKey: {
     std::wstring from = redo ? operation.name : operation.new_name;
     std::wstring to = redo ? operation.new_name : operation.name;
     RegistryNode child = MakeChildNode(operation.node, from);
     ok = RegistryProvider::RenameKey(child, to);
     if (ok) {
       RefreshTreeSelection();
-      std::wstring path = RegistryProvider::BuildPath(operation.node);
+      std::wstring path = registry_path::Build(operation.node);
       if (!path.empty()) {
         path.append(L"\\");
         path.append(to);
@@ -15039,7 +12680,7 @@ bool MainWindow::ApplyUndoOperation(const UndoOperation& operation, bool redo) {
     }
     break;
   }
-  case UndoOperation::Type::kCreateValue: {
+  case changes::UndoOperation::Type::kCreateValue: {
     if (redo) {
       ok = RegistryProvider::SetValue(operation.node, operation.new_value.name, operation.new_value.type, operation.new_value.data);
     } else {
@@ -15047,7 +12688,7 @@ bool MainWindow::ApplyUndoOperation(const UndoOperation& operation, bool redo) {
     }
     break;
   }
-  case UndoOperation::Type::kDeleteValue: {
+  case changes::UndoOperation::Type::kDeleteValue: {
     if (redo) {
       ok = RegistryProvider::DeleteValue(operation.node, operation.old_value.name);
     } else {
@@ -15055,12 +12696,12 @@ bool MainWindow::ApplyUndoOperation(const UndoOperation& operation, bool redo) {
     }
     break;
   }
-  case UndoOperation::Type::kModifyValue: {
+  case changes::UndoOperation::Type::kModifyValue: {
     const ValueEntry& value = redo ? operation.new_value : operation.old_value;
     ok = RegistryProvider::SetValue(operation.node, value.name, value.type, value.data);
     break;
   }
-  case UndoOperation::Type::kRenameValue: {
+  case changes::UndoOperation::Type::kRenameValue: {
     std::wstring from = redo ? operation.name : operation.new_name;
     std::wstring to = redo ? operation.new_name : operation.name;
     ok = RegistryProvider::RenameValue(operation.node, from, to);
@@ -15078,44 +12719,12 @@ bool MainWindow::ApplyUndoOperation(const UndoOperation& operation, bool redo) {
     UpdateValueListForNode(current_node_);
   }
   if (toolbar_.hwnd()) {
-    SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditUndo, undo_stack_.empty() ? 0 : TBSTATE_ENABLED);
-    SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditRedo, redo_stack_.empty() ? 0 : TBSTATE_ENABLED);
+    SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditUndo,
+                 undo_stack_.CanUndo() ? TBSTATE_ENABLED : 0);
+    SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditRedo,
+                 undo_stack_.CanRedo() ? TBSTATE_ENABLED : 0);
   }
   return ok;
-}
-
-MainWindow::KeySnapshot MainWindow::CaptureKeySnapshot(const RegistryNode& node) {
-  KeySnapshot snapshot;
-  snapshot.name = LeafName(node);
-  snapshot.values = RegistryProvider::EnumValues(node);
-  auto children = RegistryProvider::EnumSubKeyNames(node, false);
-  snapshot.children.reserve(children.size());
-  for (const auto& child_name : children) {
-    RegistryNode child = MakeChildNode(node, child_name);
-    snapshot.children.push_back(CaptureKeySnapshot(child));
-  }
-  return snapshot;
-}
-
-bool MainWindow::RestoreKeySnapshot(const RegistryNode& parent, const KeySnapshot& snapshot) {
-  if (snapshot.name.empty()) {
-    return false;
-  }
-  if (!RegistryProvider::CreateKey(parent, snapshot.name)) {
-    return false;
-  }
-  RegistryNode node = MakeChildNode(parent, snapshot.name);
-  for (const auto& value : snapshot.values) {
-    if (!RegistryProvider::SetValue(node, value.name, value.type, value.data)) {
-      return false;
-    }
-  }
-  for (const auto& child : snapshot.children) {
-    if (!RestoreKeySnapshot(node, child)) {
-      return false;
-    }
-  }
-  return true;
 }
 
 bool MainWindow::SameNode(const RegistryNode& left, const RegistryNode& right) const {
@@ -15129,14 +12738,24 @@ bool MainWindow::SameNode(const RegistryNode& left, const RegistryNode& right) c
 }
 
 std::wstring MainWindow::MakeUniqueValueName(const RegistryNode& node, const std::wstring& base) const {
-  auto values = RegistryProvider::EnumValues(node);
-  auto exists = [&](const std::wstring& candidate) -> bool {
-    for (const auto& value : values) {
-      if (EqualsInsensitive(value.name, candidate)) {
+  std::unordered_set<std::wstring> value_names;
+  RegistryProvider::KeyEnumResult enum_result;
+  bool names_reserved = false;
+  RegistryProvider::EnumKeyStreaming(
+      node, true, false, false, &enum_result,
+      [&](const ValueInfo& value, const BYTE*, DWORD) {
+        if (!names_reserved) {
+          if (enum_result.info_valid) {
+            value_names.reserve(enum_result.info.value_count);
+          }
+          names_reserved = true;
+        }
+        value_names.insert(ToLower(value.name));
         return true;
-      }
-    }
-    return false;
+      },
+      {});
+  auto exists = [&](const std::wstring& candidate) -> bool {
+    return value_names.contains(ToLower(candidate));
   };
 
   std::wstring base_name = base;
@@ -15616,6 +13235,7 @@ bool MainWindow::SelectValueByName(const std::wstring& name) {
       continue;
     }
     if (row->extra == name) {
+      ListView_SetItemState(value_list_.hwnd(), -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
       ListView_SetItemState(value_list_.hwnd(), static_cast<int>(i), LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
       ListView_EnsureVisible(value_list_.hwnd(), static_cast<int>(i), FALSE);
       return true;
@@ -15856,68 +13476,12 @@ bool MainWindow::AllowTraceSimulation(const RegistryNode& node) const {
 }
 
 std::wstring MainWindow::TracePathLowerForNode(const RegistryNode& node) const {
-  std::wstring path = RegistryProvider::BuildPath(node);
+  std::wstring path = registry_path::Build(node);
   std::wstring trace_path = NormalizeTraceKeyPath(path);
   if (trace_path.empty()) {
     trace_path = path;
   }
   return ToLower(trace_path);
-}
-
-void MainWindow::NormalizeSelectionForTrace(const TraceData& trace, TraceSelection* selection) const {
-  if (!selection || selection->select_all) {
-    return;
-  }
-  auto resolve_key = [&](const std::wstring& key) -> std::wstring {
-    if (key.empty()) {
-      return key;
-    }
-    std::wstring lower = ToLower(key);
-    auto it = trace.display_to_key.find(lower);
-    if (it != trace.display_to_key.end()) {
-      return it->second;
-    }
-    return key;
-  };
-
-  std::unordered_map<std::wstring, std::wstring> key_lookup;
-  key_lookup.reserve(trace.key_paths.size());
-  for (const auto& key_path : trace.key_paths) {
-    key_lookup.emplace(ToLower(key_path), key_path);
-  }
-
-  std::vector<std::wstring> normalized_keys;
-  std::unordered_set<std::wstring> seen_keys;
-  for (const auto& path : selection->key_paths) {
-    std::wstring resolved = resolve_key(path);
-    std::wstring lower = ToLower(resolved);
-    auto it = key_lookup.find(lower);
-    if (it == key_lookup.end()) {
-      continue;
-    }
-    if (seen_keys.insert(lower).second) {
-      normalized_keys.push_back(it->second);
-    }
-  }
-
-  std::unordered_map<std::wstring, std::unordered_set<std::wstring>> normalized_values;
-  for (const auto& entry : selection->values_by_key) {
-    std::wstring resolved = resolve_key(entry.first);
-    std::wstring key_lower = ToLower(resolved);
-    if (key_lower.empty()) {
-      continue;
-    }
-    auto& values = normalized_values[key_lower];
-    for (const auto& value_lower : entry.second) {
-      values.insert(value_lower);
-    }
-  }
-
-  selection->key_paths = std::move(normalized_keys);
-  selection->values_by_key = std::move(normalized_values);
-  if (selection->key_paths.empty() && selection->values_by_key.empty()) {
-    selection->select_all = true;
-  }
 }
 
 void MainWindow::AppendTraceChildren(const RegistryNode& node, const std::unordered_set<std::wstring>& existing_lower, std::vector<std::wstring>* out) const {
@@ -15944,7 +13508,8 @@ void MainWindow::AppendTraceChildren(const RegistryNode& node, const std::unorde
       continue;
     }
     std::shared_lock<std::shared_mutex> trace_lock(*trace.data->mutex);
-    if (!SelectionIncludesKey(trace.selection, key_lower)) {
+    if (!trace.selection ||
+        !trace::IncludesKey(*trace.selection, key_lower)) {
       continue;
     }
     auto it = trace.data->children_by_key.find(key_lower);
@@ -15985,7 +13550,9 @@ std::wstring MainWindow::ResolveBundledTracePath(const std::wstring& label) cons
   return util::JoinPath(records, file);
 }
 
-bool MainWindow::LoadBundledTrace(const std::wstring& label, const TraceSelection* selection_override) {
+bool MainWindow::LoadBundledTrace(
+    const std::wstring& label,
+    const trace::Selection* selection_override) {
   std::wstring path = ResolveBundledTracePath(label);
   if (path.empty()) {
     return false;
@@ -16011,462 +13578,10 @@ std::wstring MainWindow::ResolveBundledDefaultPath(const std::wstring& label) co
   return util::JoinPath(defaults, file);
 }
 
-bool MainWindow::LoadBundledDefault(const std::wstring& label) {
-  std::wstring path = ResolveBundledDefaultPath(label);
-  if (path.empty()) {
-    return false;
-  }
-  return LoadDefaultFromFile(label, path);
-}
-
-bool MainWindow::ParseDefaultRegFile(const std::wstring& path, DefaultData* out, std::wstring* error) const {
-  if (!out) {
-    return false;
-  }
-  out->values_by_key.clear();
-  std::wstring content;
-  if (!util::ReadTextFile(path, &content)) {
-    if (error) {
-      *error = L"Failed to read registry file.";
-    }
-    return false;
-  }
-
-  std::vector<std::wstring> lines;
-  std::wstring current;
-  size_t start = 0;
-  while (start < content.size()) {
-    size_t end = content.find(L'\n', start);
-    if (end == std::wstring::npos) {
-      end = content.size();
-    }
-    std::wstring line = content.substr(start, end - start);
-    if (!line.empty() && line.back() == L'\r') {
-      line.pop_back();
-    }
-    start = end + 1;
-    if (current.empty()) {
-      current = line;
-    } else {
-      current.append(line);
-    }
-    std::wstring trimmed_right = current;
-    while (!trimmed_right.empty() && (trimmed_right.back() == L' ' || trimmed_right.back() == L'\t')) {
-      trimmed_right.pop_back();
-    }
-    if (!trimmed_right.empty() && trimmed_right.back() == L'\\') {
-      trimmed_right.pop_back();
-      current = trimmed_right;
-      continue;
-    }
-    lines.push_back(current);
-    current.clear();
-  }
-  if (!current.empty()) {
-    lines.push_back(current);
-  }
-
-  std::wstring current_key;
-  for (const auto& raw : lines) {
-    std::wstring line = TrimWhitespace(raw);
-    if (line.empty()) {
-      continue;
-    }
-    if (line[0] == L';') {
-      continue;
-    }
-    if (line.front() == L'[' && line.back() == L']') {
-      std::wstring key = line.substr(1, line.size() - 2);
-      key = TrimWhitespace(key);
-      bool delete_key = !key.empty() && key.front() == L'-';
-      if (delete_key) {
-        current_key.clear();
-        continue;
-      }
-      std::wstring normalized = NormalizeTraceKeyPathBasic(key);
-      current_key = normalized.empty() ? key : normalized;
-      if (!current_key.empty()) {
-        std::wstring key_lower = ToLower(current_key);
-        out->values_by_key.emplace(key_lower, DefaultKeyValues());
-      }
-      continue;
-    }
-    if (current_key.empty()) {
-      continue;
-    }
-    size_t eq = line.find(L'=');
-    if (eq == std::wstring::npos) {
-      continue;
-    }
-    std::wstring name_part = TrimWhitespace(line.substr(0, eq));
-    std::wstring data_part = TrimWhitespace(line.substr(eq + 1));
-    if (name_part.empty() || data_part.empty()) {
-      continue;
-    }
-    if (data_part == L"-") {
-      continue;
-    }
-
-    std::wstring value_name;
-    if (name_part == L"@") {
-      value_name.clear();
-    } else if (name_part.front() == L'"') {
-      size_t end_pos = 0;
-      if (!ParseQuotedString(name_part, &value_name, &end_pos)) {
-        continue;
-      }
-    } else {
-      continue;
-    }
-
-    DWORD type = REG_NONE;
-    std::vector<BYTE> data;
-    if (data_part.front() == L'"') {
-      std::wstring text;
-      size_t end_pos = 0;
-      if (!ParseQuotedString(data_part, &text, &end_pos)) {
-        continue;
-      }
-      type = REG_SZ;
-      data = StringToRegData(text);
-    } else if (StartsWithInsensitive(data_part, L"dword:")) {
-      std::wstring hex = TrimWhitespace(data_part.substr(6));
-      if (hex.empty()) {
-        continue;
-      }
-      DWORD number = static_cast<DWORD>(wcstoul(hex.c_str(), nullptr, 16));
-      type = REG_DWORD;
-      data.resize(sizeof(DWORD));
-      memcpy(data.data(), &number, sizeof(DWORD));
-    } else if (StartsWithInsensitive(data_part, L"hex")) {
-      type = REG_BINARY;
-      size_t colon = data_part.find(L':');
-      if (colon == std::wstring::npos) {
-        continue;
-      }
-      size_t open = data_part.find(L'(');
-      size_t close = data_part.find(L')');
-      if (open != std::wstring::npos && close != std::wstring::npos && close > open) {
-        std::wstring code = data_part.substr(open + 1, close - open - 1);
-        unsigned long parsed = wcstoul(code.c_str(), nullptr, 16);
-        switch (parsed) {
-        case 0x0:
-          type = REG_NONE;
-          break;
-        case 0x1:
-          type = REG_SZ;
-          break;
-        case 0x2:
-          type = REG_EXPAND_SZ;
-          break;
-        case 0x3:
-          type = REG_BINARY;
-          break;
-        case 0x4:
-          type = REG_DWORD;
-          break;
-        case 0x5:
-          type = REG_DWORD_BIG_ENDIAN;
-          break;
-        case 0x7:
-          type = REG_MULTI_SZ;
-          break;
-        case 0x8:
-          type = REG_RESOURCE_LIST;
-          break;
-        case 0x9:
-          type = REG_FULL_RESOURCE_DESCRIPTOR;
-          break;
-        case 0xA:
-          type = REG_RESOURCE_REQUIREMENTS_LIST;
-          break;
-        case 0xB:
-          type = REG_QWORD;
-          break;
-        default:
-          type = REG_BINARY;
-          break;
-        }
-      }
-      std::wstring hex = data_part.substr(colon + 1);
-      if (!ParseHexBytes(hex, &data)) {
-        continue;
-      }
-    } else {
-      continue;
-    }
-
-    std::wstring key_lower = ToLower(current_key);
-    auto it = out->values_by_key.find(key_lower);
-    if (it == out->values_by_key.end()) {
-      continue;
-    }
-    std::wstring name_lower = ToLower(value_name);
-    DefaultValueEntry entry;
-    entry.type = type;
-    entry.data = RegistryProvider::FormatValueDataForDisplay(type, data.empty() ? nullptr : data.data(), static_cast<DWORD>(data.size()));
-    it->second.values[name_lower] = std::move(entry);
-  }
-  if (out->values_by_key.empty()) {
-    if (error) {
-      *error = L"Default file contains no usable entries.";
-    }
-    return false;
-  }
-  return true;
-}
-
-bool MainWindow::BuildTraceDataFromBuffer(const std::wstring& label, const std::wstring& source, const std::string& buffer, TraceData* out_data, std::wstring* error) const {
-  if (!out_data) {
-    return false;
-  }
-  if (buffer.empty()) {
-    if (error) {
-      *error = L"Trace file is empty or too large to load.";
-    }
-    return false;
-  }
-  std::string text = buffer;
-  if (text.size() >= 3 && static_cast<unsigned char>(text[0]) == 0xEF && static_cast<unsigned char>(text[1]) == 0xBB && static_cast<unsigned char>(text[2]) == 0xBF) {
-    text.erase(0, 3);
-  }
-  std::wstring content = util::Utf8ToWide(text);
-  if (content.empty()) {
-    if (error) {
-      *error = L"Trace file has no readable entries.";
-    }
-    return false;
-  }
-
-  TraceData data;
-  data.label = label;
-  data.source_path = source;
-  std::unordered_map<std::wstring, std::wstring> key_by_lower;
-  std::unordered_set<std::wstring> display_lower;
-  std::unordered_map<std::wstring, std::wstring> display_to_key;
-
-  auto add_display_path = [&](const std::wstring& path, const std::wstring& key_path) {
-    if (path.empty()) {
-      return;
-    }
-    std::wstring lower = ToLower(path);
-    if (display_lower.insert(lower).second) {
-      data.display_key_paths.push_back(path);
-    }
-    if (!key_path.empty()) {
-      display_to_key.emplace(lower, key_path);
-    }
-  };
-
-  size_t start = 0;
-  while (start < content.size()) {
-    size_t end = content.find(L'\n', start);
-    if (end == std::wstring::npos) {
-      end = content.size();
-    }
-    std::wstring line = content.substr(start, end - start);
-    if (!line.empty() && line.back() == L'\r') {
-      line.pop_back();
-    }
-    start = end + 1;
-    line = TrimWhitespace(line);
-    if (line.empty()) {
-      continue;
-    }
-    size_t sep = line.rfind(L" : ");
-    size_t sep_len = 0;
-    if (sep != std::wstring::npos) {
-      sep_len = 3;
-    } else {
-      sep = line.rfind(L':');
-      sep_len = (sep == std::wstring::npos) ? 0 : 1;
-    }
-    if (sep == std::wstring::npos) {
-      continue;
-    }
-    std::wstring key_text = TrimWhitespace(line.substr(0, sep));
-    std::wstring value_text = TrimWhitespace(line.substr(sep + sep_len));
-    if (key_text.empty()) {
-      continue;
-    }
-    std::wstring selection_path = NormalizeTraceSelectionPath(key_text);
-    if (selection_path.empty()) {
-      continue;
-    }
-    std::wstring key_path = NormalizeTraceKeyPath(key_text);
-    if (key_path.empty()) {
-      key_path = selection_path;
-    }
-    std::wstring key_lower = ToLower(key_path);
-    key_by_lower.emplace(key_lower, key_path);
-    add_display_path(selection_path, key_path);
-
-    std::wstring value_name = value_text;
-    if (EqualsInsensitive(value_name, L"(Default)")) {
-      value_name.clear();
-    }
-    std::wstring value_lower = ToLower(value_name);
-    auto& entry = data.values_by_key[key_lower];
-    if (entry.values_lower.insert(value_lower).second) {
-      entry.values_display.push_back(value_name);
-    }
-  }
-
-  if (key_by_lower.empty()) {
-    if (error) {
-      *error = L"Trace file contains no usable entries.";
-    }
-    return false;
-  }
-  data.key_paths.reserve(key_by_lower.size());
-  for (const auto& item : key_by_lower) {
-    data.key_paths.push_back(item.second);
-  }
-  data.display_to_key = std::move(display_to_key);
-  std::sort(data.key_paths.begin(), data.key_paths.end(), [](const std::wstring& left, const std::wstring& right) { return _wcsicmp(left.c_str(), right.c_str()) < 0; });
-  std::sort(data.display_key_paths.begin(), data.display_key_paths.end(), [](const std::wstring& left, const std::wstring& right) { return _wcsicmp(left.c_str(), right.c_str()) < 0; });
-
-  std::unordered_map<std::wstring, std::unordered_map<std::wstring, std::wstring>> child_map;
-  child_map.reserve(data.key_paths.size());
-  for (const auto& key_path : data.key_paths) {
-    std::vector<std::wstring> parts = SplitPath(key_path);
-    if (parts.size() < 2) {
-      continue;
-    }
-    std::wstring current = parts.front();
-    for (size_t i = 1; i < parts.size(); ++i) {
-      const std::wstring& child = parts[i];
-      std::wstring parent_lower = ToLower(current);
-      std::wstring child_lower = ToLower(child);
-      auto& children = child_map[parent_lower];
-      if (children.find(child_lower) == children.end()) {
-        children.emplace(child_lower, child);
-      }
-      current.append(L"\\");
-      current.append(child);
-    }
-  }
-  data.children_by_key.clear();
-  data.children_by_key.reserve(child_map.size());
-  for (auto& entry : child_map) {
-    std::vector<std::wstring> children;
-    children.reserve(entry.second.size());
-    for (auto& child : entry.second) {
-      children.push_back(child.second);
-    }
-    std::sort(children.begin(), children.end(), [](const std::wstring& left, const std::wstring& right) { return _wcsicmp(left.c_str(), right.c_str()) < 0; });
-    data.children_by_key.emplace(entry.first, std::move(children));
-  }
-
-  *out_data = std::move(data);
-  return true;
-}
-
-bool MainWindow::AddTraceFromBuffer(const std::wstring& label, const std::wstring& source, const std::string& buffer, const TraceSelection* selection_override, bool prompt_for_selection) {
-  TraceData data;
-  std::wstring error;
-  if (!BuildTraceDataFromBuffer(label, source, buffer, &data, &error)) {
-    ui::ShowError(hwnd_, error.empty() ? L"Failed to load trace file." : error.c_str());
-    return false;
-  }
-
-  std::shared_ptr<const TraceData> trace = std::make_shared<TraceData>(std::move(data));
-  TraceSelection selection = {};
-  selection.select_all = true;
-  selection.recursive = true;
-  if (selection_override) {
-    selection = *selection_override;
-  }
-  if (prompt_for_selection) {
-    TraceDialogOptions options;
-    options.title = trace->label.empty() ? L"Trace entries" : L"Trace entries - " + trace->label;
-    options.prompt = L"";
-    options.show_values = true;
-
-    std::unordered_map<std::wstring, std::wstring> key_lookup;
-    key_lookup.reserve(trace->key_paths.size());
-    for (const auto& key_path : trace->key_paths) {
-      key_lookup.emplace(ToLower(key_path), key_path);
-    }
-    std::unordered_map<std::wstring, std::wstring> display_lookup;
-    display_lookup.reserve(trace->display_key_paths.size());
-    for (const auto& display_path : trace->display_key_paths) {
-      std::wstring display_lower = ToLower(display_path);
-      auto it = trace->display_to_key.find(display_lower);
-      if (it == trace->display_to_key.end()) {
-        continue;
-      }
-      std::wstring key_lower = ToLower(it->second);
-      display_lookup.emplace(key_lower, display_path);
-    }
-
-    auto entries = std::make_unique<std::vector<KeyValueDialogEntry>>();
-    for (const auto& entry : trace->values_by_key) {
-      std::wstring key_lower = entry.first;
-      std::wstring key_path = key_lower;
-      auto key_it = key_lookup.find(key_lower);
-      if (key_it != key_lookup.end()) {
-        key_path = key_it->second;
-      }
-      std::wstring display_path = key_path;
-      auto display_it = display_lookup.find(key_lower);
-      if (display_it != display_lookup.end()) {
-        display_path = display_it->second;
-      }
-      for (const auto& value_name : entry.second.values_display) {
-        KeyValueDialogEntry dialog_entry;
-        dialog_entry.key_path = key_path;
-        dialog_entry.display_path = display_path;
-        dialog_entry.has_value = true;
-        dialog_entry.value_name = value_name;
-        entries->push_back(std::move(dialog_entry));
-      }
-    }
-
-    struct DialogEntryContext {
-      std::unique_ptr<std::vector<KeyValueDialogEntry>> entries;
-    };
-    DialogEntryContext context;
-    context.entries = std::move(entries);
-    auto on_ready = [](HWND dialog, void* context_ptr) {
-      auto* ctx = reinterpret_cast<DialogEntryContext*>(context_ptr);
-      if (!ctx) {
-        return;
-      }
-      if (ctx->entries) {
-        TraceDialogPostEntries(dialog, ctx->entries.release());
-      }
-      TraceDialogPostDone(dialog, true);
-    };
-
-    if (!ShowTraceDialog(hwnd_, options, &selection, on_ready, &context)) {
-      return false;
-    }
-  }
-  if (!selection.select_all && selection.key_paths.empty() && selection.values_by_key.empty()) {
-    selection.select_all = true;
-  }
-  NormalizeSelectionForTrace(*trace, &selection);
-
-  active_traces_.push_back({trace->label, source, trace, selection});
-  trace_selection_cache_[ToLower(source)] = selection;
-  return true;
-}
-
-bool MainWindow::LoadTraceFromBuffer(const std::wstring& label, const std::wstring& source, const std::string& buffer, const TraceSelection* selection_override) {
-  if (!AddTraceFromBuffer(label, source, buffer, selection_override, true)) {
-    return false;
-  }
-  SaveActiveTraces();
-  SaveTraceSettings();
-  BuildMenus();
-  RefreshTreeSelection();
-  UpdateValueListForNode(current_node_);
-  SaveSettings();
-  return true;
-}
-
-bool MainWindow::AddTraceFromFile(const std::wstring& label, const std::wstring& path, const TraceSelection* selection_override, bool prompt_for_selection, bool update_ui) {
+bool MainWindow::AddTraceFromFile(
+    const std::wstring& label, const std::wstring& path,
+    const trace::Selection* selection_override,
+    bool prompt_for_selection, bool update_ui) {
   std::wstring source = TrimWhitespace(path);
   if (source.empty()) {
     return false;
@@ -16503,7 +13618,7 @@ bool MainWindow::AddTraceFromFile(const std::wstring& label, const std::wstring&
     return true;
   }
 
-  TraceSelection selection = {};
+  trace::Selection selection = {};
   selection.select_all = true;
   selection.recursive = true;
   if (selection_override) {
@@ -16519,7 +13634,7 @@ bool MainWindow::AddTraceFromFile(const std::wstring& label, const std::wstring&
   session->label = use_label;
   session->source_path = source;
   session->source_lower = source_lower;
-  session->data = std::make_shared<TraceData>();
+  session->data = std::make_shared<trace::Data>();
   session->data->label = use_label;
   session->data->source_path = source;
   session->selection = selection;
@@ -16528,7 +13643,7 @@ bool MainWindow::AddTraceFromFile(const std::wstring& label, const std::wstring&
   trace_parse_sessions_.emplace(source_lower, std::move(session));
 
   if (prompt_for_selection) {
-    TraceSelection dialog_selection = selection;
+    trace::Selection dialog_selection = selection;
     TraceDialogOptions options;
     options.title = use_label.empty() ? L"Trace entries" : L"Trace entries - " + use_label;
     options.prompt = L"";
@@ -16537,10 +13652,7 @@ bool MainWindow::AddTraceFromFile(const std::wstring& label, const std::wstring&
     context.window = this;
     context.session = session_ptr;
     if (!ShowTraceDialog(hwnd_, options, &dialog_selection, StartTraceDialogLoad, &context)) {
-      session_ptr->cancel.store(true);
-      if (session_ptr->thread.joinable()) {
-        session_ptr->thread.join();
-      }
+      session_ptr->work.CancelAndJoin();
       trace_parse_sessions_.erase(source_lower);
       return false;
     }
@@ -16555,7 +13667,9 @@ bool MainWindow::AddTraceFromFile(const std::wstring& label, const std::wstring&
   }
 
   session_ptr->added_to_active = true;
-  active_traces_.push_back({use_label, source, session_ptr->data, session_ptr->selection});
+  active_traces_.push_back(
+      {use_label, source, session_ptr->data,
+       std::make_shared<trace::Selection>(session_ptr->selection)});
   trace_selection_cache_[source_lower] = session_ptr->selection;
 
   if (update_ui) {
@@ -16566,8 +13680,8 @@ bool MainWindow::AddTraceFromFile(const std::wstring& label, const std::wstring&
     UpdateValueListForNode(current_node_);
     SaveSettings();
   }
-  if (session_ptr->parsing_done && session_ptr->thread.joinable()) {
-    session_ptr->thread.join();
+  if (session_ptr->parsing_done) {
+    session_ptr->work.Join();
   }
   if (session_ptr->parsing_done && !session_ptr->dialog) {
     trace_parse_sessions_.erase(source_lower);
@@ -16575,7 +13689,9 @@ bool MainWindow::AddTraceFromFile(const std::wstring& label, const std::wstring&
   return true;
 }
 
-bool MainWindow::LoadTraceFromFile(const std::wstring& label, const std::wstring& path, const TraceSelection* selection_override) {
+bool MainWindow::LoadTraceFromFile(
+    const std::wstring& label, const std::wstring& path,
+    const trace::Selection* selection_override) {
   return AddTraceFromFile(label, path, selection_override, true, true);
 }
 
@@ -16645,7 +13761,7 @@ bool MainWindow::AddDefaultFromFile(const std::wstring& label, const std::wstrin
     return false;
   }
 
-  KeyValueSelection selection = {};
+  trace::Selection selection = {};
   selection.select_all = true;
   selection.recursive = true;
 
@@ -16653,7 +13769,7 @@ bool MainWindow::AddDefaultFromFile(const std::wstring& label, const std::wstrin
   session->label = use_label;
   session->source_path = source;
   session->source_lower = source_lower;
-  session->data = std::make_shared<DefaultData>();
+  session->data = std::make_shared<defaults::Data>();
   session->selection = selection;
   session->show_errors = show_error;
 
@@ -16661,7 +13777,7 @@ bool MainWindow::AddDefaultFromFile(const std::wstring& label, const std::wstrin
   default_parse_sessions_.emplace(source_lower, std::move(session));
 
   if (prompt_for_selection) {
-    KeyValueSelection dialog_selection = selection;
+    trace::Selection dialog_selection = selection;
     TraceDialogOptions options;
     options.title = use_label.empty() ? L"Default entries" : L"Default entries - " + use_label;
     options.prompt = L"";
@@ -16670,10 +13786,7 @@ bool MainWindow::AddDefaultFromFile(const std::wstring& label, const std::wstrin
     context.window = this;
     context.session = session_ptr;
     if (!ShowTraceDialog(hwnd_, options, &dialog_selection, StartDefaultDialogLoad, &context)) {
-      session_ptr->cancel.store(true);
-      if (session_ptr->thread.joinable()) {
-        session_ptr->thread.join();
-      }
+      session_ptr->work.CancelAndJoin();
       default_parse_sessions_.erase(source_lower);
       return false;
     }
@@ -16688,15 +13801,17 @@ bool MainWindow::AddDefaultFromFile(const std::wstring& label, const std::wstrin
   }
 
   session_ptr->added_to_active = true;
-  active_defaults_.push_back({use_label, source, session_ptr->data, session_ptr->selection});
+  active_defaults_.push_back(
+      {use_label, source, session_ptr->data,
+       std::make_shared<trace::Selection>(session_ptr->selection)});
   if (update_ui) {
     SaveActiveDefaults();
     BuildMenus();
     UpdateValueListForNode(current_node_);
     SaveSettings();
   }
-  if (session_ptr->parsing_done && session_ptr->thread.joinable()) {
-    session_ptr->thread.join();
+  if (session_ptr->parsing_done) {
+    session_ptr->work.Join();
   }
   if (session_ptr->parsing_done && !session_ptr->dialog) {
     default_parse_sessions_.erase(source_lower);
@@ -16756,55 +13871,28 @@ bool MainWindow::BuildRegFileContent(const TabEntry& entry, std::wstring* out) c
     return false;
   }
 
-  out->append(L"Windows Registry Editor Version 5.00\r\n");
-  std::function<void(const RegistryProvider::VirtualRegistryKey&, const std::wstring&)> append_key;
-  append_key = [&](const RegistryProvider::VirtualRegistryKey& key, const std::wstring& full_path) {
-    std::vector<const RegistryProvider::VirtualRegistryValue*> values;
-    values.reserve(key.values.size());
-    for (const auto& entry_value : key.values) {
-      values.push_back(&entry_value.second);
+  regfile::Writer writer;
+  std::function<void(const VirtualRegistryKey&,
+                     const std::wstring&)>
+      append_key;
+  append_key = [&](const VirtualRegistryKey& key,
+                    const std::wstring& full_path) {
+    if (!key.values.empty()) {
+      std::vector<const VirtualRegistryValue*> values;
+      values.reserve(key.values.size());
+      for (const auto& source : key.values) {
+        values.push_back(&source.second);
+      }
+      writer.AppendKey(full_path, std::move(values));
     }
-    std::sort(values.begin(), values.end(), [](const RegistryProvider::VirtualRegistryValue* left, const RegistryProvider::VirtualRegistryValue* right) {
-      if (!left || !right) {
-        return left != nullptr;
-      }
-      bool left_default = left->name.empty();
-      bool right_default = right->name.empty();
-      if (left_default != right_default) {
-        return left_default;
-      }
-      return _wcsicmp(left->name.c_str(), right->name.c_str()) < 0;
-    });
-
-    if (!values.empty()) {
-      out->append(L"\r\n");
-      out->append(L"[");
-      out->append(full_path);
-      out->append(L"]\r\n");
-      for (const auto* value : values) {
-        if (!value) {
-          continue;
-        }
-        if (value->name.empty()) {
-          out->append(L"@=");
-        } else {
-          out->append(L"\"");
-          out->append(EscapeRegString(value->name));
-          out->append(L"\"=");
-        }
-        out->append(FormatRegValueData(value->type, value->data));
-        out->append(L"\r\n");
-      }
-    }
-
-    std::vector<const RegistryProvider::VirtualRegistryKey*> children;
+    std::vector<const VirtualRegistryKey*> children;
     children.reserve(key.children.size());
     for (const auto& child : key.children) {
       if (child.second) {
         children.push_back(child.second.get());
       }
     }
-    std::sort(children.begin(), children.end(), [](const RegistryProvider::VirtualRegistryKey* left, const RegistryProvider::VirtualRegistryKey* right) {
+    std::sort(children.begin(), children.end(), [](const VirtualRegistryKey* left, const VirtualRegistryKey* right) {
       if (!left || !right) {
         return left != nullptr;
       }
@@ -16831,6 +13919,7 @@ bool MainWindow::BuildRegFileContent(const TabEntry& entry, std::wstring* out) c
     }
     append_key(*root.data->root, root_name);
   }
+  *out = std::move(writer).Finish();
   return true;
 }
 
@@ -16870,14 +13959,19 @@ bool MainWindow::OpenRegFileTab(const std::wstring& path) {
     session->source_lower = path_lower;
     HWND hwnd = hwnd_;
     RegFileParseSession* session_ptr = session.get();
-    session->thread = std::thread([this, session_ptr, hwnd]() {
+    session->work.Start([this, session_ptr, hwnd](
+                            uint64_t generation,
+                            std::atomic_bool& cancel) {
       auto payload = std::make_unique<RegFileParsePayload>();
+      payload->generation = generation;
       payload->source_path = session_ptr->source_path;
       payload->source_lower = session_ptr->source_lower;
       std::wstring parse_error;
       std::vector<ParsedRegFileRoot> parsed_roots;
       bool cancelled = false;
-      if (!ParseRegFileToVirtualRoots(payload->source_path, &parsed_roots, &parse_error, &session_ptr->cancel, &cancelled)) {
+      if (!ParseRegFileToVirtualRoots(payload->source_path, &parsed_roots,
+                                      &parse_error, &cancel,
+                                      &cancelled)) {
         if (!cancelled && parse_error.empty()) {
           parse_error = L"Failed to read registry file.";
         }
@@ -16970,79 +14064,19 @@ void MainWindow::ClearDefaults() {
 }
 
 void MainWindow::NormalizeRecentTraceList() {
-  std::vector<std::wstring> cleaned;
-  cleaned.reserve(recent_trace_paths_.size());
-  for (const auto& entry : recent_trace_paths_) {
-    std::wstring path = TrimWhitespace(entry);
-    if (path.empty()) {
-      continue;
-    }
-    bool duplicate = false;
-    for (const auto& existing : cleaned) {
-      if (EqualsInsensitive(existing, path)) {
-        duplicate = true;
-        break;
-      }
-    }
-    if (!duplicate) {
-      cleaned.push_back(std::move(path));
-      if (static_cast<int>(cleaned.size()) >= kMaxRecentTraces) {
-        break;
-      }
-    }
-  }
-  recent_trace_paths_.swap(cleaned);
+  recent_trace_paths_.Normalize();
 }
 
 void MainWindow::NormalizeRecentDefaultList() {
-  std::vector<std::wstring> cleaned;
-  cleaned.reserve(recent_default_paths_.size());
-  for (const auto& entry : recent_default_paths_) {
-    std::wstring path = TrimWhitespace(entry);
-    if (path.empty()) {
-      continue;
-    }
-    bool duplicate = false;
-    for (const auto& existing : cleaned) {
-      if (EqualsInsensitive(existing, path)) {
-        duplicate = true;
-        break;
-      }
-    }
-    if (!duplicate) {
-      cleaned.push_back(std::move(path));
-      if (static_cast<int>(cleaned.size()) >= kMaxRecentDefaults) {
-        break;
-      }
-    }
-  }
-  recent_default_paths_.swap(cleaned);
+  recent_default_paths_.Normalize();
 }
 
 void MainWindow::AddRecentTracePath(const std::wstring& path) {
-  std::wstring trimmed = TrimWhitespace(path);
-  if (trimmed.empty()) {
-    return;
-  }
-  auto it = std::find_if(recent_trace_paths_.begin(), recent_trace_paths_.end(), [&](const std::wstring& entry) { return EqualsInsensitive(entry, trimmed); });
-  if (it != recent_trace_paths_.end()) {
-    recent_trace_paths_.erase(it);
-  }
-  recent_trace_paths_.insert(recent_trace_paths_.begin(), std::move(trimmed));
-  NormalizeRecentTraceList();
+  recent_trace_paths_.Add(path);
 }
 
 void MainWindow::AddRecentDefaultPath(const std::wstring& path) {
-  std::wstring trimmed = TrimWhitespace(path);
-  if (trimmed.empty()) {
-    return;
-  }
-  auto it = std::find_if(recent_default_paths_.begin(), recent_default_paths_.end(), [&](const std::wstring& entry) { return EqualsInsensitive(entry, trimmed); });
-  if (it != recent_default_paths_.end()) {
-    recent_default_paths_.erase(it);
-  }
-  recent_default_paths_.insert(recent_default_paths_.begin(), std::move(trimmed));
-  NormalizeRecentDefaultList();
+  recent_default_paths_.Add(path);
 }
 
 } // namespace regkit

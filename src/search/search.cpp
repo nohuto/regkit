@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2026 Noverse (Nohuto)
+// Copyright (C) 2026 Noverse (Nohuto)
 // This file is part of RegKit https://github.com/nohuto/regkit
 //
 // RegKit is free software: you can redistribute it and/or modify
@@ -14,7 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "../../include/registry/search_engine.h"
+#include "search/search.h"
+
+#include "registry/registry_path.h"
+#include "registry/value_format.h"
 
 #include <algorithm>
 #include <condition_variable>
@@ -26,11 +29,153 @@
 #include <regex>
 #include <string_view>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include <windows.h>
 
-namespace regkit {
+namespace regkit::search {
+
+Matcher::Matcher(const TextOptions& options)
+    : query_(options.query), use_regex_(options.use_regex),
+      match_case_(options.match_case), match_whole_(options.match_whole),
+      valid_(!query_.empty()) {
+  if (!valid_ || !use_regex_) {
+    return;
+  }
+  try {
+    auto flags = std::regex_constants::ECMAScript;
+    if (!match_case_) {
+      flags |= std::regex_constants::icase;
+    }
+    regex_ = std::wregex(query_, flags);
+  } catch (const std::regex_error&) {
+    valid_ = false;
+  }
+}
+
+bool Matcher::valid() const noexcept {
+  return valid_;
+}
+
+Match Matcher::Find(std::wstring_view text) const {
+  Match location;
+  if (!valid_ || text.empty()) {
+    return location;
+  }
+  if (use_regex_) {
+    std::match_results<std::wstring_view::const_iterator> match;
+    if (match_whole_) {
+      if (std::regex_match(text.begin(), text.end(), match, regex_)) {
+        location.matched = true;
+        location.start = 0;
+        location.length = static_cast<size_t>(match.length());
+      }
+    } else if (std::regex_search(text.begin(), text.end(), match, regex_)) {
+      location.matched = true;
+      location.start =
+          static_cast<size_t>(std::distance(text.begin(), match[0].first));
+      location.length = static_cast<size_t>(match.length());
+    }
+    return location;
+  }
+
+  if (match_whole_) {
+    const bool matched =
+        match_case_
+            ? text == query_
+            : CompareStringOrdinal(
+                  text.data(), static_cast<int>(text.size()),
+                  query_.c_str(), static_cast<int>(query_.size()),
+                  TRUE) == CSTR_EQUAL;
+    if (matched) {
+      location.matched = true;
+      location.start = 0;
+      location.length = text.size();
+    }
+    return location;
+  }
+
+  if (match_case_) {
+    const size_t position = text.find(query_);
+    if (position != std::wstring::npos) {
+      location.matched = true;
+      location.start = position;
+      location.length = query_.size();
+    }
+    return location;
+  }
+
+  const int position = FindStringOrdinal(
+      FIND_FROMSTART, text.data(), static_cast<int>(text.size()),
+      query_.c_str(), static_cast<int>(query_.size()), TRUE);
+  if (position >= 0) {
+    location.matched = true;
+    location.start = static_cast<size_t>(position);
+    location.length = query_.size();
+  }
+  return location;
+}
+
+namespace {
+
+int CompareText(const std::wstring& left, const std::wstring& right) {
+  if (left.empty()) {
+    return right.empty() ? 0 : 1;
+  }
+  if (right.empty()) {
+    return -1;
+  }
+  const int result = CompareStringOrdinal(
+      left.c_str(), static_cast<int>(left.size()), right.c_str(),
+      static_cast<int>(right.size()), TRUE);
+  if (result == CSTR_LESS_THAN) {
+    return -1;
+  }
+  if (result == CSTR_GREATER_THAN) {
+    return 1;
+  }
+  return 0;
+}
+
+int CompareResult(const Result& left, const Result& right,
+                  int column, bool compare) {
+  switch (column) {
+  case 0:
+    return CompareText(left.key_path, right.key_path);
+  case 1:
+    return CompareText(left.display_name, right.display_name);
+  case 2:
+    return CompareText(left.type_text, right.type_text);
+  case 3:
+    return CompareText(left.data, right.data);
+  case 4:
+    return compare ? CompareText(left.key_path, right.key_path)
+                   : CompareText(left.size_text, right.size_text);
+  case 5:
+    return compare ? CompareText(left.key_path, right.key_path)
+                   : CompareText(left.date_text, right.date_text);
+  default:
+    return CompareText(left.key_path, right.key_path);
+  }
+}
+
+} // namespace
+
+void SortResults(std::vector<Result>* results, int column,
+                 bool ascending, bool compare) {
+  if (!results || results->size() < 2) {
+    return;
+  }
+  std::stable_sort(
+      results->begin(), results->end(),
+      [column, ascending, compare](const Result& left,
+                                   const Result& right) {
+        const int result = CompareResult(left, right, column, compare);
+        return result != 0 &&
+               (ascending ? result < 0 : result > 0);
+      });
+}
 
 namespace {
 
@@ -42,19 +187,15 @@ struct SearchNode {
 
 std::wstring KeyLeafName(const RegistryNode& node) {
   if (node.subkey.empty()) {
-    return node.root_name.empty() ? RegistryProvider::RootName(node.root) : node.root_name;
+    return node.root_name.empty() ? registry_path::RootName(node.root) : node.root_name;
   }
-  size_t pos = node.subkey.rfind(L'\\');
-  if (pos == std::wstring::npos) {
-    return node.subkey;
-  }
-  return node.subkey.substr(pos + 1);
+  return registry_path::Leaf(node.subkey);
 }
 
 SearchNode MakeSearchNode(const RegistryNode& node) {
   SearchNode entry;
   entry.node = node;
-  entry.path = RegistryProvider::BuildPath(node);
+  entry.path = registry_path::Build(node);
   entry.key_name = KeyLeafName(node);
   return entry;
 }
@@ -94,92 +235,6 @@ std::wstring FormatFileTime(const FILETIME& filetime) {
   swprintf_s(buffer, L"%d/%d/%d %d:%02d", st.wMonth, st.wDay, st.wYear, st.wHour, st.wMinute);
   return buffer;
 }
-
-struct MatchLocation {
-  bool matched = false;
-  size_t start = std::wstring::npos;
-  size_t length = 0;
-};
-
-class Matcher {
-public:
-  Matcher(const SearchCriteria& criteria, bool* ok) : query_(criteria.query), use_regex_(criteria.use_regex), match_case_(criteria.match_case), match_whole_(criteria.match_whole) {
-    if (use_regex_) {
-      try {
-        auto flags = std::regex_constants::ECMAScript;
-        if (!match_case_) {
-          flags |= std::regex_constants::icase;
-        }
-        regex_ = std::wregex(query_, flags);
-      } catch (const std::regex_error&) {
-        if (ok) {
-          *ok = false;
-        }
-      }
-    }
-  }
-
-  MatchLocation MatchView(std::wstring_view text) const {
-    MatchLocation location;
-    if (text.empty()) {
-      return location;
-    }
-    if (use_regex_) {
-      std::match_results<std::wstring_view::const_iterator> match;
-      if (match_whole_) {
-        if (std::regex_match(text.begin(), text.end(), match, regex_)) {
-          location.matched = true;
-          location.start = 0;
-          location.length = static_cast<size_t>(match.length());
-        }
-      } else if (std::regex_search(text.begin(), text.end(), match, regex_)) {
-        location.matched = true;
-        location.start = static_cast<size_t>(std::distance(text.begin(), match[0].first));
-        location.length = static_cast<size_t>(match.length());
-      }
-      return location;
-    }
-
-    if (match_whole_) {
-      if (match_case_) {
-        if (text == query_) {
-          location.matched = true;
-          location.start = 0;
-          location.length = text.size();
-        }
-      } else if (CompareStringOrdinal(text.data(), static_cast<int>(text.size()), query_.c_str(), static_cast<int>(query_.size()), TRUE) == CSTR_EQUAL) {
-        location.matched = true;
-        location.start = 0;
-        location.length = text.size();
-      }
-      return location;
-    }
-
-    if (match_case_) {
-      size_t pos = text.find(query_);
-      if (pos != std::wstring::npos) {
-        location.matched = true;
-        location.start = pos;
-        location.length = query_.size();
-      }
-    } else {
-      int pos = FindStringOrdinal(FIND_FROMSTART, text.data(), static_cast<int>(text.size()), query_.c_str(), static_cast<int>(query_.size()), TRUE);
-      if (pos >= 0) {
-        location.matched = true;
-        location.start = static_cast<size_t>(pos);
-        location.length = query_.size();
-      }
-    }
-    return location;
-  }
-
-private:
-  std::wstring query_;
-  bool use_regex_ = false;
-  bool match_case_ = false;
-  bool match_whole_ = false;
-  std::wregex regex_;
-};
 
 struct HexQuery {
   bool hex_only = false;
@@ -271,29 +326,31 @@ bool IsBinaryType(DWORD base_type) {
 
 struct DataMatch {
   bool matched = false;
-  MatchLocation match;
+  Match match;
   std::wstring data_text;
 };
 
-DataMatch MatchValueData(const Matcher& matcher, const HexQuery& hex_query, DWORD type, const BYTE* data, DWORD size) {
+DataMatch MatchValueData(const Matcher& matcher,
+                         const HexQuery& hex_query, DWORD type,
+                         const BYTE* data, DWORD size) {
   DataMatch result;
   if (!data || size == 0) {
     return result;
   }
 
-  DWORD base_type = RegistryProvider::NormalizeValueType(type);
+  DWORD base_type = value_format::NormalizeType(type);
   if (base_type == REG_SZ || base_type == REG_EXPAND_SZ || base_type == REG_LINK || base_type == REG_MULTI_SZ) {
     std::wstring_view view;
     if (!BuildStringView(data, size, &view)) {
       return result;
     }
-    MatchLocation match = matcher.MatchView(view);
+    Match match = matcher.Find(view);
     if (!match.matched) {
       return result;
     }
     result.matched = true;
     result.match = match;
-    result.data_text = RegistryProvider::FormatValueDataForDisplay(type, data, size);
+    result.data_text = value_format::DisplayData(type, data, size);
     return result;
   }
 
@@ -304,7 +361,7 @@ DataMatch MatchValueData(const Matcher& matcher, const HexQuery& hex_query, DWOR
         for (size_t i = 0; i + needle <= size; ++i) {
           if (memcmp(data + i, hex_query.bytes.data(), needle) == 0) {
             result.matched = true;
-            result.data_text = RegistryProvider::FormatValueData(type, data, size);
+            result.data_text = value_format::Data(type, data, size);
             constexpr size_t kPreviewBytes = 32;
             size_t preview = std::min<size_t>(size, kPreviewBytes);
             if (i < preview) {
@@ -325,10 +382,10 @@ DataMatch MatchValueData(const Matcher& matcher, const HexQuery& hex_query, DWOR
     for (DWORD i = 0; i < size; ++i) {
       ascii.push_back(static_cast<wchar_t>(data[i]));
     }
-    MatchLocation ascii_match = matcher.MatchView(ascii);
+    Match ascii_match = matcher.Find(ascii);
     if (ascii_match.matched) {
       result.matched = true;
-      result.data_text = RegistryProvider::FormatValueData(type, data, size);
+      result.data_text = value_format::Data(type, data, size);
       return result;
     }
     if (size >= sizeof(wchar_t) && (size % sizeof(wchar_t)) == 0) {
@@ -336,18 +393,18 @@ DataMatch MatchValueData(const Matcher& matcher, const HexQuery& hex_query, DWOR
       std::wstring wide;
       wide.resize(wchar_count);
       memcpy(wide.data(), data, size);
-      MatchLocation wide_match = matcher.MatchView(wide);
+      Match wide_match = matcher.Find(wide);
       if (wide_match.matched) {
         result.matched = true;
-        result.data_text = RegistryProvider::FormatValueData(type, data, size);
+        result.data_text = value_format::Data(type, data, size);
         return result;
       }
     }
     return result;
   }
 
-  std::wstring text = RegistryProvider::FormatValueDataForDisplay(type, data, size);
-  MatchLocation match = matcher.MatchView(text);
+  std::wstring text = value_format::DisplayData(type, data, size);
+  Match match = matcher.Find(text);
   if (!match.matched) {
     return result;
   }
@@ -357,26 +414,26 @@ DataMatch MatchValueData(const Matcher& matcher, const HexQuery& hex_query, DWOR
   return result;
 }
 
-bool IsTypeAllowed(const SearchCriteria& criteria, DWORD type) {
+bool IsTypeAllowed(const Criteria& criteria, DWORD type) {
   if (criteria.allowed_types.empty()) {
     return true;
   }
   for (DWORD allowed : criteria.allowed_types) {
-    DWORD allowed_base = RegistryProvider::NormalizeValueType(allowed);
+    DWORD allowed_base = value_format::NormalizeType(allowed);
     if (allowed_base != allowed) {
       if (allowed == type) {
         return true;
       }
       continue;
     }
-    if (RegistryProvider::NormalizeValueType(type) == allowed_base) {
+    if (value_format::NormalizeType(type) == allowed_base) {
       return true;
     }
   }
   return false;
 }
 
-bool IsSizeAllowed(const SearchCriteria& criteria, DWORD size) {
+bool IsSizeAllowed(const Criteria& criteria, DWORD size) {
   if (criteria.use_min_size && size < criteria.min_size) {
     return false;
   }
@@ -386,7 +443,7 @@ bool IsSizeAllowed(const SearchCriteria& criteria, DWORD size) {
   return true;
 }
 
-bool IsKeyInRange(const SearchCriteria& criteria, const FILETIME& last_write) {
+bool IsKeyInRange(const Criteria& criteria, const FILETIME& last_write) {
   if (!criteria.use_modified_from && !criteria.use_modified_to) {
     return true;
   }
@@ -408,14 +465,20 @@ bool IsKeyInRange(const SearchCriteria& criteria, const FILETIME& last_write) {
 
 } // namespace
 
-bool SearchRegistryStreaming(const SearchCriteria& criteria, std::atomic_bool* cancel_flag, const std::function<bool(const SearchResult&)>& callback, const SearchProgressCallback& progress, bool stop_on_first) {
+bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
+         const ResultCallback& callback,
+         const ProgressCallback& progress, bool stop_on_first) {
   if (criteria.query.empty() || criteria.start_nodes.empty()) {
     return false;
   }
 
-  bool regex_ok = true;
-  Matcher matcher(criteria, &regex_ok);
-  if (!regex_ok) {
+  TextOptions match_options;
+  match_options.query = criteria.query;
+  match_options.match_case = criteria.match_case;
+  match_options.match_whole = criteria.match_whole;
+  match_options.use_regex = criteria.use_regex;
+  Matcher matcher(match_options);
+  if (!matcher.valid()) {
     return false;
   }
   HexQuery hex_query = ParseHexQuery(criteria.query);
@@ -467,11 +530,11 @@ bool SearchRegistryStreaming(const SearchCriteria& criteria, std::atomic_bool* c
     }
   };
 
-  auto emit = [&](SearchResult&& result) -> bool {
+  auto emit = [&](Result&& result) -> bool {
     if (should_stop()) {
       return false;
     }
-    if (callback && !callback(result)) {
+    if (callback && !callback(std::move(result))) {
       request_stop();
       return false;
     }
@@ -552,9 +615,9 @@ bool SearchRegistryStreaming(const SearchCriteria& criteria, std::atomic_bool* c
             }
 
             std::wstring display_name = value.name.empty() ? L"(Default)" : value.name;
-            MatchLocation name_match;
+            Match name_match;
             if (criteria.search_values) {
-              name_match = matcher.MatchView(display_name);
+              name_match = matcher.Find(display_name);
             }
             DataMatch data_match;
             if (criteria.search_data) {
@@ -562,18 +625,18 @@ bool SearchRegistryStreaming(const SearchCriteria& criteria, std::atomic_bool* c
             }
 
             if (name_match.matched || data_match.matched) {
-              SearchResult result;
+              Result result;
               result.key_path = entry.path;
               result.key_name = entry.key_name;
               result.value_name = value.name;
               result.display_name = display_name;
               result.type = value.type;
-              result.type_text = RegistryProvider::FormatValueType(value.type);
+              result.type_text = value_format::TypeName(value.type);
               if (criteria.search_data) {
                 if (data_match.matched) {
                   result.data = std::move(data_match.data_text);
                 } else if (name_match.matched) {
-                  result.data = RegistryProvider::FormatValueDataForDisplay(value.type, data, data_size);
+                  result.data = value_format::DisplayData(value.type, data, data_size);
                 }
               } else if (name_match.matched) {
                 result.data_loaded = false;
@@ -584,11 +647,11 @@ bool SearchRegistryStreaming(const SearchCriteria& criteria, std::atomic_bool* c
               result.date_text = get_date_text();
               result.is_key = false;
               if (name_match.matched) {
-                result.match_field = SearchMatchField::kName;
+                result.match_field = MatchField::kName;
                 result.match_start = static_cast<int>(name_match.start);
                 result.match_length = static_cast<int>(name_match.length);
               } else if (data_match.matched && data_match.match.matched) {
-                result.match_field = SearchMatchField::kData;
+                result.match_field = MatchField::kData;
                 result.match_start = static_cast<int>(data_match.match.start);
                 result.match_length = static_cast<int>(data_match.match.length);
               }
@@ -611,16 +674,16 @@ bool SearchRegistryStreaming(const SearchCriteria& criteria, std::atomic_bool* c
           RegistryProvider::EnumKeyStreaming(entry.node, want_values, criteria.search_data, want_subkeys, &enum_result, want_values ? value_cb : RegistryProvider::ValueStreamCallback(), want_subkeys ? subkey_cb : RegistryProvider::SubkeyStreamCallback());
 
           if (criteria.search_keys && is_key_in_range()) {
-            MatchLocation key_match = matcher.MatchView(entry.key_name);
+            Match key_match = matcher.Find(entry.key_name);
             if (key_match.matched) {
-              SearchResult result;
+              Result result;
               result.key_path = entry.path;
               result.key_name = entry.key_name;
               result.type_text = L"Key";
               result.is_key = true;
               result.date_text = get_date_text();
               size_t path_start = entry.path.size() >= entry.key_name.size() ? entry.path.size() - entry.key_name.size() : 0;
-              result.match_field = SearchMatchField::kPath;
+              result.match_field = MatchField::kPath;
               result.match_start = static_cast<int>(path_start + key_match.start);
               result.match_length = static_cast<int>(key_match.length);
               if (!emit(std::move(result))) {
@@ -671,4 +734,4 @@ bool SearchRegistryStreaming(const SearchCriteria& criteria, std::atomic_bool* c
   return true;
 }
 
-} // namespace regkit
+} // namespace regkit::search

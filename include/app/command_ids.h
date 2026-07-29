@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <minwindef.h>
+#include <cstdint>
 namespace regkit { namespace cmd {
 
 constexpr int kFileExit = 2000;
@@ -152,18 +152,6 @@ constexpr int kDefaultRecentMax = 2739;
 constexpr int kDefaultBundledBase = 2740;
 constexpr int kDefaultBundledMax = 2759;
 
-constexpr int kResearchRecordsTable = 2799;
-constexpr int kResearchDxgKernel = 2800;
-constexpr int kResearchSessionManager = 2801;
-constexpr int kResearchPower = 2802;
-constexpr int kResearchDwm = 2803;
-constexpr int kResearchUsb = 2804;
-constexpr int kResearchBcd = 2805;
-constexpr int kResearchIntelNic = 2806;
-constexpr int kResearchMmcss = 2807;
-constexpr int kResearchStorNvme = 2808;
-constexpr int kResearchNotifications = 2809;
-
 constexpr int kHeaderSizeToFit = 4000;
 constexpr int kHeaderSizeAll = 4001;
 constexpr int kHeaderToggleBase = 4100;
@@ -172,7 +160,7 @@ constexpr int kHeaderToggleBase = 4100;
 
 namespace regkit { namespace rowkind {
 
-constexpr LPARAM kKey = 1;
-constexpr LPARAM kValue = 2;
+constexpr std::intptr_t kKey = 1;
+constexpr std::intptr_t kValue = 2;
 
 } } // namespace regkit::rowkind

@@ -25,7 +25,6 @@
 
 namespace regkit {
 
-bool ImportRegFile(HWND owner, std::wstring* error);
 bool ImportRegFileFromPath(const std::wstring& path, std::wstring* error);
 bool ExportRegFile(HWND owner, const std::wstring& key_path, std::wstring* error);
 bool ExportRegFileSelection(HWND owner, const std::wstring& base_key_path, const std::vector<std::wstring>& value_names, const std::vector<std::wstring>& subkey_names, std::wstring* error);
