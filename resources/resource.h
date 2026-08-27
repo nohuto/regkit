@@ -1,27 +1,14 @@
-// Copyright (C) 2026 Noverse (Nohuto)
-// This file is part of RegKit https://github.com/nohuto/regkit
-//
-// RegKit is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// RegKit is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
+// Copyright (C) 2026 nohuto
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #pragma once
 
 #define REGKIT_VERSION_MAJOR 0
 #define REGKIT_VERSION_MINOR 0
 #define REGKIT_VERSION_PATCH 0
-#define REGKIT_VERSION_BUILD 4
-#define REGKIT_VERSION_STR "0.0.0.4"
-#define REGKIT_VERSION_STR_W L"0.0.0.4"
+#define REGKIT_VERSION_BUILD 5
+#define REGKIT_VERSION_STR "0.0.0.5"
+#define REGKIT_VERSION_STR_W L"0.0.0.5"
 
 #define IDI_APPICON 101
 #define IDI_ICON_LIGHT_BACK 2000

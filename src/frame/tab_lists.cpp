@@ -1,0 +1,696 @@
+// Copyright (C) 2026 nohuto
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+#include "frame/window_detail.h"
+
+namespace regkit {
+using namespace window_detail;
+
+void MainWindow::Impl::SortValueList(int column, bool toggle) {
+  if (column < 0 || static_cast<size_t>(column) >= browse_.columns().items.size()) {
+    return;
+  }
+  if (toggle) {
+    if (browse_.columns().sort_column == column) {
+      browse_.columns().sort_ascending = !browse_.columns().sort_ascending;
+    } else {
+      browse_.columns().sort_column = column;
+      browse_.columns().sort_ascending = true;
+    }
+  } else {
+    browse_.columns().sort_column = column;
+  }
+
+  if (value_list_loading_ && browse_.current_node()) {
+    UpdateValueListForNode(browse_.current_node());
+    return;
+  }
+
+  auto& rows = browse_.values().rows();
+  if (browse_.columns().sort_column == kValueColData) {
+    bool needs_data = false;
+    for (const auto& row : rows) {
+      if (row.kind == rowkind::kValue && !row.data_ready) {
+        needs_data = true;
+        break;
+      }
+    }
+    if (needs_data && browse_.current_node()) {
+      UpdateValueListForNode(browse_.current_node());
+      return;
+    }
+    for (auto& row : rows) {
+      EnsureValueRowData(&row);
+    }
+  }
+  SortValueRows(&rows, browse_.columns().sort_column, browse_.columns().sort_ascending);
+  browse_.values().RebuildFilter();
+
+  HWND header = ListView_GetHeader(browse_.values().hwnd());
+  if (header) {
+    UpdateListViewSort(browse_.values().hwnd(), browse_.columns().sort_column, browse_.columns().sort_ascending);
+    InvalidateRect(header, nullptr, TRUE);
+  }
+}
+
+void MainWindow::Impl::SortHistoryList(int column, bool toggle) {
+  if (!history_list_ || column < 0) {
+    return;
+  }
+  if (toggle) {
+    if (history_sort_column_ == column) {
+      history_sort_ascending_ = !history_sort_ascending_;
+    } else {
+      history_sort_column_ = column;
+      history_sort_ascending_ = true;
+    }
+  } else {
+    history_sort_column_ = column;
+  }
+
+  change_history_.Sort(history_sort_column_, history_sort_ascending_);
+  RebuildHistoryList();
+
+  HWND header = ListView_GetHeader(history_list_);
+  if (header) {
+    UpdateListViewSort(history_list_, history_sort_column_, history_sort_ascending_);
+    InvalidateRect(header, nullptr, TRUE);
+  }
+}
+
+void MainWindow::Impl::SortSearchTabResults(SearchTab* tab) {
+  if (!tab || tab->sort_column < 0) {
+    if (tab) {
+      tab->sort_dirty = false;
+    }
+    return;
+  }
+  if (!tab->is_compare && tab->sort_column == 3) {
+    for (auto& result : tab->results) {
+      EnsureSearchResultDataLoaded(&result);
+    }
+  }
+  search::SortResults(&tab->results, tab->sort_column,
+                      tab->sort_ascending, tab->is_compare);
+  tab->sort_dirty = false;
+}
+
+void MainWindow::Impl::SortSearchResults(int column, bool toggle) {
+  if (!search_results_list_ || column < 0) {
+    return;
+  }
+  int sel = TabCtrl_GetCurSel(tab_);
+  int index = SearchIndexFromTab(sel);
+  if (index < 0 || static_cast<size_t>(index) >= search_tabs_.size()) {
+    return;
+  }
+  EnsureSearchTabResultsLoaded(index);
+  auto& tab = search_tabs_[static_cast<size_t>(index)];
+  if (toggle) {
+    if (tab.sort_column == column) {
+      tab.sort_ascending = !tab.sort_ascending;
+    } else {
+      tab.sort_column = column;
+      tab.sort_ascending = true;
+    }
+  } else {
+    tab.sort_column = column;
+  }
+  SortSearchTabResults(&tab);
+  UpdateListViewSort(search_results_list_, tab.sort_column, tab.sort_ascending);
+  HWND header = ListView_GetHeader(search_results_list_);
+  if (header) {
+    InvalidateRect(header, nullptr, TRUE);
+  }
+  InvalidateRect(search_results_list_, nullptr, TRUE);
+}
+
+void MainWindow::Impl::ClearHistoryItems(bool delete_cache) {
+  if (!history_list_) {
+    return;
+  }
+  change_history_.entries().clear();
+  ListView_DeleteAllItems(history_list_);
+
+  if (delete_cache) {
+    std::wstring path = HistoryCachePath();
+    if (!path.empty()) {
+      DeleteFileW(path.c_str());
+    }
+  }
+}
+
+void MainWindow::Impl::RebuildHistoryList() {
+  if (!history_list_) {
+    return;
+  }
+  SendMessageW(history_list_, WM_SETREDRAW, FALSE, 0);
+  ListView_DeleteAllItems(history_list_);
+
+  int index = 0;
+  for (const auto& entry : change_history_.entries()) {
+    LVITEMW item = {};
+    item.mask = LVIF_TEXT | LVIF_PARAM;
+    item.iItem = index;
+    item.pszText = const_cast<wchar_t*>(entry.time_text.c_str());
+    item.lParam = static_cast<LPARAM>(index);
+    int inserted = ListView_InsertItem(history_list_, &item);
+    if (inserted >= 0) {
+      ListView_SetItemText(history_list_, inserted, 1, const_cast<wchar_t*>(entry.action.c_str()));
+      ListView_SetItemText(history_list_, inserted, 2, const_cast<wchar_t*>(entry.old_data.c_str()));
+      ListView_SetItemText(history_list_, inserted, 3, const_cast<wchar_t*>(entry.new_data.c_str()));
+    }
+    ++index;
+  }
+
+  SendMessageW(history_list_, WM_SETREDRAW, TRUE, 0);
+  InvalidateRect(history_list_, nullptr, TRUE);
+}
+
+void MainWindow::Impl::ResetNavigationState() {
+  browse_.ResetNavigation();
+  UpdateNavigationButtons();
+}
+
+void MainWindow::Impl::UpdateTabText(const std::wstring& text) {
+  if (!tab_) {
+    return;
+  }
+  int index = TabCtrl_GetCurSel(tab_);
+  if (!IsSearchTabIndex(index) && !IsRegFileTabIndex(index)) {
+    // keep the current registry tab label up to date
+  } else {
+    index = FindFirstRegistryTabIndex();
+  }
+  if (index < 0) {
+    return;
+  }
+  TCITEMW item = {};
+  item.mask = TCIF_TEXT;
+  item.pszText = const_cast<wchar_t*>(text.c_str());
+  TabCtrl_SetItem(tab_, index, &item);
+  UpdateTabWidth();
+  InvalidateRect(tab_, nullptr, FALSE);
+}
+
+void MainWindow::Impl::MarkOfflineDirty() {
+  if (IsRegFileTabSelected()) {
+    int index = TabCtrl_GetCurSel(tab_);
+    if (index >= 0 && static_cast<size_t>(index) < tabs_.size() && IsRegFileTabIndex(index)) {
+      bool was_dirty = tabs_[static_cast<size_t>(index)].reg_file_dirty;
+      tabs_[static_cast<size_t>(index)].reg_file_dirty = true;
+      if (!was_dirty) {
+        BuildMenus();
+      }
+    }
+    return;
+  }
+  if (registry_mode_ != RegistryMode::kOffline) {
+    return;
+  }
+  int index = CurrentRegistryTabIndex();
+  if (index < 0 || static_cast<size_t>(index) >= tabs_.size()) {
+    return;
+  }
+  TabEntry& entry = tabs_[static_cast<size_t>(index)];
+  if (entry.kind != TabEntry::Kind::kRegistry || entry.registry_mode != RegistryMode::kOffline) {
+    return;
+  }
+  if (!entry.offline_dirty) {
+    entry.offline_dirty = true;
+    BuildMenus();
+  }
+}
+
+void MainWindow::Impl::ClearOfflineDirty() {
+  if (registry_mode_ != RegistryMode::kOffline) {
+    return;
+  }
+  int index = CurrentRegistryTabIndex();
+  if (index < 0 || static_cast<size_t>(index) >= tabs_.size()) {
+    return;
+  }
+  TabEntry& entry = tabs_[static_cast<size_t>(index)];
+  if (entry.kind != TabEntry::Kind::kRegistry || entry.registry_mode != RegistryMode::kOffline) {
+    return;
+  }
+  if (entry.offline_dirty) {
+    entry.offline_dirty = false;
+    BuildMenus();
+  }
+}
+
+bool MainWindow::Impl::ConfirmCloseTab(int tab_index) {
+  if (!tab_ || tab_index < 0 || static_cast<size_t>(tab_index) >= tabs_.size()) {
+    return false;
+  }
+  TabEntry& entry = tabs_[static_cast<size_t>(tab_index)];
+  if (entry.kind == TabEntry::Kind::kRegFile && entry.reg_file_dirty) {
+    std::wstring message = L"The registry file has unsaved changes.\nSave "
+                           L"before closing the tab?";
+    int result = ui::PromptChoice(hwnd_, message, L"Unsaved changes", L"Save", L"Don't Save", L"Cancel");
+    if (result == IDCANCEL) {
+      return false;
+    }
+    if (result == IDNO) {
+      return true;
+    }
+    if (SaveRegFileTab(tab_index)) {
+      entry.reg_file_dirty = false;
+      return true;
+    }
+    return false;
+  }
+  if (entry.kind != TabEntry::Kind::kRegistry || entry.registry_mode != RegistryMode::kOffline || !entry.offline_dirty) {
+    return true;
+  }
+  if (tab_index != CurrentRegistryTabIndex()) {
+    return true;
+  }
+  std::wstring message = L"The offline registry has unsaved changes.\nSave "
+                         L"before closing the tab?";
+  int result = ui::PromptChoice(hwnd_, message, L"Unsaved changes", L"Save", L"Don't Save", L"Cancel");
+  if (result == IDCANCEL) {
+    return false;
+  }
+  if (result == IDNO) {
+    return true;
+  }
+  if (SaveOfflineRegistry()) {
+    entry.offline_dirty = false;
+    return true;
+  }
+  return false;
+}
+
+void MainWindow::Impl::CloseTab(int tab_index) {
+  if (!tab_) {
+    return;
+  }
+  int count = TabCtrl_GetItemCount(tab_);
+  if (count <= 1 || tab_index < 0 || tab_index >= count) {
+    return;
+  }
+  if (IsSearchTabIndex(tab_index)) {
+    CloseSearchTab(tab_index);
+    return;
+  }
+  if (!ConfirmCloseTab(tab_index)) {
+    return;
+  }
+
+  if (IsRegFileTabIndex(tab_index)) {
+    TabEntry& entry = tabs_[static_cast<size_t>(tab_index)];
+    if (entry.reg_file_loading && !entry.reg_file_path.empty()) {
+      std::wstring lower = ToLower(entry.reg_file_path);
+      auto it = reg_file_parse_sessions_.find(lower);
+      if (it != reg_file_parse_sessions_.end() && it->second) {
+        it->second->work.CancelAndJoin();
+        reg_file_parse_sessions_.erase(it);
+      }
+    }
+    ReleaseRegFileRoots(&entry);
+  }
+  tabs_.erase(tabs_.begin() + tab_index);
+  TabCtrl_DeleteItem(tab_, tab_index);
+
+  if (active_search_tab_index_ == tab_index) {
+    active_search_tab_index_ = -1;
+  } else if (active_search_tab_index_ > tab_index) {
+    --active_search_tab_index_;
+  }
+
+  int new_count = TabCtrl_GetItemCount(tab_);
+  if (new_count > 0) {
+    int new_index = std::min(tab_index, new_count - 1);
+    TabCtrl_SetCurSel(tab_, new_index);
+    ApplyTabSelection(new_index);
+  }
+  RefreshRegistryTabLabels();
+  ApplyViewVisibility();
+  UpdateSearchResultsView();
+  UpdateStatus();
+}
+
+void MainWindow::Impl::OpenLocalRegistryTab() {
+  if (!tab_) {
+    return;
+  }
+  int current = TabCtrl_GetCurSel(tab_);
+  if (current >= 0 && !IsSearchTabIndex(current) && !IsRegFileTabIndex(current)) {
+    CaptureRegistryTabState(current);
+  }
+  TCITEMW item = {};
+  item.mask = TCIF_TEXT;
+  item.pszText = const_cast<wchar_t*>(L"Local Registry");
+  int index = TabCtrl_GetItemCount(tab_);
+  TabCtrl_InsertItem(tab_, index, &item);
+  TabEntry entry;
+  entry.kind = TabEntry::Kind::kRegistry;
+  entry.registry_mode = RegistryMode::kLocal;
+  tabs_.push_back(std::move(entry));
+  RefreshRegistryTabLabels();
+  TabCtrl_SetCurSel(tab_, index);
+  SwitchToLocalRegistry();
+  RestoreRegistryTabState(index);
+  ApplyViewVisibility();
+  UpdateSearchResultsView();
+  UpdateStatus();
+}
+
+int MainWindow::Impl::CurrentRegistryTabIndex() const {
+  if (!tab_) {
+    return -1;
+  }
+  int index = TabCtrl_GetCurSel(tab_);
+  if (index < 0) {
+    return -1;
+  }
+  if (!IsSearchTabIndex(index) && !IsRegFileTabIndex(index)) {
+    return index;
+  }
+  return FindFirstRegistryTabIndex();
+}
+
+void MainWindow::Impl::UpdateRegistryTabEntry(RegistryMode mode, const std::wstring& offline_path, const std::wstring& remote_machine) {
+  int index = CurrentRegistryTabIndex();
+  if (index < 0 || static_cast<size_t>(index) >= tabs_.size()) {
+    return;
+  }
+  TabEntry& entry = tabs_[static_cast<size_t>(index)];
+  if (entry.kind != TabEntry::Kind::kRegistry) {
+    return;
+  }
+  entry.registry_mode = mode;
+  entry.offline_path = offline_path;
+  entry.remote_machine = remote_machine;
+}
+
+void MainWindow::Impl::UpdateTabWidth() {
+  if (!tab_) {
+    return;
+  }
+  int count = TabCtrl_GetItemCount(tab_);
+  if (count <= 0) {
+    return;
+  }
+  bool has_close = count > 1;
+  int pad_x = kTabTextPaddingX + (has_close ? (kTabCloseSize + kTabCloseGap) : 0);
+  int pad_y = kTabInsetY + 2;
+  TabCtrl_SetPadding(tab_, pad_x, pad_y);
+  int text_height = 0;
+  HDC hdc = GetDC(tab_);
+  HFONT font = reinterpret_cast<HFONT>(SendMessageW(tab_, WM_GETFONT, 0, 0));
+  HFONT old_font = nullptr;
+  if (hdc && font) {
+    old_font = reinterpret_cast<HFONT>(SelectObject(hdc, font));
+  }
+  if (hdc) {
+    TEXTMETRICW tm = {};
+    if (GetTextMetricsW(hdc, &tm)) {
+      text_height = tm.tmHeight;
+    }
+  }
+
+  if (hdc) {
+    if (old_font) {
+      SelectObject(hdc, old_font);
+    }
+    ReleaseDC(tab_, hdc);
+  }
+
+  int min_height = std::max<int>(24, text_height + pad_y * 2 + 2);
+  SendMessageW(tab_, TCM_SETMINTABWIDTH, 0, static_cast<LPARAM>(kTabMinWidth));
+  RECT item_rect = {};
+  if (TabCtrl_GetItemRect(tab_, 0, &item_rect)) {
+    int item_height = static_cast<int>(item_rect.bottom - item_rect.top);
+    tab_height_ = std::max<int>(min_height, item_height);
+  } else {
+    tab_height_ = min_height;
+  }
+  InvalidateRect(tab_, nullptr, FALSE);
+  if (hwnd_) {
+    RECT rect = {};
+    GetClientRect(hwnd_, &rect);
+    if (rect.right > 0 && rect.bottom > 0) {
+      LayoutControls(rect.right, rect.bottom);
+    }
+  }
+}
+
+void MainWindow::Impl::BuildAccelerators() {
+  if (accelerators_) {
+    DestroyAcceleratorTable(accelerators_);
+    accelerators_ = nullptr;
+  }
+  ACCEL accels[] = {
+      {FVIRTKEY | FCONTROL, 'C', cmd::kEditCopy},
+      {FVIRTKEY | FCONTROL, 'V', cmd::kEditPaste},
+      {FVIRTKEY | FCONTROL, 'A', cmd::kViewSelectAll},
+      {FVIRTKEY | FCONTROL, 'Z', cmd::kEditUndo},
+      {FVIRTKEY | FCONTROL, 'Y', cmd::kEditRedo},
+      {FVIRTKEY | FCONTROL, 'F', cmd::kEditFind},
+      {FVIRTKEY | FCONTROL, 'G', cmd::kEditGoTo},
+      {FVIRTKEY | FCONTROL, 'H', cmd::kEditReplace},
+      {FVIRTKEY | FCONTROL, 'S', cmd::kFileSave},
+      {FVIRTKEY | FCONTROL, 'E', cmd::kFileExport},
+      {FVIRTKEY | FCONTROL | FSHIFT, 'C', cmd::kEditCopyKey},
+      {FVIRTKEY, VK_DELETE, cmd::kEditDelete},
+      {FVIRTKEY, VK_F2, cmd::kEditRename},
+      {FVIRTKEY, VK_F5, cmd::kViewRefresh},
+      {FVIRTKEY | FALT, VK_LEFT, cmd::kNavBack},
+      {FVIRTKEY | FALT, VK_RIGHT, cmd::kNavForward},
+      {FVIRTKEY | FALT, VK_UP, cmd::kNavUp},
+  };
+  accelerators_ = CreateAcceleratorTableW(accels, static_cast<int>(sizeof(accels) / sizeof(accels[0])));
+}
+
+bool MainWindow::Impl::SelectAllInFocusedList() {
+  HWND focus = GetFocus();
+  if (!focus) {
+    return false;
+  }
+  if (focus != browse_.values().hwnd() && focus != history_list_ && focus != search_results_list_) {
+    return false;
+  }
+  int count = ListView_GetItemCount(focus);
+  if (count <= 0) {
+    return true;
+  }
+  ListView_SetItemState(focus, -1, LVIS_SELECTED, LVIS_SELECTED);
+  ListView_SetItemState(focus, 0, LVIS_FOCUSED, LVIS_FOCUSED);
+  ListView_EnsureVisible(focus, 0, FALSE);
+  return true;
+}
+
+bool MainWindow::Impl::InvertSelectionInFocusedList() {
+  HWND focus = GetFocus();
+  if (!focus) {
+    return false;
+  }
+  if (focus != browse_.values().hwnd() && focus != history_list_ && focus != search_results_list_) {
+    return false;
+  }
+  int count = ListView_GetItemCount(focus);
+  if (count <= 0) {
+    return true;
+  }
+  SendMessageW(focus, WM_SETREDRAW, FALSE, 0);
+  int first_selected = -1;
+  for (int i = 0; i < count; ++i) {
+    UINT state = ListView_GetItemState(focus, i, LVIS_SELECTED);
+    if (state & LVIS_SELECTED) {
+      ListView_SetItemState(focus, i, 0, LVIS_SELECTED);
+    } else {
+      ListView_SetItemState(focus, i, LVIS_SELECTED, LVIS_SELECTED);
+      if (first_selected < 0) {
+        first_selected = i;
+      }
+    }
+  }
+  if (first_selected < 0) {
+    first_selected = 0;
+  }
+  ListView_SetItemState(focus, first_selected, LVIS_FOCUSED, LVIS_FOCUSED);
+  ListView_EnsureVisible(focus, first_selected, FALSE);
+  SendMessageW(focus, WM_SETREDRAW, TRUE, 0);
+  InvalidateRect(focus, nullptr, TRUE);
+  return true;
+}
+
+void MainWindow::Impl::UpdateTabHotState(HWND hwnd, POINT pt) {
+  int new_hot = -1;
+  int new_close_hot = -1;
+
+  TCHITTESTINFO hit = {};
+  hit.pt = pt;
+  int index = TabCtrl_HitTest(hwnd, &hit);
+  if (index >= 0) {
+    new_hot = index;
+    RECT close_rect = {};
+    if (GetTabCloseRect(index, &close_rect) && PtInRect(&close_rect, pt)) {
+      new_close_hot = index;
+    }
+  }
+
+  if (new_hot != tab_hot_index_ || new_close_hot != tab_close_hot_index_) {
+    tab_hot_index_ = new_hot;
+    tab_close_hot_index_ = new_close_hot;
+    InvalidateRect(hwnd, nullptr, FALSE);
+  }
+}
+
+bool MainWindow::Impl::GetTabCloseRect(int index, RECT* rect) const {
+  if (!tab_ || !rect || index < 0) {
+    return false;
+  }
+  int count = TabCtrl_GetItemCount(tab_);
+  if (count <= 1) {
+    return false;
+  }
+  RECT item_rect = {};
+  if (!TabCtrl_GetItemRect(tab_, index, &item_rect)) {
+    return false;
+  }
+  int header_bottom = item_rect.bottom + 1;
+  RECT draw_rect = AdjustTabDrawRect(item_rect, header_bottom, false);
+  RECT close_area = draw_rect;
+  close_area.left = item_rect.left;
+  close_area.right = item_rect.right;
+  return CalcTabCloseRect(close_area, rect);
+}
+
+void MainWindow::Impl::DrawTabItem(HDC hdc, int index, const RECT& item_rect, int header_bottom, bool selected) {
+  const Theme& theme = Theme::Current();
+  RECT draw_rect = AdjustTabDrawRect(item_rect, header_bottom, selected);
+
+  bool is_hot = (index == tab_hot_index_);
+  bool close_hot = (index == tab_close_hot_index_);
+  bool close_down = (index == tab_close_down_index_);
+
+  COLORREF fill = selected ? theme.SurfaceColor() : theme.PanelColor();
+  if (is_hot) {
+    fill = theme.HoverColor();
+  }
+  HBRUSH fill_brush = appearance::CachedBrush(fill);
+  FillRect(hdc, &draw_rect, fill_brush);
+
+  HPEN border_pen = appearance::CachedPen(theme.BorderColor(), 1);
+  HGDIOBJ old_pen = SelectObject(hdc, border_pen);
+  MoveToEx(hdc, draw_rect.left, draw_rect.bottom, nullptr);
+  LineTo(hdc, draw_rect.left, draw_rect.top);
+  LineTo(hdc, draw_rect.right, draw_rect.top);
+  LineTo(hdc, draw_rect.right, draw_rect.bottom);
+  if (!selected) {
+    LineTo(hdc, draw_rect.left, draw_rect.bottom);
+  }
+  SelectObject(hdc, old_pen);
+
+  RECT close_rect = {};
+  RECT close_area = draw_rect;
+  close_area.left = item_rect.left;
+  close_area.right = item_rect.right;
+  bool has_close = TabCtrl_GetItemCount(tab_) > 1 && CalcTabCloseRect(close_area, &close_rect);
+
+  RECT text_rect = draw_rect;
+  text_rect.left = item_rect.left + kTabTextPaddingX;
+  text_rect.right = item_rect.right - kTabTextPaddingX;
+  if (has_close) {
+    text_rect.right = std::max(text_rect.left, close_rect.left - kTabCloseGap);
+  }
+
+  COLORREF text_color = selected || is_hot ? theme.TextColor() : theme.MutedTextColor();
+  SetTextColor(hdc, text_color);
+  SetBkMode(hdc, TRANSPARENT);
+
+  wchar_t text[256] = {};
+  TCITEMW item = {};
+  item.mask = TCIF_TEXT;
+  item.pszText = text;
+  item.cchTextMax = static_cast<int>(_countof(text));
+  if (TabCtrl_GetItem(tab_, index, &item)) {
+    DrawTextW(hdc, text, -1, &text_rect, DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
+  }
+
+  if (has_close) {
+    if (close_down) {
+      HBRUSH down_brush = appearance::CachedBrush(theme.SelectionColor());
+      FillRect(hdc, &close_rect, down_brush);
+    } else if (close_hot) {
+      HBRUSH hot_brush = appearance::CachedBrush(theme.HoverColor());
+      FillRect(hdc, &close_rect, hot_brush);
+    }
+
+    COLORREF close_color = close_down ? theme.SelectionTextColor() : theme.TextColor();
+    if (icon_font_) {
+      HFONT old_font = reinterpret_cast<HFONT>(SelectObject(hdc, icon_font_));
+      SetTextColor(hdc, close_color);
+      SetBkMode(hdc, TRANSPARENT);
+      DrawTextW(hdc, L"\xE711", -1, &close_rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
+      SelectObject(hdc, old_font);
+    } else {
+      HPEN close_pen = appearance::CachedPen(close_color, 2);
+      HGDIOBJ old_close_pen = SelectObject(hdc, close_pen);
+      int pad = std::max<int>(2, static_cast<int>((close_rect.right - close_rect.left) / 4));
+      MoveToEx(hdc, close_rect.left + pad, close_rect.top + pad, nullptr);
+      LineTo(hdc, close_rect.right - pad, close_rect.bottom - pad);
+      MoveToEx(hdc, close_rect.right - pad, close_rect.top + pad, nullptr);
+      LineTo(hdc, close_rect.left + pad, close_rect.bottom - pad);
+      SelectObject(hdc, old_close_pen);
+    }
+  }
+}
+
+void MainWindow::Impl::PaintTabControl(HWND hwnd, HDC hdc) {
+  RECT client = {};
+  GetClientRect(hwnd, &client);
+  const Theme& theme = Theme::Current();
+  FillRect(hdc, &client, theme.BackgroundBrush());
+
+  HFONT font = reinterpret_cast<HFONT>(SendMessageW(hwnd, WM_GETFONT, 0, 0));
+  HGDIOBJ old_font = nullptr;
+  if (font) {
+    old_font = SelectObject(hdc, font);
+  }
+
+  int count = TabCtrl_GetItemCount(hwnd);
+  int current = TabCtrl_GetCurSel(hwnd);
+
+  int header_bottom = client.top;
+  RECT first_rect = {};
+  if (count > 0 && TabCtrl_GetItemRect(hwnd, 0, &first_rect)) {
+    int row_height = first_rect.bottom - first_rect.top;
+    int rows = std::max(1, TabCtrl_GetRowCount(hwnd));
+    header_bottom = first_rect.top + row_height * rows + 1;
+  }
+
+  if (header_bottom > client.top) {
+    HPEN line_pen = appearance::CachedPen(theme.BorderColor(), 1);
+    HGDIOBJ old_pen = SelectObject(hdc, line_pen);
+    MoveToEx(hdc, client.left, header_bottom, nullptr);
+    LineTo(hdc, client.right, header_bottom);
+    SelectObject(hdc, old_pen);
+  }
+
+  for (int i = 0; i < count; ++i) {
+    if (i == current) {
+      continue;
+    }
+    RECT item_rect = {};
+    if (TabCtrl_GetItemRect(hwnd, i, &item_rect)) {
+      DrawTabItem(hdc, i, item_rect, header_bottom, false);
+    }
+  }
+  if (current >= 0) {
+    RECT item_rect = {};
+    if (TabCtrl_GetItemRect(hwnd, current, &item_rect)) {
+      DrawTabItem(hdc, current, item_rect, header_bottom, true);
+    }
+  }
+
+  if (old_font) {
+    SelectObject(hdc, old_font);
+  }
+}
+
+} // namespace regkit

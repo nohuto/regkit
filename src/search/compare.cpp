@@ -1,10 +1,5 @@
-// Copyright (C) 2026 Noverse (Nohuto)
-// This file is part of RegKit https://github.com/nohuto/regkit
-//
-// RegKit is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2026 nohuto
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "search/compare.h"
 
@@ -137,9 +132,9 @@ bool CaptureRegistry(const std::wstring& base_path,
 
     Key key;
     key.relative_path = relative;
-    RegistryProvider::KeyEnumResult enumeration;
+    RegistryStore::KeyEnumResult enumeration;
     bool reserved = false;
-    RegistryProvider::EnumKeyStreaming(
+    RegistryStore::EnumKeyStreaming(
         node, true, true, false, &enumeration,
         [&](const ValueInfo& value, const BYTE* data, DWORD size) {
           if (Cancelled(cancel)) {
@@ -170,7 +165,7 @@ bool CaptureRegistry(const std::wstring& base_path,
       continue;
     }
     for (const auto& name :
-         RegistryProvider::EnumSubKeyNames(node, false)) {
+         RegistryStore::EnumSubKeyNames(node, false)) {
       RegistryNode child = node;
       child.subkey =
           node.subkey.empty() ? name : node.subkey + L"\\" + name;

@@ -1,14 +1,9 @@
-// Copyright (C) 2026 Noverse (Nohuto)
-// This file is part of RegKit https://github.com/nohuto/regkit
-//
-// RegKit is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2026 nohuto
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "registry/registry_path.h"
 
-#include "registry/registry_provider.h"
+#include "registry/registry_store.h"
 #include "win32/process_rights.h"
 
 #include <algorithm>
@@ -121,7 +116,7 @@ bool StartsWith(std::wstring_view text, std::wstring_view prefix) {
 
 std::wstring RootName(HKEY root) {
   std::wstring virtual_name;
-  if (RegistryProvider::GetVirtualRootName(root, &virtual_name)) {
+  if (RegistryStore::GetVirtualRootName(root, &virtual_name)) {
     return virtual_name;
   }
   if (root == HKEY_CLASSES_ROOT) {
@@ -158,7 +153,7 @@ std::wstring Build(const RegistryNode& node) {
 }
 
 std::wstring BuildNative(const RegistryNode& node) {
-  if (RegistryProvider::IsVirtualRoot(node.root)) {
+  if (RegistryStore::IsVirtualRoot(node.root)) {
     return {};
   }
   if (Equals(node.root_name, L"REGISTRY")) {
@@ -232,7 +227,7 @@ std::wstring Leaf(std::wstring_view path) {
   }
   const size_t split = path.find_last_of(L"\\/");
   return std::wstring(path.substr(split == std::wstring_view::npos ? 0
-                                                                  : split + 1));
+                                                                   : split + 1));
 }
 
 std::wstring Clean(std::wstring_view input) {
@@ -340,7 +335,7 @@ std::wstring Normalize(std::wstring_view input,
   const size_t split = path.find_first_of(L":\\");
   const std::wstring_view root(path.data(),
                                split == std::wstring::npos ? path.size()
-                                                          : split);
+                                                           : split);
   std::wstring_view rest =
       split == std::wstring::npos
           ? std::wstring_view{}

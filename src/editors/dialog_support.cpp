@@ -1,0 +1,173 @@
+// Copyright (C) 2026 nohuto
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+#include "editors/dialog_support.h"
+
+#include "appearance/theme.h"
+#include "appearance/default_font.h"
+#include "appearance/feedback.h"
+
+#include <algorithm>
+
+#include <commctrl.h>
+
+namespace regkit::editors::dialog_support {
+
+namespace {
+
+constexpr UINT_PTR kMultilineSubclassId = 1;
+
+LRESULT CALLBACK MultilineProc(HWND window, UINT message, WPARAM wparam,
+                               LPARAM lparam, UINT_PTR, DWORD_PTR) {
+  if (message == WM_KEYDOWN && wparam == VK_RETURN &&
+      (GetKeyState(VK_SHIFT) & 0x8000)) {
+    const LONG_PTR style = GetWindowLongPtrW(window, GWL_STYLE);
+    if ((style & ES_MULTILINE) && !(style & ES_READONLY)) {
+      SendMessageW(window, EM_REPLACESEL, TRUE,
+                   reinterpret_cast<LPARAM>(L"\r\n"));
+      return 0;
+    }
+  } else if (message == WM_NCDESTROY) {
+    RemoveWindowSubclass(window, MultilineProc, kMultilineSubclassId);
+  }
+  return DefSubclassProc(window, message, wparam, lparam);
+}
+
+void Center(HWND dialog) {
+  RECT dialog_rect = {};
+  if (!GetWindowRect(dialog, &dialog_rect)) {
+    return;
+  }
+  RECT target = {};
+  const HWND owner = GetWindow(dialog, GW_OWNER);
+  if ((!owner || !GetWindowRect(owner, &target)) &&
+      !SystemParametersInfoW(SPI_GETWORKAREA, 0, &target, 0)) {
+    return;
+  }
+  const int width = dialog_rect.right - dialog_rect.left;
+  const int height = dialog_rect.bottom - dialog_rect.top;
+  const LONG x = target.left +
+                 std::max<LONG>(0, (target.right - target.left - width) / 2);
+  const LONG y = target.top +
+                 std::max<LONG>(0, (target.bottom - target.top - height) / 2);
+  SetWindowPos(dialog, nullptr, x, y, 0, 0,
+               SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+}
+
+void ThinBorder(HWND dialog, int id) {
+  const HWND edit = GetDlgItem(dialog, id);
+  if (!edit) {
+    return;
+  }
+  SetWindowLongPtrW(edit, GWL_EXSTYLE,
+                    GetWindowLongPtrW(edit, GWL_EXSTYLE) &
+                        ~WS_EX_CLIENTEDGE);
+  SetWindowLongPtrW(edit, GWL_STYLE,
+                    GetWindowLongPtrW(edit, GWL_STYLE) | WS_BORDER);
+  SetWindowPos(edit, nullptr, 0, 0, 0, 0,
+               SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+                   SWP_FRAMECHANGED);
+}
+
+} // namespace
+
+void Initialize(HWND dialog, HFONT* owned_font,
+                std::initializer_list<int> bordered_edits) {
+  for (const int id : bordered_edits) {
+    ThinBorder(dialog, id);
+  }
+  HFONT font = ui::DefaultUIFont();
+  if (owned_font) {
+    *owned_font = font;
+  }
+  if (font) {
+    SendMessageW(dialog, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
+    EnumChildWindows(
+        dialog,
+        [](HWND child, LPARAM value) {
+          SendMessageW(child, WM_SETFONT, static_cast<WPARAM>(value), TRUE);
+          wchar_t class_name[16] = {};
+          GetClassNameW(child, class_name, _countof(class_name));
+          const LONG_PTR style = GetWindowLongPtrW(child, GWL_STYLE);
+          if (_wcsicmp(class_name, L"Edit") == 0 &&
+              (style & ES_MULTILINE) && !(style & ES_READONLY)) {
+            SetWindowSubclass(child, MultilineProc,
+                              kMultilineSubclassId, 0);
+          }
+          return TRUE;
+        },
+        reinterpret_cast<LPARAM>(font));
+  }
+  Theme::Current().ApplyToWindow(dialog);
+  Theme::Current().ApplyToChildren(dialog);
+  Center(dialog);
+}
+
+void ReleaseFont(HFONT* font) {
+  if (font && *font) {
+    DeleteObject(*font);
+    *font = nullptr;
+  }
+}
+
+bool HandleThemeMessage(HWND dialog, UINT message, WPARAM wparam,
+                        LPARAM lparam, INT_PTR* result) {
+  if (!result) {
+    return false;
+  }
+  if (message == WM_SETTINGCHANGE) {
+    if (Theme::UpdateFromSystem()) {
+      Theme::Current().ApplyToWindow(dialog);
+      Theme::Current().ApplyToChildren(dialog);
+      InvalidateRect(dialog, nullptr, TRUE);
+    }
+    *result = TRUE;
+    return true;
+  }
+  if (message == WM_ERASEBKGND) {
+    RECT rect = {};
+    GetClientRect(dialog, &rect);
+    FillRect(reinterpret_cast<HDC>(wparam), &rect,
+             Theme::Current().BackgroundBrush());
+    *result = TRUE;
+    return true;
+  }
+  int color_type = 0;
+  switch (message) {
+  case WM_CTLCOLORDLG:
+    color_type = CTLCOLOR_DLG;
+    break;
+  case WM_CTLCOLORSTATIC:
+    color_type = CTLCOLOR_STATIC;
+    break;
+  case WM_CTLCOLOREDIT:
+    color_type = CTLCOLOR_EDIT;
+    break;
+  case WM_CTLCOLORLISTBOX:
+    color_type = CTLCOLOR_LISTBOX;
+    break;
+  case WM_CTLCOLORBTN:
+    color_type = CTLCOLOR_BTN;
+    break;
+  default:
+    return false;
+  }
+  *result = reinterpret_cast<INT_PTR>(Theme::Current().ControlColor(
+      reinterpret_cast<HDC>(wparam), reinterpret_cast<HWND>(lparam),
+      color_type));
+  return true;
+}
+
+std::wstring ReadText(HWND dialog, int control_id) {
+  const HWND control = GetDlgItem(dialog, control_id);
+  const int length = control ? GetWindowTextLengthW(control) : 0;
+  if (length <= 0) {
+    return {};
+  }
+  std::wstring text(static_cast<size_t>(length) + 1, L'\0');
+  GetWindowTextW(control, text.data(), length + 1);
+  text.resize(static_cast<size_t>(length));
+  return text;
+}
+
+} // namespace regkit::editors::dialog_support

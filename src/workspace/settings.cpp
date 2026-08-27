@@ -1,16 +1,11 @@
-// Copyright (C) 2026 Noverse (Nohuto)
-// This file is part of RegKit https://github.com/nohuto/regkit
-//
-// RegKit is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2026 nohuto
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "workspace/settings.h"
 
 #include "records/escaped_fields.h"
 #include "win32/file_text.h"
-#include "win32/win32_helpers.h"
+#include "win32/text_transform.h"
 
 #include <algorithm>
 #include <cwchar>
@@ -72,98 +67,97 @@ Settings ParseSettings(const std::wstring& content, Settings settings) {
     const std::wstring value =
         util::TrimWhitespace(line.substr(separator + 1));
     int index = -1;
-#define REGKIT_BOOL(name, member)                                            \
-  if (_wcsicmp(key.c_str(), name) == 0) {                                   \
-    settings.member = Boolean(value);                                        \
+#define REGKIT_BOOL(name, member)         \
+  if (_wcsicmp(key.c_str(), name) == 0) { \
+    settings.member = Boolean(value);     \
   }
     REGKIT_BOOL(L"clear_history_on_exit", clear_history_on_exit)
-    else REGKIT_BOOL(L"clear_tabs_on_exit", clear_tabs_on_exit)
-    else REGKIT_BOOL(L"view_toolbar", show_toolbar)
-    else REGKIT_BOOL(L"view_address_bar", show_address_bar)
-    else REGKIT_BOOL(L"view_filter_bar", show_filter_bar)
-    else REGKIT_BOOL(L"view_tab_control", show_tab_control)
-    else REGKIT_BOOL(L"view_tree", show_tree)
-    else REGKIT_BOOL(L"view_history", show_history)
-    else REGKIT_BOOL(L"view_status_bar", show_status_bar)
-    else REGKIT_BOOL(L"view_keys_in_list", show_keys_in_list)
-    else REGKIT_BOOL(L"view_simulated_keys", show_simulated_keys)
-    else REGKIT_BOOL(L"view_extra_hives", show_extra_hives)
-    else REGKIT_BOOL(L"save_tree_state", save_tree_state)
-    else REGKIT_BOOL(L"save_tabs", save_tabs)
-    else REGKIT_BOOL(L"always_run_as_admin", always_run_as_admin)
-    else REGKIT_BOOL(L"always_run_as_system", always_run_as_system)
-    else REGKIT_BOOL(L"always_run_as_trustedinstaller",
-                     always_run_as_trustedinstaller)
-    else REGKIT_BOOL(L"always_on_top", always_on_top)
-    else REGKIT_BOOL(L"replace_regedit", replace_regedit)
-    else REGKIT_BOOL(L"single_instance", single_instance)
-    else REGKIT_BOOL(L"read_only", read_only)
+    else REGKIT_BOOL(L"clear_tabs_on_exit", clear_tabs_on_exit) else REGKIT_BOOL(L"view_toolbar", show_toolbar) else REGKIT_BOOL(L"view_address_bar", show_address_bar) else REGKIT_BOOL(L"view_filter_bar", show_filter_bar) else REGKIT_BOOL(L"view_tab_control", show_tab_control) else REGKIT_BOOL(L"view_tree", show_tree) else REGKIT_BOOL(L"view_history", show_history) else REGKIT_BOOL(L"view_status_bar", show_status_bar) else REGKIT_BOOL(L"view_keys_in_list", show_keys_in_list) else REGKIT_BOOL(L"view_simulated_keys", show_simulated_keys) else REGKIT_BOOL(L"view_extra_hives", show_extra_hives) else REGKIT_BOOL(L"save_tree_state", save_tree_state) else REGKIT_BOOL(L"save_tabs", save_tabs) else REGKIT_BOOL(L"always_run_as_admin", always_run_as_admin) else REGKIT_BOOL(L"always_run_as_system", always_run_as_system) else REGKIT_BOOL(L"always_run_as_trustedinstaller",
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     always_run_as_trustedinstaller) else REGKIT_BOOL(L"always_on_top", always_on_top) else REGKIT_BOOL(L"replace_regedit", replace_regedit) else REGKIT_BOOL(L"single_instance", single_instance) else REGKIT_BOOL(L"read_only", read_only)
 #undef REGKIT_BOOL
-    else if (_wcsicmp(key.c_str(), L"window_x") == 0) {
+        else if (_wcsicmp(key.c_str(), L"window_x") == 0) {
       settings.window_x = _wtoi(value.c_str());
       settings.window_placement_present = true;
-    } else if (_wcsicmp(key.c_str(), L"window_y") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"window_y") == 0) {
       settings.window_y = _wtoi(value.c_str());
       settings.window_placement_present = true;
-    } else if (_wcsicmp(key.c_str(), L"window_width") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"window_width") == 0) {
       settings.window_width = _wtoi(value.c_str());
       settings.window_placement_present = true;
-    } else if (_wcsicmp(key.c_str(), L"window_height") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"window_height") == 0) {
       settings.window_height = _wtoi(value.c_str());
       settings.window_placement_present = true;
-    } else if (_wcsicmp(key.c_str(), L"window_maximized") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"window_maximized") == 0) {
       settings.window_maximized = Boolean(value);
       settings.window_placement_present = true;
-    } else if (_wcsicmp(key.c_str(), L"tree_width") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"tree_width") == 0) {
       const int width = _wtoi(value.c_str());
       if (width > 0) {
         settings.tree_width = width;
       }
-    } else if (_wcsicmp(key.c_str(), L"history_height") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"history_height") == 0) {
       const int height = _wtoi(value.c_str());
       if (height > 0) {
         settings.history_height = height;
       }
-    } else if (_wcsicmp(key.c_str(), L"theme_mode") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"theme_mode") == 0) {
       settings.theme_mode = value;
-    } else if (_wcsicmp(key.c_str(), L"theme_preset") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"theme_preset") == 0) {
       settings.theme_preset = value;
-    } else if (_wcsicmp(key.c_str(), L"icon_set") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"icon_set") == 0) {
       settings.icon_set = value;
-    } else if (_wcsicmp(key.c_str(), L"font_use_default") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"font_use_default") == 0) {
       settings.use_custom_font = !Boolean(value);
-    } else if (_wcsicmp(key.c_str(), L"font_face") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"font_face") == 0) {
       settings.font_face = value;
-    } else if (_wcsicmp(key.c_str(), L"font_size") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"font_size") == 0) {
       const int size = _wtoi(value.c_str());
       if (size > 0) {
         settings.font_size = size;
       }
-    } else if (_wcsicmp(key.c_str(), L"font_weight") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"font_weight") == 0) {
       const int weight = _wtoi(value.c_str());
       if (weight > 0) {
         settings.font_weight = weight;
       }
-    } else if (_wcsicmp(key.c_str(), L"font_italic") == 0) {
+    }
+    else if (_wcsicmp(key.c_str(), L"font_italic") == 0) {
       settings.font_italic = Boolean(value);
-    } else if (Indexed(key, L"trace_recent_", &index)) {
+    }
+    else if (Indexed(key, L"trace_recent_", &index)) {
       if (static_cast<size_t>(index) >= settings.recent_traces.size()) {
         settings.recent_traces.resize(static_cast<size_t>(index) + 1);
       }
       settings.recent_traces[static_cast<size_t>(index)] = value;
-    } else if (Indexed(key, L"default_recent_", &index)) {
+    }
+    else if (Indexed(key, L"default_recent_", &index)) {
       if (static_cast<size_t>(index) >= settings.recent_defaults.size()) {
         settings.recent_defaults.resize(static_cast<size_t>(index) + 1);
       }
       settings.recent_defaults[static_cast<size_t>(index)] = value;
-    } else if (Indexed(key, L"value_column_width_", &index)) {
+    }
+    else if (Indexed(key, L"value_column_width_", &index)) {
       if (static_cast<size_t>(index) >=
           settings.value_column_widths.size()) {
         settings.value_column_widths.resize(static_cast<size_t>(index) + 1);
       }
       settings.value_column_widths[static_cast<size_t>(index)] =
           _wtoi(value.c_str());
-    } else if (Indexed(key, L"value_column_visible_", &index)) {
+    }
+    else if (Indexed(key, L"value_column_visible_", &index)) {
       if (static_cast<size_t>(index) >=
           settings.value_column_visible.size()) {
         settings.value_column_visible.resize(static_cast<size_t>(index) + 1,

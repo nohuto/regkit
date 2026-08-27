@@ -1,14 +1,9 @@
-// Copyright (C) 2026 Noverse (Nohuto)
-// This file is part of RegKit https://github.com/nohuto/regkit
-//
-// RegKit is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2026 nohuto
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "registry/value_format.h"
 
-#include "win32/win32_helpers.h"
+#include "win32/text_transform.h"
 
 #include <shlwapi.h>
 
@@ -43,23 +38,44 @@ std::wstring TypeName(DWORD type) {
   const bool has_flags = base != type;
   const wchar_t* label = nullptr;
   switch (base) {
-  case REG_NONE: label = L"REG_NONE"; break;
-  case REG_SZ: label = L"REG_SZ"; break;
-  case REG_EXPAND_SZ: label = L"REG_EXPAND_SZ"; break;
-  case REG_MULTI_SZ: label = L"REG_MULTI_SZ"; break;
-  case REG_DWORD: label = L"REG_DWORD"; break;
-  case REG_QWORD: label = L"REG_QWORD"; break;
-  case REG_BINARY: label = L"REG_BINARY"; break;
-  case REG_RESOURCE_LIST: label = L"REG_RESOURCE_LIST"; break;
+  case REG_NONE:
+    label = L"REG_NONE";
+    break;
+  case REG_SZ:
+    label = L"REG_SZ";
+    break;
+  case REG_EXPAND_SZ:
+    label = L"REG_EXPAND_SZ";
+    break;
+  case REG_MULTI_SZ:
+    label = L"REG_MULTI_SZ";
+    break;
+  case REG_DWORD:
+    label = L"REG_DWORD";
+    break;
+  case REG_QWORD:
+    label = L"REG_QWORD";
+    break;
+  case REG_BINARY:
+    label = L"REG_BINARY";
+    break;
+  case REG_RESOURCE_LIST:
+    label = L"REG_RESOURCE_LIST";
+    break;
   case REG_FULL_RESOURCE_DESCRIPTOR:
     label = L"REG_FULL_RESOURCE_DESCRIPTOR";
     break;
   case REG_RESOURCE_REQUIREMENTS_LIST:
     label = L"REG_RESOURCE_REQUIREMENTS_LIST";
     break;
-  case REG_LINK: label = L"REG_LINK"; break;
-  case REG_DWORD_BIG_ENDIAN: label = L"REG_DWORD_BIG_ENDIAN"; break;
-  default: break;
+  case REG_LINK:
+    label = L"REG_LINK";
+    break;
+  case REG_DWORD_BIG_ENDIAN:
+    label = L"REG_DWORD_BIG_ENDIAN";
+    break;
+  default:
+    break;
   }
   wchar_t buffer[64] = {};
   if (!label) {

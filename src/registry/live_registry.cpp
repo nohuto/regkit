@@ -1,10 +1,5 @@
-// Copyright (C) 2026 Noverse (Nohuto)
-// This file is part of RegKit https://github.com/nohuto/regkit
-//
-// RegKit is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2026 nohuto
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "registry/registry_backends.h"
 
@@ -124,7 +119,7 @@ bool QuerySymbolicLinkTarget(const RegistryNode& node,
 }
 
 std::vector<std::wstring> EnumSubKeyNames(const RegistryNode& node,
-                                         bool sorted) {
+                                          bool sorted) {
   std::vector<std::wstring> names;
   util::UniqueHKey key = OpenKey(node, KEY_READ);
   if (!key.get()) {
@@ -159,9 +154,9 @@ std::vector<std::wstring> EnumSubKeyNames(const RegistryNode& node,
 
 bool EnumKeyStreaming(
     const RegistryNode& node, bool include_values, bool include_data,
-    bool include_subkeys, RegistryProvider::KeyEnumResult* out_info,
-    const RegistryProvider::ValueStreamCallback& value_callback,
-    const RegistryProvider::SubkeyStreamCallback& subkey_callback,
+    bool include_subkeys, RegistryStore::KeyEnumResult* out_info,
+    const RegistryStore::ValueStreamCallback& value_callback,
+    const RegistryStore::SubkeyStreamCallback& subkey_callback,
     DWORD max_data_size) {
   util::UniqueHKey key = OpenKey(node, KEY_READ);
   if (!key.get()) {

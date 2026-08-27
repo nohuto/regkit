@@ -1,10 +1,5 @@
-// Copyright (C) 2026 Noverse (Nohuto)
-// This file is part of RegKit https://github.com/nohuto/regkit
-//
-// RegKit is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2026 nohuto
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "regfile/reg_file.h"
 
@@ -49,11 +44,21 @@ bool ParseQuoted(std::wstring_view text, std::wstring* output) {
     const wchar_t character = text[index];
     if (escaped) {
       switch (character) {
-      case L'n': output->push_back(L'\n'); break;
-      case L'r': output->push_back(L'\r'); break;
-      case L't': output->push_back(L'\t'); break;
-      case L'0': output->push_back(L'\0'); break;
-      default: output->push_back(character); break;
+      case L'n':
+        output->push_back(L'\n');
+        break;
+      case L'r':
+        output->push_back(L'\r');
+        break;
+      case L't':
+        output->push_back(L'\t');
+        break;
+      case L'0':
+        output->push_back(L'\0');
+        break;
+      default:
+        output->push_back(character);
+        break;
       }
       escaped = false;
     } else if (character == L'\\') {
@@ -69,19 +74,32 @@ bool ParseQuoted(std::wstring_view text, std::wstring* output) {
 
 DWORD TypeFromCode(unsigned long code) {
   switch (code) {
-  case 0x0: return REG_NONE;
-  case 0x1: return REG_SZ;
-  case 0x2: return REG_EXPAND_SZ;
-  case 0x3: return REG_BINARY;
-  case 0x4: return REG_DWORD;
-  case 0x5: return REG_DWORD_BIG_ENDIAN;
-  case 0x6: return REG_LINK;
-  case 0x7: return REG_MULTI_SZ;
-  case 0x8: return REG_RESOURCE_LIST;
-  case 0x9: return REG_FULL_RESOURCE_DESCRIPTOR;
-  case 0xA: return REG_RESOURCE_REQUIREMENTS_LIST;
-  case 0xB: return REG_QWORD;
-  default: return REG_BINARY;
+  case 0x0:
+    return REG_NONE;
+  case 0x1:
+    return REG_SZ;
+  case 0x2:
+    return REG_EXPAND_SZ;
+  case 0x3:
+    return REG_BINARY;
+  case 0x4:
+    return REG_DWORD;
+  case 0x5:
+    return REG_DWORD_BIG_ENDIAN;
+  case 0x6:
+    return REG_LINK;
+  case 0x7:
+    return REG_MULTI_SZ;
+  case 0x8:
+    return REG_RESOURCE_LIST;
+  case 0x9:
+    return REG_FULL_RESOURCE_DESCRIPTOR;
+  case 0xA:
+    return REG_RESOURCE_REQUIREMENTS_LIST;
+  case 0xB:
+    return REG_QWORD;
+  default:
+    return REG_BINARY;
   }
 }
 
@@ -94,13 +112,27 @@ std::wstring Escape(std::wstring_view text) {
   output.reserve(text.size());
   for (wchar_t character : text) {
     switch (character) {
-    case L'\\': output += L"\\\\"; break;
-    case L'"': output += L"\\\""; break;
-    case L'\n': output += L"\\n"; break;
-    case L'\r': output += L"\\r"; break;
-    case L'\t': output += L"\\t"; break;
-    case L'\0': output += L"\\0"; break;
-    default: output.push_back(character); break;
+    case L'\\':
+      output += L"\\\\";
+      break;
+    case L'"':
+      output += L"\\\"";
+      break;
+    case L'\n':
+      output += L"\\n";
+      break;
+    case L'\r':
+      output += L"\\r";
+      break;
+    case L'\t':
+      output += L"\\t";
+      break;
+    case L'\0':
+      output += L"\\0";
+      break;
+    default:
+      output.push_back(character);
+      break;
     }
   }
   return output;

@@ -1,3 +1,5 @@
+Boot Record | Created by nohuto | Based on 24H2 | discord.noverse.dev | github.com/nohuto/regkit
+
 \Registry\Machine : ServiceDebugOnStartup
 \Registry\Machine : ServiceLastKnownStatus
 \Registry\Machine : SocketBrokerContextSizeLimit

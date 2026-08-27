@@ -1,18 +1,5 @@
-// Copyright (C) 2026 Noverse (Nohuto)
-// This file is part of RegKit https://github.com/nohuto/regkit
-//
-// RegKit is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// RegKit is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with RegKit.  If not, see <https://www.gnu.org/licenses/>.
+// Copyright (C) 2026 nohuto
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "search/search.h"
 
@@ -570,7 +557,7 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
 
       if (!should_stop()) {
         if (!has_excludes || !IsExcludedPath(entry.path, criteria.exclude_paths)) {
-          RegistryProvider::KeyEnumResult enum_result;
+          RegistryStore::KeyEnumResult enum_result;
           std::wstring date_text;
           bool key_range_checked = false;
           bool key_in_range = true;
@@ -671,7 +658,7 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
             return true;
           };
 
-          RegistryProvider::EnumKeyStreaming(entry.node, want_values, criteria.search_data, want_subkeys, &enum_result, want_values ? value_cb : RegistryProvider::ValueStreamCallback(), want_subkeys ? subkey_cb : RegistryProvider::SubkeyStreamCallback());
+          RegistryStore::EnumKeyStreaming(entry.node, want_values, criteria.search_data, want_subkeys, &enum_result, want_values ? value_cb : RegistryStore::ValueStreamCallback(), want_subkeys ? subkey_cb : RegistryStore::SubkeyStreamCallback());
 
           if (criteria.search_keys && is_key_in_range()) {
             Match key_match = matcher.Find(entry.key_name);

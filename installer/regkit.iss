@@ -1,9 +1,12 @@
+; Copyright (C) 2026 nohuto
+; SPDX-License-Identifier: AGPL-3.0-or-later
+
 #define AppId "4678f42c-c6a2-4df9-bc2a-dddbd2613045"
 #define AppName "RegKit"
 #define AppExeName "regkit.exe"
-#define AppVersion "0.0.0.4"
-#define AppPublisher "Noverse (Nohuto)"
-#define AppCopyright "(C) 2026 Noverse (Nohuto)"
+#define AppVersion "0.0.0.5"
+#define AppPublisher "nohuto"
+#define AppCopyright "(C) 2026 nohuto"
 #define AppURL "https://github.com/nohuto/regkit"
 #define BuildDir "..\\build\\Release"
 
@@ -27,8 +30,8 @@ SetupIconFile=..\assets\icons\regkit.ico
 UninstallDisplayIcon={app}\{#AppExeName}
 Compression=lzma2
 SolidCompression=yes
-ArchitecturesAllowed=x64
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesAllowed=x64os
+ArchitecturesInstallIn64BitMode=x64os
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=dialog
 WizardStyle=modern

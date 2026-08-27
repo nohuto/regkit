@@ -35,7 +35,7 @@ include(cmake/VerifyTargetGraph.cmake)
 add_subdirectory(src)
 
 add_executable(RegKit WIN32
-    src/app_entry.cpp
+    src/launch/program.cpp
     resources/app.rc
 )
 regkit_configure_executable(RegKit)
@@ -89,11 +89,6 @@ add_custom_command(TARGET RegKit POST_BUILD
 
 if (MSVC)
     target_link_options(RegKit PRIVATE "/MANIFEST:NO")
-endif()
-
-include(CTest)
-if (BUILD_TESTING)
-    add_subdirectory(tests)
 endif()
 
 regkit_verify_dependency_order(

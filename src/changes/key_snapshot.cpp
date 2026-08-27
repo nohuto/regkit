@@ -1,10 +1,5 @@
-// Copyright (C) 2026 Noverse (Nohuto)
-// This file is part of RegKit https://github.com/nohuto/regkit
-//
-// RegKit is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2026 nohuto
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "changes/key_snapshot.h"
 
@@ -16,7 +11,7 @@ namespace {
 RegistryNode ChildNode(const RegistryNode& parent, const std::wstring& name) {
   RegistryNode child = parent;
   child.subkey = parent.subkey.empty() ? name
-                                      : parent.subkey + L"\\" + name;
+                                       : parent.subkey + L"\\" + name;
   child.children_loaded = false;
   return child;
 }
@@ -26,9 +21,9 @@ RegistryNode ChildNode(const RegistryNode& parent, const std::wstring& name) {
 KeySnapshot CaptureKey(const RegistryNode& node) {
   KeySnapshot snapshot;
   snapshot.name = registry_path::Leaf(node.subkey);
-  RegistryProvider::KeyEnumResult result;
+  RegistryStore::KeyEnumResult result;
   bool reserved = false;
-  RegistryProvider::EnumKeyStreaming(
+  RegistryStore::EnumKeyStreaming(
       node, true, true, false, &result,
       [&](const ValueInfo& info, const BYTE* data, DWORD size) {
         if (!reserved) {
@@ -48,7 +43,7 @@ KeySnapshot CaptureKey(const RegistryNode& node) {
       },
       {});
 
-  const auto children = RegistryProvider::EnumSubKeyNames(node, false);
+  const auto children = RegistryStore::EnumSubKeyNames(node, false);
   snapshot.children.reserve(children.size());
   for (const std::wstring& name : children) {
     snapshot.children.push_back(CaptureKey(ChildNode(node, name)));
@@ -58,13 +53,13 @@ KeySnapshot CaptureKey(const RegistryNode& node) {
 
 bool RestoreKey(const RegistryNode& parent, const KeySnapshot& snapshot) {
   if (snapshot.name.empty() ||
-      !RegistryProvider::CreateKey(parent, snapshot.name)) {
+      !RegistryStore::CreateKey(parent, snapshot.name)) {
     return false;
   }
   const RegistryNode node = ChildNode(parent, snapshot.name);
   for (const ValueEntry& value : snapshot.values) {
-    if (!RegistryProvider::SetValue(node, value.name, value.type,
-                                    value.data)) {
+    if (!RegistryStore::SetValue(node, value.name, value.type,
+                                 value.data)) {
       return false;
     }
   }
