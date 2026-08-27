@@ -755,7 +755,7 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
 
 void MainWindow::Impl::StartReplace(const ReplaceDialogResult& options) {
   if (read_only_) {
-    ui::ShowWarning(hwnd_, L"Read-only mode is enabled.");
+    ui::ShowWarning(hwnd_, L"Read only mode is enabled.");
     return;
   }
   if (options.find_text.empty()) {

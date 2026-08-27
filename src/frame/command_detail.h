@@ -47,10 +47,15 @@ using window_detail::FindChildByText;
 using window_detail::LeafName;
 using window_detail::MakeChildNode;
 using window_detail::MakeValueListRow;
+using window_detail::kIconSetCustom;
+using window_detail::kIconSetDefault;
+using window_detail::kIconSetLucide;
+using window_detail::kIconSetMaterialSymbols;
+using window_detail::kIconSetPhosphor;
 using window_detail::StartsWithInsensitive;
 using workspace::FavoritesStore;
 
-constexpr wchar_t kRepoUrl[] = L"https://github.com/nohuto/regkit";
+constexpr wchar_t kHelpUrl[] = L"https://discord.noverse.dev";
 
 using util::ToLower;
 using util::TrimWhitespace;

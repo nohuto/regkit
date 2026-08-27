@@ -322,10 +322,9 @@ bool MainWindow::Impl::OpenDefaultRegedit() {
   return true;
 }
 
-void MainWindow::Impl::OpenHiveFileDir() {
+std::wstring MainWindow::Impl::ResolveSelectedHiveFilePath() {
   if (registry_mode_ == RegistryMode::kRemote) {
-    ui::ShowError(hwnd_, L"Hive files are not available for remote registries.");
-    return;
+    return L"";
   }
   RegistryNode* node = browse_.current_node();
   if (!node && browse_.tree().hwnd()) {
@@ -335,18 +334,28 @@ void MainWindow::Impl::OpenHiveFileDir() {
     }
   }
   if (!node) {
-    return;
+    return L"";
   }
   RegistryNode target = *node;
-  int index = ListView_GetNextItem(browse_.values().hwnd(), -1, LVNI_SELECTED);
+  int index = browse_.values().hwnd()
+                  ? ListView_GetNextItem(browse_.values().hwnd(), -1,
+                                         LVNI_SELECTED)
+                  : -1;
   if (index >= 0) {
     const ListRow* row = browse_.values().RowAt(index);
     if (row && row->kind == rowkind::kKey && !row->extra.empty()) {
       target = MakeChildNode(*node, row->extra);
     }
   }
-  bool is_root = false;
-  std::wstring hive_path = LookupHivePath(target, &is_root);
+  return LookupHivePath(target, nullptr);
+}
+
+void MainWindow::Impl::OpenHiveFileDir() {
+  if (registry_mode_ == RegistryMode::kRemote) {
+    ui::ShowError(hwnd_, L"Hive files are not available for remote registries.");
+    return;
+  }
+  std::wstring hive_path = ResolveSelectedHiveFilePath();
   if (hive_path.empty()) {
     ui::ShowError(hwnd_, L"No hive file was found for this key.");
     return;

@@ -1,6 +1,3 @@
-; Copyright (C) 2026 nohuto
-; SPDX-License-Identifier: AGPL-3.0-or-later
-
 #define AppId "4678f42c-c6a2-4df9-bc2a-dddbd2613045"
 #define AppName "RegKit"
 #define AppExeName "regkit.exe"

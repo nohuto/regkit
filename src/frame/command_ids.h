@@ -110,6 +110,7 @@ constexpr int kOptionsRestartTrustedInstaller = 2466;
 constexpr int kOptionsAlwaysRunTrustedInstaller = 2467;
 constexpr int kOptionsThemePresets = 2468;
 constexpr int kOptionsIconSetDefault = 2469;
+constexpr int kOptionsIconSetPhosphor = 2470;
 constexpr int kOptionsIconSetLucide = 2471;
 constexpr int kOptionsIconSetMaterialSymbols = 2472;
 constexpr int kOptionsIconSetCustom = 2473;

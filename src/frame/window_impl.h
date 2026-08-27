@@ -351,6 +351,7 @@ private:
   void SyncReplaceRegeditState();
   bool OpenDefaultRegedit();
   void OpenHiveFileDir();
+  std::wstring ResolveSelectedHiveFilePath();
   void AddAddressHistory(const std::wstring& path);
   void RecordNavigation(const std::wstring& path);
   void NavigateBack();
@@ -557,7 +558,7 @@ private:
   bool single_instance_ = true;
   bool read_only_ = false;
   ThemeMode theme_mode_ = ThemeMode::kSystem;
-  std::wstring icon_set_ = L"default";
+  std::wstring icon_set_ = L"phosphor-regedit";
   std::wstring icon_dir_;
   bool updating_value_list_ = false;
   bool value_list_loading_ = false;

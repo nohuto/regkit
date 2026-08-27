@@ -1,6 +1,3 @@
-// Copyright (C) 2026 nohuto
-// SPDX-License-Identifier: AGPL-3.0-or-later
-
 IDD_INPUT DIALOGEX 0, 0, 220, 75
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Input"

@@ -627,8 +627,8 @@ LRESULT CALLBACK AboutDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
                                           L"https://www.noverse.dev/</a>",
                                           WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hwnd, nullptr, nullptr, nullptr);
     state->email_link = CreateWindowExW(0, WC_LINK,
-                                        L"Email: <a href=\"mailto:nohuto@tuta.io\">"
-                                        L"nohuto@tuta.io</a>",
+                                        L"Email: <a href=\"mailto:contact@noverse.dev\">"
+                                        L"contact@noverse.dev</a>",
                                         WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hwnd, nullptr, nullptr, nullptr);
     state->ok_btn = CreateWindowExW(0, L"BUTTON", L"OK", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDOK), nullptr, nullptr);
 
@@ -1011,7 +1011,7 @@ void ShowAbout(HWND owner) {
                   L"Repository: https://github.com/nohuto/regkit\n"
                   L"Discord: https://discord.noverse.dev\n"
                   L"Website: https://www.noverse.dev/\n"
-                  L"Email: nohuto@tuta.io");
+                  L"Email: contact@noverse.dev");
 }
 
 bool ConfirmRegFileMerge(HWND owner, const std::wstring& path) {

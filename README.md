@@ -9,7 +9,7 @@ RegKit adds functionality that standard regedit doesn't support/expose:
 - A real REGISTRY root view in addition to standard hives
 - [Theme modes](https://github.com/nohuto/regkit#theme-presets) (System/Light/Dark) and custom theme presets (edit colors, import/export `.rktheme`)
 - Custom font support
-- Custom [icon support](https://github.com/nohuto/regkit#icon-sets) (has 3 sets installed by default)
+- Custom [icon support](https://github.com/nohuto/regkit#icon-sets) (has 4 sets installed by default)
 - Symbolic link detection (`SymbolicLinkValue` value with the link target)
 - Hive backed key detection using hivelist key & open Hive File (opens the backing hive file)
 - [Trace presets](https://github.com/nohuto/regkit#trace-menu) (23H2/24H2/25H2 - see below), used for "Read on boot" column
@@ -41,17 +41,17 @@ It includes built in presets and a theme editor to customize colors, presets can
 
 ### Examples
 
+#### Default Dark
+
+![](https://github.com/nohuto/regkit/blob/main/assets/images/default-dark.png?raw=true)
+
+#### Default Light
+
+![](https://github.com/nohuto/regkit/blob/main/assets/images/default-light.png?raw=true)
+
 #### Ayu Dark
 
 ![](https://github.com/nohuto/regkit/blob/main/assets/images/ayu-dark.png?raw=true)
-
-#### Catppuccin Latte
-
-![](https://github.com/nohuto/regkit/blob/main/assets/images/catppuccin-latte.png?raw=true)
-
-#### Everforest Dark
-
-![](https://github.com/nohuto/regkit/blob/main/assets/images/everforest-dark.png?raw=true)
 
 #### Kanagawa Dragon
 
@@ -63,7 +63,8 @@ RegKit comes with multiple icon sets and supports loading your own icons, you ca
 
 Built in sets:
 
-- Phosphor (default)
+- Phosphor + RegEdit (default)
+- Phosphor
 - Lucide
 - Material Symbols
 

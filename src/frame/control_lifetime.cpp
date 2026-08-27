@@ -470,7 +470,9 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
       ui::ShowError(hwnd_, L"Failed to rename value.");
       return FALSE;
     }
-    AppendHistoryEntry(L"Rename value " + old_name, old_name, new_name);
+    AppendValueHistoryEntry(L"Rename value " + old_name, old_name, new_name,
+                            *browse_.current_node(), new_name,
+                            HistoryEntry::RevertKind::kNone);
     MarkOfflineDirty();
     changes::UndoOperation op;
     op.type = changes::UndoOperation::Type::kRenameValue;
@@ -496,7 +498,11 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
     return TRUE;
   }
   if (header->hwndFrom == browse_.values().hwnd() && header->code == LVN_ITEMCHANGED) {
-    UpdateStatus();
+    auto* info = reinterpret_cast<NMLISTVIEW*>(lparam);
+    if (!updating_value_list_ && info &&
+        ((info->uOldState ^ info->uNewState) & LVIS_SELECTED) != 0) {
+      UpdateStatus();
+    }
     return 0;
   }
   if (header->hwndFrom == browse_.values().hwnd() && header->code == LVN_COLUMNCLICK) {
@@ -555,10 +561,6 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
 }
 
 LRESULT MainWindow::Impl::HandleHistoryNotification(NMHDR* header, LPARAM lparam) {
-  if (header->hwndFrom == history_list_ && header->code == LVN_ITEMCHANGED) {
-    ListView_SetItemState(history_list_, -1, 0, LVIS_FOCUSED);
-    return 0;
-  }
   if (header->hwndFrom == history_list_ && header->code == LVN_COLUMNCLICK) {
     auto* info = reinterpret_cast<NMLISTVIEW*>(lparam);
     if (info) {

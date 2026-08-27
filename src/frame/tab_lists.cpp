@@ -3,8 +3,104 @@
 
 #include "frame/window_detail.h"
 
+#include <unordered_set>
+
 namespace regkit {
 using namespace window_detail;
+
+namespace {
+
+struct StableListSelection {
+  std::unordered_set<std::wstring> selected;
+  std::wstring focused;
+};
+
+void AppendIdentityPart(std::wstring* key, const std::wstring& part) {
+  key->push_back(L'|');
+  key->append(std::to_wstring(part.size()));
+  key->push_back(L':');
+  key->append(part);
+}
+
+std::wstring ValueRowIdentity(const ListRow& row) {
+  std::wstring key = std::to_wstring(static_cast<long long>(row.kind));
+  AppendIdentityPart(&key, row.extra);
+  return key;
+}
+
+std::wstring SearchResultIdentity(const search::Result& result) {
+  std::wstring key(1, result.is_key ? L'K' : L'V');
+  AppendIdentityPart(&key, result.key_path);
+  AppendIdentityPart(&key, result.value_name);
+  AppendIdentityPart(&key, result.display_name);
+  AppendIdentityPart(&key, result.type_text);
+  return key;
+}
+
+std::wstring HistoryEntryIdentity(const HistoryEntry& entry) {
+  std::wstring key = std::to_wstring(entry.timestamp);
+  AppendIdentityPart(&key, entry.action);
+  AppendIdentityPart(&key, entry.key_path);
+  AppendIdentityPart(&key, entry.value_name);
+  return key;
+}
+
+template <typename KeyAt>
+StableListSelection CaptureListSelection(HWND list, KeyAt key_at) {
+  StableListSelection state;
+  if (!list) {
+    return state;
+  }
+  state.selected.reserve(static_cast<size_t>(ListView_GetSelectedCount(list)));
+  int index = -1;
+  while ((index = ListView_GetNextItem(list, index, LVNI_SELECTED)) >= 0) {
+    std::wstring key = key_at(index);
+    if (!key.empty()) {
+      state.selected.emplace(std::move(key));
+    }
+  }
+  index = ListView_GetNextItem(list, -1, LVNI_FOCUSED);
+  if (index >= 0) {
+    state.focused = key_at(index);
+  }
+  return state;
+}
+
+template <typename KeyAt>
+void RestoreListSelection(HWND list, const StableListSelection& state,
+                          KeyAt key_at) {
+  if (!list) {
+    return;
+  }
+  if (state.selected.empty() && state.focused.empty()) {
+    return;
+  }
+  SendMessageW(list, WM_SETREDRAW, FALSE, 0);
+  ListView_SetItemState(list, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+  int focused_index = -1;
+  const int count = ListView_GetItemCount(list);
+  for (int index = 0; index < count; ++index) {
+    std::wstring key = key_at(index);
+    UINT state_mask = 0;
+    if (state.selected.find(key) != state.selected.end()) {
+      state_mask |= LVIS_SELECTED;
+    }
+    if (!state.focused.empty() && key == state.focused) {
+      state_mask |= LVIS_FOCUSED;
+      focused_index = index;
+    }
+    if (state_mask != 0) {
+      ListView_SetItemState(list, index, state_mask, state_mask);
+    }
+  }
+  SendMessageW(list, WM_SETREDRAW, TRUE, 0);
+  if (focused_index >= 0) {
+    ListView_EnsureVisible(list, focused_index, FALSE);
+  }
+  InvalidateRect(list, nullptr, TRUE);
+}
+
+} // namespace
 
 void MainWindow::Impl::SortValueList(int column, bool toggle) {
   if (column < 0 || static_cast<size_t>(column) >= browse_.columns().items.size()) {
@@ -26,6 +122,11 @@ void MainWindow::Impl::SortValueList(int column, bool toggle) {
     return;
   }
 
+  StableListSelection selection = CaptureListSelection(
+      browse_.values().hwnd(), [this](int index) {
+        const ListRow* row = browse_.values().RowAt(index);
+        return row ? ValueRowIdentity(*row) : std::wstring();
+      });
   auto& rows = browse_.values().rows();
   if (browse_.columns().sort_column == kValueColData) {
     bool needs_data = false;
@@ -43,8 +144,19 @@ void MainWindow::Impl::SortValueList(int column, bool toggle) {
       EnsureValueRowData(&row);
     }
   }
+  const bool was_updating = updating_value_list_;
+  updating_value_list_ = true;
   SortValueRows(&rows, browse_.columns().sort_column, browse_.columns().sort_ascending);
   browse_.values().RebuildFilter();
+  RestoreListSelection(browse_.values().hwnd(), selection,
+                       [this](int index) {
+                         const ListRow* row = browse_.values().RowAt(index);
+                         return row ? ValueRowIdentity(*row) : std::wstring();
+                       });
+  updating_value_list_ = was_updating;
+  if (!was_updating) {
+    UpdateStatus();
+  }
 
   HWND header = ListView_GetHeader(browse_.values().hwnd());
   if (header) {
@@ -68,8 +180,22 @@ void MainWindow::Impl::SortHistoryList(int column, bool toggle) {
     history_sort_column_ = column;
   }
 
+  auto history_key_at = [this](int index) {
+    LVITEMW item = {};
+    item.mask = LVIF_PARAM;
+    item.iItem = index;
+    if (!ListView_GetItem(history_list_, &item) || item.lParam < 0 ||
+        static_cast<size_t>(item.lParam) >= change_history_.entries().size()) {
+      return std::wstring();
+    }
+    return HistoryEntryIdentity(
+        change_history_.entries()[static_cast<size_t>(item.lParam)]);
+  };
+  StableListSelection selection =
+      CaptureListSelection(history_list_, history_key_at);
   change_history_.Sort(history_sort_column_, history_sort_ascending_);
   RebuildHistoryList();
+  RestoreListSelection(history_list_, selection, history_key_at);
 
   HWND header = ListView_GetHeader(history_list_);
   if (header) {
@@ -106,6 +232,13 @@ void MainWindow::Impl::SortSearchResults(int column, bool toggle) {
   }
   EnsureSearchTabResultsLoaded(index);
   auto& tab = search_tabs_[static_cast<size_t>(index)];
+  auto search_key_at = [&tab](int row) {
+    return row >= 0 && static_cast<size_t>(row) < tab.results.size()
+               ? SearchResultIdentity(tab.results[static_cast<size_t>(row)])
+               : std::wstring();
+  };
+  StableListSelection selection =
+      CaptureListSelection(search_results_list_, search_key_at);
   if (toggle) {
     if (tab.sort_column == column) {
       tab.sort_ascending = !tab.sort_ascending;
@@ -117,6 +250,7 @@ void MainWindow::Impl::SortSearchResults(int column, bool toggle) {
     tab.sort_column = column;
   }
   SortSearchTabResults(&tab);
+  RestoreListSelection(search_results_list_, selection, search_key_at);
   UpdateListViewSort(search_results_list_, tab.sort_column, tab.sort_ascending);
   HWND header = ListView_GetHeader(search_results_list_);
   if (header) {
@@ -164,6 +298,11 @@ void MainWindow::Impl::RebuildHistoryList() {
   }
 
   SendMessageW(history_list_, WM_SETREDRAW, TRUE, 0);
+  if (history_sort_column_ == 0 && history_sort_ascending_ &&
+      ListView_GetItemCount(history_list_) > 0) {
+    ListView_EnsureVisible(history_list_, ListView_GetItemCount(history_list_) - 1,
+                           FALSE);
+  }
   InvalidateRect(history_list_, nullptr, TRUE);
 }
 
@@ -477,9 +616,20 @@ bool MainWindow::Impl::SelectAllInFocusedList() {
   if (count <= 0) {
     return true;
   }
+  const bool value_list = focus == browse_.values().hwnd();
+  const bool was_updating = updating_value_list_;
+  if (value_list) {
+    updating_value_list_ = true;
+  }
   ListView_SetItemState(focus, -1, LVIS_SELECTED, LVIS_SELECTED);
   ListView_SetItemState(focus, 0, LVIS_FOCUSED, LVIS_FOCUSED);
   ListView_EnsureVisible(focus, 0, FALSE);
+  if (value_list) {
+    updating_value_list_ = was_updating;
+    if (!was_updating) {
+      UpdateStatus();
+    }
+  }
   return true;
 }
 
@@ -494,6 +644,11 @@ bool MainWindow::Impl::InvertSelectionInFocusedList() {
   int count = ListView_GetItemCount(focus);
   if (count <= 0) {
     return true;
+  }
+  const bool value_list = focus == browse_.values().hwnd();
+  const bool was_updating = updating_value_list_;
+  if (value_list) {
+    updating_value_list_ = true;
   }
   SendMessageW(focus, WM_SETREDRAW, FALSE, 0);
   int first_selected = -1;
@@ -515,6 +670,12 @@ bool MainWindow::Impl::InvertSelectionInFocusedList() {
   ListView_EnsureVisible(focus, first_selected, FALSE);
   SendMessageW(focus, WM_SETREDRAW, TRUE, 0);
   InvalidateRect(focus, nullptr, TRUE);
+  if (value_list) {
+    updating_value_list_ = was_updating;
+    if (!was_updating) {
+      UpdateStatus();
+    }
+  }
   return true;
 }
 

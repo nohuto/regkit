@@ -47,15 +47,44 @@ void MainWindow::Impl::AppendHistoryEntry(HistoryEntry entry) {
 }
 
 bool MainWindow::Impl::PrepareHistoryRevert(const HistoryEntry& entry, HistoryEntry* prepared) const {
-  return changes::PrepareRevert(
-      entry,
-      [this](const std::wstring& path, const std::wstring& name,
-             ValueEntry* value) {
-        RegistryNode node;
-        return ResolvePathToNode(path, &node) &&
-               RegistryStore::QueryValue(node, name, value);
-      },
-      prepared);
+  auto query_value = [this](const std::wstring& path,
+                            const std::wstring& name, ValueEntry* value) {
+    RegistryNode node;
+    return ResolvePathToNode(path, &node) &&
+           RegistryStore::QueryValue(node, name, value);
+  };
+  if (!changes::PrepareRevert(entry, query_value, prepared)) {
+    return false;
+  }
+  if (prepared->revert_kind != HistoryEntry::RevertKind::kDeleteValue) {
+    return true;
+  }
+
+  std::vector<const HistoryEntry*> later_entries;
+  later_entries.reserve(change_history_.entries().size());
+  for (const HistoryEntry& candidate : change_history_.entries()) {
+    if (candidate.timestamp > entry.timestamp &&
+        EqualsInsensitive(candidate.key_path, entry.key_path) &&
+        StartsWithInsensitive(candidate.action, L"Rename value ")) {
+      later_entries.push_back(&candidate);
+    }
+  }
+  std::stable_sort(
+      later_entries.begin(), later_entries.end(),
+      [](const HistoryEntry* left, const HistoryEntry* right) {
+        return left->timestamp < right->timestamp;
+      });
+  for (const HistoryEntry* candidate : later_entries) {
+    if (!EqualsInsensitive(candidate->old_data, prepared->value_name)) {
+      continue;
+    }
+    prepared->value_name = candidate->value_name.empty()
+                               ? candidate->new_data
+                               : candidate->value_name;
+  }
+
+  ValueEntry current;
+  return query_value(prepared->key_path, prepared->value_name, &current);
 }
 
 bool MainWindow::Impl::OpenHistoryTarget(const HistoryEntry& entry) {
@@ -701,7 +730,11 @@ void MainWindow::Impl::LoadSettings() {
     theme_mode_ = ThemeMode::kSystem;
   }
   active_theme_preset_ = std::move(settings.theme_preset);
-  icon_set_ = IsKnownIconSetName(settings.icon_set) ? std::move(settings.icon_set) : kIconSetDefault;
+  icon_set_ = IsIconSetName(settings.icon_set, kIconSetLegacyDefault)
+                  ? kIconSetDefault
+                  : (IsKnownIconSetName(settings.icon_set)
+                         ? std::move(settings.icon_set)
+                         : kIconSetDefault);
   use_custom_font_ = settings.use_custom_font;
   if (!settings.font_face.empty()) {
     wcsncpy_s(custom_font_.lfFaceName, settings.font_face.c_str(), _TRUNCATE);

@@ -109,7 +109,9 @@ inline bool IsDirectoryPath(const std::wstring& path) {
   return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
 }
 
-constexpr wchar_t kIconSetDefault[] = L"default";
+constexpr wchar_t kIconSetDefault[] = L"phosphor-regedit";
+constexpr wchar_t kIconSetPhosphor[] = L"phosphor";
+constexpr wchar_t kIconSetLegacyDefault[] = L"default";
 constexpr wchar_t kIconSetLucide[] = L"lucide";
 constexpr wchar_t kIconSetMaterialSymbols[] = L"materialsymbols";
 constexpr wchar_t kIconSetCustom[] = L"custom";
@@ -119,7 +121,11 @@ inline bool IsIconSetName(const std::wstring& value, const wchar_t* name) {
 }
 
 inline bool IsKnownIconSetName(const std::wstring& value) {
-  return IsIconSetName(value, kIconSetDefault) || IsIconSetName(value, kIconSetLucide) || IsIconSetName(value, kIconSetMaterialSymbols) || IsIconSetName(value, kIconSetCustom);
+  return IsIconSetName(value, kIconSetDefault) ||
+         IsIconSetName(value, kIconSetPhosphor) ||
+         IsIconSetName(value, kIconSetLucide) ||
+         IsIconSetName(value, kIconSetMaterialSymbols) ||
+         IsIconSetName(value, kIconSetCustom);
 }
 
 inline std::wstring FindAssetsIconsRoot() {

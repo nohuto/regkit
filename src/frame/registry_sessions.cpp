@@ -737,7 +737,7 @@ void MainWindow::Impl::NavigateToAddress() {
     }
     std::wstring message = L"The registry key \"" + path + L"\" does not exist.";
     if (read_only_) {
-      message += L"\nRead-only mode is enabled.";
+      message += L"\nRead only mode is enabled.";
       int result = ui::PromptChoice(hwnd_, message, L"Registry path not found", L"Go nearest key", L"Cancel", L"Cancel");
       if (result == IDYES) {
         if (SelectTreePath(nearest)) {
@@ -795,8 +795,8 @@ bool MainWindow::Impl::ResolveExternalJumpTarget(const std::wstring& target, std
     RegistryStore::EnumKeyStreaming(
         candidate, true, false, false, nullptr,
         [&](const ValueInfo& value, const BYTE*, DWORD) {
-          found = found || EqualsInsensitive(value.name, candidate_value);
-          return true;
+          found = EqualsInsensitive(value.name, candidate_value);
+          return !found;
         },
         {});
     return found;
@@ -847,6 +847,9 @@ bool MainWindow::Impl::ResolveExternalJumpTarget(const std::wstring& target, std
 }
 
 bool MainWindow::Impl::NavigateToExternalJump(const std::wstring& target) {
+  if (registry_mode_ != RegistryMode::kLocal && !SwitchToLocalRegistry()) {
+    return false;
+  }
   std::wstring key_path;
   std::wstring value_name;
   if (!ResolveExternalJumpTarget(target, &key_path, &value_name)) {

@@ -609,7 +609,7 @@ int MainWindow::Impl::KeyIconIndex(const RegistryNode& node, bool* is_link, bool
 }
 
 std::wstring MainWindow::Impl::ResolveIconDir(bool use_light) const {
-  if (icon_set_.empty() || IsIconSetName(icon_set_, kIconSetDefault)) {
+  if (IsIconSetName(icon_set_, kIconSetPhosphor)) {
     return L"";
   }
   if (IsIconSetName(icon_set_, kIconSetCustom)) {

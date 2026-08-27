@@ -91,7 +91,7 @@ bool MainWindow::Impl::EnsureWritable() {
   if (!read_only_) {
     return true;
   }
-  ui::ShowWarning(hwnd_, L"Read-only mode is enabled.");
+  ui::ShowWarning(hwnd_, L"Read only mode is enabled.");
   return false;
 }
 
@@ -221,7 +221,8 @@ void MainWindow::Impl::BuildMenus() {
   }
   AppendMenuW(view_menu, extra_flags, cmd::kViewExtraHives, L"Show Extra Hives");
   AppendMenuW(view_menu, MF_SEPARATOR, 0, nullptr);
-  UINT hive_flags = MF_STRING | (registry_mode_ == RegistryMode::kLocal ? 0 : MF_GRAYED);
+  UINT hive_flags = MF_STRING |
+                    (ResolveSelectedHiveFilePath().empty() ? MF_GRAYED : 0);
   append_menu(view_menu, hive_flags, cmd::kOptionsHiveFileDir, L"Open Hive File");
   AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(view_menu), L"View");
 
@@ -236,10 +237,11 @@ void MainWindow::Impl::BuildMenus() {
   AppendMenuW(options_menu, MF_POPUP, reinterpret_cast<UINT_PTR>(theme_menu), L"Theme");
   HMENU icon_menu = CreatePopupMenu();
   auto icon_flags = [&](const wchar_t* name) -> UINT { return MF_STRING | (_wcsicmp(icon_set_.c_str(), name) == 0 ? MF_CHECKED : MF_UNCHECKED); };
-  AppendMenuW(icon_menu, icon_flags(L"default"), cmd::kOptionsIconSetDefault, L"Phosphor");
-  AppendMenuW(icon_menu, icon_flags(L"lucide"), cmd::kOptionsIconSetLucide, L"Lucide");
-  AppendMenuW(icon_menu, icon_flags(L"materialsymbols"), cmd::kOptionsIconSetMaterialSymbols, L"Material Symbols");
-  AppendMenuW(icon_menu, icon_flags(L"custom"), cmd::kOptionsIconSetCustom, L"Custom");
+  AppendMenuW(icon_menu, icon_flags(kIconSetDefault), cmd::kOptionsIconSetDefault, L"Phosphor + RegEdit");
+  AppendMenuW(icon_menu, icon_flags(kIconSetPhosphor), cmd::kOptionsIconSetPhosphor, L"Phosphor");
+  AppendMenuW(icon_menu, icon_flags(kIconSetLucide), cmd::kOptionsIconSetLucide, L"Lucide");
+  AppendMenuW(icon_menu, icon_flags(kIconSetMaterialSymbols), cmd::kOptionsIconSetMaterialSymbols, L"Material Symbols");
+  AppendMenuW(icon_menu, icon_flags(kIconSetCustom), cmd::kOptionsIconSetCustom, L"Custom");
   AppendMenuW(options_menu, MF_POPUP, reinterpret_cast<UINT_PTR>(icon_menu), L"Icons");
   AppendMenuW(options_menu, MF_STRING, cmd::kViewFont, L"Font...");
   AppendMenuW(options_menu, MF_SEPARATOR, 0, nullptr);

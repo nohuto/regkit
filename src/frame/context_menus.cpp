@@ -312,7 +312,14 @@ void MainWindow::Impl::ShowHistoryContextMenu(POINT screen_pt) {
   hit.pt = client_pt;
   int index = ListView_HitTest(history_list_, &hit);
   if (index >= 0) {
-    ListView_SetItemState(history_list_, index, LVIS_SELECTED, LVIS_SELECTED);
+    if ((ListView_GetItemState(history_list_, index, LVIS_SELECTED) &
+         LVIS_SELECTED) == 0) {
+      ListView_SetItemState(history_list_, -1, 0,
+                            LVIS_SELECTED | LVIS_FOCUSED);
+    }
+    ListView_SetItemState(history_list_, index,
+                          LVIS_SELECTED | LVIS_FOCUSED,
+                          LVIS_SELECTED | LVIS_FOCUSED);
   }
   const HistoryEntry* entry = nullptr;
   if (index >= 0) {
@@ -386,7 +393,14 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
     return;
   }
 
-  ListView_SetItemState(search_results_list_, index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+  if ((ListView_GetItemState(search_results_list_, index, LVIS_SELECTED) &
+       LVIS_SELECTED) == 0) {
+    ListView_SetItemState(search_results_list_, -1, 0,
+                          LVIS_SELECTED | LVIS_FOCUSED);
+  }
+  ListView_SetItemState(search_results_list_, index,
+                        LVIS_SELECTED | LVIS_FOCUSED,
+                        LVIS_SELECTED | LVIS_FOCUSED);
   const search::Result& result = search_tabs_[static_cast<size_t>(search_index)].results[static_cast<size_t>(index)];
   std::wstring key_path = result.key_path;
   if (key_path.empty()) {

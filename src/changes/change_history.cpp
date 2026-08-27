@@ -252,10 +252,6 @@ bool PrepareRevert(const HistoryEntry& entry, const QueryValue& query_value,
   std::wstring value_name;
   ValueEntry current;
   if (suffix(L"Create value ", &value_name)) {
-    if (!query_value ||
-        !query_value(entry.key_path, value_name, &current)) {
-      return false;
-    }
     prepared->value_name = std::move(value_name);
     prepared->revert_kind = HistoryEntry::RevertKind::kDeleteValue;
     return true;

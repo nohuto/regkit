@@ -880,6 +880,14 @@ std::optional<LRESULT> MainWindow::Impl::HandleAppearanceMessage(UINT message,
     const UINT modify_state = can_modify_value ? MF_ENABLED : MF_GRAYED;
     EnableMenuItem(menu, cmd::kEditModify, MF_BYCOMMAND | modify_state);
     EnableMenuItem(menu, cmd::kEditModifyBinary, MF_BYCOMMAND | modify_state);
+    if (GetMenuState(menu, cmd::kOptionsHiveFileDir, MF_BYCOMMAND) !=
+        static_cast<UINT>(-1)) {
+      const UINT hive_state = ResolveSelectedHiveFilePath().empty()
+                                  ? MF_GRAYED
+                                  : MF_ENABLED;
+      EnableMenuItem(menu, cmd::kOptionsHiveFileDir,
+                     MF_BYCOMMAND | hive_state);
+    }
     return 0;
   }
   case WM_CTLCOLOREDIT: {

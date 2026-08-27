@@ -15,6 +15,8 @@
 
 #include "frame/main_window.h"
 #include "regfile/registry_transfer.h"
+#include "registry/registry_path.h"
+#include "registry/registry_store.h"
 #include "appearance/theme.h"
 #include "appearance/presets.h"
 #include "appearance/feedback.h"
@@ -115,52 +117,20 @@ std::vector<std::wstring> RegFilesFromArgs(const std::vector<std::wstring>& args
 }
 
 bool LooksLikeRegistryPath(const std::wstring& arg) {
-  if (arg.empty()) {
-    return false;
-  }
-  auto starts_with = [&](const wchar_t* prefix) {
-    return _wcsnicmp(arg.c_str(), prefix, wcslen(prefix)) == 0;
-  };
-  return starts_with(L"Computer\\") || starts_with(L"Registry::") || starts_with(L"REGISTRY\\") || starts_with(L"HKCR\\") || starts_with(L"HKCU\\") || starts_with(L"HKLM\\") || starts_with(L"HKU\\") || starts_with(L"HKCC\\") || starts_with(L"HKEY_CLASSES_ROOT\\") || starts_with(L"HKEY_CURRENT_USER\\") || starts_with(L"HKEY_LOCAL_MACHINE\\") || starts_with(L"HKEY_USERS\\") || starts_with(L"HKEY_CURRENT_CONFIG\\");
+  regkit::RegistryNode node;
+  return regkit::registry_path::ParseRoot(arg, &node);
 }
 
-bool IsRecentFileTime(const FILETIME& timestamp, ULONGLONG max_age_ms) {
-  if ((timestamp.dwLowDateTime == 0 && timestamp.dwHighDateTime == 0) || max_age_ms == 0) {
-    return false;
-  }
-  FILETIME now = {};
-  GetSystemTimeAsFileTime(&now);
-  ULARGE_INTEGER now_value = {};
-  now_value.LowPart = now.dwLowDateTime;
-  now_value.HighPart = now.dwHighDateTime;
-  ULARGE_INTEGER stamp_value = {};
-  stamp_value.LowPart = timestamp.dwLowDateTime;
-  stamp_value.HighPart = timestamp.dwHighDateTime;
-  if (now_value.QuadPart < stamp_value.QuadPart) {
-    return false;
-  }
-  const ULONGLONG elapsed_100ns = now_value.QuadPart - stamp_value.QuadPart;
-  const ULONGLONG max_age_100ns = max_age_ms * 10000ULL;
-  return elapsed_100ns <= max_age_100ns;
-}
-
-bool ReadRegeditLastKey(std::wstring* out, FILETIME* last_write_time = nullptr) {
+bool ReadRegeditLastKey(std::wstring* out) {
   if (!out) {
     return false;
   }
   out->clear();
-  if (last_write_time) {
-    *last_write_time = {};
-  }
 
   HKEY key = nullptr;
   LONG result = RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Applets\\Regedit", 0, KEY_QUERY_VALUE, &key);
   if (result != ERROR_SUCCESS) {
     return false;
-  }
-
-  if (last_write_time) {
-    RegQueryInfoKeyW(key, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, last_write_time);
   }
 
   DWORD type = 0;
@@ -219,7 +189,7 @@ bool ResolveExternalJumpTarget(const std::vector<std::wstring>& args, std::wstri
       intercepted_regedit = true;
       continue;
     }
-    if (!intercepted_regedit || arg.empty()) {
+    if (arg.empty()) {
       continue;
     }
     if (arg[0] == L'-' || arg[0] == L'/') {
@@ -241,11 +211,7 @@ bool ResolveExternalJumpTarget(const std::vector<std::wstring>& args, std::wstri
   if (!intercepted_regedit) {
     return false;
   }
-  FILETIME last_write = {};
-  if (!ReadRegeditLastKey(out, &last_write)) {
-    return false;
-  }
-  return IsRecentFileTime(last_write, 5000);
+  return ReadRegeditLastKey(out);
 }
 
 BOOL CALLBACK FindRegKitWindowProc(HWND hwnd, LPARAM lparam) {

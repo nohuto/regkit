@@ -26,6 +26,7 @@ bool MainWindow::Impl::HandleWorkspaceAppearanceCommand(int command_id) {
   case cmd::kOptionsThemeCustom:
   case cmd::kOptionsThemePresets:
   case cmd::kOptionsIconSetDefault:
+  case cmd::kOptionsIconSetPhosphor:
   case cmd::kOptionsIconSetLucide:
   case cmd::kOptionsIconSetMaterialSymbols:
   case cmd::kOptionsIconSetCustom:
@@ -49,6 +50,7 @@ bool MainWindow::Impl::HandleWorkspaceAppearanceCommand(int command_id) {
   case cmd::kFavoritesImport:
   case cmd::kFavoritesImportRegedit:
   case cmd::kFavoritesExport:
+    return HandleFavoritesCommand(command_id);
   default:
     return false;
   }
@@ -96,25 +98,31 @@ bool MainWindow::Impl::HandleWindowAppearanceCommand(int command_id) {
     ShowThemePresetsDialog();
     return true;
   case cmd::kOptionsIconSetDefault:
-    icon_set_ = L"default";
+    icon_set_ = kIconSetDefault;
+    ReloadThemeIcons();
+    SaveSettings();
+    BuildMenus();
+    return true;
+  case cmd::kOptionsIconSetPhosphor:
+    icon_set_ = kIconSetPhosphor;
     ReloadThemeIcons();
     SaveSettings();
     BuildMenus();
     return true;
   case cmd::kOptionsIconSetLucide:
-    icon_set_ = L"lucide";
+    icon_set_ = kIconSetLucide;
     ReloadThemeIcons();
     SaveSettings();
     BuildMenus();
     return true;
   case cmd::kOptionsIconSetMaterialSymbols:
-    icon_set_ = L"materialsymbols";
+    icon_set_ = kIconSetMaterialSymbols;
     ReloadThemeIcons();
     SaveSettings();
     BuildMenus();
     return true;
   case cmd::kOptionsIconSetCustom:
-    icon_set_ = L"custom";
+    icon_set_ = kIconSetCustom;
     ReloadThemeIcons();
     SaveSettings();
     BuildMenus();
@@ -190,7 +198,7 @@ bool MainWindow::Impl::HandleLaunchHelpCommand(int command_id) {
     ui::ShowAbout(hwnd_);
     return true;
   case cmd::kHelpContents:
-    ShellExecuteW(hwnd_, L"open", kRepoUrl, nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteW(hwnd_, L"open", kHelpUrl, nullptr, nullptr, SW_SHOWNORMAL);
     return true;
   default:
     return false;

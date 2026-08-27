@@ -81,6 +81,9 @@ void MainWindow::Impl::CreateRegeditCompatControls() {
   regedit_compat_edit_ = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"", base_style | ES_AUTOHSCROLL, -2000, -2000, 8, 8, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kRegeditCompatEditId)), instance_, nullptr);
   regedit_compat_tree_ = CreateWindowExW(WS_EX_CLIENTEDGE, WC_TREEVIEWW, L"", base_style | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS, -2000, -2000, 8, 8, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kRegeditCompatTreeId)), instance_, nullptr);
   regedit_compat_list_ = CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEWW, L"", base_style | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SINGLESEL, -2000, -2000, 8, 8, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kRegeditCompatListId)), instance_, nullptr);
+  SetWindowPos(regedit_compat_edit_, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+  SetWindowPos(regedit_compat_tree_, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+  SetWindowPos(regedit_compat_list_, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
   if (regedit_compat_edit_) {
     SetWindowSubclass(regedit_compat_edit_, AddressEditProc, kAddressSubclassId, reinterpret_cast<DWORD_PTR>(this));
   }
@@ -148,9 +151,10 @@ void MainWindow::Impl::PopulateRegeditCompatTree() {
     add_node(computer, hive, hive, true);
   }
   TreeView_Expand(regedit_compat_tree_, computer, TVE_EXPAND);
+  TreeView_SelectItem(regedit_compat_tree_, computer);
   regedit_compat_selected_key_path_.clear();
   if (regedit_compat_edit_) {
-    SetWindowTextW(regedit_compat_edit_, L"");
+    SetWindowTextW(regedit_compat_edit_, L"Computer");
   }
 }
 
@@ -428,6 +432,9 @@ void MainWindow::Impl::ApplyPendingRegeditCompatNavigation() {
   if (key_path.empty()) {
     return;
   }
+  if (registry_mode_ != RegistryMode::kLocal && !SwitchToLocalRegistry()) {
+    return;
+  }
   std::wstring resolved_key_path;
   std::wstring resolved_value_name;
   if (!ResolveExternalJumpTarget(key_path, &resolved_key_path, &resolved_value_name)) {
@@ -664,11 +671,12 @@ LRESULT CALLBACK MainWindow::Impl::AddressEditProc(HWND hwnd, UINT message, WPAR
   if (message == WM_KEYDOWN && wparam == VK_RETURN) {
     if (self && self->hwnd_) {
       if (hwnd == self->regedit_compat_edit_) {
-        wchar_t buffer[2048] = {};
-        GetWindowTextW(hwnd, buffer, static_cast<int>(_countof(buffer)));
-        self->regedit_compat_selected_key_path_ = buffer;
+        std::wstring text(static_cast<size_t>(GetWindowTextLengthW(hwnd)) + 1, L'\0');
+        int length = GetWindowTextW(hwnd, text.data(), static_cast<int>(text.size()));
+        text.resize(static_cast<size_t>(std::max(length, 0)));
+        self->regedit_compat_selected_key_path_ = text;
         self->regedit_compat_pending_value_name_.clear();
-        self->regedit_compat_pending_key_path_ = buffer;
+        self->regedit_compat_pending_key_path_ = std::move(text);
         KillTimer(self->hwnd_, kRegeditCompatApplyTimerId);
         self->ApplyPendingRegeditCompatNavigation();
       } else {
@@ -830,16 +838,10 @@ LRESULT CALLBACK MainWindow::Impl::ListViewProc(HWND hwnd, UINT message, WPARAM 
   }
   if (message == WM_SETFOCUS || message == WM_KILLFOCUS) {
     SendMessageW(hwnd, WM_CHANGEUISTATE, MAKEWPARAM(UIS_SET, UISF_HIDEFOCUS), 0);
-    if (self && hwnd == self->history_list_) {
-      ListView_SetItemState(hwnd, -1, 0, LVIS_FOCUSED);
-    }
   }
   if (message == WM_UPDATEUISTATE) {
     LRESULT result = DefSubclassProc(hwnd, message, wparam, lparam);
     SendMessageW(hwnd, WM_CHANGEUISTATE, MAKEWPARAM(UIS_SET, UISF_HIDEFOCUS), 0);
-    if (self && hwnd == self->history_list_) {
-      ListView_SetItemState(hwnd, -1, 0, LVIS_FOCUSED);
-    }
     return result;
   }
   if (message == WM_ERASEBKGND) {
