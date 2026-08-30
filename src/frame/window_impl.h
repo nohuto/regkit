@@ -340,6 +340,10 @@ private:
   bool OpenHistoryTarget(const HistoryEntry& entry);
   bool RevertHistoryEntry(const HistoryEntry& entry);
   bool EnsureSearchResultDataLoaded(search::Result* result);
+  void CreateCellTooltip();
+  void UpdateCellTooltip(POINT client_pt);
+  void HideCellTooltip();
+  void ShowAddressContextMenu(HWND edit, POINT screen_pt);
   void ShowTreeContextMenu(POINT screen_pt);
   void ShowValueContextMenu(POINT screen_pt);
   void ShowHistoryContextMenu(POINT screen_pt);
@@ -481,6 +485,10 @@ private:
   HWND history_list_ = nullptr;
   HWND status_bar_ = nullptr;
   HWND search_progress_ = nullptr;
+  HWND cell_tooltip_ = nullptr;
+  int cell_tooltip_item_ = -1;
+  int cell_tooltip_column_ = -1;
+  std::wstring cell_tooltip_text_;
   browse::Pane browse_;
   HIMAGELIST tree_images_ = nullptr;
   HIMAGELIST list_images_ = nullptr;

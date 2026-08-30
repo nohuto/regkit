@@ -191,7 +191,7 @@ LRESULT CALLBACK AutoCompletePopupSubclassProc(HWND hwnd, UINT msg, WPARAM wpara
           return CDRF_DODEFAULT;
         }
         COLORREF text = theme.TextColor();
-        COLORREF background = theme.SurfaceColor();
+        COLORREF background = theme.FieldColor();
         if (draw->nmcd.uItemState & CDIS_HOT) {
           background = theme.HoverColor();
         }
@@ -209,7 +209,7 @@ LRESULT CALLBACK AutoCompletePopupSubclassProc(HWND hwnd, UINT msg, WPARAM wpara
     HDC hdc = reinterpret_cast<HDC>(wparam);
     RECT rect = {};
     GetClientRect(hwnd, &rect);
-    FillRect(hdc, &rect, Theme::Current().SurfaceBrush());
+    FillRect(hdc, &rect, Theme::Current().FieldBrush());
     return TRUE;
   }
   case WM_CTLCOLORLISTBOX:

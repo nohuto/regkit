@@ -401,9 +401,7 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
         text = row->extra.c_str();
         break;
       }
-      if (disp->item.pszText && disp->item.cchTextMax > 0) {
-        wcsncpy_s(disp->item.pszText, disp->item.cchTextMax, text, _TRUNCATE);
-      }
+      disp->item.pszText = const_cast<wchar_t*>(text);
     }
     if (disp->item.mask & LVIF_IMAGE) {
       disp->item.iImage = row->image_index;
@@ -648,9 +646,7 @@ LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam)
           break;
         }
       }
-      if (disp->item.pszText && disp->item.cchTextMax > 0) {
-        wcsncpy_s(disp->item.pszText, disp->item.cchTextMax, text, _TRUNCATE);
-      }
+      disp->item.pszText = const_cast<wchar_t*>(text);
     }
     if (disp->item.mask & LVIF_IMAGE) {
       if (result->is_key) {
@@ -791,6 +787,7 @@ bool MainWindow::Impl::OnCreate() {
   browse_.tree().SetIconResolver([this](const RegistryNode& node) { return KeyIconIndex(node, nullptr, nullptr); });
   browse_.tree().SetVirtualChildProvider([this](const RegistryNode& node, const std::unordered_set<std::wstring>& existing_lower, std::vector<std::wstring>* out) { AppendTraceChildren(node, existing_lower, out); });
   search_results_list_ = CreateWindowExW(0, WC_LISTVIEWW, L"", WS_CHILD | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kSearchResultsListId)), instance_, nullptr);
+  CreateCellTooltip();
   LoadTabs();
 
   history_label_ = CreateWindowExW(0, L"STATIC", L"History", WS_CHILD | WS_VISIBLE | SS_LEFT | SS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kHistoryLabelId)), instance_, nullptr);

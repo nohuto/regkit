@@ -11,4 +11,6 @@ namespace regkit::win32 {
 
 UINT DpiForWindow(HWND window);
 
+void ClampToWorkArea(RECT* rect);
+
 } // namespace regkit::win32

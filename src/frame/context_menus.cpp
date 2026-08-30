@@ -46,6 +46,79 @@ void MainWindow::Impl::UpdateNavigationButtons() {
                available.up ? TBSTATE_ENABLED : 0);
 }
 
+void MainWindow::Impl::ShowAddressContextMenu(HWND edit, POINT screen_pt) {
+  if (!edit) {
+    return;
+  }
+  enum AddressCommand {
+    kAddressUndo = 1,
+    kAddressCut,
+    kAddressCopy,
+    kAddressPaste,
+    kAddressPasteGo,
+    kAddressDelete,
+    kAddressSelectAll,
+  };
+
+  DWORD selection_start = 0;
+  DWORD selection_end = 0;
+  SendMessageW(edit, EM_GETSEL, reinterpret_cast<WPARAM>(&selection_start), reinterpret_cast<LPARAM>(&selection_end));
+  const bool has_selection = selection_end > selection_start;
+  const bool writable = (GetWindowLongPtrW(edit, GWL_STYLE) & ES_READONLY) == 0;
+  const bool can_undo = SendMessageW(edit, EM_CANUNDO, 0, 0) != 0;
+  const bool has_text = GetWindowTextLengthW(edit) > 0;
+  const bool has_clipboard_text = IsClipboardFormatAvailable(CF_UNICODETEXT) != FALSE;
+
+  HMENU menu = CreatePopupMenu();
+  auto append = [&](bool enabled, int command, const wchar_t* text, const wchar_t* shortcut) {
+    std::wstring label = text;
+    label.push_back(L'\t');
+    label.append(shortcut);
+    AppendMenuW(menu, MF_STRING | (enabled ? MF_ENABLED : MF_GRAYED), static_cast<UINT_PTR>(command), label.c_str());
+  };
+
+  append(can_undo && writable, kAddressUndo, L"Undo", L"Ctrl+Z");
+  AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+  append(has_selection && writable, kAddressCut, L"Cut", L"Ctrl+X");
+  append(has_selection, kAddressCopy, L"Copy", L"Ctrl+C");
+  append(has_clipboard_text && writable, kAddressPaste, L"Paste", L"Ctrl+V");
+  append(has_clipboard_text && writable, kAddressPasteGo, L"Paste and Go", L"Ctrl+Shift+V");
+  append(has_selection && writable, kAddressDelete, L"Delete", L"Del");
+  AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+  append(has_text, kAddressSelectAll, L"Select All", L"Ctrl+A");
+
+  const int command = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON, screen_pt.x, screen_pt.y, 0, hwnd_, nullptr);
+  DestroyMenu(menu);
+
+  switch (command) {
+  case kAddressUndo:
+    SendMessageW(edit, WM_UNDO, 0, 0);
+    break;
+  case kAddressCut:
+    SendMessageW(edit, WM_CUT, 0, 0);
+    break;
+  case kAddressCopy:
+    SendMessageW(edit, WM_COPY, 0, 0);
+    break;
+  case kAddressPaste:
+    SendMessageW(edit, WM_PASTE, 0, 0);
+    break;
+  case kAddressPasteGo:
+    SendMessageW(edit, EM_SETSEL, 0, -1);
+    SendMessageW(edit, WM_PASTE, 0, 0);
+    SendMessageW(edit, WM_KEYDOWN, VK_RETURN, 0);
+    break;
+  case kAddressDelete:
+    SendMessageW(edit, WM_CLEAR, 0, 0);
+    break;
+  case kAddressSelectAll:
+    SendMessageW(edit, EM_SETSEL, 0, -1);
+    break;
+  default:
+    break;
+  }
+}
+
 void MainWindow::Impl::ShowTreeContextMenu(POINT screen_pt) {
   if (!browse_.tree().hwnd()) {
     return;

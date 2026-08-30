@@ -143,14 +143,24 @@ void MainWindow::Impl::ApplySavedWindowPlacement() {
   if (!window_placement_loaded_ || !hwnd_) {
     return;
   }
-  const int min_width = 640;
-  const int min_height = 480;
-  int width = std::max(window_width_, min_width);
-  int height = std::max(window_height_, min_height);
   if (window_width_ <= 0 || window_height_ <= 0) {
     return;
   }
-  SetWindowPos(hwnd_, nullptr, window_x_, window_y_, width, height, SWP_NOZORDER | SWP_NOACTIVATE);
+  const int min_width = 640;
+  const int min_height = 480;
+  const int width = std::max(window_width_, min_width);
+  const int height = std::max(window_height_, min_height);
+
+  RECT work = {};
+  if (!SystemParametersInfoW(SPI_GETWORKAREA, 0, &work, 0)) {
+    work = {};
+  }
+  RECT target = {window_x_ + work.left, window_y_ + work.top,
+                 window_x_ + work.left + width, window_y_ + work.top + height};
+  win32::ClampToWorkArea(&target);
+  SetWindowPos(hwnd_, nullptr, target.left, target.top,
+               target.right - target.left, target.bottom - target.top,
+               SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
 bool MainWindow::Impl::ExpandTreePath(const std::wstring& path) {

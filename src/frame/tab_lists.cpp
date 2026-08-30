@@ -434,6 +434,15 @@ void MainWindow::Impl::CloseTab(int tab_index) {
     CloseSearchTab(tab_index);
     return;
   }
+  const int registry_tab_count =
+      static_cast<int>(std::count_if(tabs_.begin(), tabs_.end(), [](const TabEntry& entry) {
+        return entry.kind == TabEntry::Kind::kRegistry;
+      }));
+  if (registry_tab_count <= 1 &&
+      static_cast<size_t>(tab_index) < tabs_.size() &&
+      tabs_[static_cast<size_t>(tab_index)].kind == TabEntry::Kind::kRegistry) {
+    return;
+  }
   if (!ConfirmCloseTab(tab_index)) {
     return;
   }

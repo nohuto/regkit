@@ -20,7 +20,7 @@ namespace {
 constexpr wchar_t kThemePresetClass[] = L"RegKitThemePresetsWindow";
 constexpr wchar_t kThemePresetTitle[] = L"Theme Presets";
 
-constexpr int kWindowWidth = 560;
+constexpr int kWindowWidth = 580;
 constexpr int kWindowHeight = 360;
 constexpr int kPadding = 12;
 constexpr int kGap = 8;
@@ -29,6 +29,8 @@ constexpr int kBottomButtonHeight = 24;
 constexpr int kLeftPanelWidth = 190;
 constexpr int kGroupBoxCaptionHeight = 18;
 constexpr int kGroupBoxPadding = 10;
+constexpr int kEditColorButtonWidth = 125;
+constexpr int kTemplateButtonWidth = 135;
 constexpr UINT_PTR kThemePresetHeaderSubclassId = 1;
 constexpr UINT_PTR kThemePresetListViewSubclassId = 2;
 
@@ -57,6 +59,7 @@ constexpr ColorField kColorFields[] = {
     {L"Background", &ThemeColors::background},
     {L"Panel", &ThemeColors::panel},
     {L"Surface", &ThemeColors::surface},
+    {L"Field", &ThemeColors::field},
     {L"Header", &ThemeColors::header},
     {L"Border", &ThemeColors::border},
     {L"Text", &ThemeColors::text},
@@ -719,7 +722,7 @@ void LayoutControls(ThemePresetWindowState* state) {
   }
 
   int edit_row_y = color_list_y + color_list_h + kGap;
-  int edit_btn_w = 90;
+  int edit_btn_w = kEditColorButtonWidth;
   if (state->edit_color_btn) {
     SetWindowPos(state->edit_color_btn, nullptr, colors_inner_x, edit_row_y, edit_btn_w, edit_row_h, SWP_NOZORDER);
   }
@@ -736,7 +739,7 @@ void LayoutControls(ThemePresetWindowState* state) {
   int templates_inner_w = right_w - kGroupBoxPadding * 2;
   int template_row_h = kButtonHeight;
   int template_row_y = templates_inner_y;
-  int template_btn_w = 110;
+  int template_btn_w = kTemplateButtonWidth;
   int combo_w = std::max(120, templates_inner_w - template_btn_w - kGap);
   if (state->template_combo) {
     SetWindowPos(state->template_combo, nullptr, templates_inner_x, template_row_y, combo_w, template_row_h, SWP_NOZORDER);

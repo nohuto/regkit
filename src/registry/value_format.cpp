@@ -143,7 +143,7 @@ std::wstring Data(DWORD type, const BYTE* data, DWORD size) {
   default:
     break;
   }
-  return util::ToHex(data, size, 32);
+  return util::ToHex(data, size, 0);
 }
 
 std::wstring DisplayData(DWORD type, const BYTE* data, DWORD size) {

@@ -273,6 +273,54 @@ inline int CompareUint64(uint64_t left, uint64_t right) {
   return 0;
 }
 
+constexpr int kCellTooltipMaxWidth = 900;
+constexpr int kCellTooltipPadding = 8;
+constexpr size_t kCellTooltipMeasureLimit = 512;
+
+inline const std::wstring& ValueRowFieldText(const ListRow& row, int subitem) {
+  switch (subitem) {
+  case kValueColName:
+    return row.name;
+  case kValueColType:
+    return row.type;
+  case kValueColData:
+    return row.data;
+  case kValueColDefault:
+    return row.default_data;
+  case kValueColReadOnBoot:
+    return row.read_on_boot;
+  case kValueColSize:
+    return row.size;
+  case kValueColDate:
+    return row.date;
+  case kValueColDetails:
+    return row.details;
+  case kValueColComment:
+    return row.comment;
+  default:
+    return row.name;
+  }
+}
+
+inline bool CellTextIsClipped(HWND list, const std::wstring& text, int available) {
+  if (text.size() > kCellTooltipMeasureLimit) {
+    return true;
+  }
+  HDC dc = GetDC(list);
+  if (!dc) {
+    return false;
+  }
+  HFONT font = reinterpret_cast<HFONT>(SendMessageW(list, WM_GETFONT, 0, 0));
+  HGDIOBJ old_font = font ? SelectObject(dc, font) : nullptr;
+  SIZE size = {};
+  GetTextExtentPoint32W(dc, text.c_str(), static_cast<int>(text.size()), &size);
+  if (old_font) {
+    SelectObject(dc, old_font);
+  }
+  ReleaseDC(list, dc);
+  return size.cx > available;
+}
+
 inline int CompareValueRow(const ListRow& left, const ListRow& right, int column) {
   if (left.kind != right.kind) {
     return (left.kind == rowkind::kKey) ? -1 : 1;

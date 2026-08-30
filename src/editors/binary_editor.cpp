@@ -5,6 +5,7 @@
 
 #include "appearance/feedback.h"
 #include "editors/binary_text.h"
+#include "appearance/dialog_layout.h"
 #include "editors/dialog_support.h"
 #include "registry/value_format.h"
 
@@ -25,6 +26,7 @@ struct State {
   bool accepted = false;
   HFONT ui_font = nullptr;
   HFONT mono_font = nullptr;
+  appearance::DialogResizer resizer;
 };
 
 void SelectGroup(HWND dialog, int selected) {
@@ -104,6 +106,26 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam,
       SendDlgItemMessageW(dialog, IDC_BINARY_PREVIEW, WM_SETFONT,
                           reinterpret_cast<WPARAM>(state->mono_font), TRUE);
     }
+    using namespace appearance;
+    state->resizer.Attach(dialog, {
+        {IDC_VALUE_NAME, kAnchorLeft | kAnchorTop | kAnchorRight},
+        {IDC_VALUE_BYTES_LABEL, kAnchorTop | kAnchorRight},
+        {IDC_VALUE_BYTES, kAnchorTop | kAnchorRight},
+        {IDC_LABEL, kAnchorLeft | kAnchorTop | kAnchorRight},
+        {IDC_EDIT, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+        {IDC_NOTE, kAnchorLeft | kAnchorRight | kAnchorBottom},
+        {IDC_BINARY_PREVIEW, kAnchorLeft | kAnchorRight | kAnchorBottom},
+        {IDC_FORMAT_GROUP, kAnchorLeft | kAnchorBottom},
+        {IDC_FORMAT_BYTE, kAnchorLeft | kAnchorBottom},
+        {IDC_FORMAT_WORD, kAnchorLeft | kAnchorBottom},
+        {IDC_FORMAT_DWORD, kAnchorLeft | kAnchorBottom},
+        {IDC_FORMAT_QWORD, kAnchorLeft | kAnchorBottom},
+        {IDC_TEXT_GROUP, kAnchorRight | kAnchorBottom},
+        {IDC_TEXT_ANSI, kAnchorRight | kAnchorBottom},
+        {IDC_TEXT_UNICODE, kAnchorRight | kAnchorBottom},
+        {IDOK, kAnchorRight | kAnchorBottom},
+        {IDCANCEL, kAnchorRight | kAnchorBottom},
+    });
     UpdatePreview(dialog, state);
     return TRUE;
   }
@@ -112,6 +134,14 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam,
       dialog_support::ReleaseFont(&state->mono_font);
       dialog_support::ReleaseFont(&state->ui_font);
     }
+    return TRUE;
+  }
+  if (message == WM_SIZE && state) {
+    state->resizer.Apply(dialog);
+    return TRUE;
+  }
+  if (message == WM_GETMINMAXINFO && state) {
+    state->resizer.ClampMinSize(reinterpret_cast<MINMAXINFO*>(lparam));
     return TRUE;
   }
   INT_PTR themed = 0;

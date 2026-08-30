@@ -893,8 +893,8 @@ std::optional<LRESULT> MainWindow::Impl::HandleAppearanceMessage(UINT message,
   case WM_CTLCOLOREDIT: {
     HDC hdc = reinterpret_cast<HDC>(wparam);
     SetTextColor(hdc, Theme::Current().TextColor());
-    SetBkColor(hdc, Theme::Current().SurfaceColor());
-    return reinterpret_cast<LRESULT>(Theme::Current().SurfaceBrush());
+    SetBkColor(hdc, Theme::Current().FieldColor());
+    return reinterpret_cast<LRESULT>(Theme::Current().FieldBrush());
   }
   case WM_DRAWITEM: {
     auto* draw = reinterpret_cast<DRAWITEMSTRUCT*>(lparam);

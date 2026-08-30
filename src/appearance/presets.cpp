@@ -42,6 +42,7 @@ ThemeColors DarkDefaults() {
   colors.background = RGB(20, 20, 20);
   colors.panel = RGB(20, 20, 20);
   colors.surface = RGB(34, 34, 34);
+  colors.field = RGB(14, 14, 14);
   colors.header = colors.surface;
   colors.border = RGB(66, 66, 66);
   colors.text = RGB(200, 200, 200);
@@ -59,6 +60,7 @@ ThemeColors LightDefaults() {
   colors.background = RGB(245, 245, 245);
   colors.panel = RGB(255, 255, 255);
   colors.surface = RGB(242, 242, 242);
+  colors.field = RGB(235, 235, 235);
   colors.header = colors.surface;
   colors.border = RGB(204, 204, 204);
   colors.text = RGB(32, 32, 32);
@@ -76,6 +78,7 @@ ThemeColors SolarizedDark() {
   colors.background = RGB(0, 43, 54);
   colors.panel = RGB(7, 54, 66);
   colors.surface = RGB(10, 60, 71);
+  colors.field = RGB(0, 37, 48);
   colors.header = colors.surface;
   colors.border = RGB(15, 59, 70);
   colors.text = RGB(147, 161, 161);
@@ -93,6 +96,7 @@ ThemeColors SolarizedLight() {
   colors.background = RGB(253, 246, 227);
   colors.panel = RGB(238, 232, 213);
   colors.surface = RGB(228, 221, 200);
+  colors.field = RGB(243, 236, 217);
   colors.header = colors.surface;
   colors.border = RGB(214, 207, 181);
   colors.text = RGB(88, 110, 117);
@@ -110,6 +114,7 @@ ThemeColors NordDark() {
   colors.background = RGB(46, 52, 64);
   colors.panel = RGB(59, 66, 82);
   colors.surface = RGB(67, 76, 94);
+  colors.field = RGB(40, 46, 58);
   colors.header = colors.surface;
   colors.border = RGB(76, 86, 106);
   colors.text = RGB(229, 233, 240);
@@ -127,6 +132,7 @@ ThemeColors Dracula() {
   colors.background = RGB(40, 42, 54);
   colors.panel = RGB(52, 55, 70);
   colors.surface = RGB(59, 63, 82);
+  colors.field = RGB(34, 36, 48);
   colors.header = colors.surface;
   colors.border = RGB(68, 71, 90);
   colors.text = RGB(248, 248, 242);
@@ -144,6 +150,7 @@ ThemeColors GruvboxDark() {
   colors.background = RGB(40, 40, 40);
   colors.panel = RGB(50, 48, 47);
   colors.surface = RGB(60, 56, 54);
+  colors.field = RGB(34, 34, 34);
   colors.header = colors.surface;
   colors.border = RGB(80, 73, 69);
   colors.text = RGB(235, 219, 178);
@@ -161,6 +168,7 @@ ThemeColors GruvboxLight() {
   colors.background = RGB(251, 241, 199);
   colors.panel = RGB(242, 229, 188);
   colors.surface = RGB(235, 219, 178);
+  colors.field = RGB(241, 231, 189);
   colors.header = colors.surface;
   colors.border = RGB(213, 196, 161);
   colors.text = RGB(60, 56, 54);
@@ -178,6 +186,7 @@ ThemeColors CatppuccinMocha() {
   colors.background = RGB(30, 30, 46);
   colors.panel = RGB(42, 43, 60);
   colors.surface = RGB(49, 50, 68);
+  colors.field = RGB(24, 24, 40);
   colors.header = colors.surface;
   colors.border = RGB(69, 71, 90);
   colors.text = RGB(205, 214, 244);
@@ -195,6 +204,7 @@ ThemeColors CatppuccinMacchiato() {
   colors.background = RGB(36, 39, 58);
   colors.panel = RGB(48, 52, 70);
   colors.surface = RGB(54, 58, 79);
+  colors.field = RGB(30, 33, 52);
   colors.header = colors.surface;
   colors.border = RGB(73, 77, 100);
   colors.text = RGB(202, 211, 245);
@@ -212,6 +222,7 @@ ThemeColors CatppuccinFrappe() {
   colors.background = RGB(48, 52, 70);
   colors.panel = RGB(65, 69, 89);
   colors.surface = RGB(81, 87, 109);
+  colors.field = RGB(42, 46, 64);
   colors.header = colors.surface;
   colors.border = RGB(98, 104, 128);
   colors.text = RGB(198, 208, 245);
@@ -229,6 +240,7 @@ ThemeColors CatppuccinLatte() {
   colors.background = RGB(239, 241, 245);
   colors.panel = RGB(230, 233, 239);
   colors.surface = RGB(220, 224, 232);
+  colors.field = RGB(229, 231, 235);
   colors.header = colors.surface;
   colors.border = RGB(204, 208, 218);
   colors.text = RGB(76, 79, 105);
@@ -246,6 +258,7 @@ ThemeColors TokyoNight() {
   colors.background = RGB(26, 27, 38);
   colors.panel = RGB(36, 40, 59);
   colors.surface = RGB(47, 51, 77);
+  colors.field = RGB(20, 21, 32);
   colors.header = colors.surface;
   colors.border = RGB(65, 72, 104);
   colors.text = RGB(192, 202, 245);
@@ -263,6 +276,7 @@ ThemeColors OneDark() {
   colors.background = RGB(40, 44, 52);
   colors.panel = RGB(47, 52, 63);
   colors.surface = RGB(59, 64, 74);
+  colors.field = RGB(34, 38, 46);
   colors.header = colors.surface;
   colors.border = RGB(62, 68, 81);
   colors.text = RGB(171, 178, 191);
@@ -280,6 +294,7 @@ ThemeColors OneLight() {
   colors.background = RGB(250, 250, 250);
   colors.panel = RGB(242, 242, 242);
   colors.surface = RGB(231, 231, 231);
+  colors.field = RGB(240, 240, 240);
   colors.header = colors.surface;
   colors.border = RGB(208, 208, 208);
   colors.text = RGB(56, 58, 66);
@@ -297,6 +312,7 @@ ThemeColors Monokai() {
   colors.background = RGB(39, 40, 34);
   colors.panel = RGB(45, 46, 39);
   colors.surface = RGB(58, 59, 51);
+  colors.field = RGB(33, 34, 28);
   colors.header = colors.surface;
   colors.border = RGB(62, 61, 50);
   colors.text = RGB(248, 248, 242);
@@ -314,6 +330,7 @@ ThemeColors AyuDark() {
   colors.background = RGB(15, 20, 25);
   colors.panel = RGB(21, 26, 33);
   colors.surface = RGB(27, 34, 43);
+  colors.field = RGB(9, 14, 19);
   colors.header = colors.surface;
   colors.border = RGB(37, 51, 64);
   colors.text = RGB(230, 225, 207);
@@ -331,6 +348,7 @@ ThemeColors AyuLight() {
   colors.background = RGB(250, 250, 250);
   colors.panel = RGB(243, 243, 243);
   colors.surface = RGB(232, 232, 232);
+  colors.field = RGB(240, 240, 240);
   colors.header = colors.surface;
   colors.border = RGB(214, 214, 214);
   colors.text = RGB(92, 103, 115);
@@ -348,6 +366,7 @@ ThemeColors EverforestDark() {
   colors.background = RGB(43, 51, 57);
   colors.panel = RGB(52, 63, 68);
   colors.surface = RGB(60, 71, 77);
+  colors.field = RGB(37, 45, 51);
   colors.header = colors.surface;
   colors.border = RGB(61, 72, 77);
   colors.text = RGB(211, 198, 170);
@@ -365,6 +384,7 @@ ThemeColors EverforestLight() {
   colors.background = RGB(243, 234, 211);
   colors.panel = RGB(232, 223, 198);
   colors.surface = RGB(223, 212, 181);
+  colors.field = RGB(233, 224, 201);
   colors.header = colors.surface;
   colors.border = RGB(211, 198, 170);
   colors.text = RGB(92, 106, 114);
@@ -382,6 +402,7 @@ ThemeColors Material() {
   colors.background = RGB(38, 50, 56);
   colors.panel = RGB(47, 59, 67);
   colors.surface = RGB(54, 69, 79);
+  colors.field = RGB(32, 44, 50);
   colors.header = colors.surface;
   colors.border = RGB(55, 71, 79);
   colors.text = RGB(207, 216, 220);
@@ -399,6 +420,7 @@ ThemeColors Horizon() {
   colors.background = RGB(28, 30, 38);
   colors.panel = RGB(35, 37, 48);
   colors.surface = RGB(45, 47, 58);
+  colors.field = RGB(22, 24, 32);
   colors.header = colors.surface;
   colors.border = RGB(46, 48, 62);
   colors.text = RGB(224, 224, 224);
@@ -416,6 +438,7 @@ ThemeColors NightOwl() {
   colors.background = RGB(1, 22, 39);
   colors.panel = RGB(11, 37, 58);
   colors.surface = RGB(17, 50, 77);
+  colors.field = RGB(0, 16, 33);
   colors.header = colors.surface;
   colors.border = RGB(18, 48, 71);
   colors.text = RGB(214, 222, 235);
@@ -433,6 +456,7 @@ ThemeColors RosePine() {
   colors.background = RGB(25, 23, 36);
   colors.panel = RGB(31, 29, 46);
   colors.surface = RGB(38, 35, 58);
+  colors.field = RGB(19, 17, 30);
   colors.header = colors.surface;
   colors.border = RGB(64, 61, 82);
   colors.text = RGB(224, 222, 244);
@@ -450,6 +474,7 @@ ThemeColors RosePineMoon() {
   colors.background = RGB(35, 33, 54);
   colors.panel = RGB(42, 39, 63);
   colors.surface = RGB(49, 48, 74);
+  colors.field = RGB(29, 27, 48);
   colors.header = colors.surface;
   colors.border = RGB(68, 65, 90);
   colors.text = RGB(224, 222, 244);
@@ -467,6 +492,7 @@ ThemeColors KanagawaWave() {
   colors.background = RGB(31, 31, 40);
   colors.panel = RGB(42, 42, 55);
   colors.surface = RGB(54, 54, 70);
+  colors.field = RGB(25, 25, 34);
   colors.header = colors.surface;
   colors.border = RGB(59, 59, 79);
   colors.text = RGB(220, 215, 186);
@@ -484,6 +510,7 @@ ThemeColors KanagawaDragon() {
   colors.background = RGB(24, 22, 22);
   colors.panel = RGB(31, 31, 31);
   colors.surface = RGB(38, 38, 38);
+  colors.field = RGB(18, 16, 16);
   colors.header = colors.surface;
   colors.border = RGB(45, 42, 46);
   colors.text = RGB(197, 201, 197);
@@ -501,6 +528,7 @@ ThemeColors KanagawaLotus() {
   colors.background = RGB(242, 236, 188);
   colors.panel = RGB(231, 221, 176);
   colors.surface = RGB(223, 212, 164);
+  colors.field = RGB(232, 226, 178);
   colors.header = colors.surface;
   colors.border = RGB(200, 192, 160);
   colors.text = RGB(77, 74, 65);
@@ -520,6 +548,7 @@ void WritePreset(std::wofstream& file, const ThemePreset& preset) {
   file << L"background=" << FormatColorHex(preset.colors.background) << L"\n";
   file << L"panel=" << FormatColorHex(preset.colors.panel) << L"\n";
   file << L"surface=" << FormatColorHex(preset.colors.surface) << L"\n";
+  file << L"field=" << FormatColorHex(preset.colors.field) << L"\n";
   file << L"header=" << FormatColorHex(preset.colors.header) << L"\n";
   file << L"border=" << FormatColorHex(preset.colors.border) << L"\n";
   file << L"text=" << FormatColorHex(preset.colors.text) << L"\n";
@@ -555,6 +584,8 @@ void ApplyField(ThemePreset* preset, const std::wstring& key, const std::wstring
     preset->colors.panel = color;
   } else if (key_lower == L"surface") {
     preset->colors.surface = color;
+  } else if (key_lower == L"field") {
+    preset->colors.field = color;
   } else if (key_lower == L"header") {
     preset->colors.header = color;
   } else if (key_lower == L"border") {
@@ -576,9 +607,16 @@ void ApplyField(ThemePreset* preset, const std::wstring& key, const std::wstring
   }
 }
 
+void ResolveLegacyField(ThemePreset* preset) {
+  if (preset && preset->colors.field == CLR_INVALID) {
+    preset->colors.field = preset->colors.surface;
+  }
+}
+
 std::vector<ThemePreset> LoadFromStream(std::wistream& file) {
   std::vector<ThemePreset> presets;
   ThemePreset current;
+  current.colors.field = CLR_INVALID;
   bool in_preset = false;
   std::wstring line;
   while (std::getline(file, line)) {
@@ -588,9 +626,11 @@ std::vector<ThemePreset> LoadFromStream(std::wistream& file) {
     }
     if (line == kPresetSection) {
       if (in_preset && !current.name.empty()) {
+        ResolveLegacyField(&current);
         presets.push_back(current);
       }
       current = ThemePreset{};
+      current.colors.field = CLR_INVALID;
       in_preset = true;
       continue;
     }
@@ -604,6 +644,7 @@ std::vector<ThemePreset> LoadFromStream(std::wistream& file) {
     ApplyField(&current, Trim(line.substr(0, sep)), Trim(line.substr(sep + 1)));
   }
   if (in_preset && !current.name.empty()) {
+    ResolveLegacyField(&current);
     presets.push_back(current);
   }
   return presets;

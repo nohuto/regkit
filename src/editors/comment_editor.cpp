@@ -3,6 +3,7 @@
 
 #include "editors/comment_editor.h"
 
+#include "appearance/dialog_layout.h"
 #include "editors/dialog_support.h"
 
 #include "resource.h"
@@ -16,6 +17,7 @@ namespace {
 struct State {
   CommentResult value;
   HFONT font = nullptr;
+  appearance::DialogResizer resizer;
   bool accepted = false;
 };
 
@@ -33,12 +35,28 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam,
                    state->value.apply_to_same_name ? BST_CHECKED
                                                    : BST_UNCHECKED);
     dialog_support::Initialize(dialog, &state->font, {IDC_EDIT});
+    using namespace appearance;
+    state->resizer.Attach(dialog, {
+        {IDC_LABEL, kAnchorLeft | kAnchorTop | kAnchorRight},
+        {IDC_EDIT, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+        {IDC_COMMENT_ALL, kAnchorLeft | kAnchorBottom},
+        {IDOK, kAnchorRight | kAnchorBottom},
+        {IDCANCEL, kAnchorRight | kAnchorBottom},
+    });
     return TRUE;
   }
   if (message == WM_DESTROY) {
     if (state) {
       dialog_support::ReleaseFont(&state->font);
     }
+    return TRUE;
+  }
+  if (message == WM_SIZE && state) {
+    state->resizer.Apply(dialog);
+    return TRUE;
+  }
+  if (message == WM_GETMINMAXINFO && state) {
+    state->resizer.ClampMinSize(reinterpret_cast<MINMAXINFO*>(lparam));
     return TRUE;
   }
   INT_PTR themed = 0;

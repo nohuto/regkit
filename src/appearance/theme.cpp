@@ -29,6 +29,7 @@ ThemeColors g_custom_colors = []() -> ThemeColors {
   colors.background = RGB(20, 20, 20);
   colors.panel = RGB(20, 20, 20);
   colors.surface = RGB(34, 34, 34);
+  colors.field = RGB(14, 14, 14);
   colors.header = colors.surface;
   colors.border = RGB(66, 66, 66);
   colors.text = RGB(200, 200, 200);
@@ -767,6 +768,7 @@ Theme& Theme::Dark() {
   colors.background = RGB(20, 20, 20);
   colors.panel = RGB(20, 20, 20);
   colors.surface = RGB(34, 34, 34);
+  colors.field = RGB(14, 14, 14);
   colors.header = colors.surface;
   colors.border = RGB(66, 66, 66);
   colors.text = RGB(200, 200, 200);
@@ -785,6 +787,7 @@ Theme& Theme::Light() {
   colors.background = RGB(245, 245, 245);
   colors.panel = RGB(255, 255, 255);
   colors.surface = RGB(242, 242, 242);
+  colors.field = RGB(235, 235, 235);
   colors.header = colors.surface;
   colors.border = RGB(204, 204, 204);
   colors.text = RGB(32, 32, 32);
@@ -819,6 +822,7 @@ void Theme::SetCustomColors(const ThemeColors& colors, bool is_dark) {
   custom.background_brush_.reset(CreateSolidBrush(colors.background));
   custom.panel_brush_.reset(CreateSolidBrush(colors.panel));
   custom.surface_brush_.reset(CreateSolidBrush(colors.surface));
+  custom.field_brush_.reset(CreateSolidBrush(colors.field));
   custom.header_brush_.reset(CreateSolidBrush(colors.header));
   if (g_theme_mode == ThemeMode::kCustom) {
     g_use_dark_mode = is_dark;
@@ -876,6 +880,7 @@ Theme::Theme(const ThemeColors& colors, bool is_dark) : colors_(colors), is_dark
   background_brush_.reset(CreateSolidBrush(colors_.background));
   panel_brush_.reset(CreateSolidBrush(colors_.panel));
   surface_brush_.reset(CreateSolidBrush(colors_.surface));
+  field_brush_.reset(CreateSolidBrush(colors_.field));
   header_brush_.reset(CreateSolidBrush(colors_.header));
 }
 
@@ -1029,6 +1034,10 @@ HBRUSH Theme::SurfaceBrush() const {
   return surface_brush_.get();
 }
 
+HBRUSH Theme::FieldBrush() const {
+  return field_brush_.get();
+}
+
 HBRUSH Theme::HeaderBrush() const {
   return header_brush_.get();
 }
@@ -1043,6 +1052,10 @@ COLORREF Theme::PanelColor() const {
 
 COLORREF Theme::SurfaceColor() const {
   return colors_.surface;
+}
+
+COLORREF Theme::FieldColor() const {
+  return colors_.field;
 }
 
 COLORREF Theme::HeaderColor() const {
@@ -1084,8 +1097,8 @@ HBRUSH Theme::ControlColor(HDC hdc, HWND target, int type) const {
   switch (type) {
   case CTLCOLOR_EDIT:
     SetTextColor(hdc, TextColor());
-    SetBkColor(hdc, SurfaceColor());
-    return SurfaceBrush();
+    SetBkColor(hdc, FieldColor());
+    return FieldBrush();
   case CTLCOLOR_LISTBOX:
     SetTextColor(hdc, TextColor());
     SetBkColor(hdc, SurfaceColor());

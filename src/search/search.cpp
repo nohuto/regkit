@@ -349,13 +349,9 @@ DataMatch MatchValueData(const Matcher& matcher,
           if (memcmp(data + i, hex_query.bytes.data(), needle) == 0) {
             result.matched = true;
             result.data_text = value_format::Data(type, data, size);
-            constexpr size_t kPreviewBytes = 32;
-            size_t preview = std::min<size_t>(size, kPreviewBytes);
-            if (i < preview) {
-              result.match.matched = true;
-              result.match.start = i * 3;
-              result.match.length = needle * 3 - 1;
-            }
+            result.match.matched = true;
+            result.match.start = i * 3;
+            result.match.length = needle * 3 - 1;
             return result;
           }
         }

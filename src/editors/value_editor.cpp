@@ -4,6 +4,7 @@
 #include "editors/value_editor.h"
 
 #include "editors/binary_text.h"
+#include "appearance/dialog_layout.h"
 #include "editors/dialog_support.h"
 
 #include <algorithm>
@@ -22,6 +23,10 @@ namespace regkit::editors {
 
 namespace {
 
+bool IsMultilineEdit(HWND dialog, int id) {
+  HWND edit = GetDlgItem(dialog, id);
+  return edit && (GetWindowLongPtrW(edit, GWL_STYLE) & ES_MULTILINE) != 0;
+}
 struct TextDialogState {
   const wchar_t* title = nullptr;
   const wchar_t* label = nullptr;
@@ -30,6 +35,7 @@ struct TextDialogState {
   std::wstring value_type;
   bool show_details = false;
   HFONT ui_font = nullptr;
+  appearance::DialogResizer resizer;
 };
 
 struct BinaryGroupState {
@@ -49,6 +55,7 @@ struct TraceValueDialogState {
   BinaryGroupState none;
   HFONT mono_font = nullptr;
   HFONT ui_font = nullptr;
+  appearance::DialogResizer resizer;
 };
 
 struct ExtendedValueDialogState {
@@ -62,6 +69,7 @@ struct ExtendedValueDialogState {
   int number_base = 16;
   int initial_number_base = 16;
   HFONT ui_font = nullptr;
+  appearance::DialogResizer resizer;
 };
 
 std::wstring RegDataToString(const std::vector<BYTE>& data);
@@ -584,6 +592,16 @@ INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM
     }
   }
   switch (msg) {
+  case WM_SIZE:
+    if (state) {
+      state->resizer.Apply(dlg);
+    }
+    return TRUE;
+  case WM_GETMINMAXINFO:
+    if (state) {
+      state->resizer.ClampMinSize(reinterpret_cast<MINMAXINFO*>(lparam));
+    }
+    return TRUE;
   case WM_INITDIALOG: {
     state = reinterpret_cast<TraceValueDialogState*>(lparam);
     SetWindowLongPtrW(dlg, DWLP_USER, reinterpret_cast<LONG_PTR>(state));
@@ -627,6 +645,46 @@ INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM
          IDC_REG_MULTI_EDIT, IDC_REG_DWORD_EDIT, IDC_REG_QWORD_EDIT,
          IDC_REG_BINARY_EDIT, IDC_REG_BINARY_PREVIEW, IDC_REG_NONE_EDIT,
          IDC_REG_NONE_PREVIEW});
+    using namespace appearance;
+    state->resizer.Attach(dlg, {
+        {IDC_VALUE_NAME, kAnchorLeft | kAnchorTop | kAnchorRight},
+        {IDC_GROUP_REG_SZ, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+        {IDC_REG_SZ_EDIT, kAnchorLeft | kAnchorTop | kAnchorRight},
+        {IDC_GROUP_REG_EXPAND, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+        {IDC_REG_EXPAND_EDIT, kAnchorLeft | kAnchorTop | kAnchorRight},
+        {IDC_GROUP_REG_MULTI, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+        {IDC_REG_MULTI_EDIT, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+        {IDC_GROUP_REG_DWORD, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+        {IDC_GROUP_REG_QWORD, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+        {IDC_GROUP_REG_BINARY, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+        {IDC_REG_BINARY_LABEL_HEX, kAnchorLeft | kAnchorTop},
+        {IDC_REG_BINARY_EDIT, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+        {IDC_REG_BINARY_LABEL_PREVIEW, kAnchorLeft | kAnchorBottom},
+        {IDC_REG_BINARY_PREVIEW, kAnchorLeft | kAnchorRight | kAnchorBottom},
+        {IDC_REG_BINARY_FORMAT_GROUP, kAnchorLeft | kAnchorBottom},
+        {IDC_REG_BINARY_FORMAT_BYTE, kAnchorLeft | kAnchorBottom},
+        {IDC_REG_BINARY_FORMAT_WORD, kAnchorLeft | kAnchorBottom},
+        {IDC_REG_BINARY_FORMAT_DWORD, kAnchorLeft | kAnchorBottom},
+        {IDC_REG_BINARY_FORMAT_QWORD, kAnchorLeft | kAnchorBottom},
+        {IDC_REG_BINARY_TEXT_GROUP, kAnchorRight | kAnchorBottom},
+        {IDC_REG_BINARY_TEXT_ANSI, kAnchorRight | kAnchorBottom},
+        {IDC_REG_BINARY_TEXT_UNICODE, kAnchorRight | kAnchorBottom},
+        {IDC_GROUP_REG_NONE, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+        {IDC_REG_NONE_LABEL_HEX, kAnchorLeft | kAnchorTop},
+        {IDC_REG_NONE_EDIT, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+        {IDC_REG_NONE_LABEL_PREVIEW, kAnchorLeft | kAnchorBottom},
+        {IDC_REG_NONE_PREVIEW, kAnchorLeft | kAnchorRight | kAnchorBottom},
+        {IDC_REG_NONE_FORMAT_GROUP, kAnchorLeft | kAnchorBottom},
+        {IDC_REG_NONE_FORMAT_BYTE, kAnchorLeft | kAnchorBottom},
+        {IDC_REG_NONE_FORMAT_WORD, kAnchorLeft | kAnchorBottom},
+        {IDC_REG_NONE_FORMAT_DWORD, kAnchorLeft | kAnchorBottom},
+        {IDC_REG_NONE_FORMAT_QWORD, kAnchorLeft | kAnchorBottom},
+        {IDC_REG_NONE_TEXT_GROUP, kAnchorRight | kAnchorBottom},
+        {IDC_REG_NONE_TEXT_ANSI, kAnchorRight | kAnchorBottom},
+        {IDC_REG_NONE_TEXT_UNICODE, kAnchorRight | kAnchorBottom},
+        {IDOK, kAnchorRight | kAnchorBottom},
+        {IDCANCEL, kAnchorRight | kAnchorBottom},
+    });
     state->mono_font = CreateFontW(
         -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
         OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_MODERN,
@@ -898,6 +956,16 @@ INT_PTR CALLBACK TextDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lparam
   }
 
   switch (msg) {
+  case WM_SIZE:
+    if (state) {
+      state->resizer.Apply(dlg);
+    }
+    return TRUE;
+  case WM_GETMINMAXINFO:
+    if (state) {
+      state->resizer.ClampMinSize(reinterpret_cast<MINMAXINFO*>(lparam));
+    }
+    return TRUE;
   case WM_INITDIALOG: {
     state = reinterpret_cast<TextDialogState*>(lparam);
     SetWindowLongPtrW(dlg, DWLP_USER, reinterpret_cast<LONG_PTR>(state));
@@ -942,6 +1010,15 @@ INT_PTR CALLBACK TextDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lparam
     }
     dialog_support::Initialize(
         dlg, &state->ui_font, {IDC_VALUE_NAME, IDC_EDIT});
+    if (IsMultilineEdit(dlg, IDC_EDIT)) {
+      using namespace appearance;
+      state->resizer.Attach(dlg, {
+          {IDC_LABEL, kAnchorLeft | kAnchorTop | kAnchorRight},
+          {IDC_EDIT, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+          {IDOK, kAnchorRight | kAnchorBottom},
+          {IDCANCEL, kAnchorRight | kAnchorBottom},
+      });
+    }
     return TRUE;
   }
   case WM_DESTROY:
@@ -982,6 +1059,16 @@ INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPAR
     }
   }
   switch (msg) {
+  case WM_SIZE:
+    if (state) {
+      state->resizer.Apply(dlg);
+    }
+    return TRUE;
+  case WM_GETMINMAXINFO:
+    if (state) {
+      state->resizer.ClampMinSize(reinterpret_cast<MINMAXINFO*>(lparam));
+    }
+    return TRUE;
   case WM_INITDIALOG: {
     state = reinterpret_cast<ExtendedValueDialogState*>(lparam);
     SetWindowLongPtrW(dlg, DWLP_USER, reinterpret_cast<LONG_PTR>(state));
@@ -1005,6 +1092,17 @@ INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPAR
     }
     dialog_support::Initialize(
         dlg, &state->ui_font, {IDC_VALUE_NAME, IDC_EDIT});
+    if (IsMultilineEdit(dlg, IDC_EDIT)) {
+      using namespace appearance;
+      state->resizer.Attach(dlg, {
+          {IDC_VALUE_NAME, kAnchorLeft | kAnchorTop | kAnchorRight},
+          {IDC_VALUE_TYPE, kAnchorLeft | kAnchorTop | kAnchorRight},
+          {IDC_LABEL, kAnchorLeft | kAnchorTop | kAnchorRight},
+          {IDC_EDIT, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+          {IDOK, kAnchorRight | kAnchorBottom},
+          {IDCANCEL, kAnchorRight | kAnchorBottom},
+      });
+    }
     return TRUE;
   }
   case WM_DESTROY:

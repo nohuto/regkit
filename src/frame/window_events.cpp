@@ -58,6 +58,18 @@ void MainWindow::Impl::Show(int cmd_show) {
   } else if (window_placement_loaded_ && window_maximized_) {
     show_cmd = SW_MAXIMIZE;
   }
+  if (show_cmd != SW_MAXIMIZE) {
+    RECT rect = {};
+    if (GetWindowRect(hwnd_, &rect)) {
+      RECT fitted = rect;
+      win32::ClampToWorkArea(&fitted);
+      if (!EqualRect(&fitted, &rect)) {
+        SetWindowPos(hwnd_, nullptr, fitted.left, fitted.top,
+                     fitted.right - fitted.left, fitted.bottom - fitted.top,
+                     SWP_NOZORDER | SWP_NOACTIVATE);
+      }
+    }
+  }
   ShowWindow(hwnd_, show_cmd);
   UpdateWindow(hwnd_);
   if (regedit_compatibility_mode_) {
@@ -668,6 +680,34 @@ LRESULT CALLBACK MainWindow::Impl::AddressEditProc(HWND hwnd, UINT message, WPAR
       }
     }
   }
+  if (message == WM_CONTEXTMENU) {
+    POINT pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
+    if (pt.x == -1 && pt.y == -1) {
+      RECT rect = {};
+      GetWindowRect(hwnd, &rect);
+      pt.x = rect.left + 8;
+      pt.y = rect.top + (rect.bottom - rect.top) / 2;
+    }
+    if (self) {
+      self->ShowAddressContextMenu(hwnd, pt);
+    }
+    return 0;
+  }
+  if (message == WM_CHAR && wparam == 0x16 &&
+      (GetKeyState(VK_SHIFT) & 0x8000) != 0) {
+    return 0;
+  }
+  if (message == WM_KEYDOWN && wparam == 'V' &&
+      (GetKeyState(VK_CONTROL) & 0x8000) != 0 &&
+      (GetKeyState(VK_SHIFT) & 0x8000) != 0) {
+    if ((GetWindowLongPtrW(hwnd, GWL_STYLE) & ES_READONLY) == 0 &&
+        IsClipboardFormatAvailable(CF_UNICODETEXT)) {
+      SendMessageW(hwnd, EM_SETSEL, 0, -1);
+      SendMessageW(hwnd, WM_PASTE, 0, 0);
+      SendMessageW(hwnd, WM_KEYDOWN, VK_RETURN, 0);
+    }
+    return 0;
+  }
   if (message == WM_KEYDOWN && wparam == VK_RETURN) {
     if (self && self->hwnd_) {
       if (hwnd == self->regedit_compat_edit_) {
@@ -822,6 +862,15 @@ LRESULT CALLBACK MainWindow::Impl::ListViewProc(HWND hwnd, UINT message, WPARAM 
     }
     self->last_value_click_time_ = now;
     self->last_value_click_index_ = index;
+  }
+  if (self && hwnd == self->browse_.values().hwnd()) {
+    if (message == WM_MOUSEMOVE) {
+      POINT pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
+      self->UpdateCellTooltip(pt);
+    } else if (message == WM_MOUSELEAVE || message == WM_VSCROLL ||
+               message == WM_HSCROLL || message == WM_MOUSEWHEEL) {
+      self->HideCellTooltip();
+    }
   }
   if (message == WM_KEYDOWN && self && hwnd == self->browse_.values().hwnd()) {
     if (wparam == VK_RETURN) {

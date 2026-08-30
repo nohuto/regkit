@@ -10,6 +10,9 @@
 #include <algorithm>
 
 #include <commctrl.h>
+#include <uxtheme.h>
+#include <vsstyle.h>
+#include <windowsx.h>
 
 namespace regkit::editors::dialog_support {
 
@@ -31,6 +34,46 @@ LRESULT CALLBACK MultilineProc(HWND window, UINT message, WPARAM wparam,
     RemoveWindowSubclass(window, MultilineProc, kMultilineSubclassId);
   }
   return DefSubclassProc(window, message, wparam, lparam);
+}
+
+bool SizeGripRect(HWND dialog, RECT* rect) {
+  if (!rect || (GetWindowLongPtrW(dialog, GWL_STYLE) & WS_THICKFRAME) == 0) {
+    return false;
+  }
+  RECT client = {};
+  if (!GetClientRect(dialog, &client)) {
+    return false;
+  }
+  SIZE grip = {};
+  HTHEME theme = OpenThemeData(dialog, VSCLASS_STATUS);
+  if (theme) {
+    if (FAILED(GetThemePartSize(theme, nullptr, SP_GRIPPER, 0, nullptr, TS_TRUE, &grip))) {
+      grip = {};
+    }
+    CloseThemeData(theme);
+  }
+  if (grip.cx <= 0 || grip.cy <= 0) {
+    grip.cx = grip.cy = GetSystemMetrics(SM_CXVSCROLL);
+  }
+  rect->left = client.right - grip.cx;
+  rect->top = client.bottom - grip.cy;
+  rect->right = client.right;
+  rect->bottom = client.bottom;
+  return true;
+}
+
+void DrawSizeGrip(HWND dialog, HDC hdc) {
+  RECT grip = {};
+  if (!hdc || !SizeGripRect(dialog, &grip)) {
+    return;
+  }
+  HTHEME theme = OpenThemeData(dialog, VSCLASS_STATUS);
+  if (theme) {
+    DrawThemeBackground(theme, hdc, SP_GRIPPER, 0, &grip, nullptr);
+    CloseThemeData(theme);
+    return;
+  }
+  DrawFrameControl(hdc, &grip, DFC_SCROLL, DFCS_SCROLLSIZEGRIP);
 }
 
 void Center(HWND dialog) {
@@ -129,8 +172,21 @@ bool HandleThemeMessage(HWND dialog, UINT message, WPARAM wparam,
     GetClientRect(dialog, &rect);
     FillRect(reinterpret_cast<HDC>(wparam), &rect,
              Theme::Current().BackgroundBrush());
+    DrawSizeGrip(dialog, reinterpret_cast<HDC>(wparam));
     *result = TRUE;
     return true;
+  }
+  if (message == WM_NCHITTEST) {
+    RECT grip = {};
+    if (SizeGripRect(dialog, &grip)) {
+      MapWindowPoints(dialog, nullptr, reinterpret_cast<POINT*>(&grip), 2);
+      const POINT pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
+      if (PtInRect(&grip, pt)) {
+        SetWindowLongPtrW(dialog, DWLP_MSGRESULT, HTBOTTOMRIGHT);
+        *result = TRUE;
+        return true;
+      }
+    }
   }
   int color_type = 0;
   switch (message) {

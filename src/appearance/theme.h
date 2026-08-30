@@ -22,6 +22,7 @@ struct ThemeColors {
   COLORREF background = RGB(0, 0, 0);
   COLORREF panel = RGB(0, 0, 0);
   COLORREF surface = RGB(0, 0, 0);
+  COLORREF field = RGB(0, 0, 0);
   COLORREF header = RGB(0, 0, 0);
   COLORREF border = RGB(0, 0, 0);
   COLORREF text = RGB(0, 0, 0);
@@ -61,11 +62,13 @@ public:
   HBRUSH BackgroundBrush() const;
   HBRUSH PanelBrush() const;
   HBRUSH SurfaceBrush() const;
+  HBRUSH FieldBrush() const;
   HBRUSH HeaderBrush() const;
 
   COLORREF BackgroundColor() const;
   COLORREF PanelColor() const;
   COLORREF SurfaceColor() const;
+  COLORREF FieldColor() const;
   COLORREF HeaderColor() const;
   COLORREF BorderColor() const;
   COLORREF TextColor() const;
@@ -83,6 +86,7 @@ private:
   util::UniqueGdiObject<HBRUSH> background_brush_;
   util::UniqueGdiObject<HBRUSH> panel_brush_;
   util::UniqueGdiObject<HBRUSH> surface_brush_;
+  util::UniqueGdiObject<HBRUSH> field_brush_;
   util::UniqueGdiObject<HBRUSH> header_brush_;
 };
 

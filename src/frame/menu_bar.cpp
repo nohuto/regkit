@@ -285,7 +285,7 @@ void MainWindow::Impl::BuildMenus() {
   AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(favorites_menu), L"Favorites");
 
   HMENU window_menu = CreatePopupMenu();
-  AppendMenuW(window_menu, MF_STRING, cmd::kWindowNew, L"New Window");
+  AppendMenuW(window_menu, MF_STRING | (single_instance_ ? MF_GRAYED : 0), cmd::kWindowNew, L"New Window");
   AppendMenuW(window_menu, MF_STRING, cmd::kWindowClose, L"Close Window");
   AppendMenuW(window_menu, MF_STRING | (always_on_top_ ? MF_CHECKED : MF_UNCHECKED), cmd::kWindowAlwaysOnTop, L"Always on Top");
   AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(window_menu), L"Window");
