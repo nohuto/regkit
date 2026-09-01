@@ -152,6 +152,32 @@ std::wstring Hex(std::span<const BYTE> data) {
   return output;
 }
 
+constexpr size_t kRegFileLineLimit = 80;
+
+void AppendWrapped(std::wstring* output, const std::wstring& line) {
+  size_t start = 0;
+  size_t indent = 0;
+  while (true) {
+    const size_t remaining = line.size() - start;
+    if (indent + remaining <= kRegFileLineLimit) {
+      output->append(indent, L' ');
+      output->append(line, start, std::wstring::npos);
+      output->append(L"\r\n");
+      return;
+    }
+    const size_t room = kRegFileLineLimit - indent - 1;
+    size_t split = line.rfind(L',', start + room - 1);
+    if (split == std::wstring::npos || split < start) {
+      split = start + room - 1;
+    }
+    output->append(indent, L' ');
+    output->append(line, start, split - start + 1);
+    output->append(L"\\\r\n");
+    start = split + 1;
+    indent = 2;
+  }
+}
+
 std::wstring SerializeValue(const Value& value) {
   const DWORD type = value_format::NormalizeType(value.type);
   if (type == REG_SZ) {
@@ -181,7 +207,7 @@ Writer::Writer()
     : output_(L"Windows Registry Editor Version 5.00\r\n\r\n") {}
 
 void Writer::AppendKey(std::wstring_view path,
-                       std::vector<const Value*> values) {
+                       std::vector<const Value*> values, bool sorted) {
   if (output_.size() >
       std::wstring_view(L"Windows Registry Editor Version 5.00\r\n\r\n")
           .size()) {
@@ -190,6 +216,7 @@ void Writer::AppendKey(std::wstring_view path,
   output_.push_back(L'[');
   output_.append(path);
   output_ += L"]\r\n";
+  if (sorted) {
   std::sort(values.begin(), values.end(),
             [](const Value* left, const Value* right) {
               if (left->name.empty() != right->name.empty()) {
@@ -197,16 +224,18 @@ void Writer::AppendKey(std::wstring_view path,
               }
               return _wcsicmp(left->name.c_str(), right->name.c_str()) < 0;
             });
+  }
   for (const Value* value : values) {
+    std::wstring line;
     if (value->name.empty()) {
-      output_ += L"@=";
+      line = L"@=";
     } else {
-      output_.push_back(L'"');
-      output_ += Escape(value->name);
-      output_ += L"\"=";
+      line.push_back(L'"');
+      line += Escape(value->name);
+      line += L"\"=";
     }
-    output_ += SerializeValue(*value);
-    output_ += L"\r\n";
+    line += SerializeValue(*value);
+    AppendWrapped(&output_, line);
   }
 }
 

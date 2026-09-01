@@ -2,12 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "editors/dialog_support.h"
+#include "win32/text_transform.h"
 
 #include "appearance/theme.h"
 #include "appearance/default_font.h"
 #include "appearance/feedback.h"
 
 #include <algorithm>
+#include <string>
 
 #include <commctrl.h>
 #include <uxtheme.h>
@@ -25,13 +27,49 @@ LRESULT CALLBACK MultilineProc(HWND window, UINT message, WPARAM wparam,
   if (message == WM_KEYDOWN && wparam == VK_RETURN &&
       (GetKeyState(VK_SHIFT) & 0x8000)) {
     const LONG_PTR style = GetWindowLongPtrW(window, GWL_STYLE);
-    if ((style & ES_MULTILINE) && !(style & ES_READONLY)) {
+    if ((style & ES_MULTILINE) && (style & ES_WANTRETURN) && !(style & ES_READONLY)) {
       SendMessageW(window, EM_REPLACESEL, TRUE,
                    reinterpret_cast<LPARAM>(L"\r\n"));
       return 0;
     }
   } else if (message == WM_NCDESTROY) {
     RemoveWindowSubclass(window, MultilineProc, kMultilineSubclassId);
+  }
+  return DefSubclassProc(window, message, wparam, lparam);
+}
+
+constexpr UINT_PTR kSingleLineSubclassId = 2;
+
+LRESULT CALLBACK SingleLineProc(HWND window, UINT message, WPARAM wparam,
+                                LPARAM lparam, UINT_PTR, DWORD_PTR) {
+  if (message == WM_CHAR && (wparam == L'\r' || wparam == L'\n')) {
+    return 0;
+  }
+  if (message == WM_PASTE) {
+    std::wstring text;
+    if (OpenClipboard(window)) {
+      HANDLE handle = GetClipboardData(CF_UNICODETEXT);
+      const wchar_t* data = handle ? static_cast<const wchar_t*>(GlobalLock(handle)) : nullptr;
+      if (data) {
+        text = data;
+        GlobalUnlock(handle);
+      }
+      CloseClipboard();
+    }
+    if (text.find_first_of(L"\r\n") == std::wstring::npos) {
+      return DefSubclassProc(window, message, wparam, lparam);
+    }
+    for (wchar_t& character : text) {
+      if (character == L'\r' || character == L'\n') {
+        character = L' ';
+      }
+    }
+    SendMessageW(window, EM_REPLACESEL, TRUE,
+                 reinterpret_cast<LPARAM>(text.c_str()));
+    return 0;
+  }
+  if (message == WM_NCDESTROY) {
+    RemoveWindowSubclass(window, SingleLineProc, kSingleLineSubclassId);
   }
   return DefSubclassProc(window, message, wparam, lparam);
 }
@@ -134,8 +172,11 @@ void Initialize(HWND dialog, HFONT* owned_font,
           const LONG_PTR style = GetWindowLongPtrW(child, GWL_STYLE);
           if (_wcsicmp(class_name, L"Edit") == 0 &&
               (style & ES_MULTILINE) && !(style & ES_READONLY)) {
-            SetWindowSubclass(child, MultilineProc,
-                              kMultilineSubclassId, 0);
+            if (style & ES_WANTRETURN) {
+              SetWindowSubclass(child, MultilineProc, kMultilineSubclassId, 0);
+            } else {
+              SetWindowSubclass(child, SingleLineProc, kSingleLineSubclassId, 0);
+            }
           }
           return TRUE;
         },
@@ -215,15 +256,7 @@ bool HandleThemeMessage(HWND dialog, UINT message, WPARAM wparam,
 }
 
 std::wstring ReadText(HWND dialog, int control_id) {
-  const HWND control = GetDlgItem(dialog, control_id);
-  const int length = control ? GetWindowTextLengthW(control) : 0;
-  if (length <= 0) {
-    return {};
-  }
-  std::wstring text(static_cast<size_t>(length) + 1, L'\0');
-  GetWindowTextW(control, text.data(), length + 1);
-  text.resize(static_cast<size_t>(length));
-  return text;
+  return util::WindowText(GetDlgItem(dialog, control_id));
 }
 
 } // namespace regkit::editors::dialog_support

@@ -48,17 +48,13 @@ void MainWindow::Impl::ApplyRegistryRoots(const std::vector<RegistryRootEntry>& 
   browse_.values().Clear();
   current_key_count_ = 0;
   current_value_count_ = 0;
-  browse_.tree().SetRegeditLayout(UseRegeditVisibleTreeLayout());
+  browse_.tree().SetRegeditLayout(false);
   browse_.tree().SetRootLabel(TreeRootLabel());
   browse_.tree().PopulateRoots(browse_.roots());
   ResetNavigationState();
   UpdateStatus();
 
   SelectDefaultTreeItem();
-}
-
-bool MainWindow::Impl::UseRegeditVisibleTreeLayout() const {
-  return regedit_compatibility_mode_ && registry_mode_ == RegistryMode::kLocal;
 }
 
 std::vector<std::wstring> MainWindow::Impl::BuildVisibleTreePathParts(const std::wstring& path) const {
@@ -83,16 +79,16 @@ std::vector<std::wstring> MainWindow::Impl::BuildVisibleTreePathParts(const std:
   };
   if (!parts.empty() && EqualsInsensitive(parts.front(), L"Registry")) {
     if (parts.size() > 1 && is_standard_root(parts[1])) {
-      if (UseRegeditVisibleTreeLayout()) {
+      if (false) {
         parts.erase(parts.begin());
       } else {
         parts.front() = kStandardGroupLabel;
       }
-    } else if (!UseRegeditVisibleTreeLayout()) {
+    } else if (!false) {
       parts.front() = kRealGroupLabel;
     }
   } else if (!parts.empty() && EqualsInsensitive(parts.front(), L"Real Registry")) {
-    if (UseRegeditVisibleTreeLayout()) {
+    if (false) {
       parts.clear();
       return parts;
     }
@@ -123,7 +119,7 @@ std::vector<std::wstring> MainWindow::Impl::BuildVisibleTreePathParts(const std:
     }
   }
 
-  if (UseRegeditVisibleTreeLayout()) {
+  if (false) {
     if (!parts.empty() && EqualsInsensitive(parts.front(), kStandardGroupLabel)) {
       parts.erase(parts.begin());
     }
@@ -157,7 +153,7 @@ void MainWindow::Impl::RefreshVisibleRegistryTreeLayout(bool preserve_selection)
     CaptureTreeState(&selected_path, &expanded_paths);
   }
 
-  browse_.tree().SetRegeditLayout(UseRegeditVisibleTreeLayout());
+  browse_.tree().SetRegeditLayout(false);
   browse_.tree().SetRootLabel(TreeRootLabel());
   browse_.tree().PopulateRoots(browse_.roots());
 
@@ -182,7 +178,7 @@ void MainWindow::Impl::RefreshVisibleRegistryTreeLayout(bool preserve_selection)
 }
 
 std::wstring MainWindow::Impl::TreeRootLabel() const {
-  if (UseRegeditVisibleTreeLayout()) {
+  if (false) {
     return L"Computer";
   }
   if (registry_mode_ == RegistryMode::kRemote && !remote_machine_.empty()) {
@@ -202,17 +198,6 @@ void MainWindow::Impl::SelectDefaultTreeItem() {
   }
   HTREEITEM root = TreeView_GetRoot(browse_.tree().hwnd());
   if (!root) {
-    return;
-  }
-  if (UseRegeditVisibleTreeLayout()) {
-    HTREEITEM child = TreeView_GetChild(browse_.tree().hwnd(), root);
-    while (child) {
-      if (browse_.tree().NodeFromItem(child)) {
-        TreeView_SelectItem(browse_.tree().hwnd(), child);
-        return;
-      }
-      child = TreeView_GetNextSibling(browse_.tree().hwnd(), child);
-    }
     return;
   }
   HTREEITEM group = TreeView_GetChild(browse_.tree().hwnd(), root);
@@ -258,7 +243,7 @@ void MainWindow::Impl::CaptureRegistryTabState(int index) {
     return;
   }
   TabEntry& entry = tabs_[static_cast<size_t>(index)];
-  if (entry.kind != TabEntry::Kind::kRegistry) {
+  if (entry.kind == TabEntry::Kind::kSearch) {
     return;
   }
   CaptureTreeState(&entry.selected_path, &entry.expanded_paths);
@@ -298,7 +283,7 @@ void MainWindow::Impl::RestoreRegistryTabState(int index) {
     return;
   }
   const TabEntry& entry = tabs_[static_cast<size_t>(index)];
-  if (entry.kind != TabEntry::Kind::kRegistry) {
+  if (entry.kind == TabEntry::Kind::kSearch) {
     return;
   }
   ResetRegistryTreeState();
@@ -512,8 +497,19 @@ bool MainWindow::Impl::SwitchToRemoteRegistry() {
 }
 
 bool MainWindow::Impl::SwitchToOfflineRegistry() {
+  const int choice = ui::PromptChoice(
+      hwnd_, L"Load the offline registry from a single hive file, or from a folder of hives?",
+      L"Offline Registry", L"Hive File", L"Folder", L"Cancel", 60, 470);
   std::wstring hive_path;
-  if (!PromptOpenFolderOrFile(hwnd_, L"Select Offline Hive Folder or File", &hive_path)) {
+  HRESULT hr = S_OK;
+  if (choice == IDYES) {
+    hr = win32::ChooseFileToOpen(hwnd_, kOfflineHiveFilter, &hive_path);
+  } else if (choice == IDNO) {
+    hr = win32::ChooseFolder(hwnd_, &hive_path);
+  } else {
+    return false;
+  }
+  if (!ui::ReportFileDialogResult(hwnd_, hr)) {
     return false;
   }
   return LoadOfflineRegistryFromPath(hive_path, true);
@@ -609,7 +605,7 @@ bool MainWindow::Impl::LoadOfflineRegistryFromPath(const std::wstring& path, boo
     tabs_.push_back(std::move(entry));
     UpdateTabWidth();
     suppress_tab_change_ = true;
-    TabCtrl_SetCurSel(tab_, index);
+    SelectTabIndex(index);
     suppress_tab_change_ = false;
   }
 
@@ -722,7 +718,7 @@ void MainWindow::Impl::NavigateToAddress() {
   std::wstring jump_key_path;
   std::wstring jump_value_name;
   if (ResolveExternalJumpTarget(path, &jump_key_path, &jump_value_name) && !jump_value_name.empty()) {
-    if (NavigateToResolvedExternalJump(jump_key_path, jump_value_name, true)) {
+    if (NavigateToResolvedExternalJump(jump_key_path, jump_value_name)) {
       AddAddressHistory(jump_key_path);
     }
     return;
@@ -735,10 +731,10 @@ void MainWindow::Impl::NavigateToAddress() {
       ui::ShowWarning(hwnd_, L"Registry path not found.");
       return;
     }
-    std::wstring message = L"The registry key \"" + path + L"\" does not exist.";
+    std::wstring message = L"The registry key doesn't exist:";
     if (read_only_) {
       message += L"\nRead only mode is enabled.";
-      int result = ui::PromptChoice(hwnd_, message, L"Registry path not found", L"Go nearest key", L"Cancel", L"Cancel");
+      int result = ui::PromptKeyChoice(hwnd_, message, path, L"Registry path not found", L"Go to nearest key", L"", L"Cancel", 70);
       if (result == IDYES) {
         if (SelectTreePath(nearest)) {
           AddAddressHistory(nearest);
@@ -746,7 +742,7 @@ void MainWindow::Impl::NavigateToAddress() {
       }
       return;
     }
-    int result = ui::PromptChoice(hwnd_, message, L"Registry path not found", L"Go nearest key", L"Create key", L"Cancel");
+    int result = ui::PromptKeyChoice(hwnd_, message, path, L"Registry path not found", L"Go to nearest key", L"Create key", L"Cancel", 70);
     if (result == IDYES) {
       if (SelectTreePath(nearest)) {
         AddAddressHistory(nearest);
@@ -855,25 +851,29 @@ bool MainWindow::Impl::NavigateToExternalJump(const std::wstring& target) {
   if (!ResolveExternalJumpTarget(target, &key_path, &value_name)) {
     return false;
   }
-  return NavigateToResolvedExternalJump(key_path, value_name, true);
+  return NavigateToResolvedExternalJump(key_path, value_name);
 }
 
-bool MainWindow::Impl::NavigateToResolvedExternalJump(const std::wstring& key_path, const std::wstring& value_name, bool sync_compat_controls) {
+void MainWindow::Impl::ActivateRegistryTab() {
+  const int registry_tab = FindFirstRegistryTabIndex();
+  if (registry_tab < 0) {
+    OpenLocalRegistryTab();
+    return;
+  }
+  suppress_tab_change_ = true;
+  SelectTabIndex(registry_tab);
+  suppress_tab_change_ = false;
+  ApplyTabSelection(registry_tab);
+}
+
+bool MainWindow::Impl::NavigateToResolvedExternalJump(const std::wstring& key_path, const std::wstring& value_name) {
   if (key_path.empty()) {
     return false;
   }
 
   int sel = TabCtrl_GetCurSel(tab_);
   if (sel < 0 || static_cast<size_t>(sel) >= tabs_.size() || tabs_[static_cast<size_t>(sel)].kind != TabEntry::Kind::kRegistry) {
-    int registry_tab = FindFirstRegistryTabIndex();
-    if (registry_tab >= 0) {
-      suppress_tab_change_ = true;
-      TabCtrl_SetCurSel(tab_, registry_tab);
-      suppress_tab_change_ = false;
-      ApplyTabSelection(registry_tab);
-    } else {
-      OpenLocalRegistryTab();
-    }
+    ActivateRegistryTab();
   }
 
   if (registry_mode_ != RegistryMode::kLocal) {
@@ -894,10 +894,6 @@ bool MainWindow::Impl::NavigateToResolvedExternalJump(const std::wstring& key_pa
   EndJumpUiBatch();
 
   AddAddressHistory(key_path);
-  if (sync_compat_controls && !syncing_regedit_compat_controls_) {
-    EnsureRegeditCompatControls();
-    SyncRegeditCompatControls(key_path, value_name);
-  }
 
   pending_external_value_key_path_.clear();
   pending_external_value_name_.clear();

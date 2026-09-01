@@ -4,6 +4,7 @@ regkit_add_library(regkit_editors
     comment_editor.cpp
     dialog_support.cpp
     export_dialog.cpp
+    hive_dialog.cpp
     value_editor.cpp
 )
 target_include_directories(regkit_editors PRIVATE
@@ -17,7 +18,6 @@ target_link_libraries(regkit_editors PRIVATE
     regkit_registry
     regkit_win32
     comctl32
-    comdlg32
     shell32
     uxtheme
 )

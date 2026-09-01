@@ -317,7 +317,6 @@ void MainWindow::Impl::UpdateTabText(const std::wstring& text) {
   }
   int index = TabCtrl_GetCurSel(tab_);
   if (!IsSearchTabIndex(index) && !IsRegFileTabIndex(index)) {
-    // keep the current registry tab label up to date
   } else {
     index = FindFirstRegistryTabIndex();
   }
@@ -480,14 +479,22 @@ void MainWindow::Impl::CloseTab(int tab_index) {
   UpdateStatus();
 }
 
+void MainWindow::Impl::SelectTabIndex(int index) {
+  if (!tab_) {
+    return;
+  }
+  const int current = TabCtrl_GetCurSel(tab_);
+  if (current != index) {
+    CaptureRegistryTabState(current);
+  }
+  TabCtrl_SetCurSel(tab_, index);
+}
+
 void MainWindow::Impl::OpenLocalRegistryTab() {
   if (!tab_) {
     return;
   }
-  int current = TabCtrl_GetCurSel(tab_);
-  if (current >= 0 && !IsSearchTabIndex(current) && !IsRegFileTabIndex(current)) {
-    CaptureRegistryTabState(current);
-  }
+  CaptureRegistryTabState(TabCtrl_GetCurSel(tab_));
   TCITEMW item = {};
   item.mask = TCIF_TEXT;
   item.pszText = const_cast<wchar_t*>(L"Local Registry");

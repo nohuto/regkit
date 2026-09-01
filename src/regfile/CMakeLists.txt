@@ -16,7 +16,6 @@ target_link_libraries(regkit_registry_io PRIVATE
     regkit_editors
     regkit_regfile
     regkit_win32
-    comdlg32
     shell32
 )
 

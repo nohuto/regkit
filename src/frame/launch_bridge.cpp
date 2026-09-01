@@ -10,93 +10,73 @@ void MainWindow::Impl::ShowPermissionsDialog(const RegistryNode& node) {
   ShowRegistryPermissions(hwnd_, node);
 }
 
-bool MainWindow::Impl::RestartAsAdmin() {
-  std::wstring exe_path = util::GetModulePath();
+namespace {
+
+bool BeginRestart(HWND owner, const wchar_t* target_arg, const wchar_t* failure) {
+  const std::wstring exe_path = util::GetModulePath();
   if (exe_path.empty()) {
-    ui::ShowError(hwnd_, L"Failed to locate the executable path.");
+    ui::ShowError(owner, L"Failed to locate the executable path.");
     return false;
   }
-  HINSTANCE result = ShellExecuteW(hwnd_, L"runas", exe_path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-  if (reinterpret_cast<INT_PTR>(result) <= 32) {
-    ui::ShowError(hwnd_, L"Failed to restart with administrator rights.");
+  const std::wstring arguments =
+      win32::RestartArguments(target_arg, GetCurrentProcessId());
+  const HRESULT hr = win32::LaunchElevated(owner, exe_path, arguments);
+  if (FAILED(hr)) {
+    if (!win32::DialogCancelled(hr)) {
+      ui::ShowError(owner, std::wstring(failure) + L"\n" + win32::FormatDialogError(hr));
+    }
     return false;
   }
-  PostMessageW(hwnd_, WM_CLOSE, 0, 0);
+  PostMessageW(owner, WM_CLOSE, 0, 0);
   return true;
+}
+
+bool BrokerRestart(HWND owner, const wchar_t* target_arg, const wchar_t* failure,
+                   bool (*launch)(const std::wstring&, const std::wstring&, DWORD*)) {
+  const std::wstring exe_path = util::GetModulePath();
+  if (exe_path.empty()) {
+    ui::ShowError(owner, L"Failed to locate the executable path.");
+    return false;
+  }
+  std::wstring command_line = L"\"";
+  command_line += exe_path;
+  command_line += L"\" ";
+  command_line += win32::RestartArguments(target_arg, GetCurrentProcessId());
+  DWORD error = 0;
+  if (!launch(command_line, L"", &error)) {
+    std::wstring message = failure;
+    const std::wstring detail = FormatWin32Error(error);
+    if (!detail.empty()) {
+      message += L"\n";
+      message += detail;
+    }
+    ui::ShowError(owner, message);
+    return false;
+  }
+  PostMessageW(owner, WM_CLOSE, 0, 0);
+  return true;
+}
+
+} // namespace
+
+bool MainWindow::Impl::RestartAsAdmin() {
+  return BeginRestart(hwnd_, nullptr, L"Failed to restart with administrator rights.");
 }
 
 bool MainWindow::Impl::RestartAsSystem() {
-  std::wstring exe_path = util::GetModulePath();
-  if (exe_path.empty()) {
-    ui::ShowError(hwnd_, L"Failed to locate the executable path.");
-    return false;
-  }
-
   if (!util::IsProcessElevated()) {
-    HINSTANCE result = ShellExecuteW(hwnd_, L"runas", exe_path.c_str(), kRestartSystemArg, nullptr, SW_SHOWNORMAL);
-    if (reinterpret_cast<INT_PTR>(result) <= 32) {
-      ui::ShowError(hwnd_, L"Failed to request SYSTEM restart.");
-      return false;
-    }
-    PostMessageW(hwnd_, WM_CLOSE, 0, 0);
-    return true;
+    return BeginRestart(hwnd_, kRestartSystemArg, L"Failed to request SYSTEM restart.");
   }
-
-  std::wstring command_line = L"\"";
-  command_line += exe_path;
-  command_line += L"\" ";
-  command_line += kRestartSystemArg;
-  DWORD error = 0;
-  if (!util::LaunchProcessAsSystem(command_line, L"", &error)) {
-    std::wstring message = L"Failed to restart with SYSTEM rights.";
-    std::wstring detail = FormatWin32Error(error);
-    if (!detail.empty()) {
-      message += L"\n";
-      message += detail;
-    }
-    ui::ShowError(hwnd_, message);
-    return false;
-  }
-
-  PostMessageW(hwnd_, WM_CLOSE, 0, 0);
-  return true;
+  return BrokerRestart(hwnd_, kRestartSystemArg, L"Failed to restart with SYSTEM rights.",
+                       util::LaunchProcessAsSystem);
 }
 
 bool MainWindow::Impl::RestartAsTrustedInstaller() {
-  std::wstring exe_path = util::GetModulePath();
-  if (exe_path.empty()) {
-    ui::ShowError(hwnd_, L"Failed to locate the executable path.");
-    return false;
-  }
-
   if (!util::IsProcessElevated()) {
-    HINSTANCE result = ShellExecuteW(hwnd_, L"runas", exe_path.c_str(), kRestartTiArg, nullptr, SW_SHOWNORMAL);
-    if (reinterpret_cast<INT_PTR>(result) <= 32) {
-      ui::ShowError(hwnd_, L"Failed to request TrustedInstaller restart.");
-      return false;
-    }
-    PostMessageW(hwnd_, WM_CLOSE, 0, 0);
-    return true;
+    return BeginRestart(hwnd_, kRestartTiArg, L"Failed to request TrustedInstaller restart.");
   }
-
-  std::wstring command_line = L"\"";
-  command_line += exe_path;
-  command_line += L"\" ";
-  command_line += kRestartTiArg;
-  DWORD error = 0;
-  if (!util::LaunchProcessAsTrustedInstaller(command_line, L"", &error)) {
-    std::wstring message = L"Failed to restart with TrustedInstaller rights.";
-    std::wstring detail = FormatWin32Error(error);
-    if (!detail.empty()) {
-      message += L"\n";
-      message += detail;
-    }
-    ui::ShowError(hwnd_, message);
-    return false;
-  }
-
-  PostMessageW(hwnd_, WM_CLOSE, 0, 0);
-  return true;
+  return BrokerRestart(hwnd_, kRestartTiArg, L"Failed to restart with TrustedInstaller rights.",
+                       util::LaunchProcessAsTrustedInstaller);
 }
 
 void MainWindow::Impl::SyncReplaceRegeditState() {
@@ -227,96 +207,22 @@ void MainWindow::Impl::ReplaceRegedit(bool enable) {
     replace_regedit_ = false;
   }
 
-  SaveSettings();
   BuildMenus();
 }
 
 bool MainWindow::Impl::OpenDefaultRegedit() {
-  if (!util::IsProcessElevated() && !util::IsProcessSystem() &&
-      !util::IsProcessTrustedInstaller()) {
-    ui::ShowError(hwnd_, L"Administrator rights are required to open the default Regedit.");
-    return false;
-  }
-
-  std::wstring regedit_path = GetDefaultRegeditPath();
+  const std::wstring regedit_path = GetDefaultRegeditPath();
   if (regedit_path.empty()) {
     ui::ShowError(hwnd_, L"Failed to locate the default Regedit executable.");
     return false;
   }
-  auto launch_regedit = [&]() -> bool {
-    DWORD launch_error = ERROR_SUCCESS;
-    if (LaunchDefaultRegeditProcess(regedit_path, &launch_error)) {
-      return true;
+  const HRESULT hr = util::IsProcessElevated()
+                         ? win32::ShellOpen(hwnd_, regedit_path.c_str())
+                         : win32::LaunchElevated(hwnd_, regedit_path, L"");
+  if (FAILED(hr)) {
+    if (!win32::DialogCancelled(hr)) {
+      ui::ShowError(hwnd_, win32::FormatDialogError(hr));
     }
-    ui::ShowError(hwnd_, FormatWin32Error(launch_error));
-    return false;
-  };
-
-  util::UniqueHKey key;
-  LONG result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, kRegeditIfeoPath, 0, KEY_READ | KEY_WRITE | KEY_WOW64_64KEY, key.put());
-  if (result == ERROR_FILE_NOT_FOUND) {
-    return launch_regedit();
-  }
-  if (result != ERROR_SUCCESS) {
-    ui::ShowError(hwnd_, FormatWin32Error(result));
-    return false;
-  }
-
-  DWORD type = 0;
-  DWORD size = 0;
-  result = RegQueryValueExW(key.get(), L"Debugger", nullptr, &type, nullptr, &size);
-  if (result == ERROR_FILE_NOT_FOUND) {
-    return launch_regedit();
-  }
-  if (result != ERROR_SUCCESS || (type != REG_SZ && type != REG_EXPAND_SZ) || size == 0) {
-    ui::ShowError(hwnd_, L"Failed to read the Regedit debugger value.");
-    return false;
-  }
-
-  std::vector<BYTE> data(size);
-  result = RegQueryValueExW(key.get(), L"Debugger", nullptr, &type, data.data(), &size);
-  if (result != ERROR_SUCCESS) {
-    ui::ShowError(hwnd_, FormatWin32Error(result));
-    return false;
-  }
-  data.resize(size);
-
-  std::wstring temp_name = L"Debugger_RegKitTemp";
-  DWORD temp_type = 0;
-  DWORD temp_size = 0;
-  int suffix = 0;
-  while (RegQueryValueExW(key.get(), temp_name.c_str(), nullptr, &temp_type, nullptr, &temp_size) == ERROR_SUCCESS) {
-    ++suffix;
-    temp_name = L"Debugger_RegKitTemp_" + std::to_wstring(suffix);
-    if (suffix > 100) {
-      ui::ShowError(hwnd_, L"Failed to prepare a temporary Regedit debugger value.");
-      return false;
-    }
-  }
-
-  result = RegSetValueExW(key.get(), temp_name.c_str(), 0, type, data.data(), size);
-  if (result != ERROR_SUCCESS) {
-    ui::ShowError(hwnd_, FormatWin32Error(result));
-    return false;
-  }
-  result = RegDeleteValueW(key.get(), L"Debugger");
-  if (result != ERROR_SUCCESS) {
-    RegDeleteValueW(key.get(), temp_name.c_str());
-    ui::ShowError(hwnd_, FormatWin32Error(result));
-    return false;
-  }
-
-  DWORD launch_error = ERROR_SUCCESS;
-  bool launched = LaunchDefaultRegeditProcess(regedit_path, &launch_error);
-
-  LONG restore = RegSetValueExW(key.get(), L"Debugger", 0, type, data.data(), size);
-  RegDeleteValueW(key.get(), temp_name.c_str());
-  if (restore != ERROR_SUCCESS) {
-    ui::ShowError(hwnd_, FormatWin32Error(restore));
-    return false;
-  }
-  if (!launched) {
-    ui::ShowError(hwnd_, FormatWin32Error(launch_error));
     return false;
   }
   return true;
@@ -360,28 +266,14 @@ void MainWindow::Impl::OpenHiveFileDir() {
     ui::ShowError(hwnd_, L"No hive file was found for this key.");
     return;
   }
-  std::wstring args = L"/select,\"" + hive_path + L"\"";
-  std::wstring folder = hive_path;
-  folder.push_back(L'\0');
-  if (SUCCEEDED(PathCchRemoveFileSpec(folder.data(), folder.size()))) {
-    folder.resize(wcsnlen_s(folder.data(), folder.size()));
-    ShellExecuteW(hwnd_, L"open", L"explorer.exe", args.c_str(), folder.c_str(), SW_SHOWNORMAL);
-  } else {
-    ShellExecuteW(hwnd_, L"open", L"explorer.exe", args.c_str(), nullptr, SW_SHOWNORMAL);
+  const HRESULT hr = win32::RevealInExplorer(hive_path);
+  if (FAILED(hr)) {
+    ui::ShowError(hwnd_, win32::FormatDialogError(hr));
   }
 }
 
 LOGFONTW MainWindow::Impl::DefaultLogFont() const {
-  LOGFONTW lf = {};
-  std::wstring face = ReadFontSubstitute(L"Segoe UI");
-  if (face.empty()) {
-    face = L"Segoe UI";
-  }
-  lf.lfHeight = appearance::FontHeight(9);
-  lf.lfWeight = FW_NORMAL;
-  lf.lfCharSet = DEFAULT_CHARSET;
-  wcsncpy_s(lf.lfFaceName, face.c_str(), _TRUNCATE);
-  return lf;
+  return ui::DefaultUIFontLogFont();
 }
 
 } // namespace regkit

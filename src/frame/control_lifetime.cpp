@@ -23,17 +23,6 @@ LRESULT MainWindow::Impl::HandleNotification(LPARAM lparam) {
   if (header->hwndFrom == browse_.tree().hwnd()) {
     return HandleTreeNotification(header, lparam);
   }
-  if (header->hwndFrom == regedit_compat_tree_ ||
-      header->hwndFrom == regedit_compat_list_) {
-    return HandleRegeditCompatNotification(header, lparam);
-  }
-  HWND value_header = ListView_GetHeader(browse_.values().hwnd());
-  HWND history_header = ListView_GetHeader(history_list_);
-  HWND search_header = ListView_GetHeader(search_results_list_);
-  if (header->hwndFrom == value_header || header->hwndFrom == history_header ||
-      header->hwndFrom == search_header) {
-    return HandleHeaderNotification(header, lparam);
-  }
   if (header->hwndFrom == browse_.values().hwnd()) {
     return HandleValueNotification(header, lparam);
   }
@@ -42,6 +31,11 @@ LRESULT MainWindow::Impl::HandleNotification(LPARAM lparam) {
   }
   if (header->hwndFrom == search_results_list_) {
     return HandleSearchNotification(header, lparam);
+  }
+  if (header->hwndFrom == ListView_GetHeader(browse_.values().hwnd()) ||
+      header->hwndFrom == ListView_GetHeader(history_list_) ||
+      header->hwndFrom == ListView_GetHeader(search_results_list_)) {
+    return HandleHeaderNotification(header, lparam);
   }
   return 0;
 }
@@ -137,9 +131,7 @@ LRESULT MainWindow::Impl::HandleTabNotification(NMHDR* header, LPARAM lparam) {
   if (header->hwndFrom == tab_ && header->code == TCN_SELCHANGING) {
     if (!suppress_tab_change_ && tab_) {
       int current = TabCtrl_GetCurSel(tab_);
-      if (!IsSearchTabIndex(current) && !IsRegFileTabIndex(current)) {
-        CaptureRegistryTabState(current);
-      }
+      CaptureRegistryTabState(current);
       last_tab_index_ = current;
     }
     return 0;
@@ -287,27 +279,6 @@ LRESULT MainWindow::Impl::HandleTreeNotification(NMHDR* header, LPARAM lparam) {
   return 0;
 }
 
-LRESULT MainWindow::Impl::HandleRegeditCompatNotification(NMHDR* header, LPARAM lparam) {
-  if (header->hwndFrom == regedit_compat_tree_) {
-    if (header->code == TVN_ITEMEXPANDINGW) {
-      auto* info = reinterpret_cast<NMTREEVIEWW*>(lparam);
-      if (info) {
-        PopulateRegeditCompatChildren(info->itemNew.hItem);
-      }
-      return 0;
-    }
-    if (header->code == TVN_SELCHANGEDW) {
-      HandleRegeditCompatTreeSelection(reinterpret_cast<NMTREEVIEWW*>(lparam));
-      return 0;
-    }
-  }
-  if (header->hwndFrom == regedit_compat_list_ && header->code == LVN_ITEMCHANGED) {
-    HandleRegeditCompatListSelection(reinterpret_cast<NMLISTVIEW*>(lparam));
-    return 0;
-  }
-  return 0;
-}
-
 LRESULT MainWindow::Impl::HandleHeaderNotification(NMHDR* header, LPARAM lparam) {
   HWND value_header = ListView_GetHeader(browse_.values().hwnd());
   HWND history_header = ListView_GetHeader(history_list_);
@@ -348,6 +319,25 @@ LRESULT MainWindow::Impl::HandleHeaderNotification(NMHDR* header, LPARAM lparam)
   return 0;
 }
 
+const wchar_t* SearchRowText(const search::Result& result, int subitem) {
+  switch (subitem) {
+  case 0:
+    return result.key_path.c_str();
+  case 1:
+    return result.display_name.c_str();
+  case 2:
+    return result.type_text.c_str();
+  case 3:
+    return result.data.c_str();
+  case 4:
+    return result.size_text.c_str();
+  case 5:
+    return result.date_text.c_str();
+  default:
+    return L"";
+  }
+}
+
 LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) {
   if (header->hwndFrom == browse_.values().hwnd() && header->code == LVN_GETDISPINFOW) {
     auto* disp = reinterpret_cast<NMLVDISPINFOW*>(lparam);
@@ -365,47 +355,53 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
       return 0;
     }
     if (disp->item.mask & LVIF_TEXT) {
-      if (disp->item.iSubItem == kValueColData && mutable_row) {
+      const int subitem = MappedSubItem(value_column_subitems_, disp->item.iSubItem);
+      if (subitem == kValueColData && mutable_row) {
         EnsureValueRowData(mutable_row);
       }
-      const wchar_t* text = L"";
-      switch (disp->item.iSubItem) {
-      case kValueColName:
-        text = row->name.c_str();
-        break;
-      case kValueColType:
-        text = row->type.c_str();
-        break;
-      case kValueColData:
-        text = row->data.c_str();
-        break;
-      case kValueColDefault:
-        text = row->default_data.c_str();
-        break;
-      case kValueColReadOnBoot:
-        text = row->read_on_boot.c_str();
-        break;
-      case kValueColSize:
-        text = row->size.c_str();
-        break;
-      case kValueColDate:
-        text = row->date.c_str();
-        break;
-      case kValueColDetails:
-        text = row->details.c_str();
-        break;
-      case kValueColComment:
-        text = row->comment.c_str();
-        break;
-      default:
-        text = row->extra.c_str();
-        break;
-      }
+      const wchar_t* text = ValueRowFieldText(*row, subitem).c_str();
       disp->item.pszText = const_cast<wchar_t*>(text);
     }
     if (disp->item.mask & LVIF_IMAGE) {
       disp->item.iImage = row->image_index;
     }
+    return 0;
+  }
+  if (header->hwndFrom == browse_.values().hwnd() && header->code == LVN_GETINFOTIPW) {
+    auto* tip = reinterpret_cast<NMLVGETINFOTIPW*>(lparam);
+    if (!tip || !tip->pszText || tip->cchTextMax <= 0) {
+      return 0;
+    }
+    tip->pszText[0] = L'\0';
+    HWND list = browse_.values().hwnd();
+    POINT pt = {};
+    GetCursorPos(&pt);
+    ScreenToClient(list, &pt);
+    LVHITTESTINFO hit = {};
+    hit.pt = pt;
+    if (ListView_SubItemHitTest(list, &hit) != tip->iItem) {
+      return 0;
+    }
+    ListRow* row = browse_.values().MutableRowAt(tip->iItem);
+    if (!row) {
+      return 0;
+    }
+    const int subitem = MappedSubItem(value_column_subitems_, hit.iSubItem);
+    if (subitem == kValueColData) {
+      EnsureValueRowData(row);
+    }
+    const std::wstring& text = ValueRowFieldText(*row, subitem);
+    RECT cell = {};
+    const bool measured =
+        hit.iSubItem == 0
+            ? ListView_GetItemRect(list, tip->iItem, &cell, LVIR_LABEL) != FALSE
+            : ListView_GetSubItemRect(list, tip->iItem, hit.iSubItem, LVIR_BOUNDS, &cell) != FALSE;
+    const int available = static_cast<int>(cell.right - cell.left) - kCellTooltipPadding;
+    if (!measured || text.empty() || available <= 0 ||
+        !CellTextIsClipped(list, text, available)) {
+      return 0;
+    }
+    lstrcpynW(tip->pszText, text.c_str(), tip->cchTextMax);
     return 0;
   }
   if (header->hwndFrom == browse_.values().hwnd() && header->code == LVN_BEGINLABELEDITW) {
@@ -492,7 +488,8 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
       return TRUE;
     }
     UpdateValueListForNode(browse_.current_node());
-    SelectValueByName(new_name);
+    retained_value_name_ = new_name;
+    retained_value_key_path_ = registry_path::Build(*browse_.current_node());
     return TRUE;
   }
   if (header->hwndFrom == browse_.values().hwnd() && header->code == LVN_ITEMCHANGED) {
@@ -552,10 +549,88 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
     }
     return 0;
   }
+
   if (header->code == NM_CUSTOMDRAW) {
-    return ui::HandleThemedListViewCustomDraw(header->hwndFrom, reinterpret_cast<NMLVCUSTOMDRAW*>(lparam));
+    return HandleValueListCustomDraw(reinterpret_cast<NMLVCUSTOMDRAW*>(lparam));
   }
   return 0;
+}
+
+LRESULT MainWindow::Impl::HandleValueListCustomDraw(NMLVCUSTOMDRAW* draw) {
+  return ui::HandleThemedListViewCustomDraw(browse_.values().hwnd(), draw);
+}
+
+
+search::Result* MainWindow::Impl::SearchResultAt(int item) {
+  const int tab_index = SearchIndexFromTab(TabCtrl_GetCurSel(tab_));
+  if (item < 0 || tab_index < 0 || static_cast<size_t>(tab_index) >= search_tabs_.size()) {
+    return nullptr;
+  }
+  SearchTab& tab = search_tabs_[static_cast<size_t>(tab_index)];
+  return static_cast<size_t>(item) < tab.results.size()
+             ? &tab.results[static_cast<size_t>(item)]
+             : nullptr;
+}
+
+LRESULT MainWindow::Impl::HandleSearchListCustomDraw(NMLVCUSTOMDRAW* draw) {
+  if (!draw || !search_results_list_) {
+    return CDRF_DODEFAULT;
+  }
+  const int item = static_cast<int>(draw->nmcd.dwItemSpec);
+  switch (draw->nmcd.dwDrawStage) {
+  case CDDS_ITEMPREPAINT: {
+    const LRESULT stage = ui::HandleThemedListViewCustomDraw(search_results_list_, draw);
+    const search::Result* result = SearchResultAt(item);
+    return result && result->match_length > 0 ? stage | CDRF_NOTIFYSUBITEMDRAW : stage;
+  }
+  case CDDS_ITEMPREPAINT | CDDS_SUBITEM: {
+    search::Result* result = SearchResultAt(item);
+    if (!result ||
+        SearchMatchSubItem(*result) != MappedSubItem(search_column_subitems_, draw->iSubItem)) {
+      return CDRF_DODEFAULT;
+    }
+    EnsureSearchResultDataLoaded(result);
+    return CDRF_NOTIFYPOSTPAINT;
+  }
+  case CDDS_ITEMPOSTPAINT | CDDS_SUBITEM: {
+    const search::Result* result = SearchResultAt(item);
+    const int subitem = MappedSubItem(search_column_subitems_, draw->iSubItem);
+    if (!result || SearchMatchSubItem(*result) != subitem) {
+      return CDRF_DODEFAULT;
+    }
+    RECT cell = {};
+    if (draw->iSubItem == 0) {
+      RECT row = {};
+      if (!ListView_GetItemRect(search_results_list_, item, &cell, LVIR_LABEL) ||
+          !ListView_GetItemRect(search_results_list_, item, &row, LVIR_BOUNDS)) {
+        return CDRF_DODEFAULT;
+      }
+      cell.right = row.left + ListView_GetColumnWidth(search_results_list_, 0);
+    } else {
+      cell.top = draw->iSubItem;
+      cell.left = LVIR_BOUNDS;
+      if (!SendMessageW(search_results_list_, LVM_GETSUBITEMRECT, item,
+                        reinterpret_cast<LPARAM>(&cell))) {
+        return CDRF_DODEFAULT;
+      }
+      cell.left += kCellTextPadding;
+    }
+    cell.right -= kCellTextPadding;
+    if (cell.left >= cell.right) {
+      return CDRF_DODEFAULT;
+    }
+    HFONT font = reinterpret_cast<HFONT>(SendMessageW(search_results_list_, WM_GETFONT, 0, 0));
+    HFONT old_font = font ? reinterpret_cast<HFONT>(SelectObject(draw->nmcd.hdc, font)) : nullptr;
+    DrawSearchMatchOverlay(draw->nmcd.hdc, cell, SearchRowText(*result, subitem),
+                           result->match_start, result->match_length);
+    if (old_font) {
+      SelectObject(draw->nmcd.hdc, old_font);
+    }
+    return CDRF_DODEFAULT;
+  }
+  default:
+    return ui::HandleThemedListViewCustomDraw(search_results_list_, draw);
+  }
 }
 
 LRESULT MainWindow::Impl::HandleHistoryNotification(NMHDR* header, LPARAM lparam) {
@@ -567,8 +642,9 @@ LRESULT MainWindow::Impl::HandleHistoryNotification(NMHDR* header, LPARAM lparam
     return 0;
   }
   if (header->code == NM_CUSTOMDRAW) {
-    return HandleHistoryListCustomDraw(history_list_, reinterpret_cast<NMLVCUSTOMDRAW*>(lparam));
+    return ui::HandleThemedListViewCustomDraw(history_list_, reinterpret_cast<NMLVCUSTOMDRAW*>(lparam));
   }
+
   return 0;
 }
 
@@ -598,54 +674,13 @@ LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam)
     if (index >= 0 && static_cast<size_t>(index) < search_tabs_.size()) {
       compare = search_tabs_[static_cast<size_t>(index)].is_compare;
     }
-    if (!compare && disp->item.iSubItem == 3) {
+    const int subitem = MappedSubItem(search_column_subitems_, disp->item.iSubItem);
+    if (!compare && subitem == 3) {
       EnsureSearchResultDataLoaded(result);
     }
     if (disp->item.mask & LVIF_TEXT) {
-      const wchar_t* text = L"";
-      if (compare) {
-        switch (disp->item.iSubItem) {
-        case 0:
-          text = result->key_path.c_str();
-          break;
-        case 1:
-          text = result->display_name.c_str();
-          break;
-        case 2:
-          text = result->type_text.c_str();
-          break;
-        case 3:
-          text = result->data.c_str();
-          break;
-        default:
-          text = L"";
-          break;
-        }
-      } else {
-        switch (disp->item.iSubItem) {
-        case 0:
-          text = result->key_path.c_str();
-          break;
-        case 1:
-          text = result->display_name.c_str();
-          break;
-        case 2:
-          text = result->type_text.c_str();
-          break;
-        case 3:
-          text = result->data.c_str();
-          break;
-        case 4:
-          text = result->size_text.c_str();
-          break;
-        case 5:
-          text = result->date_text.c_str();
-          break;
-        default:
-          text = L"";
-          break;
-        }
-      }
+      const int column = (compare && subitem > 3) ? -1 : subitem;
+      const wchar_t* text = SearchRowText(*result, column);
       disp->item.pszText = const_cast<wchar_t*>(text);
     }
     if (disp->item.mask & LVIF_IMAGE) {
@@ -676,10 +711,7 @@ LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam)
       int index = SearchIndexFromTab(sel);
       if (index >= 0 && static_cast<size_t>(index) < search_tabs_.size() && static_cast<size_t>(activate->iItem) < search_tabs_[static_cast<size_t>(index)].results.size()) {
         const auto& result = search_tabs_[static_cast<size_t>(index)].results[static_cast<size_t>(activate->iItem)];
-        int registry_tab = FindFirstRegistryTabIndex();
-        if (registry_tab >= 0) {
-          TabCtrl_SetCurSel(tab_, registry_tab);
-        }
+        ActivateRegistryTab();
         ApplyViewVisibility();
         UpdateStatus();
         SelectTreePath(result.key_path);
@@ -691,23 +723,7 @@ LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam)
     return 0;
   }
   if (header->code == NM_CUSTOMDRAW) {
-    auto* draw = reinterpret_cast<NMLVCUSTOMDRAW*>(lparam);
-    if (!draw) {
-      return CDRF_DODEFAULT;
-    }
-    if (draw->nmcd.dwDrawStage == (CDDS_ITEMPREPAINT | CDDS_SUBITEM)) {
-      int item_index = static_cast<int>(draw->nmcd.dwItemSpec);
-      int sel_tab = TabCtrl_GetCurSel(tab_);
-      int tab_index = SearchIndexFromTab(sel_tab);
-      if (item_index >= 0 && tab_index >= 0 && static_cast<size_t>(tab_index) < search_tabs_.size() && static_cast<size_t>(item_index) < search_tabs_[static_cast<size_t>(tab_index)].results.size()) {
-        const search::Result& result = search_tabs_[static_cast<size_t>(tab_index)].results[static_cast<size_t>(item_index)];
-        bool selected = ListViewItemSelected(search_results_list_, item_index);
-        if (!selected && DrawSearchMatchSubItem(result, draw->iSubItem, draw->nmcd.hdc, draw->nmcd.rc, ui_font_)) {
-          return CDRF_SKIPDEFAULT;
-        }
-      }
-    }
-    return ui::HandleThemedListViewCustomDraw(search_results_list_, draw);
+    return HandleSearchListCustomDraw(reinterpret_cast<NMLVCUSTOMDRAW*>(lparam));
   }
   return 0;
 }
@@ -723,7 +739,6 @@ bool MainWindow::Impl::OnCreate() {
   }
   ApplySavedWindowPlacement();
   if (theme_mode_ == ThemeMode::kCustom && ApplyThemePresetByName(active_theme_preset_, false)) {
-    // Applied by preset.
   } else {
     Theme::SetMode(theme_mode_);
     ApplySystemTheme();
@@ -776,22 +791,23 @@ bool MainWindow::Impl::OnCreate() {
     return false;
   }
 
-  tab_ = CreateWindowExW(0, WC_TABCONTROLW, L"", WS_CHILD | WS_VISIBLE | TCS_TABS | TCS_FOCUSNEVER, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kTabId)), instance_, nullptr);
+  tab_ = CreateWindowExW(0, WC_TABCONTROLW, L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | TCS_TABS | TCS_FOCUSNEVER, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kTabId)), instance_, nullptr);
   ApplyFont(tab_, ui_font_);
   TabCtrl_SetPadding(tab_, kTabTextPaddingX, kTabInsetY);
   SetWindowSubclass(tab_, TabProc, kTabSubclassId, reinterpret_cast<DWORD_PTR>(this));
 
-  tree_header_ = CreateWindowExW(0, L"STATIC", L"Key Tree", WS_CHILD | WS_VISIBLE | SS_LEFT | SS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kTreeHeaderId)), instance_, nullptr);
-  tree_close_btn_ = CreateWindowExW(0, L"BUTTON", L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kTreeHeaderCloseId)), instance_, nullptr);
+  tree_header_ = CreateWindowExW(0, L"STATIC", L"Key Tree", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | SS_LEFT | SS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kTreeHeaderId)), instance_, nullptr);
+  tree_close_btn_ = CreateWindowExW(0, L"BUTTON", L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kTreeHeaderCloseId)), instance_, nullptr);
+  SetWindowPos(tree_close_btn_, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
   browse_.tree().SetIconResolver([this](const RegistryNode& node) { return KeyIconIndex(node, nullptr, nullptr); });
   browse_.tree().SetVirtualChildProvider([this](const RegistryNode& node, const std::unordered_set<std::wstring>& existing_lower, std::vector<std::wstring>* out) { AppendTraceChildren(node, existing_lower, out); });
-  search_results_list_ = CreateWindowExW(0, WC_LISTVIEWW, L"", WS_CHILD | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kSearchResultsListId)), instance_, nullptr);
-  CreateCellTooltip();
+  search_results_list_ = CreateWindowExW(0, WC_LISTVIEWW, L"", WS_CHILD | WS_CLIPSIBLINGS | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kSearchResultsListId)), instance_, nullptr);
   LoadTabs();
 
-  history_label_ = CreateWindowExW(0, L"STATIC", L"History", WS_CHILD | WS_VISIBLE | SS_LEFT | SS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kHistoryLabelId)), instance_, nullptr);
-  history_close_btn_ = CreateWindowExW(0, L"BUTTON", L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kHistoryHeaderCloseId)), instance_, nullptr);
+  history_label_ = CreateWindowExW(0, L"STATIC", L"History", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | SS_LEFT | SS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kHistoryLabelId)), instance_, nullptr);
+  history_close_btn_ = CreateWindowExW(0, L"BUTTON", L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kHistoryHeaderCloseId)), instance_, nullptr);
+  SetWindowPos(history_close_btn_, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
   status_bar_ = CreateWindowExW(0, STATUSCLASSNAMEW, L"", WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kStatusBarId)), instance_, nullptr);
   if (status_bar_) {
     int parts[4] = {0, 0, 0, 0};
@@ -803,7 +819,7 @@ bool MainWindow::Impl::OnCreate() {
     SendMessageW(search_progress_, PBM_SETRANGE32, 0, 1);
     ShowWindow(search_progress_, SW_HIDE);
   }
-  history_list_ = CreateWindowExW(0, WC_LISTVIEWW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SHOWSELALWAYS, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kHistoryListId)), instance_, nullptr);
+  history_list_ = CreateWindowExW(0, WC_LISTVIEWW, L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | LVS_REPORT | LVS_SHOWSELALWAYS, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kHistoryListId)), instance_, nullptr);
 
   DWORD ex_mask = LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_BORDERSELECT | LVS_EX_TRACKSELECT | LVS_EX_ONECLICKACTIVATE | LVS_EX_TWOCLICKACTIVATE | LVS_EX_UNDERLINEHOT;
   DWORD ex_style = LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER;
@@ -813,6 +829,16 @@ bool MainWindow::Impl::OnCreate() {
   SendMessageW(history_list_, WM_CHANGEUISTATE, MAKEWPARAM(UIS_SET, UISF_HIDEFOCUS), 0);
   SetWindowSubclass(history_list_, ListViewProc, kListViewSubclassId, reinterpret_cast<DWORD_PTR>(this));
   SetWindowSubclass(search_results_list_, ListViewProc, kListViewSubclassId, reinterpret_cast<DWORD_PTR>(this));
+
+  AttachBorder(browse_.values().hwnd());
+  AttachBorder(tree_header_);
+  AttachBorder(browse_.tree().hwnd());
+  AttachBorder(history_label_);
+  AttachBorder(history_list_);
+  AttachBorder(search_results_list_);
+  AttachBorder(browse_.address());
+  AttachBorder(browse_.go_button());
+  AttachBorder(browse_.filter());
 
   ApplyUIFontToControls();
 
@@ -831,7 +857,7 @@ bool MainWindow::Impl::OnCreate() {
 
   browse_.roots() = RegistryStore::DefaultRoots(show_extra_hives_);
   AppendRealRegistryRoot(&browse_.roots());
-  browse_.tree().SetRegeditLayout(UseRegeditVisibleTreeLayout());
+  browse_.tree().SetRegeditLayout(false);
   browse_.tree().SetRootLabel(TreeRootLabel());
   browse_.tree().PopulateRoots(browse_.roots());
 
@@ -1035,7 +1061,6 @@ void MainWindow::Impl::ApplyStartupCachePayload(StartupCachePayload* payload) {
 void MainWindow::Impl::OnDestroy() {
   if (hwnd_) {
     RemovePropW(hwnd_, kRegKitWindowProperty);
-    KillTimer(hwnd_, kRegeditCompatApplyTimerId);
   }
   EndJumpUiBatch();
   StopStartupCacheLoad();
@@ -1056,8 +1081,8 @@ void MainWindow::Impl::OnDestroy() {
   }
   if (clear_tabs_on_exit_) {
     ClearTabsCache();
-  } else if (save_tabs_) {
-    SaveTabs();
+  } else if (save_tabs_ && !SaveTabs()) {
+    ui::ShowError(hwnd_, L"The open tabs could not be saved for the next session.");
   }
   ClearHistoryItems(false);
   if (clear_history_on_exit_) {

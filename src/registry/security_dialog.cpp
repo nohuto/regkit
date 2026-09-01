@@ -4,6 +4,7 @@
 #include "registry/security_dialog.h"
 
 #include "registry/registry_path.h"
+#include "win32/registry_view.h"
 
 #include <string>
 
@@ -146,13 +147,13 @@ bool ShowRegistryPermissions(HWND owner, const RegistryNode& node) {
   const wchar_t* subkey = node.subkey.empty() ? nullptr : node.subkey.c_str();
   bool read_only = false;
   HKEY key = nullptr;
-  LONG result = RegOpenKeyExW(node.root, subkey, 0, READ_CONTROL | WRITE_DAC | WRITE_OWNER, &key);
+  LONG result = RegOpenKeyExW(node.root, subkey, 0, READ_CONTROL | WRITE_DAC | WRITE_OWNER | win32::kDefaultRegistryView, &key);
   if (result == ERROR_ACCESS_DENIED) {
     read_only = true;
-    result = RegOpenKeyExW(node.root, subkey, 0, READ_CONTROL, &key);
+    result = RegOpenKeyExW(node.root, subkey, 0, READ_CONTROL | win32::kDefaultRegistryView, &key);
   }
   if (result == ERROR_ACCESS_DENIED) {
-    result = RegOpenKeyExW(node.root, subkey, 0, MAXIMUM_ALLOWED, &key);
+    result = RegOpenKeyExW(node.root, subkey, 0, MAXIMUM_ALLOWED | win32::kDefaultRegistryView, &key);
   }
 
   bool ok = false;

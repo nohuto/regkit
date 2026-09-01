@@ -9,10 +9,9 @@ using namespace command_detail;
 
 bool MainWindow::Impl::HandleWorkspaceAppearanceCommand(int command_id) {
   if (const auto* link = frame::ResearchLinkForCommand(command_id)) {
-    HINSTANCE result = ShellExecuteW(hwnd_, L"open", link->url, nullptr,
-                                     nullptr, SW_SHOWNORMAL);
-    if (reinterpret_cast<INT_PTR>(result) <= 32) {
-      ui::ShowError(hwnd_, L"Failed to open the research link.");
+    const HRESULT hr = win32::ShellOpen(hwnd_, link->url);
+    if (FAILED(hr)) {
+      ui::ShowError(hwnd_, win32::FormatDialogError(hr));
     }
     return true;
   }
@@ -198,7 +197,7 @@ bool MainWindow::Impl::HandleLaunchHelpCommand(int command_id) {
     ui::ShowAbout(hwnd_);
     return true;
   case cmd::kHelpContents:
-    ShellExecuteW(hwnd_, L"open", kHelpUrl, nullptr, nullptr, SW_SHOWNORMAL);
+    win32::ShellOpen(hwnd_, kHelpUrl);
     return true;
   default:
     return false;

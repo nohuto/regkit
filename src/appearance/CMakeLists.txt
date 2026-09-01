@@ -6,6 +6,7 @@ regkit_add_library(regkit_appearance
     font_picker.cpp
     gdi_cache.cpp
     icon_loader.cpp
+    list_header.cpp
     presets.cpp
     preset_editor.cpp
     theme.cpp

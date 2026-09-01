@@ -1,11 +1,18 @@
 #define AppId "4678f42c-c6a2-4df9-bc2a-dddbd2613045"
 #define AppName "RegKit"
 #define AppExeName "regkit.exe"
-#define AppVersion "0.0.0.5"
+#define AppVersion "0.0.0.7"
 #define AppPublisher "nohuto"
 #define AppCopyright "(C) 2026 nohuto"
 #define AppURL "https://github.com/nohuto/regkit"
-#define BuildDir "..\\build\\Release"
+#ifndef Arch
+  #define Arch "x64"
+#endif
+#if Arch == "x86"
+  #define BuildDir "..\\build32\\Release"
+#else
+  #define BuildDir "..\\build\\Release"
+#endif
 
 [Setup]
 AppId={#AppId}
@@ -27,19 +34,19 @@ SetupIconFile=..\assets\icons\regkit.ico
 UninstallDisplayIcon={app}\{#AppExeName}
 Compression=lzma2
 SolidCompression=yes
+#if Arch == "x64"
 ArchitecturesAllowed=x64os
 ArchitecturesInstallIn64BitMode=x64os
+#endif
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=dialog
 WizardStyle=modern
 OutputDir=dist
-OutputBaseFilename=RegKit-Setup-{#AppVersion}
+OutputBaseFilename=RegKit-Setup-{#AppVersion}-{#Arch}
 
 [Tasks]
 Name: "startmenu"; Description: "Start Menu shortcut"; GroupDescription: "Shortcuts:"; Flags: checkedonce
 Name: "desktopicon"; Description: "Desktop shortcut"; GroupDescription: "Shortcuts:"
-Name: "contextmenu_reg"; Description: "Add 'Edit with RegKit' to .reg context menu"; GroupDescription: "File integration:"
-Name: "replace_regedit"; Description: "Replace Regedit"; GroupDescription: "File integration:"
 
 [Files]
 Source: "{#BuildDir}\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
@@ -50,17 +57,30 @@ Source: "{#BuildDir}\records\25H2.txt"; DestDir: "{app}\records"; Flags: ignorev
 
 [Icons]
 Name: "{autoprograms}\RegKit\RegKit"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: startmenu
-Name: "{userdesktop}\RegKit"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
-
-[Registry]
-; "Edit with RegKit" context menu for .reg
-Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.reg\shell\EditWithRegKit"; ValueType: string; ValueName: ""; ValueData: "Edit with RegKit"; Flags: uninsdeletekey; Tasks: contextmenu_reg
-Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.reg\shell\EditWithRegKit\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExeName}"" ""%1"""; Flags: uninsdeletekey; Tasks: contextmenu_reg
-
-; Replace Regedit
-Root: HKLM; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\regedit.exe"; ValueType: string; ValueName: "Debugger"; ValueData: """{app}\{#AppExeName}"""; Flags: uninsdeletevalue; Tasks: replace_regedit
+Name: "{autodesktop}\RegKit"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Code]
+const
+  IfeoRegeditKey = 'Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\regedit.exe';
+
+procedure RemoveRegeditReplacement;
+var
+  Debugger: string;
+begin
+  if not RegQueryStringValue(HKLM, IfeoRegeditKey, 'Debugger', Debugger) then
+    exit;
+  if CompareText(RemoveQuotes(Trim(Debugger)), ExpandConstant('{app}\{#AppExeName}')) = 0 then begin
+    RegDeleteValue(HKLM, IfeoRegeditKey, 'Debugger');
+    RegDeleteKeyIfEmpty(HKLM, IfeoRegeditKey);
+  end;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+    RemoveRegeditReplacement;
+end;
+
 function GetDefaultDir(Param: string): string;
 begin
   if IsAdminInstallMode then begin

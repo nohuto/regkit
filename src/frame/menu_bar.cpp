@@ -258,9 +258,9 @@ void MainWindow::Impl::BuildMenus() {
   AppendMenuW(options_menu, ti_flags, cmd::kOptionsRestartTrustedInstaller, L"Restart as TI");
   AppendMenuW(options_menu, MF_STRING | (always_run_as_trustedinstaller_ ? MF_CHECKED : MF_UNCHECKED), cmd::kOptionsAlwaysRunTrustedInstaller, L"Always run as TI");
   AppendMenuW(options_menu, MF_SEPARATOR, 0, nullptr);
-  UINT regedit_flags = MF_STRING | ((is_elevated || is_system || is_ti) ? 0 : MF_GRAYED);
-  AppendMenuW(options_menu, regedit_flags, cmd::kOptionsOpenDefaultRegedit, L"Open Default Regedit");
-  AppendMenuW(options_menu, MF_STRING | (replace_regedit_ ? MF_CHECKED : MF_UNCHECKED), cmd::kOptionsReplaceRegedit, L"Replace Regedit");
+  AppendMenuW(options_menu, MF_STRING, cmd::kOptionsOpenDefaultRegedit, L"Open Default Regedit");
+  UINT replace_flags = MF_STRING | ((is_elevated || is_system || is_ti) ? 0 : MF_GRAYED);
+  AppendMenuW(options_menu, replace_flags | (replace_regedit_ ? MF_CHECKED : MF_UNCHECKED), cmd::kOptionsReplaceRegedit, L"Replace Regedit");
   AppendMenuW(options_menu, MF_STRING | (single_instance_ ? MF_CHECKED : MF_UNCHECKED), cmd::kOptionsSingleInstance, L"Single Instance");
   AppendMenuW(options_menu, MF_STRING | (save_tabs_ ? MF_CHECKED : MF_UNCHECKED), cmd::kOptionsSaveTabs, L"Save Tabs");
   AppendMenuW(options_menu, MF_STRING | (read_only_ ? MF_CHECKED : MF_UNCHECKED), cmd::kOptionsReadOnly, L"Read Only Mode");

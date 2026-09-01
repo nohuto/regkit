@@ -3,8 +3,24 @@
 
 #include "frame/command_detail.h"
 
+#include <array>
+
 namespace regkit {
 using namespace command_detail;
+
+namespace {
+HFONT SubmenuArrowFont(int size) {
+  static std::array<HFONT, 12> fonts = {};
+  if (size < 1 || size > static_cast<int>(fonts.size())) {
+    return nullptr;
+  }
+  HFONT& font = fonts[static_cast<size_t>(size) - 1];
+  if (!font) {
+    font = CreateFontW(-size, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, L"Marlett");
+  }
+  return font;
+}
+} // namespace
 
 void MainWindow::Impl::PrepareMenusForOwnerDraw(HMENU menu, bool is_menu_bar) {
   if (!menu) {
@@ -235,7 +251,7 @@ void MainWindow::Impl::OnDrawMenuItem(const DRAWITEMSTRUCT* info) {
     arrow_rect.left = arrow_rect.right - arrow_size;
     arrow_rect.top = rect.top + (rect_h - arrow_size) / 2;
     arrow_rect.bottom = arrow_rect.top + arrow_size;
-    HFONT arrow_font = CreateFontW(-arrow_size, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, L"Marlett");
+    HFONT arrow_font = SubmenuArrowFont(arrow_size);
     HFONT old_arrow = nullptr;
     if (arrow_font) {
       old_arrow = reinterpret_cast<HFONT>(SelectObject(hdc, arrow_font));
@@ -245,9 +261,6 @@ void MainWindow::Impl::OnDrawMenuItem(const DRAWITEMSTRUCT* info) {
     DrawTextW(hdc, L"8", -1, &arrow_rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER | DT_NOPREFIX | DT_NOCLIP);
     if (old_arrow) {
       SelectObject(hdc, old_arrow);
-    }
-    if (arrow_font) {
-      DeleteObject(arrow_font);
     }
   }
 }

@@ -35,6 +35,46 @@ RegKit adds functionality that standard regedit doesn't support/expose:
 - `.reg` / hive file/folder drag and drop support
 - Miscellaneous common functionalities
 
+## Command Line
+
+### regedit
+
+| Command | Notes |
+| --- | --- |
+| `regkit file.reg` | Import `.reg` file (asks for confirmation) |
+| `regkit /s file.reg` | Import without confirmation |
+| `regkit /e file.reg <key>` | Export key to a `.reg` file |
+| `regkit /a file.reg <key>` | Same as `/e` (for compatibility) |
+| `regkit /c` `/m` `/l:file` `/r:file` | Accepted and ignored |
+
+### reg
+
+Using `reg` here is optional, means both `regkit reg query` & `regkit query` work.
+
+| Command | Notes |
+| --- | --- |
+| `add <key> [/v name \| /ve] [/t type] [/s sep] [/d data] [/f]` | `/f` overwrites an existing value |
+| `delete <key> [/v name \| /ve \| /va] [/f]` | Without `/v` the whole key tree is removed |
+| `query <key> [/v name \| /ve] [/s]` | `/s` recurses into subkeys |
+| `copy <src> <dst> [/s] [/f]` | `/s` copies subkeys too |
+| `export <key> <file.reg> [/y]` | `/y` overwrites an existing file |
+| `import <file.reg>` | |
+| `save <key> <file.hiv> [/y]` | Needs the backup privilege |
+| `restore <key> <file.hiv>` | Needs the restore privilege |
+| `load <key> <file.hiv>` / `unload <key>` | Mounts/releases a hive file |
+| `compare <key1> <key2> [/s]` | Exit code `0` = identical, `2` = different |
+| `/reg:32` `/reg:64` | Selects the 32/64 bit registry view |
+
+### regkit (additions)
+
+| Command | Notes |
+| --- | --- |
+| `regkit <key>` | Open the window at that key |
+| `regkit --goto <key>` | The same, in explicit form |
+| `regkit --restart-system` | Relaunch under the SYSTEM account |
+| `regkit --restart-ti` | Relaunch under TrustedInstaller |
+| `regkit --help` | Print usage text |
+
 ## Theme Presets
 
 It includes built in presets and a theme editor to customize colors, presets can also be saved, exported, and imported as `.rktheme` files.

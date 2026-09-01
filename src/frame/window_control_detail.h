@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "frame/window_data_detail.h"
+#include "frame/window_registry_detail.h"
 #include "appearance/font_metrics.h"
 
 #include "frame/window_impl.h"
@@ -273,7 +273,6 @@ inline int CompareUint64(uint64_t left, uint64_t right) {
   return 0;
 }
 
-constexpr int kCellTooltipMaxWidth = 900;
 constexpr int kCellTooltipPadding = 8;
 constexpr size_t kCellTooltipMeasureLimit = 512;
 
@@ -298,7 +297,7 @@ inline const std::wstring& ValueRowFieldText(const ListRow& row, int subitem) {
   case kValueColComment:
     return row.comment;
   default:
-    return row.name;
+    return row.extra;
   }
 }
 

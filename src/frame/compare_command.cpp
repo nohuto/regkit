@@ -148,7 +148,7 @@ void MainWindow::Impl::StartCompareRegistries() {
   tabs_.push_back({TabEntry::Kind::kSearch, search_index});
 
   UpdateTabWidth();
-  TabCtrl_SetCurSel(tab_, tab_index);
+  SelectTabIndex(tab_index);
   active_search_tab_index_ = tab_index;
   UpdateSearchResultsView();
   ApplyViewVisibility();

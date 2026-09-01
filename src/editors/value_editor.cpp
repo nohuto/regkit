@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "editors/value_editor.h"
+#include "win32/text_transform.h"
 
 #include "editors/binary_text.h"
 #include "appearance/dialog_layout.h"
@@ -355,17 +356,7 @@ DWORD ReadTraceType(HWND dlg, TraceValueDialogState* state) {
 }
 
 std::wstring ReadDialogText(HWND dlg, int id) {
-  std::wstring text;
-  if (!dlg) {
-    return text;
-  }
-  int length = GetWindowTextLengthW(GetDlgItem(dlg, id));
-  if (length <= 0) {
-    return text;
-  }
-  text.resize(static_cast<size_t>(length));
-  GetDlgItemTextW(dlg, id, text.data(), length + 1);
-  return text;
+  return dlg ? util::WindowText(GetDlgItem(dlg, id)) : std::wstring();
 }
 
 void SetBinaryGroupSelection(HWND dlg, const BinaryGroupIds& ids, int control_id) {
@@ -1013,6 +1004,8 @@ INT_PTR CALLBACK TextDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lparam
     if (IsMultilineEdit(dlg, IDC_EDIT)) {
       using namespace appearance;
       state->resizer.Attach(dlg, {
+          {IDC_VALUE_NAME, kAnchorLeft | kAnchorTop | kAnchorRight},
+          {IDC_VALUE_TYPE, kAnchorLeft | kAnchorTop | kAnchorRight},
           {IDC_LABEL, kAnchorLeft | kAnchorTop | kAnchorRight},
           {IDC_EDIT, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
           {IDOK, kAnchorRight | kAnchorBottom},

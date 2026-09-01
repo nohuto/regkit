@@ -12,6 +12,7 @@
 
 namespace util {
 
+std::wstring WindowText(HWND window);
 std::wstring ToLower(const std::wstring& text);
 std::wstring TrimWhitespace(const std::wstring& text);
 std::wstring ExpandEnvironmentStringsDynamic(const std::wstring& text);

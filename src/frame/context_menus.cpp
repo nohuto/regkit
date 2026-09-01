@@ -485,8 +485,8 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
   KeyInfo info = {};
   bool key_exists = node_ok && RegistryStore::QueryKeyInfo(node, &info);
   bool can_modify = !read_only_;
-  bool can_rename = key_exists && !node.subkey.empty() && can_modify;
-  bool can_delete = key_exists && !node.subkey.empty() && can_modify;
+  bool can_rename = key_exists && can_modify && (!result.is_key || !node.subkey.empty());
+  bool can_delete = key_exists && can_modify && (!result.is_key || !node.subkey.empty());
   bool can_export = key_exists;
   bool can_permissions = key_exists && can_modify;
   bool can_open_hive = false;
@@ -521,7 +521,6 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
     kSearchExport = 51009,
     kSearchRename = 51010,
     kSearchDelete = 51011,
-    kSearchRefresh = 51012,
   };
 
   auto build_copy_path_menu = [&]() -> HMENU {
@@ -557,8 +556,6 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
   UINT export_flags = MF_STRING | (can_export ? 0 : MF_GRAYED);
   AppendMenuW(menu, export_flags, kSearchExport, L"Export...");
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-  AppendMenuW(menu, MF_STRING, kSearchRefresh, L"Refresh");
-  AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   UINT rename_flags = MF_STRING | (can_rename ? 0 : MF_GRAYED);
   UINT delete_flags = MF_STRING | (can_delete ? 0 : MF_GRAYED);
   AppendMenuW(menu, rename_flags, kSearchRename, L"Rename");
@@ -577,12 +574,7 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
     if (new_tab) {
       OpenLocalRegistryTab();
     } else {
-      int registry_tab = FindFirstRegistryTabIndex();
-      if (registry_tab >= 0) {
-        TabCtrl_SetCurSel(tab_, registry_tab);
-      } else {
-        OpenLocalRegistryTab();
-      }
+      ActivateRegistryTab();
     }
     ApplyViewVisibility();
     UpdateStatus();
@@ -594,18 +586,32 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
       SetFocus(browse_.tree().hwnd());
     }
   };
-  auto focus_value = [&]() -> bool {
+  auto run_on_value = [&](int command) {
     if (result.is_key) {
-      return false;
+      return;
     }
     open_key(false);
-    if (!SelectValueByName(result.value_name)) {
-      return false;
+    if (SelectValueByName(result.value_name)) {
+      if (browse_.values().hwnd()) {
+        SetFocus(browse_.values().hwnd());
+      }
+      HandleMenuCommand(command);
+      return;
     }
-    if (browse_.values().hwnd()) {
-      SetFocus(browse_.values().hwnd());
+    pending_external_value_key_path_ = key_path;
+    pending_external_value_name_ = result.value_name;
+    pending_value_command_ = command;
+  };
+  auto run_on_key = [&](int command) {
+    focus_key();
+    HandleMenuCommand(command);
+  };
+  auto run_on_target = [&](int command) {
+    if (result.is_key) {
+      run_on_key(command);
+    } else {
+      run_on_value(command);
     }
-    return true;
   };
 
   switch (command) {
@@ -616,19 +622,13 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
     open_key(true);
     return;
   case kSearchModify:
-    if (focus_value()) {
-      HandleMenuCommand(cmd::kEditModify);
-    }
+    run_on_value(cmd::kEditModify);
     return;
   case kSearchModifyBinary:
-    if (focus_value()) {
-      HandleMenuCommand(cmd::kEditModifyBinary);
-    }
+    run_on_value(cmd::kEditModifyBinary);
     return;
   case kSearchModifyComment:
-    if (focus_value()) {
-      HandleMenuCommand(cmd::kEditModifyComment);
-    }
+    run_on_value(cmd::kEditModifyComment);
     return;
   case kSearchCopyKeyName: {
     std::wstring name;
@@ -691,24 +691,17 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
     return;
   case kSearchExport:
     if (can_export) {
-      focus_key();
-      HandleMenuCommand(cmd::kFileExport);
+      run_on_target(cmd::kFileExport);
     }
-    return;
-  case kSearchRefresh:
-    focus_key();
-    HandleMenuCommand(cmd::kViewRefresh);
     return;
   case kSearchRename:
     if (can_rename) {
-      focus_key();
-      HandleMenuCommand(cmd::kEditRename);
+      run_on_target(cmd::kEditRename);
     }
     return;
   case kSearchDelete:
     if (can_delete) {
-      focus_key();
-      HandleMenuCommand(cmd::kEditDelete);
+      run_on_target(cmd::kEditDelete);
     }
     return;
   default:

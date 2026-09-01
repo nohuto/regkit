@@ -3,6 +3,8 @@
 
 #include "frame/window_detail.h"
 
+#include "regfile/registry_transfer.h"
+
 namespace regkit {
 using namespace window_detail;
 
@@ -79,14 +81,12 @@ std::optional<LRESULT> MainWindow::Impl::HandleLifecycleMessage(UINT message,
     return 0;
   case WM_ACTIVATE:
     if (LOWORD(wparam) == WA_ACTIVE && browse_.tree().hwnd()) {
+      if (last_focus_) {
+        break;
+      }
       int sel = TabCtrl_GetCurSel(tab_);
       if (sel >= 0 && static_cast<size_t>(sel) < tabs_.size() && tabs_[static_cast<size_t>(sel)].kind == TabEntry::Kind::kRegistry) {
-        if (regedit_compatibility_mode_ && regedit_compat_edit_) {
-          SetFocus(regedit_compat_edit_);
-          SendMessageW(regedit_compat_edit_, EM_SETSEL, 0, -1);
-        } else {
-          SetFocus(browse_.tree().hwnd());
-        }
+        SetFocus(browse_.tree().hwnd());
       }
     }
     break;
@@ -124,11 +124,11 @@ std::optional<LRESULT> MainWindow::Impl::HandleLayoutInputMessage(UINT message,
   }
   case WM_LBUTTONUP:
     if (splitter_dragging_) {
-      EndSplitterDrag(true);
+      EndSplitterDrag();
       return 0;
     }
     if (history_splitter_dragging_) {
-      EndHistorySplitterDrag(true);
+      EndHistorySplitterDrag();
       return 0;
     }
     break;
@@ -147,11 +147,11 @@ std::optional<LRESULT> MainWindow::Impl::HandleLayoutInputMessage(UINT message,
   }
   case WM_CAPTURECHANGED:
     if (splitter_dragging_) {
-      EndSplitterDrag(false);
+      EndSplitterDrag();
       return 0;
     }
     if (history_splitter_dragging_) {
-      EndHistorySplitterDrag(false);
+      EndHistorySplitterDrag();
       return 0;
     }
     break;
@@ -698,12 +698,27 @@ std::optional<LRESULT> MainWindow::Impl::HandleValueWorkerMessage(UINT message,
     value_list_loading_ = false;
     UpdateStatus();
     StartPendingValueListRename();
+    if (!retained_value_key_path_.empty() && browse_.current_node() &&
+        EqualsInsensitive(registry_path::Build(*browse_.current_node()),
+                          retained_value_key_path_)) {
+      SelectValueByName(retained_value_name_);
+    }
+    retained_value_name_.clear();
+    retained_value_key_path_.clear();
     if (!pending_external_value_name_.empty() && browse_.current_node()) {
       std::wstring current_path = registry_path::Build(*browse_.current_node());
       if (EqualsInsensitive(current_path, pending_external_value_key_path_)) {
-        SelectValueByName(pending_external_value_name_);
+        const bool selected = SelectValueByName(pending_external_value_name_);
         pending_external_value_key_path_.clear();
         pending_external_value_name_.clear();
+        const int command = pending_value_command_;
+        pending_value_command_ = 0;
+        if (selected && command != 0) {
+          if (browse_.values().hwnd()) {
+            SetFocus(browse_.values().hwnd());
+          }
+          PostMessageW(hwnd_, WM_COMMAND, MAKEWPARAM(command, 0), 0);
+        }
       }
     }
     return 0;
@@ -750,28 +765,15 @@ std::optional<LRESULT> MainWindow::Impl::HandleExternalMessage(UINT message,
     return 0;
   }
   case WM_TIMER:
-    if (wparam == kRegeditCompatApplyTimerId) {
-      KillTimer(hwnd_, kRegeditCompatApplyTimerId);
-      ApplyPendingRegeditCompatNavigation();
-      return 0;
-    }
     break;
   case WM_COPYDATA: {
     auto* data = reinterpret_cast<const COPYDATASTRUCT*>(lparam);
     if (!data) {
       return 0;
     }
-    if (data->dwData == kRegeditCompatActivateCopyDataId) {
-      ActivateRegeditCompatibilityMode();
-      ShowWindow(hwnd_, SW_RESTORE);
-      SetForegroundWindow(hwnd_);
-      FocusAddressBarForExternalJump(true);
-      return TRUE;
-    }
     if (data->dwData != kExternalJumpCopyDataId || !data->lpData || data->cbData < sizeof(wchar_t)) {
       return 0;
     }
-    ActivateRegeditCompatibilityMode();
     size_t length = data->cbData / sizeof(wchar_t);
     const wchar_t* text = reinterpret_cast<const wchar_t*>(data->lpData);
     std::wstring target(text, text + length);
@@ -781,10 +783,6 @@ std::optional<LRESULT> MainWindow::Impl::HandleExternalMessage(UINT message,
     if (target.empty()) {
       return 0;
     }
-    // External jump requests are authoritative; clear any in-flight compat edit debounce.
-    KillTimer(hwnd_, kRegeditCompatApplyTimerId);
-    regedit_compat_pending_key_path_.clear();
-    regedit_compat_pending_value_name_.clear();
     if (deferred_startup_complete_) {
       NavigateToExternalJump(target);
     } else {
@@ -796,6 +794,11 @@ std::optional<LRESULT> MainWindow::Impl::HandleExternalMessage(UINT message,
     return TRUE;
   }
   case WM_SETFOCUS:
+    if (last_focus_ && IsWindow(last_focus_) && IsChild(hwnd_, last_focus_) &&
+        IsWindowVisible(last_focus_) && IsWindowEnabled(last_focus_)) {
+      SetFocus(last_focus_);
+      return 0;
+    }
     break;
   case frame::message_id::kAddressEnter:
     NavigateToAddress();
@@ -880,6 +883,15 @@ std::optional<LRESULT> MainWindow::Impl::HandleAppearanceMessage(UINT message,
     const UINT modify_state = can_modify_value ? MF_ENABLED : MF_GRAYED;
     EnableMenuItem(menu, cmd::kEditModify, MF_BYCOMMAND | modify_state);
     EnableMenuItem(menu, cmd::kEditModifyBinary, MF_BYCOMMAND | modify_state);
+    const bool hives_allowed = !read_only_ && registry_mode_ != RegistryMode::kRemote;
+    const RegistryNode* hive_node = browse_.current_node();
+    const bool hive_selected =
+        hives_allowed && hive_node &&
+        IsMountedHive(hive_node->root, hive_node->subkey);
+    EnableMenuItem(menu, cmd::kFileLoadHive,
+                   MF_BYCOMMAND | (hives_allowed ? MF_ENABLED : MF_GRAYED));
+    EnableMenuItem(menu, cmd::kFileUnloadHive,
+                   MF_BYCOMMAND | (hive_selected ? MF_ENABLED : MF_GRAYED));
     if (GetMenuState(menu, cmd::kOptionsHiveFileDir, MF_BYCOMMAND) !=
         static_cast<UINT>(-1)) {
       const UINT hive_state = ResolveSelectedHiveFilePath().empty()
@@ -977,9 +989,8 @@ std::optional<LRESULT> MainWindow::Impl::HandleBrowseMessage(UINT message,
       return 0;
     }
     if (HIWORD(wparam) == EN_CHANGE && LOWORD(wparam) == kFilterEditId) {
-      wchar_t buffer[256] = {};
-      GetWindowTextW(browse_.filter(), buffer, static_cast<int>(_countof(buffer)));
-      bool needs_full_data = buffer[0] != L'\0';
+      const std::wstring buffer = util::WindowText(browse_.filter());
+      bool needs_full_data = !buffer.empty();
       if (needs_full_data) {
         needs_full_data = std::any_of(browse_.values().rows().begin(), browse_.values().rows().end(), [](const ListRow& row) {
           return row.kind == rowkind::kValue && !row.data_ready;

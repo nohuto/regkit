@@ -114,8 +114,6 @@ void ApplyNativeDarkTheme(HWND hwnd, bool dark_mode) {
         bool dark_mode = param != 0;
         int control_id = GetDlgCtrlID(child);
         if (control_id == stc5) {
-          // Keep the sample preview controls on the stock theme so ChooseFontW
-          // can keep driving the native preview surface.
           AllowDarkModeForWindow(child, FALSE);
           SetWindowTheme(child, nullptr, nullptr);
           return TRUE;

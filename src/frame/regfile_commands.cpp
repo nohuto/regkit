@@ -187,7 +187,7 @@ bool MainWindow::Impl::OpenRegFileTab(const std::wstring& path) {
       item.mask = TCIF_TEXT;
       item.pszText = const_cast<wchar_t*>(label.c_str());
       TabCtrl_SetItem(tab_, static_cast<int>(i), &item);
-      TabCtrl_SetCurSel(tab_, static_cast<int>(i));
+      SelectTabIndex(static_cast<int>(i));
       SyncRegFileTabSelection();
       ApplyViewVisibility();
       UpdateStatus();
@@ -210,7 +210,7 @@ bool MainWindow::Impl::OpenRegFileTab(const std::wstring& path) {
   entry.reg_file_loading = true;
   tabs_.push_back(std::move(entry));
   UpdateTabWidth();
-  TabCtrl_SetCurSel(tab_, index);
+  SelectTabIndex(index);
   SyncRegFileTabSelection();
   ApplyViewVisibility();
   UpdateStatus();

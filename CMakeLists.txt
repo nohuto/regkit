@@ -8,6 +8,8 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 option(REGKIT_REPORT_COMPILE_TIME "Print MSVC front-end and back-end timing" OFF)
 
+message(STATUS "RegKit platform: '${CMAKE_GENERATOR_PLATFORM}' pointer size: ${CMAKE_SIZEOF_VOID_P}")
+
 add_library(regkit_compile_settings INTERFACE)
 target_compile_features(regkit_compile_settings INTERFACE cxx_std_20)
 target_compile_definitions(regkit_compile_settings INTERFACE
@@ -44,6 +46,7 @@ target_include_directories(RegKit PRIVATE
 )
 target_link_libraries(RegKit PRIVATE
     regkit_frame
+    regkit_cli
     regkit_registry_io
     regkit_editors
     regkit_appearance
@@ -64,12 +67,6 @@ add_custom_command(TARGET RegKit POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RegKit>/records"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RegKit>/assets/icons"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RegKit>/assets/defaults"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/assets/associate_regkit_reg.bat"
-        "$<TARGET_FILE_DIR:RegKit>/assets/associate_regkit_reg.bat"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/assets/remove_regkit_reg.bat"
-        "$<TARGET_FILE_DIR:RegKit>/assets/remove_regkit_reg.bat"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/records/23H2.txt"
         "$<TARGET_FILE_DIR:RegKit>/records/23H2.txt"
@@ -110,5 +107,6 @@ regkit_verify_dependency_order(
     regkit_trace_dialog
     regkit_security
     regkit_frame
+    regkit_cli
     RegKit
 )

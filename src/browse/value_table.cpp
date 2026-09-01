@@ -11,6 +11,8 @@
 namespace regkit {
 
 namespace {
+constexpr int kCellTooltipMaxWidth = 900;
+
 void AppendSearchField(std::wstring* out, const std::wstring& text) {
   if (!out || text.empty()) {
     return;
@@ -44,11 +46,12 @@ std::wstring BuildSearchText(const ListRow& row) {
 } // namespace
 
 void ValueList::Create(HWND parent, HINSTANCE instance, int control_id) {
-  hwnd_ = CreateWindowExW(0, WC_LISTVIEWW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA | LVS_EDITLABELS, 0, 0, 100, 100, parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(control_id)), instance, nullptr);
-  DWORD ex_mask = LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_BORDERSELECT | LVS_EX_TRACKSELECT | LVS_EX_ONECLICKACTIVATE | LVS_EX_TWOCLICKACTIVATE | LVS_EX_UNDERLINEHOT;
-  DWORD ex_style = LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER;
+  hwnd_ = CreateWindowExW(0, WC_LISTVIEWW, L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA | LVS_EDITLABELS, 0, 0, 100, 100, parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(control_id)), instance, nullptr);
+  DWORD ex_mask = LVS_EX_INFOTIP | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_BORDERSELECT | LVS_EX_TRACKSELECT | LVS_EX_ONECLICKACTIVATE | LVS_EX_TWOCLICKACTIVATE | LVS_EX_UNDERLINEHOT;
+  DWORD ex_style = LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_INFOTIP;
   ListView_SetExtendedListViewStyleEx(hwnd_, ex_mask, ex_style);
   SendMessageW(hwnd_, WM_CHANGEUISTATE, MAKEWPARAM(UIS_SET, UISF_HIDEFOCUS), 0);
+  SendMessageW(ListView_GetToolTips(hwnd_), TTM_SETMAXTIPWIDTH, 0, kCellTooltipMaxWidth);
 }
 
 HWND ValueList::hwnd() const {

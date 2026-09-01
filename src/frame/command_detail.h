@@ -5,10 +5,10 @@
 
 #include "frame/window_impl.h"
 #include "frame/window_detail.h"
+#include "frame/window_draw_detail.h"
 
 #include <algorithm>
 #include <commctrl.h>
-#include <commdlg.h>
 #include <cwctype>
 #include <mutex>
 #include <shellapi.h>
@@ -171,41 +171,11 @@ inline bool SelectValueByName(ValueList& list, const std::wstring& name) {
 }
 
 inline bool PromptOpenFilePath(HWND owner, const wchar_t* filter, std::wstring* path) {
-  if (!path) {
-    return false;
-  }
-  std::wstring buffer(32768, L'\0');
-  OPENFILENAMEW ofn = {};
-  ofn.lStructSize = sizeof(ofn);
-  ofn.hwndOwner = owner;
-  ofn.lpstrFilter = filter;
-  ofn.lpstrFile = buffer.data();
-  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
-  ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-  if (!GetOpenFileNameW(&ofn)) {
-    return false;
-  }
-  *path = buffer.c_str();
-  return true;
+  return ui::ReportFileDialogResult(owner, win32::ChooseFileToOpen(owner, filter, path));
 }
 
 inline bool PromptSaveFilePath(HWND owner, const wchar_t* filter, std::wstring* path) {
-  if (!path) {
-    return false;
-  }
-  std::wstring buffer(32768, L'\0');
-  OPENFILENAMEW ofn = {};
-  ofn.lStructSize = sizeof(ofn);
-  ofn.hwndOwner = owner;
-  ofn.lpstrFilter = filter;
-  ofn.lpstrFile = buffer.data();
-  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
-  ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
-  if (!GetSaveFileNameW(&ofn)) {
-    return false;
-  }
-  *path = buffer.c_str();
-  return true;
+  return ui::ReportFileDialogResult(owner, win32::ChooseFileToSave(owner, filter, nullptr, nullptr, path));
 }
 
 inline bool GetListViewColumnInfo(HWND list, int display_index, int* subitem, int* width) {
@@ -621,34 +591,11 @@ inline void SetComboSelection(HWND combo, const std::wstring& value) {
 }
 
 inline std::wstring ReadComboText(HWND combo) {
-  std::wstring text;
-  if (!combo) {
-    return text;
-  }
-  int length = GetWindowTextLengthW(combo);
-  if (length <= 0) {
-    return text;
-  }
-  text.resize(static_cast<size_t>(length) + 1);
-  int copied = GetWindowTextW(combo, &text[0], length + 1);
-  text.resize(static_cast<size_t>(copied));
-  return text;
+  return util::WindowText(combo);
 }
 
 inline std::wstring ReadDialogText(HWND dlg, int id) {
-  HWND ctrl = GetDlgItem(dlg, id);
-  if (!ctrl) {
-    return L"";
-  }
-  int length = GetWindowTextLengthW(ctrl);
-  if (length <= 0) {
-    return L"";
-  }
-  std::wstring text;
-  text.resize(static_cast<size_t>(length) + 1);
-  int copied = GetWindowTextW(ctrl, &text[0], length + 1);
-  text.resize(static_cast<size_t>(copied));
-  return text;
+  return util::WindowText(GetDlgItem(dlg, id));
 }
 
 inline void SetDialogText(HWND dlg, int id, const std::wstring& text) {

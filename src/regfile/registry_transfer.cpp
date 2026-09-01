@@ -2,19 +2,22 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "regfile/registry_transfer.h"
+#include "appearance/feedback.h"
 
 #include <cwchar>
 #include <cwctype>
 #include <unordered_set>
 #include <vector>
 
-#include <commdlg.h>
 #include <shellapi.h>
 #include <shlobj.h>
 
 #include "win32/system_error.h"
 #include "win32/text_transform.h"
 #include "editors/export_dialog.h"
+#include "editors/hive_dialog.h"
+#include "win32/file_dialog.h"
+#include "win32/registry_view.h"
 #include "editors/value_editor.h"
 #include "regfile/reg_file.h"
 #include "registry/registry_path.h"
@@ -137,23 +140,11 @@ std::wstring NormalizeExportKeyPath(const std::wstring& key_path, std::wstring* 
   return path;
 }
 
+constexpr wchar_t kRegFileFilter[] =
+    L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0";
+
 bool PromptOpenFile(HWND owner, const wchar_t* filter, std::wstring* path) {
-  if (!path) {
-    return false;
-  }
-  std::wstring buffer(32768, L'\0');
-  OPENFILENAMEW ofn = {};
-  ofn.lStructSize = sizeof(ofn);
-  ofn.hwndOwner = owner;
-  ofn.lpstrFilter = filter;
-  ofn.lpstrFile = buffer.data();
-  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
-  ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-  if (!GetOpenFileNameW(&ofn)) {
-    return false;
-  }
-  *path = buffer.c_str();
-  return true;
+  return ui::ReportFileDialogResult(owner, win32::ChooseFileToOpen(owner, filter, path));
 }
 
 std::wstring SanitizeFileName(const std::wstring& name) {
@@ -179,28 +170,9 @@ std::wstring SanitizeFileName(const std::wstring& name) {
 }
 
 bool PromptSaveRegFile(HWND owner, const std::wstring& default_name, std::wstring* path) {
-  if (!path) {
-    return false;
-  }
-  std::wstring name = default_name;
-  if (name.empty()) {
-    name = L"RegistryExport.reg";
-  }
-  std::wstring buffer(32768, L'\0');
-  wcsncpy_s(buffer.data(), buffer.size(), name.c_str(), _TRUNCATE);
-  OPENFILENAMEW ofn = {};
-  ofn.lStructSize = sizeof(ofn);
-  ofn.hwndOwner = owner;
-  ofn.lpstrFilter = L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0\0";
-  ofn.lpstrFile = buffer.data();
-  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
-  ofn.lpstrDefExt = L"reg";
-  ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
-  if (!GetSaveFileNameW(&ofn)) {
-    return false;
-  }
-  *path = buffer.c_str();
-  return true;
+  const std::wstring name = default_name.empty() ? L"RegistryExport.reg" : default_name;
+  return ui::ReportFileDialogResult(
+      owner, win32::ChooseFileToSave(owner, kRegFileFilter, L"reg", name.c_str(), path));
 }
 
 std::wstring EnsureRegExtension(std::wstring path);
@@ -383,7 +355,8 @@ bool ExportKeyToContent(const std::wstring& key_path, bool include_subkeys, std:
   }
   std::wstring temp_path = temp_file;
 
-  std::wstring args = L"export \"" + normalized + L"\" \"" + temp_path + L"\" /y";
+  std::wstring args = L"export \"" + normalized + L"\" \"" + temp_path + L"\" /y ";
+  args += win32::RegExeViewSwitch(win32::kDefaultRegistryView);
   if (!RunRegCommand(args, nullptr, error)) {
     DeleteFileW(temp_path.c_str());
     return false;
@@ -443,13 +416,42 @@ std::wstring EnsureRegExtension(std::wstring path) {
   return path;
 }
 
+bool AdjustHivePrivilege(const wchar_t* name, bool enable) {
+  HANDLE token = nullptr;
+  if (!OpenProcessToken(GetCurrentProcess(),
+                        TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token)) {
+    return false;
+  }
+  TOKEN_PRIVILEGES privileges = {};
+  privileges.PrivilegeCount = 1;
+  privileges.Privileges[0].Attributes = enable ? SE_PRIVILEGE_ENABLED : 0;
+  bool ok = LookupPrivilegeValueW(nullptr, name,
+                                  &privileges.Privileges[0].Luid) != FALSE;
+  if (ok) {
+    ok = AdjustTokenPrivileges(token, FALSE, &privileges, 0, nullptr, nullptr) &&
+         GetLastError() == ERROR_SUCCESS;
+  }
+  CloseHandle(token);
+  return ok;
+}
+
+void ReleaseHivePrivileges() {
+  AdjustHivePrivilege(SE_RESTORE_NAME, false);
+  AdjustHivePrivilege(SE_BACKUP_NAME, false);
+}
+
+bool EnableHivePrivilege(const wchar_t* name) {
+  return AdjustHivePrivilege(name, true);
+}
+
 } // namespace
 
 bool ImportRegFileFromPath(const std::wstring& path, std::wstring* error) {
   if (path.empty()) {
     return false;
   }
-  std::wstring args = L"import \"" + path + L"\"";
+  std::wstring args = L"import \"" + path + L"\" ";
+  args += win32::RegExeViewSwitch(win32::kDefaultRegistryView);
   return RunRegCommand(args, nullptr, error);
 }
 
@@ -488,7 +490,8 @@ bool ExportRegFile(HWND owner, const std::wstring& key_path, std::wstring* error
     target_path = temp_path;
   }
 
-  std::wstring args = L"export \"" + normalized + L"\" \"" + target_path + L"\" /y";
+  std::wstring args = L"export \"" + normalized + L"\" \"" + target_path + L"\" /y ";
+  args += win32::RegExeViewSwitch(win32::kDefaultRegistryView);
   if (!RunRegCommand(args, nullptr, error)) {
     if (!temp_path.empty()) {
       DeleteFileW(temp_path.c_str());
@@ -505,7 +508,7 @@ bool ExportRegFile(HWND owner, const std::wstring& key_path, std::wstring* error
   }
 
   if (options.open_after) {
-    ShellExecuteW(owner, L"open", options.path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    win32::ShellOpen(owner, options.path.c_str());
   }
   return true;
 }
@@ -603,27 +606,59 @@ bool ExportRegFileSelection(HWND owner, const std::wstring& base_key_path, const
   return true;
 }
 
-bool LoadHive(HWND owner, HKEY root, std::wstring* error) {
-  std::wstring file_path;
-  if (!PromptOpenFile(owner, L"Hive Files (*.*)\0*.*\0", &file_path)) {
+bool IsMountedHive(HKEY root, const std::wstring& subkey) {
+  if (subkey.empty() || subkey.find(L'\\') != std::wstring::npos) {
     return false;
   }
-  std::wstring mount_name;
-  editors::TextRequest request;
-  request.title = L"Load Hive";
-  request.label = L"Key name:";
-  editors::TextResult text_result;
-  if (!editors::EditText(owner, request, &text_result)) {
+  std::wstring native;
+  if (root == HKEY_LOCAL_MACHINE) {
+    native = L"\\REGISTRY\\MACHINE\\";
+  } else if (root == HKEY_USERS) {
+    native = L"\\REGISTRY\\USER\\";
+  } else {
     return false;
   }
-  mount_name = std::move(text_result.text);
-  if (mount_name.empty()) {
+  native += subkey;
+
+  HKEY key = nullptr;
+  if (RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                    L"SYSTEM\\CurrentControlSet\\Control\\hivelist", 0,
+                    KEY_QUERY_VALUE | win32::kDefaultRegistryView, &key) != ERROR_SUCCESS) {
+    return false;
+  }
+  bool found = false;
+  wchar_t name[512] = {};
+  for (DWORD index = 0; !found; ++index) {
+    DWORD length = static_cast<DWORD>(_countof(name));
+    if (RegEnumValueW(key, index, name, &length, nullptr, nullptr, nullptr,
+                      nullptr) != ERROR_SUCCESS) {
+      break;
+    }
+    found = _wcsicmp(name, native.c_str()) == 0;
+  }
+  RegCloseKey(key);
+  return found;
+}
+
+bool LoadHive(HWND owner, HKEY* root, std::wstring* error) {
+  if (!root) {
+    return false;
+  }
+  editors::LoadHiveResult choice;
+  choice.root = *root;
+  if (!editors::ChooseHiveToLoad(owner, &choice)) {
+    return false;
+  }
+  *root = choice.root;
+  if (!EnableHivePrivilege(SE_RESTORE_NAME) || !EnableHivePrivilege(SE_BACKUP_NAME)) {
     if (error) {
-      *error = L"Key name is required.";
+      *error = L"Loading a hive needs the backup and restore privileges. Run RegKit elevated.";
     }
     return false;
   }
-  LONG result = RegLoadKeyW(root, mount_name.c_str(), file_path.c_str());
+  const LONG result =
+      RegLoadKeyW(*root, choice.key_name.c_str(), choice.file.c_str());
+  ReleaseHivePrivileges();
   if (result != ERROR_SUCCESS) {
     if (error) {
       *error = FormatWin32Error(result);
@@ -652,7 +687,14 @@ bool UnloadHive(HWND owner, HKEY root, const std::wstring& subkey, std::wstring*
     }
     return false;
   }
-  LONG result = RegUnLoadKeyW(root, target.c_str());
+  if (!EnableHivePrivilege(SE_RESTORE_NAME) || !EnableHivePrivilege(SE_BACKUP_NAME)) {
+    if (error) {
+      *error = L"Unloading a hive needs the backup and restore privileges. Run RegKit elevated.";
+    }
+    return false;
+  }
+  const LONG result = RegUnLoadKeyW(root, target.c_str());
+  ReleaseHivePrivileges();
   if (result != ERROR_SUCCESS) {
     if (error) {
       *error = FormatWin32Error(result);

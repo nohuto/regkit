@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "appearance/theme.h"
+#include "win32/text_transform.h"
 
 #include "appearance/gdi_cache.h"
 
+#include <string>
 #include <commctrl.h>
 #include <dwmapi.h>
 #include <richedit.h>
@@ -35,7 +37,7 @@ ThemeColors g_custom_colors = []() -> ThemeColors {
   colors.text = RGB(200, 200, 200);
   colors.muted_text = RGB(170, 170, 170);
   colors.accent = RGB(90, 162, 255);
-  colors.selection = RGB(20, 20, 20);
+  colors.selection = RGB(38, 79, 120);
   colors.selection_text = RGB(255, 255, 255);
   colors.hover = RGB(44, 44, 44);
   colors.focus = colors.accent;
@@ -604,12 +606,16 @@ void PaintComboBox(HWND hwnd, HDC hdc, ComboBoxThemeState* state) {
   }
 
   if (cb_style == CBS_DROPDOWNLIST) {
-    wchar_t buffer[256] = {};
-    int index = static_cast<int>(SendMessageW(hwnd, CB_GETCURSEL, 0, 0));
-    if (index != CB_ERR) {
-      SendMessageW(hwnd, CB_GETLBTEXT, index, reinterpret_cast<LPARAM>(buffer));
-    } else {
-      GetWindowTextW(hwnd, buffer, static_cast<int>(_countof(buffer)));
+    std::wstring buffer;
+    const int index = static_cast<int>(SendMessageW(hwnd, CB_GETCURSEL, 0, 0));
+    const int item_length = index != CB_ERR ? static_cast<int>(SendMessageW(hwnd, CB_GETLBTEXTLEN, index, 0)) : CB_ERR;
+    if (item_length > 0) {
+      buffer.resize(static_cast<size_t>(item_length));
+      if (SendMessageW(hwnd, CB_GETLBTEXT, index, reinterpret_cast<LPARAM>(buffer.data())) == CB_ERR) {
+        buffer.clear();
+      }
+    } else if (item_length == CB_ERR) {
+      buffer = util::WindowText(hwnd);
     }
     RECT text_rect = info.rcItem;
     InflateRect(&text_rect, -2, 0);
@@ -618,10 +624,10 @@ void PaintComboBox(HWND hwnd, HDC hdc, ComboBoxThemeState* state) {
       opts.dwSize = sizeof(opts);
       opts.dwFlags = DTT_TEXTCOLOR;
       opts.crText = text;
-      DrawThemeTextEx(combo_theme, hdc, CP_DROPDOWNITEM, enabled ? CBXSR_NORMAL : CBXSR_DISABLED, buffer, -1, DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_NOPREFIX, &text_rect, &opts);
+      DrawThemeTextEx(combo_theme, hdc, CP_DROPDOWNITEM, enabled ? CBXSR_NORMAL : CBXSR_DISABLED, buffer.c_str(), -1, DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_NOPREFIX, &text_rect, &opts);
     } else {
       SetTextColor(hdc, text);
-      DrawTextW(hdc, buffer, -1, &text_rect, DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_NOPREFIX);
+      DrawTextW(hdc, buffer.c_str(), -1, &text_rect, DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_NOPREFIX);
     }
     if (enabled && has_focus && SendMessageW(hwnd, CB_GETDROPPEDSTATE, 0, 0) == FALSE) {
       DrawFocusRect(hdc, &info.rcItem);
@@ -774,7 +780,7 @@ Theme& Theme::Dark() {
   colors.text = RGB(200, 200, 200);
   colors.muted_text = RGB(170, 170, 170);
   colors.accent = RGB(90, 162, 255);
-  colors.selection = RGB(20, 20, 20);
+  colors.selection = RGB(38, 79, 120);
   colors.selection_text = RGB(255, 255, 255);
   colors.hover = RGB(44, 44, 44);
   colors.focus = colors.accent;
@@ -951,8 +957,7 @@ void Theme::ApplyToListView(HWND hwnd) const {
     return;
   }
   AllowDarkModeForWindow(hwnd, is_dark_);
-  const wchar_t* theme = is_dark_ ? L"DarkMode_Explorer" : L"Explorer";
-  SetWindowTheme(hwnd, theme, nullptr);
+  SetWindowTheme(hwnd, is_dark_ ? L"DarkMode_Explorer" : L"Explorer", nullptr);
   ListView_SetBkColor(hwnd, colors_.panel);
   ListView_SetTextBkColor(hwnd, colors_.panel);
   ListView_SetTextColor(hwnd, colors_.text);
@@ -967,7 +972,7 @@ void Theme::ApplyToListView(HWND hwnd) const {
   HWND header = ListView_GetHeader(hwnd);
   if (header) {
     AllowDarkModeForWindow(header, is_dark_);
-    SetWindowTheme(header, theme, nullptr);
+    SetWindowTheme(header, is_dark_ ? L"DarkMode_ItemsView" : L"ItemsView", nullptr);
     InvalidateRect(header, nullptr, TRUE);
   }
 }

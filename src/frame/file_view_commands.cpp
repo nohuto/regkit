@@ -233,11 +233,11 @@ bool MainWindow::Impl::HandleFileCommand(int command_id) {
     }
     std::wstring error;
     HKEY root = HKEY_LOCAL_MACHINE;
-    if (browse_.current_node() && (browse_.current_node()->root == HKEY_LOCAL_MACHINE || browse_.current_node()->root == HKEY_USERS)) {
-      root = browse_.current_node()->root;
-    }
-    if (LoadHive(hwnd_, root, &error)) {
-      AppendHistoryEntry(L"Load hive", L"", registry_path::RootName(root));
+    if (LoadHive(hwnd_, &root, &error)) {
+      const std::wstring root_name = registry_path::RootName(root);
+      AppendHistoryEntry(L"Load hive", L"", root_name);
+      SelectTreePath(root_name);
+      RefreshTreeSelection();
       UpdateValueListForNode(browse_.current_node());
     } else if (!error.empty()) {
       ui::ShowError(hwnd_, error);
@@ -258,12 +258,25 @@ bool MainWindow::Impl::HandleFileCommand(int command_id) {
       root = browse_.current_node()->root;
       subkey = browse_.current_node()->subkey;
     }
-    std::wstring error;
-    if (!UnloadHive(hwnd_, root, subkey, &error) && !error.empty()) {
-      ui::ShowError(hwnd_, error);
-    } else {
-      UpdateValueListForNode(browse_.current_node());
+    if (subkey.empty() || subkey.find(L'\\') != std::wstring::npos) {
+      ui::ShowError(hwnd_, L"Select a hive you loaded under HKEY_LOCAL_MACHINE or HKEY_USERS first.");
+      return true;
     }
+    if (ui::PromptKeyChoice(hwnd_, L"Unload this key and all of its subkeys?", subkey,
+                            L"Unload Hive", L"Unload", L"", L"Cancel") != IDYES) {
+      return true;
+    }
+    std::wstring error;
+    if (!UnloadHive(hwnd_, root, subkey, &error)) {
+      if (!error.empty()) {
+        ui::ShowError(hwnd_, error);
+      }
+      return true;
+    }
+    AppendHistoryEntry(L"Unload hive", subkey, L"");
+    SelectTreePath(registry_path::RootName(root));
+    RefreshTreeSelection();
+    UpdateValueListForNode(browse_.current_node());
     return true;
   }
   case cmd::kFileSaveOfflineHive:
@@ -539,7 +552,7 @@ bool MainWindow::Impl::HandleTraceDefaultCommand(int command_id) {
     return true;
   }
   case cmd::kTraceGuide:
-    ShellExecuteW(hwnd_, L"open", L"https://github.com/nohuto/regkit/blob/main/guides/wpr-wpa.md", nullptr, nullptr, SW_SHOWNORMAL);
+    win32::ShellOpen(hwnd_, L"https://github.com/nohuto/regkit/blob/main/guides/wpr-wpa.md");
     return true;
   case cmd::kDefaultEditRecent: {
     std::wstring content = JoinLines(recent_default_paths_.items());

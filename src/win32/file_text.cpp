@@ -103,8 +103,9 @@ bool ReadTextFile(const std::wstring& path, std::wstring* output, bool* utf16,
   return !output->empty();
 }
 
-bool WriteTextFile(const std::wstring& path, const std::wstring& text,
-                   bool utf16) {
+namespace {
+
+bool WriteWholeFile(const std::wstring& path, const std::wstring& text, bool utf16) {
   HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ,
                             nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL,
                             nullptr);
@@ -112,31 +113,46 @@ bool WriteTextFile(const std::wstring& path, const std::wstring& text,
     return false;
   }
   DWORD written = 0;
+  bool ok = true;
   if (utf16) {
     constexpr BYTE bom[] = {0xFF, 0xFE};
-    if (!WriteFile(file, bom, sizeof(bom), &written, nullptr) ||
-        written != sizeof(bom)) {
-      CloseHandle(file);
-      return false;
+    ok = WriteFile(file, bom, sizeof(bom), &written, nullptr) != 0 &&
+         written == sizeof(bom);
+    if (ok && !text.empty()) {
+      const DWORD byte_count = static_cast<DWORD>(text.size() * sizeof(wchar_t));
+      ok = WriteFile(file, text.data(), byte_count, &written, nullptr) != 0 &&
+           written == byte_count;
     }
-    if (text.empty()) {
-      CloseHandle(file);
-      return true;
+  } else {
+    const std::string utf8 = WideToUtf8(text);
+    const DWORD byte_count = static_cast<DWORD>(utf8.size());
+    if (byte_count != 0) {
+      ok = WriteFile(file, utf8.data(), byte_count, &written, nullptr) != 0 &&
+           written == byte_count;
     }
-    const DWORD byte_count =
-        static_cast<DWORD>(text.size() * sizeof(wchar_t));
-    const BOOL result =
-        WriteFile(file, text.data(), byte_count, &written, nullptr);
-    CloseHandle(file);
-    return result && written == byte_count;
   }
-  const std::string utf8 = WideToUtf8(text);
-  const DWORD byte_count = static_cast<DWORD>(utf8.size());
-  const BOOL result =
-      byte_count == 0 ||
-      WriteFile(file, utf8.data(), byte_count, &written, nullptr);
+  if (ok) {
+    ok = FlushFileBuffers(file) != 0;
+  }
   CloseHandle(file);
-  return result && written == byte_count;
+  return ok;
+}
+
+} // namespace
+
+bool WriteTextFile(const std::wstring& path, const std::wstring& text,
+                   bool utf16) {
+  const std::wstring temp_path = path + L".tmp";
+  if (!WriteWholeFile(temp_path, text, utf16)) {
+    DeleteFileW(temp_path.c_str());
+    return false;
+  }
+  if (MoveFileExW(temp_path.c_str(), path.c_str(),
+                  MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+    return true;
+  }
+  DeleteFileW(temp_path.c_str());
+  return WriteWholeFile(path, text, utf16);
 }
 
 } // namespace util

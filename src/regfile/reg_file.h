@@ -33,7 +33,7 @@ public:
   Writer();
 
   void AppendKey(std::wstring_view path,
-                 std::vector<const Value*> values);
+                 std::vector<const Value*> values, bool sorted = true);
   std::wstring Finish() &&;
 
 private:

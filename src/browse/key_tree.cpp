@@ -21,7 +21,7 @@ using util::ToLower;
 } // namespace
 
 void RegistryTree::Create(HWND parent, HINSTANCE instance, int control_id, bool show_border) {
-  DWORD style = WS_CHILD | WS_VISIBLE | TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | TVS_EDITLABELS;
+  DWORD style = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | TVS_EDITLABELS;
   if (show_border) {
     style |= WS_BORDER;
   }

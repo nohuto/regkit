@@ -3,6 +3,8 @@
 
 #include "appearance/default_font.h"
 
+#include "win32/registry_view.h"
+
 #include "appearance/font_metrics.h"
 #include "win32/file_text.h"
 #include "win32/shell_paths.h"
@@ -147,7 +149,7 @@ std::wstring ReadFontSubstitute(const wchar_t* value_name) {
     return value;
   };
 
-  std::wstring value = query(KEY_READ | KEY_WOW64_64KEY);
+  std::wstring value = query(KEY_READ | win32::kDefaultRegistryView);
   if (!value.empty()) {
     return value;
   }

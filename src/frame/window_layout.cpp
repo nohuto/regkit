@@ -94,20 +94,9 @@ void MainWindow::Impl::InitDragLayout() {
     }
   }
 
-  drag_tree_header_height_ = 20;
-  if (tree_header_) {
-    RECT rect = {};
-    if (GetWindowRect(tree_header_, &rect)) {
-      drag_tree_header_height_ = rect.bottom - rect.top;
-    }
-  }
-  drag_history_label_height_ = 18;
-  if (history_label_) {
-    RECT rect = {};
-    if (GetWindowRect(history_label_, &rect)) {
-      drag_history_label_height_ = rect.bottom - rect.top;
-    }
-  }
+  const UINT dpi = win32::DpiForWindow(hwnd_);
+  drag_tree_header_height_ = util::ScaleForDpi(kPanelHeaderHeight, dpi);
+  drag_history_label_height_ = drag_tree_header_height_;
   drag_layout_valid_ = true;
 }
 
@@ -122,6 +111,38 @@ void MainWindow::Impl::ApplyDragLayout() {
   if (!drag_layout_valid_ || width != drag_client_width_ || height != drag_client_height_) {
     InitDragLayout();
   }
+
+  auto get_panel_rect = [&](HWND header, HWND body, RECT* rect) {
+    if (!rect) {
+      return false;
+    }
+    RECT header_rect = {};
+    RECT body_rect = {};
+    bool has_header = GetChildRectInParent(hwnd_, header, &header_rect);
+    bool has_body = GetChildRectInParent(hwnd_, body, &body_rect);
+    if (!has_header && !has_body) {
+      return false;
+    }
+    if (!has_body) {
+      *rect = header_rect;
+      return true;
+    }
+    if (!has_header) {
+      *rect = body_rect;
+      return true;
+    }
+    UnionRect(rect, &header_rect, &body_rect);
+    return true;
+  };
+
+  RECT old_tree_panel_rect = {};
+  RECT old_history_panel_rect = {};
+  RECT old_value_rect = {};
+  const RECT old_splitter_rect = splitter_rect_;
+  const RECT old_history_splitter_rect = history_splitter_rect_;
+  const bool had_old_tree_panel = get_panel_rect(tree_header_, browse_.tree().hwnd(), &old_tree_panel_rect);
+  const bool had_old_history_panel = get_panel_rect(history_label_, history_list_, &old_history_panel_rect);
+  const bool had_old_value = GetChildRectInParent(hwnd_, browse_.values().hwnd(), &old_value_rect);
 
   const int gap = 6;
   const bool show_search = IsSearchTabSelected();
@@ -168,75 +189,46 @@ void MainWindow::Impl::ApplyDragLayout() {
 
   int tree_header_height = drag_tree_header_height_;
   int history_label_height = drag_history_label_height_;
+  const UINT dpi = win32::DpiForWindow(hwnd_);
+  const int close_size = util::ScaleForDpi(kPanelCloseSize, dpi);
+  const int close_inset = util::ScaleForDpi(kPanelCloseInset, dpi);
   int list_x = show_tree ? (content_left + tree_width + kSplitterWidth) : content_left;
   int list_width = content_right - list_x;
   int tree_content_height = std::max(0, content_height - (show_tree ? tree_header_height : 0));
 
-  auto get_panel_rect = [&](HWND header, HWND body, RECT* rect) {
-    if (!rect) {
-      return false;
-    }
-    RECT header_rect = {};
-    RECT body_rect = {};
-    bool has_header = GetChildRectInParent(hwnd_, header, &header_rect);
-    bool has_body = GetChildRectInParent(hwnd_, body, &body_rect);
-    if (!has_header && !has_body) {
-      return false;
-    }
-    if (!has_body) {
-      *rect = header_rect;
-      return true;
-    }
-    if (!has_header) {
-      *rect = body_rect;
-      return true;
-    }
-    UnionRect(rect, &header_rect, &body_rect);
-    return true;
+  struct PanelPlacement {
+    HWND target;
+    int x;
+    int y;
+    int width;
+    int height;
   };
-
-  RECT old_tree_panel_rect = {};
-  RECT old_history_panel_rect = {};
-  RECT old_value_rect = {};
-  RECT old_splitter_rect = splitter_rect_;
-  RECT old_history_splitter_rect = history_splitter_rect_;
-  bool had_old_tree_panel = get_panel_rect(tree_header_, browse_.tree().hwnd(), &old_tree_panel_rect);
-  bool had_old_history_panel = get_panel_rect(history_label_, history_list_, &old_history_panel_rect);
-  bool had_old_value = GetChildRectInParent(hwnd_, browse_.values().hwnd(), &old_value_rect);
-
-  int window_count = 0;
-  if (show_tree) {
-    window_count += 3;
-  }
-  if (show_history) {
-    window_count += 2;
-  }
-  if (show_search || show_value) {
-    window_count += 1;
-  }
-  HDWP hdwp = BeginDeferWindowPos(std::max(1, window_count));
+  PanelPlacement placements[7] = {};
+  int placement_count = 0;
   auto defer = [&](HWND target, int x, int y_pos, int w, int h) {
-    if (!target) {
-      return;
-    }
-    if (hdwp) {
-      hdwp = DeferWindowPos(hdwp, target, nullptr, x, y_pos, w, h, SWP_NOZORDER | SWP_NOACTIVATE);
-    } else {
-      SetWindowPos(target, nullptr, x, y_pos, w, h, SWP_NOZORDER | SWP_NOACTIVATE);
+    if (target && placement_count < static_cast<int>(_countof(placements))) {
+      placements[placement_count++] = {target, x, y_pos, w, h};
     }
   };
 
   if (show_history) {
     int history_width = content_right - content_left;
     defer(history_label_, content_left, history_top, history_width, history_label_height);
-    defer(history_close_btn_, content_left + history_width - 18, history_top + 1, 16, 16);
-    defer(history_list_, content_left, history_top + history_label_height + 2, history_width, history_height - history_label_height - 2);
+    defer(history_close_btn_, content_left + history_width - close_inset - close_size,
+          history_top + (history_label_height - close_size) / 2, close_size, close_size);
+    defer(history_list_, content_left,
+          history_top + history_label_height - kPanelBorderOverlap,
+          history_width,
+          history_height - history_label_height + kPanelBorderOverlap);
   }
 
   if (show_tree) {
     defer(tree_header_, content_left, y, tree_width, tree_header_height);
-    defer(tree_close_btn_, content_left + tree_width - 18, y + 2, 16, 16);
-    defer(browse_.tree().hwnd(), content_left, y + tree_header_height, tree_width, tree_content_height);
+    defer(tree_close_btn_, content_left + tree_width - close_inset - close_size,
+          y + (tree_header_height - close_size) / 2, close_size, close_size);
+    defer(browse_.tree().hwnd(), content_left,
+          y + tree_header_height - kPanelBorderOverlap,
+          tree_width, tree_content_height + kPanelBorderOverlap);
     splitter_rect_.left = content_left + tree_width;
     splitter_rect_.right = splitter_rect_.left + kSplitterWidth;
     splitter_rect_.top = y;
@@ -251,8 +243,19 @@ void MainWindow::Impl::ApplyDragLayout() {
     defer(browse_.values().hwnd(), list_x, y, list_width, content_height);
   }
 
+  const UINT placement_flags = SWP_NOZORDER | SWP_NOACTIVATE;
+  HDWP hdwp = BeginDeferWindowPos(placement_count);
+  for (int i = 0; hdwp && i < placement_count; ++i) {
+    const PanelPlacement& p = placements[i];
+    hdwp = DeferWindowPos(hdwp, p.target, nullptr, p.x, p.y, p.width, p.height, placement_flags);
+  }
   if (hdwp) {
     EndDeferWindowPos(hdwp);
+  } else {
+    for (int i = 0; i < placement_count; ++i) {
+      const PanelPlacement& p = placements[i];
+      SetWindowPos(p.target, nullptr, p.x, p.y, p.width, p.height, placement_flags);
+    }
   }
 
   RECT new_tree_panel_rect = {};
@@ -289,19 +292,8 @@ void MainWindow::Impl::ApplyDragLayout() {
   extend_dirty(history_splitter_rect_, history_splitter_rect_.bottom > history_splitter_rect_.top);
 
   if (has_dirty_layout) {
-    InvalidateRect(hwnd_, &dirty_layout, FALSE);
-  }
-  if (tree_header_) {
-    RedrawWindow(tree_header_, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
-  }
-  if (tree_close_btn_) {
-    RedrawWindow(tree_close_btn_, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
-  }
-  if (history_label_) {
-    RedrawWindow(history_label_, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
-  }
-  if (history_close_btn_) {
-    RedrawWindow(history_close_btn_, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+    RedrawWindow(hwnd_, &dirty_layout, nullptr,
+                 RDW_INVALIDATE | RDW_ERASE | RDW_FRAME | RDW_ALLCHILDREN | RDW_UPDATENOW);
   }
 }
 
@@ -345,7 +337,7 @@ void MainWindow::Impl::UpdateHistorySplitterTrack(int client_y) {
   ApplyDragLayout();
 }
 
-void MainWindow::Impl::EndSplitterDrag(bool apply) {
+void MainWindow::Impl::EndSplitterDrag() {
   if (!splitter_dragging_) {
     return;
   }
@@ -353,14 +345,12 @@ void MainWindow::Impl::EndSplitterDrag(bool apply) {
   if (GetCapture() == hwnd_) {
     ReleaseCapture();
   }
-  if (apply) {
-    RECT rect = {};
-    GetClientRect(hwnd_, &rect);
-    LayoutControls(rect.right, rect.bottom);
-  }
+  RECT rect = {};
+  GetClientRect(hwnd_, &rect);
+  LayoutControls(rect.right, rect.bottom);
 }
 
-void MainWindow::Impl::EndHistorySplitterDrag(bool apply) {
+void MainWindow::Impl::EndHistorySplitterDrag() {
   if (!history_splitter_dragging_) {
     return;
   }
@@ -368,11 +358,9 @@ void MainWindow::Impl::EndHistorySplitterDrag(bool apply) {
   if (GetCapture() == hwnd_) {
     ReleaseCapture();
   }
-  if (apply) {
-    RECT rect = {};
-    GetClientRect(hwnd_, &rect);
-    LayoutControls(rect.right, rect.bottom);
-  }
+  RECT rect = {};
+  GetClientRect(hwnd_, &rect);
+  LayoutControls(rect.right, rect.bottom);
 }
 
 void MainWindow::Impl::ApplyViewVisibility() {
@@ -393,9 +381,6 @@ void MainWindow::Impl::ApplyViewVisibility() {
   ShowWindow(history_close_btn_, show_history ? SW_SHOW : SW_HIDE);
   ShowWindow(history_list_, show_history ? SW_SHOW : SW_HIDE);
   ShowWindow(search_results_list_, show_search ? SW_SHOW : SW_HIDE);
-  ShowWindow(regedit_compat_edit_, SW_HIDE);
-  ShowWindow(regedit_compat_tree_, SW_HIDE);
-  ShowWindow(regedit_compat_list_, SW_HIDE);
   if (show_search && search_results_list_) {
     LONG_PTR style = GetWindowLongPtrW(search_results_list_, GWL_STYLE);
     if (style & LVS_SINGLESEL) {
@@ -767,8 +752,10 @@ void MainWindow::Impl::LayoutControls(int width, int height) {
   const int filter_min_width = 160;
   const int filter_max_width = 260;
   const int filter_gap = 6;
-  const int tree_header_height = 20;
-  const int history_label_height = 18;
+  const int tree_header_height = util::ScaleForDpi(kPanelHeaderHeight, dpi);
+  const int history_label_height = tree_header_height;
+  const int close_size = util::ScaleForDpi(kPanelCloseSize, dpi);
+  const int close_inset = util::ScaleForDpi(kPanelCloseInset, dpi);
   int status_height = 0;
   if (status_bar_ && show_status_bar_) {
     RECT sb_rect = {};
@@ -893,8 +880,12 @@ void MainWindow::Impl::LayoutControls(int width, int height) {
   if (show_history) {
     int history_width = content_right - content_left;
     place(history_label_, content_left, history_top, history_width, history_label_height);
-    place(history_close_btn_, content_left + history_width - 18, history_top + 1, 16, 16);
-    place(history_list_, content_left, history_top + history_label_height + 2, history_width, history_height - history_label_height - 2);
+    place(history_close_btn_, content_left + history_width - close_inset - close_size,
+          history_top + (history_label_height - close_size) / 2, close_size, close_size);
+    place(history_list_, content_left,
+          history_top + history_label_height - kPanelBorderOverlap,
+          history_width,
+          history_height - history_label_height + kPanelBorderOverlap);
   }
 
   int splitter_bottom = show_history ? (history_top - history_gap) : history_top;
@@ -920,8 +911,11 @@ void MainWindow::Impl::LayoutControls(int width, int height) {
   int tree_content_height = std::max(0, content_height - (show_tree ? tree_header_height : 0));
   if (show_tree) {
     place(tree_header_, content_left, y, tree_width, tree_header_height);
-    place(tree_close_btn_, content_left + tree_width - 18, y + 2, 16, 16);
-    place(browse_.tree().hwnd(), content_left, y + tree_header_height, tree_width, tree_content_height);
+    place(tree_close_btn_, content_left + tree_width - close_inset - close_size,
+          y + (tree_header_height - close_size) / 2, close_size, close_size);
+    place(browse_.tree().hwnd(), content_left,
+          y + tree_header_height - kPanelBorderOverlap,
+          tree_width, tree_content_height + kPanelBorderOverlap);
     splitter_rect_.left = content_left + tree_width;
     splitter_rect_.right = splitter_rect_.left + splitter_width;
     splitter_rect_.top = y;
@@ -937,8 +931,8 @@ void MainWindow::Impl::LayoutControls(int width, int height) {
 
   UpdateStatus();
   if (!dragging_splitter) {
-    UINT redraw_flags = RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_ERASE;
-    RedrawWindow(hwnd_, nullptr, nullptr, redraw_flags);
+    RedrawWindow(hwnd_, nullptr, nullptr,
+                 RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_ERASE | RDW_UPDATENOW);
   }
   drag_layout_valid_ = false;
 }

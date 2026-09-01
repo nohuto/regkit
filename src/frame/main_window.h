@@ -25,7 +25,6 @@ public:
   bool OpenRegFileTab(const std::wstring& path);
   bool TranslateAccelerator(const MSG& message);
   void QueueExternalJump(const std::wstring& target);
-  void ActivateRegeditCompatibilityMode();
 
 private:
   friend class MainWindowBenchmarks;

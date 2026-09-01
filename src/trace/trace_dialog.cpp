@@ -19,8 +19,6 @@
 #include "win32/text_transform.h"
 #include "registry/registry_path.h"
 
-// Older SDKs omit the NMTVITEMCHANGE struct even though TVN_ITEMCHANGED is
-// defined.
 #ifndef NMTVITEMCHANGE
 typedef struct tagNMTVITEMCHANGE {
   NMHDR hdr;

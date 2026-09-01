@@ -196,13 +196,13 @@ LRESULT CALLBACK DataTypesDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
       return 0;
     }
     switch (LOWORD(wparam)) {
-    case 100: { // select all
+    case 100: {
       for (HWND check : state->checks) {
         SendMessageW(check, BM_SETCHECK, BST_CHECKED, 0);
       }
       return 0;
     }
-    case 101: { // clear all
+    case 101: {
       for (HWND check : state->checks) {
         SendMessageW(check, BM_SETCHECK, BST_UNCHECKED, 0);
       }

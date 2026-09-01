@@ -492,8 +492,12 @@ bool MainWindow::Impl::HandleDeleteCommand(int command_id) {
         entries.push_back(std::move(entry));
       }
 
-      std::wstring target = std::to_wstring(entries.size()) + L" selected values";
-      if (!ui::ConfirmDelete(hwnd_, L"Delete Values", target)) {
+      std::vector<std::wstring> names;
+      names.reserve(entries.size());
+      for (const auto& entry : entries) {
+        names.push_back(entry.name);
+      }
+      if (!ui::ConfirmDelete(hwnd_, L"Delete Values", names)) {
         return true;
       }
 

@@ -5,6 +5,7 @@
 
 #include "registry/registry_path.h"
 #include "win32/registry_native.h"
+#include "win32/registry_view.h"
 
 #include <algorithm>
 #include <utility>
@@ -20,7 +21,7 @@ util::UniqueHKey OpenKey(const RegistryNode& node, REGSAM access) {
   }
   const wchar_t* subkey =
       node.subkey.empty() ? nullptr : node.subkey.c_str();
-  if (RegOpenKeyExW(node.root, subkey, 0, access, key.put()) !=
+  if (RegOpenKeyExW(node.root, subkey, 0, access | win32::kDefaultRegistryView, key.put()) !=
       ERROR_SUCCESS) {
     key.reset();
   }

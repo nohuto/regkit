@@ -98,9 +98,9 @@ bool MainWindow::Impl::OpenHistoryTarget(const HistoryEntry& entry) {
     if (!FindNearestExistingPath(target, &target) || target.empty()) {
       return false;
     }
-    return NavigateToResolvedExternalJump(target, L"", true);
+    return NavigateToResolvedExternalJump(target, L"");
   }
-  return NavigateToResolvedExternalJump(target, entry.value_name, true);
+  return NavigateToResolvedExternalJump(target, entry.value_name);
 }
 
 bool MainWindow::Impl::RevertHistoryEntry(const HistoryEntry& entry) {
@@ -364,9 +364,9 @@ void MainWindow::Impl::LoadTabs() {
   RefreshRegistryTabLabels();
 }
 
-void MainWindow::Impl::SaveTabs() {
+bool MainWindow::Impl::SaveTabs() {
   if (!tab_) {
-    return;
+    return true;
   }
   int current_registry_tab = CurrentRegistryTabIndex();
   if (current_registry_tab >= 0 && !IsSearchTabIndex(current_registry_tab) && !IsRegFileTabIndex(current_registry_tab)) {
@@ -374,7 +374,7 @@ void MainWindow::Impl::SaveTabs() {
   }
   std::wstring folder = CacheFolderPath();
   if (folder.empty()) {
-    return;
+    return false;
   }
 
   std::unordered_set<std::wstring> referenced_files;
@@ -460,7 +460,7 @@ void MainWindow::Impl::SaveTabs() {
     saved_active_index = 0;
   }
   state.active_index = saved_active_index;
-  workspace::SaveTabs(TabsCachePath(), state);
+  const bool saved = workspace::SaveTabs(TabsCachePath(), state);
 
   std::wstring pattern = util::JoinPath(folder, L"search_*.tsv");
   WIN32_FIND_DATAW data = {};
@@ -478,6 +478,7 @@ void MainWindow::Impl::SaveTabs() {
     } while (FindNextFileW(find, &data) != 0);
     FindClose(find);
   }
+  return saved;
 }
 
 std::wstring MainWindow::Impl::CommentsPath() const {
@@ -667,7 +668,6 @@ void MainWindow::Impl::LoadSettings() {
   settings.always_run_as_system = always_run_as_system_;
   settings.always_run_as_trustedinstaller = always_run_as_trustedinstaller_;
   settings.always_on_top = always_on_top_;
-  settings.replace_regedit = replace_regedit_;
   settings.single_instance = single_instance_;
   settings.read_only = read_only_;
   settings.window_x = window_x_;
@@ -709,7 +709,6 @@ void MainWindow::Impl::LoadSettings() {
   always_run_as_system_ = settings.always_run_as_system;
   always_run_as_trustedinstaller_ = settings.always_run_as_trustedinstaller;
   always_on_top_ = settings.always_on_top;
-  replace_regedit_ = settings.replace_regedit;
   single_instance_ = settings.single_instance;
   read_only_ = settings.read_only;
   window_placement_loaded_ = settings.window_placement_present;
@@ -774,7 +773,6 @@ void MainWindow::Impl::SaveSettings() const {
   settings.always_run_as_system = always_run_as_system_;
   settings.always_run_as_trustedinstaller = always_run_as_trustedinstaller_;
   settings.always_on_top = always_on_top_;
-  settings.replace_regedit = replace_regedit_;
   settings.single_instance = single_instance_;
   settings.read_only = read_only_;
   settings.window_x = window_x_;

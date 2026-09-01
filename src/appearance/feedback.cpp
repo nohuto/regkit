@@ -15,6 +15,7 @@
 #include <uxtheme.h>
 
 #include "appearance/theme.h"
+#include "win32/file_dialog.h"
 #include "win32/shell_paths.h"
 
 namespace regkit::ui {
@@ -24,25 +25,10 @@ namespace {
 #define WC_LINK L"SysLink"
 #endif
 
-constexpr wchar_t kDeleteClass[] = L"RegKitDeleteDialog";
 constexpr wchar_t kErrorClass[] = L"RegKitErrorDialog";
 constexpr wchar_t kChoiceClass[] = L"RegKitChoiceDialog";
 constexpr wchar_t kAboutClass[] = L"RegKitAboutDialog";
 constexpr wchar_t kAppTitle[] = L"RegKit";
-
-struct DeleteDialogState {
-  HWND hwnd = nullptr;
-  HWND text = nullptr;
-  HWND yes_btn = nullptr;
-  HWND no_btn = nullptr;
-  HWND owner = nullptr;
-  HFONT font = nullptr;
-  std::wstring title;
-  std::wstring message;
-  bool result = false;
-  bool accepted = false;
-  bool owner_restored = false;
-};
 
 struct ErrorDialogState {
   HWND hwnd = nullptr;
@@ -60,6 +46,8 @@ struct ChoiceDialogState {
   HWND hwnd = nullptr;
   HWND icon = nullptr;
   HWND text = nullptr;
+  HWND detail_edit = nullptr;
+  HWND detail_tip = nullptr;
   HWND yes_btn = nullptr;
   HWND no_btn = nullptr;
   HWND cancel_btn = nullptr;
@@ -67,9 +55,11 @@ struct ChoiceDialogState {
   HFONT font = nullptr;
   std::wstring title;
   std::wstring message;
+  std::wstring detail;
   std::wstring yes_label;
   std::wstring no_label;
   std::wstring cancel_label;
+  int yes_button_width_dlu = 0;
   PCWSTR icon_id = nullptr;
   int button_width_dlu = 45;
   int result = IDCANCEL;
@@ -138,6 +128,74 @@ void ApplyConfirmFonts(HWND hwnd, HFONT font) {
       reinterpret_cast<LPARAM>(font));
 }
 
+int TextWidth(HWND window, HFONT font, const std::wstring& text) {
+  if (text.empty()) {
+    return 0;
+  }
+  HDC dc = GetDC(window);
+  if (!dc) {
+    return 0;
+  }
+  HGDIOBJ old_font = font ? SelectObject(dc, font) : nullptr;
+  SIZE size = {};
+  GetTextExtentPoint32W(dc, text.c_str(), static_cast<int>(text.size()), &size);
+  if (old_font) {
+    SelectObject(dc, old_font);
+  }
+  ReleaseDC(window, dc);
+  return static_cast<int>(size.cx);
+}
+
+int TextBlockHeight(HWND window, HFONT font, const std::wstring& text, int width) {
+  HDC dc = GetDC(window);
+  HFONT old_font = font ? reinterpret_cast<HFONT>(SelectObject(dc, font)) : nullptr;
+  RECT rect = {0, 0, width, 0};
+  DrawTextW(dc, text.c_str(), -1, &rect, DT_CALCRECT | DT_WORDBREAK | DT_NOPREFIX);
+  if (old_font) {
+    SelectObject(dc, old_font);
+  }
+  ReleaseDC(window, dc);
+  return rect.bottom;
+}
+
+constexpr int kMaxDetailLines = 10;
+
+int DetailLineCount(const std::wstring& detail) {
+  if (detail.empty()) {
+    return 1;
+  }
+  return 1 + static_cast<int>(std::count(detail.begin(), detail.end(), L'\n'));
+}
+
+void FitChoiceDialogToContent(HWND hwnd, ChoiceDialogState* state) {
+  if (!hwnd || !state || !state->detail_edit) {
+    return;
+  }
+  RECT client = {};
+  GetClientRect(hwnd, &client);
+  const int padding = 12;
+  const int icon_w = state->icon_id ? 32 : 0;
+  const int icon_gap = state->icon_id ? 12 : 0;
+  const int base_units = GetDialogBaseUnits();
+  const int base_y = std::max(1, static_cast<int>(HIWORD(base_units)));
+  const int content_w = (client.right - client.left) - padding - icon_w - icon_gap - padding;
+  const int text_h = TextBlockHeight(hwnd, state->font, state->message, content_w);
+  const int lines = std::min(DetailLineCount(state->detail), kMaxDetailLines);
+  const int detail_h = MulDiv(12, base_y, 8) + (lines - 1) * base_y;
+  const int btn_h = MulDiv(11, base_y, 8);
+  const int needed = padding + text_h + MulDiv(2, base_y, 8) + detail_h +
+                     MulDiv(6, base_y, 8) + btn_h + padding;
+  if (needed <= client.bottom - client.top) {
+    return;
+  }
+  RECT frame = {0, 0, client.right - client.left, needed};
+  const DWORD style = static_cast<DWORD>(GetWindowLongPtrW(hwnd, GWL_STYLE));
+  const DWORD ex_style = static_cast<DWORD>(GetWindowLongPtrW(hwnd, GWL_EXSTYLE));
+  AdjustWindowRectEx(&frame, style, FALSE, ex_style);
+  SetWindowPos(hwnd, nullptr, 0, 0, frame.right - frame.left, frame.bottom - frame.top,
+               SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
 void LayoutChoiceDialog(HWND hwnd, ChoiceDialogState* state) {
   if (!hwnd || !state) {
     return;
@@ -155,62 +213,50 @@ void LayoutChoiceDialog(HWND hwnd, ChoiceDialogState* state) {
   int btn_w = MulDiv(state->button_width_dlu, base_x, 4);
   int btn_h = MulDiv(11, base_y, 8);
   int btn_y = height - padding - btn_h;
-  int text_h = btn_y - padding;
-  int gap = 8;
+  int gap = MulDiv(6, base_x, 4);
   if (state->icon) {
     SetWindowPos(state->icon, nullptr, padding, padding + 2, 32, 32, SWP_NOZORDER);
   }
-  if (state->text) {
-    int text_x = padding + icon_w + icon_gap;
-    SetWindowPos(state->text, nullptr, text_x, padding, width - text_x - padding, text_h, SWP_NOZORDER);
+  const int text_x = padding + icon_w + icon_gap;
+  const int content_w = width - text_x - padding;
+  if (state->detail_edit) {
+    const int text_h = TextBlockHeight(hwnd, state->font, state->message, content_w);
+    const int detail_y = padding + text_h + MulDiv(2, base_y, 8);
+    if (state->text) {
+      SetWindowPos(state->text, nullptr, text_x, padding, content_w, text_h, SWP_NOZORDER);
+    }
+    const int lines = std::min(DetailLineCount(state->detail), kMaxDetailLines);
+    const int detail_h = MulDiv(12, base_y, 8) + (lines - 1) * base_y;
+    SetWindowPos(state->detail_edit, nullptr, text_x, detail_y, content_w, detail_h, SWP_NOZORDER);
+    if (state->detail_tip) {
+      SendMessageW(state->detail_tip, TTM_ACTIVATE,
+                   lines == 1 && TextWidth(hwnd, state->font, state->detail) > content_w - 8, 0);
+    }
+  } else if (state->text) {
+    SetWindowPos(state->text, nullptr, text_x, padding, content_w, btn_y - padding, SWP_NOZORDER);
   }
+
   HWND buttons[] = {state->yes_btn, state->no_btn, state->cancel_btn};
+  const int widths[] = {state->yes_button_width_dlu > 0 ? MulDiv(state->yes_button_width_dlu, base_x, 4) : btn_w, btn_w, btn_w};
+  int total_w = 0;
   int button_count = 0;
-  for (HWND button : buttons) {
-    if (button) {
+  for (int i = 0; i < 3; ++i) {
+    if (buttons[i]) {
+      total_w += widths[i];
       ++button_count;
     }
   }
   if (button_count == 0) {
     return;
   }
-  int total_w = btn_w * button_count + gap * (button_count - 1);
-  int start_x = std::max(padding, width - padding - total_w);
-  int placed = 0;
-  for (HWND button : buttons) {
-    if (!button) {
+  total_w += gap * (button_count - 1);
+  int x = std::max(padding, width - padding - total_w);
+  for (int i = 0; i < 3; ++i) {
+    if (!buttons[i]) {
       continue;
     }
-    SetWindowPos(button, nullptr, start_x + placed * (btn_w + gap), btn_y, btn_w, btn_h, SWP_NOZORDER);
-    ++placed;
-  }
-}
-
-void LayoutDeleteDialog(HWND hwnd, DeleteDialogState* state) {
-  if (!hwnd || !state) {
-    return;
-  }
-  RECT client = {};
-  GetClientRect(hwnd, &client);
-  int width = client.right - client.left;
-  int height = client.bottom - client.top;
-  int padding = 12;
-  int btn_w = 80;
-  int btn_h = 22;
-  int btn_y = height - padding - btn_h;
-  int text_h = btn_y - padding;
-
-  if (state->text) {
-    SetWindowPos(state->text, nullptr, padding, padding, width - padding * 2, text_h, SWP_NOZORDER);
-  }
-
-  int no_x = width - padding - btn_w;
-  int yes_x = no_x - 8 - btn_w;
-  if (state->yes_btn) {
-    SetWindowPos(state->yes_btn, nullptr, yes_x, btn_y, btn_w, btn_h, SWP_NOZORDER);
-  }
-  if (state->no_btn) {
-    SetWindowPos(state->no_btn, nullptr, no_x, btn_y, btn_w, btn_h, SWP_NOZORDER);
+    SetWindowPos(buttons[i], nullptr, x, btn_y, widths[i], btn_h, SWP_NOZORDER);
+    x += widths[i] + gap;
   }
 }
 
@@ -304,6 +350,35 @@ LRESULT CALLBACK ChoiceDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
       }
     }
     state->text = CreateWindowExW(0, L"STATIC", state->message.c_str(), WS_CHILD | WS_VISIBLE | SS_LEFT, 0, 0, 0, 0, hwnd, nullptr, nullptr, nullptr);
+    if (!state->detail.empty()) {
+      const int detail_lines = DetailLineCount(state->detail);
+      DWORD detail_style = WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_READONLY;
+      if (detail_lines > 1) {
+        detail_style |= ES_MULTILINE;
+      }
+      if (detail_lines > kMaxDetailLines) {
+        detail_style |= WS_VSCROLL;
+      }
+      state->detail_edit = CreateWindowExW(0, L"EDIT", state->detail.c_str(),
+                                           detail_style,
+                                           0, 0, 0, 0, hwnd, nullptr, nullptr, nullptr);
+      state->detail_tip = CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASSW, nullptr,
+                                          WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+                                          CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                                          CW_USEDEFAULT, hwnd, nullptr, nullptr, nullptr);
+      if (state->detail_tip && state->detail_edit) {
+        TOOLINFOW info = {};
+        info.cbSize = sizeof(info);
+        info.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+        info.hwnd = hwnd;
+        info.uId = reinterpret_cast<UINT_PTR>(state->detail_edit);
+        info.lpszText = const_cast<wchar_t*>(state->detail.c_str());
+        SendMessageW(state->detail_tip, TTM_ADDTOOL, 0, reinterpret_cast<LPARAM>(&info));
+        SendMessageW(state->detail_tip, TTM_SETMAXTIPWIDTH, 0, 900);
+        AllowDarkModeForWindow(state->detail_tip, Theme::UseDarkMode());
+        SetWindowTheme(state->detail_tip, Theme::UseDarkMode() ? L"DarkMode_Explorer" : L"Explorer", nullptr);
+      }
+    }
     state->yes_btn = CreateWindowExW(0, L"BUTTON", state->yes_label.c_str(), WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDYES), nullptr, nullptr);
     if (!state->no_label.empty()) {
       state->no_btn = CreateWindowExW(0, L"BUTTON", state->no_label.c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDNO), nullptr, nullptr);
@@ -315,6 +390,7 @@ LRESULT CALLBACK ChoiceDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
     ApplyConfirmFonts(hwnd, state->font);
     Theme::Current().ApplyToWindow(hwnd);
     Theme::Current().ApplyToChildren(hwnd);
+    FitChoiceDialogToContent(hwnd, state);
     LayoutChoiceDialog(hwnd, state);
     return 0;
   }
@@ -385,118 +461,6 @@ LRESULT CALLBACK ChoiceDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
   case WM_CLOSE:
     if (state) {
       state->result = IDCANCEL;
-      state->accepted = true;
-      appearance::RestoreDialogOwner(state->owner, &state->owner_restored);
-    }
-    DestroyWindow(hwnd);
-    return 0;
-  default:
-    break;
-  }
-  return DefWindowProcW(hwnd, msg, wparam, lparam);
-}
-
-LRESULT CALLBACK DeleteDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-  auto* state = reinterpret_cast<DeleteDialogState*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
-  switch (msg) {
-  case WM_NCCREATE: {
-    auto* create = reinterpret_cast<CREATESTRUCTW*>(lparam);
-    SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(create->lpCreateParams));
-    return TRUE;
-  }
-  case WM_CREATE: {
-    state = reinterpret_cast<DeleteDialogState*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
-    if (!state) {
-      return -1;
-    }
-    state->hwnd = hwnd;
-    SetWindowTextW(hwnd, L"RegKit");
-    state->font = DefaultUIFont();
-    state->text = CreateWindowExW(0, L"STATIC", state->message.c_str(), WS_CHILD | WS_VISIBLE | SS_LEFT, 0, 0, 0, 0, hwnd, nullptr, nullptr, nullptr);
-    state->yes_btn = CreateWindowExW(0, L"BUTTON", L"Yes", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDYES), nullptr, nullptr);
-    state->no_btn = CreateWindowExW(0, L"BUTTON", L"No", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDNO), nullptr, nullptr);
-
-    ApplyConfirmFonts(hwnd, state->font);
-    Theme::Current().ApplyToWindow(hwnd);
-    Theme::Current().ApplyToChildren(hwnd);
-    LayoutDeleteDialog(hwnd, state);
-    return 0;
-  }
-  case WM_SHOWWINDOW:
-    if (wparam && state && state->yes_btn) {
-      SetFocus(state->yes_btn);
-      return 0;
-    }
-    break;
-  case WM_SETFOCUS:
-    if (state && state->yes_btn) {
-      SetFocus(state->yes_btn);
-      return 0;
-    }
-    break;
-  case WM_SIZE:
-    LayoutDeleteDialog(hwnd, state);
-    return 0;
-  case WM_SETTINGCHANGE:
-    if (Theme::UpdateFromSystem()) {
-      Theme::Current().ApplyToWindow(hwnd);
-      Theme::Current().ApplyToChildren(hwnd);
-      InvalidateRect(hwnd, nullptr, TRUE);
-    }
-    return 0;
-  case WM_ERASEBKGND: {
-    HDC hdc = reinterpret_cast<HDC>(wparam);
-    RECT rect = {};
-    GetClientRect(hwnd, &rect);
-    FillRect(hdc, &rect, Theme::Current().BackgroundBrush());
-    return TRUE;
-  }
-  case WM_CTLCOLORDLG: {
-    HDC hdc = reinterpret_cast<HDC>(wparam);
-    return reinterpret_cast<LRESULT>(Theme::Current().ControlColor(hdc, hwnd, CTLCOLOR_DLG));
-  }
-  case WM_CTLCOLORSTATIC: {
-    HDC hdc = reinterpret_cast<HDC>(wparam);
-    HWND target = reinterpret_cast<HWND>(lparam);
-    return reinterpret_cast<LRESULT>(Theme::Current().ControlColor(hdc, target, CTLCOLOR_STATIC));
-  }
-  case WM_CTLCOLORBTN: {
-    HDC hdc = reinterpret_cast<HDC>(wparam);
-    HWND target = reinterpret_cast<HWND>(lparam);
-    return reinterpret_cast<LRESULT>(Theme::Current().ControlColor(hdc, target, CTLCOLOR_BTN));
-  }
-  case WM_COMMAND:
-    switch (LOWORD(wparam)) {
-    case IDYES:
-      if (state) {
-        state->result = true;
-        state->accepted = true;
-        appearance::RestoreDialogOwner(state->owner, &state->owner_restored);
-      }
-      DestroyWindow(hwnd);
-      return 0;
-    case IDNO:
-    case IDCANCEL:
-      if (state) {
-        state->result = false;
-        state->accepted = true;
-        appearance::RestoreDialogOwner(state->owner, &state->owner_restored);
-      }
-      DestroyWindow(hwnd);
-      return 0;
-    default:
-      break;
-    }
-    break;
-  case WM_DESTROY:
-    if (state && state->font) {
-      DeleteObject(state->font);
-      state->font = nullptr;
-    }
-    return 0;
-  case WM_CLOSE:
-    if (state) {
-      state->result = false;
       state->accepted = true;
       appearance::RestoreDialogOwner(state->owner, &state->owner_restored);
     }
@@ -791,7 +755,7 @@ bool ShowAboutDialog(HWND owner) {
   return state.accepted;
 }
 
-bool ShowChoiceDialog(HWND owner, const std::wstring& title, const std::wstring& message, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label, int* result, PCWSTR icon_id, int width, int height, int button_width_dlu = 45) {
+bool ShowChoiceDialog(HWND owner, const std::wstring& title, const std::wstring& message, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label, int* result, PCWSTR icon_id, int width, int height, int button_width_dlu = 45, const std::wstring& detail = std::wstring(), int yes_button_width_dlu = 0) {
   WNDCLASSW wc = {};
   wc.lpfnWndProc = ChoiceDialogProc;
   wc.hInstance = GetModuleHandleW(nullptr);
@@ -804,11 +768,13 @@ bool ShowChoiceDialog(HWND owner, const std::wstring& title, const std::wstring&
   state.owner = owner;
   state.title = title;
   state.message = message;
+  state.detail = detail;
   state.yes_label = yes_label;
   state.no_label = no_label;
   state.cancel_label = cancel_label;
   state.icon_id = icon_id;
   state.button_width_dlu = button_width_dlu;
+  state.yes_button_width_dlu = yes_button_width_dlu;
   HWND hwnd = CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_CONTROLPARENT, kChoiceClass, kAppTitle, WS_POPUP | WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, width, height, owner, nullptr, wc.hInstance, &state);
   if (!hwnd) {
     return false;
@@ -837,57 +803,17 @@ bool ShowChoiceDialog(HWND owner, const std::wstring& title, const std::wstring&
   return true;
 }
 
-bool ShowDeleteDialog(HWND owner, const std::wstring& title, const std::wstring& message, bool* result) {
-  WNDCLASSW wc = {};
-  wc.lpfnWndProc = DeleteDialogProc;
-  wc.hInstance = GetModuleHandleW(nullptr);
-  wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
-  wc.hbrBackground = nullptr;
-  wc.lpszClassName = kDeleteClass;
-  RegisterClassW(&wc);
-
-  DeleteDialogState state;
-  state.owner = owner;
-  state.title = title;
-  state.message = message;
-  HWND hwnd = CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_CONTROLPARENT, kDeleteClass, kAppTitle, WS_POPUP | WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, 280, 120, owner, nullptr, wc.hInstance, &state);
-  if (!hwnd) {
-    return false;
-  }
-  CenterWindowToOwner(hwnd, owner);
-
-  EnableWindow(owner, FALSE);
-  ShowWindow(hwnd, SW_SHOW);
-  UpdateWindow(hwnd);
-
-  MSG msg = {};
-  while (IsWindow(hwnd) && GetMessageW(&msg, nullptr, 0, 0)) {
-    if (!IsDialogMessageW(hwnd, &msg)) {
-      TranslateMessage(&msg);
-      DispatchMessageW(&msg);
-    }
-  }
-
-  appearance::RestoreDialogOwner(owner, &state.owner_restored);
-  if (!state.accepted) {
-    return false;
-  }
-  if (result) {
-    *result = state.result;
-  }
-  return true;
-}
-
-HRESULT CALLBACK TaskDialogThemeCallback(HWND hwnd, UINT msg, WPARAM, LPARAM, LONG_PTR ref_data) {
+HRESULT CALLBACK TaskDialogCenterCallback(HWND hwnd, UINT msg, WPARAM, LPARAM, LONG_PTR ref_data) {
   if (msg == TDN_CREATED) {
-    Theme::Current().ApplyToWindow(hwnd);
-    Theme::Current().ApplyToChildren(hwnd);
     CenterWindowToOwner(hwnd, reinterpret_cast<HWND>(ref_data));
   }
   return S_OK;
 }
 
 bool ShowTaskDialog(HWND owner, const std::wstring& title, const std::wstring& message, TASKDIALOG_COMMON_BUTTON_FLAGS buttons, int* button, PCWSTR icon) {
+  if (Theme::UseDarkMode()) {
+    return false;
+  }
   TASKDIALOGCONFIG config = {};
   config.cbSize = sizeof(config);
   config.hwndParent = owner;
@@ -896,7 +822,7 @@ bool ShowTaskDialog(HWND owner, const std::wstring& title, const std::wstring& m
   config.pszWindowTitle = title.empty() ? kAppTitle : title.c_str();
   config.pszContent = message.c_str();
   config.pszMainIcon = icon;
-  config.pfCallback = TaskDialogThemeCallback;
+  config.pfCallback = TaskDialogCenterCallback;
   config.lpCallbackData = reinterpret_cast<LONG_PTR>(owner);
   int clicked = 0;
   HRESULT hr = TaskDialogIndirect(&config, &clicked, nullptr, nullptr);
@@ -919,7 +845,6 @@ namespace {
 void ApplyListViewThemeColors(NMLVCUSTOMDRAW* draw, const Theme& theme) {
   draw->clrText = theme.TextColor();
   draw->clrTextBk = theme.PanelColor();
-  draw->nmcd.uItemState &= ~(CDIS_FOCUS | CDIS_HOT);
 }
 } // namespace
 
@@ -927,26 +852,16 @@ LRESULT HandleThemedListViewCustomDraw(HWND list, NMLVCUSTOMDRAW* draw) {
   if (!list || !draw) {
     return CDRF_DODEFAULT;
   }
-  const Theme& theme = Theme::Current();
   switch (draw->nmcd.dwDrawStage) {
   case CDDS_PREPAINT:
     return CDRF_NOTIFYITEMDRAW;
-  case CDDS_ITEMPREPAINT: {
-    int item_index = static_cast<int>(draw->nmcd.dwItemSpec);
-    if (ListViewItemSelected(list, item_index)) {
+  case CDDS_ITEMPREPAINT:
+    draw->nmcd.uItemState &= ~(CDIS_FOCUS | CDIS_HOT);
+    if (ListViewItemSelected(list, static_cast<int>(draw->nmcd.dwItemSpec))) {
       return CDRF_DODEFAULT;
     }
-    ApplyListViewThemeColors(draw, theme);
-    return CDRF_NEWFONT | CDRF_NOTIFYSUBITEMDRAW;
-  }
-  case CDDS_ITEMPREPAINT | CDDS_SUBITEM: {
-    int item_index = static_cast<int>(draw->nmcd.dwItemSpec);
-    if (ListViewItemSelected(list, item_index)) {
-      return CDRF_DODEFAULT;
-    }
-    ApplyListViewThemeColors(draw, theme);
+    ApplyListViewThemeColors(draw, Theme::Current());
     return CDRF_NEWFONT;
-  }
   default:
     break;
   }
@@ -978,28 +893,20 @@ bool CopyTextToClipboard(HWND owner, const std::wstring& text) {
 }
 
 void ShowError(HWND owner, const std::wstring& message) {
-  if (ShowErrorDialog(owner, message)) {
-    return;
-  }
-  if (!ShowTaskDialog(owner, kAppTitle, message, TDCBF_OK_BUTTON, nullptr, TD_ERROR_ICON)) {
-    ShowErrorDialog(owner, message);
+  if (!ShowErrorDialog(owner, message)) {
+    ShowTaskDialog(owner, kAppTitle, message, TDCBF_OK_BUTTON, nullptr, TD_ERROR_ICON);
   }
 }
 
 void ShowWarning(HWND owner, const std::wstring& message) {
-  if (Theme::UseDarkMode()) {
-    if (ShowErrorDialog(owner, message)) {
-      return;
-    }
-  }
-  if (!ShowTaskDialog(owner, kAppTitle, message, TDCBF_OK_BUTTON, nullptr, TD_WARNING_ICON)) {
-    ShowErrorDialog(owner, message);
+  if (!ShowErrorDialog(owner, message)) {
+    ShowTaskDialog(owner, kAppTitle, message, TDCBF_OK_BUTTON, nullptr, TD_WARNING_ICON);
   }
 }
 
 void ShowInfo(HWND owner, const std::wstring& message) {
-  if (!ShowTaskDialog(owner, kAppTitle, message, TDCBF_OK_BUTTON, nullptr, TD_INFORMATION_ICON)) {
-    ShowErrorDialog(owner, message);
+  if (!ShowErrorDialog(owner, message)) {
+    ShowTaskDialog(owner, kAppTitle, message, TDCBF_OK_BUTTON, nullptr, TD_INFORMATION_ICON);
   }
 }
 
@@ -1062,32 +969,72 @@ void ShowRegFileMergeFailed(HWND owner, const std::wstring& path, const std::wst
   }
 }
 
-bool ConfirmDelete(HWND owner, const std::wstring& title, const std::wstring& name) {
-  bool result = false;
+constexpr int kChoiceButtonWidthDlu = 50;
+constexpr int kKeyChoiceButtonWidthDlu = 45;
+constexpr int kKeyChoiceWideButtonWidthDlu = 70;
+
+bool ConfirmDelete(HWND owner, const std::wstring& title,
+                   const std::vector<std::wstring>& names) {
+  if (names.empty()) {
+    return false;
+  }
+  const bool many = names.size() > 1;
   std::wstring message;
   if (_wcsicmp(title.c_str(), L"Delete Key") == 0) {
-    message = L"Delete key \"" + name + L"\"?";
-  } else if (_wcsicmp(title.c_str(), L"Delete Value") == 0) {
-    message = L"Delete value \"" + name + L"\"?";
+    message = many ? L"Delete these keys and all of their subkeys?"
+                   : L"Delete this key and all of its subkeys?";
+  } else if (_wcsnicmp(title.c_str(), L"Delete Value", 12) == 0) {
+    message = many ? L"Delete these values?" : L"Delete this value?";
   } else {
-    message = L"Delete \"" + name + L"\"?";
+    message = many ? L"Delete these items?" : L"Delete this item?";
   }
-  if (ShowDeleteDialog(owner, title, message, &result)) {
-    return result;
+
+  std::wstring detail;
+  for (const std::wstring& name : names) {
+    if (!detail.empty()) {
+      detail.append(L"\r\n");
+    }
+    detail.append(name.empty() ? L"(Default)" : name);
   }
-  int clicked = 0;
-  if (ShowTaskDialog(owner, title, message, TDCBF_YES_BUTTON | TDCBF_NO_BUTTON, &clicked, TD_WARNING_ICON)) {
-    return clicked == IDYES;
+
+  const int lines = std::min(static_cast<int>(names.size()), kMaxDetailLines);
+  int result = IDCANCEL;
+  if (ShowChoiceDialog(owner, title, message, L"Delete", L"", L"Cancel", &result,
+                       nullptr, 460, 128 + (lines - 1) * 16, kKeyChoiceButtonWidthDlu,
+                       detail)) {
+    return result == IDYES;
   }
   return false;
 }
 
-int PromptChoice(HWND owner, const std::wstring& message, const std::wstring& title, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label) {
+bool ConfirmDelete(HWND owner, const std::wstring& title, const std::wstring& name) {
+  return ConfirmDelete(owner, title, std::vector<std::wstring>{name});
+}
+
+
+int PromptKeyChoice(HWND owner, const std::wstring& message, const std::wstring& key_path, const std::wstring& title, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label, int yes_button_width_dlu) {
   int result = IDCANCEL;
-  if (ShowChoiceDialog(owner, title, message, yes_label, no_label, cancel_label, &result, nullptr, 420, 120)) {
+  if (ShowChoiceDialog(owner, title, message, yes_label, no_label, cancel_label,
+                       &result, nullptr, 560, 140, kKeyChoiceButtonWidthDlu,
+                       key_path, yes_button_width_dlu)) {
     return result;
   }
   return IDCANCEL;
+}
+
+int PromptChoice(HWND owner, const std::wstring& message, const std::wstring& title, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label, int button_width_dlu, int width) {
+  int result = IDCANCEL;
+  if (ShowChoiceDialog(owner, title, message, yes_label, no_label, cancel_label, &result, nullptr, width, 120, button_width_dlu)) {
+    return result;
+  }
+  return IDCANCEL;
+}
+
+bool ReportFileDialogResult(HWND owner, HRESULT hr) {
+  if (FAILED(hr) && !win32::DialogCancelled(hr)) {
+    ShowError(owner, win32::FormatDialogError(hr));
+  }
+  return SUCCEEDED(hr);
 }
 
 bool LaunchNewInstance() {

@@ -15,63 +15,24 @@ void MainWindow::Impl::OnPaint() {
   HDC hdc = BeginPaint(hwnd_, &ps);
   RECT client = {};
   GetClientRect(hwnd_, &client);
-  int width = client.right - client.left;
-  int height = client.bottom - client.top;
-  if (width <= 0 || height <= 0) {
+  if (IsRectEmpty(&ps.rcPaint) || client.right <= 0 || client.bottom <= 0) {
     EndPaint(hwnd_, &ps);
     return;
   }
 
   const Theme& theme = Theme::Current();
-  HDC mem_dc = CreateCompatibleDC(hdc);
-  HBITMAP buffer = CreateCompatibleBitmap(hdc, width, height);
-  HGDIOBJ old_bitmap = SelectObject(mem_dc, buffer);
+  HDC mem_dc = nullptr;
+  HPAINTBUFFER paint_buffer = BeginBufferedPaint(hdc, &ps.rcPaint, BPBF_COMPATIBLEBITMAP, nullptr, &mem_dc);
+  if (!mem_dc) {
+    mem_dc = hdc;
+  }
 
-  FillRect(mem_dc, &client, theme.BackgroundBrush());
+  FillRect(mem_dc, &ps.rcPaint, theme.BackgroundBrush());
 
   HPEN pen = appearance::CachedPen(theme.BorderColor(), 1);
   HPEN old_pen = reinterpret_cast<HPEN>(SelectObject(mem_dc, pen));
   HBRUSH old_brush = reinterpret_cast<HBRUSH>(SelectObject(mem_dc, GetStockObject(NULL_BRUSH)));
 
-  RECT rect = {};
-  auto draw_border = [&](HWND child) {
-    if (!GetChildRectInParent(hwnd_, child, &rect)) {
-      return;
-    }
-    DrawOutlineRect(mem_dc, rect, kBorderInflate);
-  };
-  auto draw_panel = [&](HWND header, HWND body) {
-    if (!header || !body) {
-      return;
-    }
-    RECT header_rect = {};
-    RECT body_rect = {};
-    if (!GetChildRectInParent(hwnd_, header, &header_rect)) {
-      return;
-    }
-    if (!GetChildRectInParent(hwnd_, body, &body_rect)) {
-      return;
-    }
-    RECT combined = {};
-    combined.left = std::min(header_rect.left, body_rect.left);
-    combined.top = std::min(header_rect.top, body_rect.top);
-    combined.right = std::max(header_rect.right, body_rect.right);
-    combined.bottom = std::max(header_rect.bottom, body_rect.bottom);
-    DrawOutlineRect(mem_dc, combined, kBorderInflate);
-    MoveToEx(mem_dc, combined.left, header_rect.bottom, nullptr);
-    LineTo(mem_dc, combined.right, header_rect.bottom);
-  };
-
-  bool show_search = IsSearchTabSelected();
-  if (show_value_ && !show_search) {
-    draw_border(browse_.values().hwnd());
-  }
-  if (show_tree_ && !show_search) {
-    draw_panel(tree_header_, browse_.tree().hwnd());
-  }
-  if (show_history_ && !show_search) {
-    draw_panel(history_label_, history_list_);
-  }
   if (show_tree_ && show_value_ && splitter_rect_.right > splitter_rect_.left) {
     RECT split = splitter_rect_;
     FillRect(mem_dc, &split, theme.PanelBrush());
@@ -87,22 +48,6 @@ void MainWindow::Impl::OnPaint() {
     LineTo(mem_dc, split.right - 4, mid_y);
   }
 
-  if (browse_.address() && browse_.go_button()) {
-    RECT left = {};
-    RECT right = {};
-    if (GetChildRectInParent(hwnd_, browse_.address(), &left) && GetChildRectInParent(hwnd_, browse_.go_button(), &right)) {
-      RECT combined = left;
-      combined.right = right.right;
-      DrawOutlineRect(mem_dc, combined, kBorderInflate);
-    }
-  }
-  if (browse_.filter() && IsWindowVisible(browse_.filter())) {
-    RECT filter_rect = {};
-    if (GetChildRectInParent(hwnd_, browse_.filter(), &filter_rect)) {
-      DrawOutlineRect(mem_dc, filter_rect, kBorderInflate);
-    }
-  }
-
   HPEN top_pen = appearance::CachedPen(theme.BorderColor(), 1);
   HGDIOBJ old_top = SelectObject(mem_dc, top_pen);
   MoveToEx(mem_dc, 0, 0, nullptr);
@@ -112,11 +57,9 @@ void MainWindow::Impl::OnPaint() {
   SelectObject(mem_dc, old_brush);
   SelectObject(mem_dc, old_pen);
 
-  BitBlt(hdc, 0, 0, width, height, mem_dc, 0, 0, SRCCOPY);
-  SelectObject(mem_dc, old_bitmap);
-  DeleteObject(buffer);
-  DeleteDC(mem_dc);
-
+  if (paint_buffer) {
+    EndBufferedPaint(paint_buffer, TRUE);
+  }
   EndPaint(hwnd_, &ps);
 }
 
@@ -157,9 +100,7 @@ void MainWindow::Impl::ApplyThemeToChildren() {
 
   theme.ApplyToToolbar(toolbar_.hwnd());
   theme.ApplyToTreeView(browse_.tree().hwnd());
-  theme.ApplyToTreeView(regedit_compat_tree_);
   theme.ApplyToListView(browse_.values().hwnd());
-  theme.ApplyToListView(regedit_compat_list_);
   theme.ApplyToListView(history_list_);
   theme.ApplyToListView(search_results_list_);
   theme.ApplyToTabControl(tab_);
@@ -169,11 +110,6 @@ void MainWindow::Impl::ApplyThemeToChildren() {
     SetWindowTheme(browse_.address(), Theme::UseDarkMode() ? L"DarkMode_Explorer" : L"Explorer", nullptr);
     SetEditMargins(browse_.address(), 6, 6);
     SetEditVerticalRect(browse_.address(), ui_font_, 2, 6, 6);
-  }
-  if (regedit_compat_edit_) {
-    SetWindowTheme(regedit_compat_edit_, Theme::UseDarkMode() ? L"DarkMode_Explorer" : L"Explorer", nullptr);
-    SetEditMargins(regedit_compat_edit_, 6, 6);
-    SetEditVerticalRect(regedit_compat_edit_, ui_font_, 2, 6, 6);
   }
   if (browse_.filter()) {
     SetWindowTheme(browse_.filter(), Theme::UseDarkMode() ? L"DarkMode_Explorer" : L"Explorer", nullptr);
@@ -311,16 +247,13 @@ void MainWindow::Impl::ApplyUIFontToControls() {
   }
   ApplyFont(toolbar_.hwnd(), ui_font_);
   ApplyFont(browse_.address(), ui_font_);
-  ApplyFont(regedit_compat_edit_, ui_font_);
   ApplyFont(browse_.go_button(), ui_font_);
   ApplyFont(browse_.filter(), ui_font_);
   ApplyFont(tab_, ui_font_);
   ApplyFont(tree_header_, ui_font_);
   ApplyFont(tree_close_btn_, ui_font_);
   ApplyFont(browse_.tree().hwnd(), ui_font_);
-  ApplyFont(regedit_compat_tree_, ui_font_);
   ApplyFont(browse_.values().hwnd(), ui_font_);
-  ApplyFont(regedit_compat_list_, ui_font_);
   ApplyFont(history_close_btn_, ui_font_);
   ApplyFont(history_label_, ui_font_);
   ApplyFont(history_list_, ui_font_);

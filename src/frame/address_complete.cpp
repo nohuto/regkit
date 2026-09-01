@@ -112,17 +112,7 @@ public:
 
 private:
   std::wstring ReadEditText() const {
-    if (!edit_) {
-      return L"";
-    }
-    int length = GetWindowTextLengthW(edit_);
-    if (length <= 0) {
-      return L"";
-    }
-    std::wstring text(static_cast<size_t>(length) + 1, L'\0');
-    GetWindowTextW(edit_, MutableData(text), length + 1);
-    text.resize(static_cast<size_t>(length));
-    return text;
+    return util::WindowText(edit_);
   }
 
   void UpdateSuggestionsIfNeeded() {
@@ -396,10 +386,6 @@ std::vector<std::wstring> MainWindow::Impl::BuildAddressSuggestions(const std::w
   }
   RegistryNode node;
   if (!ResolvePathToNode(normalized_prefix, &node)) {
-    return items;
-  }
-  KeyInfo info = {};
-  if (!RegistryStore::QueryKeyInfo(node, &info)) {
     return items;
   }
   auto subkeys = RegistryStore::EnumSubKeyNames(node, true);

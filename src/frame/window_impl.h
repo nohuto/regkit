@@ -8,6 +8,7 @@
 
 #include <windows.h>
 #include <commctrl.h>
+#include <uxtheme.h>
 
 #include <atomic>
 #include <memory>
@@ -53,7 +54,6 @@ public:
   bool OpenRegFileTab(const std::wstring& path);
   bool TranslateAccelerator(const MSG& msg);
   void QueueExternalJump(const std::wstring& target);
-  void ActivateRegeditCompatibilityMode();
 
 private:
   friend class MainWindowBenchmarks;
@@ -104,6 +104,7 @@ private:
   static LRESULT CALLBACK AddressEditProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data);
   static LRESULT CALLBACK FilterEditProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data);
   static LRESULT CALLBACK TabProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data);
+  static LRESULT CALLBACK BorderProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data);
   static LRESULT CALLBACK HeaderProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data);
   static LRESULT CALLBACK ListViewProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data);
   static LRESULT CALLBACK TreeViewProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data);
@@ -138,11 +139,13 @@ private:
   LRESULT HandleToolbarNotification(NMHDR* header, LPARAM lparam);
   LRESULT HandleTabNotification(NMHDR* header, LPARAM lparam);
   LRESULT HandleTreeNotification(NMHDR* header, LPARAM lparam);
-  LRESULT HandleRegeditCompatNotification(NMHDR* header, LPARAM lparam);
   LRESULT HandleHeaderNotification(NMHDR* header, LPARAM lparam);
   LRESULT HandleValueNotification(NMHDR* header, LPARAM lparam);
   LRESULT HandleHistoryNotification(NMHDR* header, LPARAM lparam);
   LRESULT HandleSearchNotification(NMHDR* header, LPARAM lparam);
+  LRESULT HandleValueListCustomDraw(NMLVCUSTOMDRAW* draw);
+  LRESULT HandleSearchListCustomDraw(NMLVCUSTOMDRAW* draw);
+  search::Result* SearchResultAt(int item);
   bool OnCreate();
   void RunDeferredStartup();
   void OnDestroy();
@@ -166,8 +169,8 @@ private:
   void BeginHistorySplitterDrag();
   void UpdateSplitterTrack(int client_x);
   void UpdateHistorySplitterTrack(int client_y);
-  void EndSplitterDrag(bool apply);
-  void EndHistorySplitterDrag(bool apply);
+  void EndSplitterDrag();
+  void EndHistorySplitterDrag();
   void ComputeSplitterLimits(int* min_width, int* max_width) const;
   void ComputeHistorySplitterLimits(int* min_height, int* max_height) const;
   void BuildImageLists();
@@ -184,6 +187,10 @@ private:
   void ApplyHistoryColumns();
   void ApplySearchColumns(bool compare);
   void UpdateValueListForNode(RegistryNode* node);
+  void AttachBorder(HWND control);
+  void AttachHeader(HWND header);
+  void ResetValueFilter();
+  void FocusFirstValue();
   void EnsureValueRowData(ListRow* row);
   void StartValueListWorker();
   void StopValueListWorker();
@@ -235,7 +242,6 @@ private:
   bool SaveOfflineRegistry();
   bool LoadOfflineRegistryFromPath(const std::wstring& path, bool open_new_tab);
   void ApplyRegistryRoots(const std::vector<RegistryRootEntry>& roots);
-  bool UseRegeditVisibleTreeLayout() const;
   std::vector<std::wstring> BuildVisibleTreePathParts(const std::wstring& path) const;
   void RefreshVisibleRegistryTreeLayout(bool preserve_selection);
   std::wstring TreeRootLabel() const;
@@ -260,6 +266,7 @@ private:
   bool IsRegFileTabSelected() const;
   int SearchIndexFromTab(int index) const;
   int FindFirstRegistryTabIndex() const;
+  void ActivateRegistryTab();
   void UpdateTabHotState(HWND hwnd, POINT pt);
   void PaintTabControl(HWND hwnd, HDC hdc);
   void DrawTabItem(HDC hdc, int index, const RECT& item_rect, int header_bottom, bool selected);
@@ -269,23 +276,12 @@ private:
   void NavigateToAddress();
   bool SelectTreePath(const std::wstring& path);
   bool SelectValueByName(const std::wstring& name);
-  void CreateRegeditCompatControls();
-  void EnsureRegeditCompatControls();
-  void PopulateRegeditCompatTree();
-  void PopulateRegeditCompatChildren(HTREEITEM item);
-  void UpdateRegeditCompatList(const std::wstring& key_path);
-  HTREEITEM FindRegeditCompatItemByPath(const std::wstring& key_path);
-  void SyncRegeditCompatControls(const std::wstring& key_path, const std::wstring& value_name);
-  void HandleRegeditCompatTreeSelection(NMTREEVIEWW* info);
-  void HandleRegeditCompatListSelection(NMLISTVIEW* info);
-  void QueueRegeditCompatNavigation(const std::wstring& key_path);
-  void ApplyPendingRegeditCompatNavigation();
   void FocusAddressBarForExternalJump(bool defer_if_needed);
   void BeginJumpUiBatch();
   void EndJumpUiBatch();
   void ApplyTreeSelectionEffects(RegistryNode* node);
   void ApplyQueuedExternalJump();
-  bool NavigateToResolvedExternalJump(const std::wstring& key_path, const std::wstring& value_name, bool sync_compat_controls);
+  bool NavigateToResolvedExternalJump(const std::wstring& key_path, const std::wstring& value_name);
   bool NavigateToExternalJump(const std::wstring& target);
   bool ResolveExternalJumpTarget(const std::wstring& target, std::wstring* key_path, std::wstring* value_name) const;
   bool LoadTraceFromFile(const std::wstring& label, const std::wstring& path, const trace::Selection* selection_override = nullptr);
@@ -340,9 +336,6 @@ private:
   bool OpenHistoryTarget(const HistoryEntry& entry);
   bool RevertHistoryEntry(const HistoryEntry& entry);
   bool EnsureSearchResultDataLoaded(search::Result* result);
-  void CreateCellTooltip();
-  void UpdateCellTooltip(POINT client_pt);
-  void HideCellTooltip();
   void ShowAddressContextMenu(HWND edit, POINT screen_pt);
   void ShowTreeContextMenu(POINT screen_pt);
   void ShowValueContextMenu(POINT screen_pt);
@@ -351,9 +344,9 @@ private:
   void DrawAddressButton(const DRAWITEMSTRUCT* info);
   void DrawHeaderCloseButton(const DRAWITEMSTRUCT* info);
   void ShowPermissionsDialog(const RegistryNode& node);
+  bool OpenDefaultRegedit();
   void ReplaceRegedit(bool enable);
   void SyncReplaceRegeditState();
-  bool OpenDefaultRegedit();
   void OpenHiveFileDir();
   std::wstring ResolveSelectedHiveFilePath();
   void AddAddressHistory(const std::wstring& path);
@@ -363,6 +356,7 @@ private:
   void NavigateUp();
   void UpdateNavigationButtons();
   void ApplyViewVisibility();
+  void SelectTabIndex(int index);
   void ApplyTabSelection(int index);
   void SyncRegFileTabSelection();
   void ResetHiveListCache();
@@ -386,7 +380,7 @@ private:
   std::wstring TabsCachePath() const;
   std::wstring SearchTabCachePath(const std::wstring& file) const;
   void LoadTabs();
-  void SaveTabs();
+  bool SaveTabs();
   void ClearTabsCache();
   bool EnsureSearchTabResultsLoaded(int search_index);
   void LoadComments();
@@ -474,9 +468,6 @@ private:
   LOGFONTW custom_font_ = {};
   HACCEL accelerators_ = nullptr;
   Toolbar toolbar_;
-  HWND regedit_compat_edit_ = nullptr;
-  HWND regedit_compat_tree_ = nullptr;
-  HWND regedit_compat_list_ = nullptr;
   HWND tab_ = nullptr;
   HWND tree_header_ = nullptr;
   HWND tree_close_btn_ = nullptr;
@@ -485,13 +476,11 @@ private:
   HWND history_list_ = nullptr;
   HWND status_bar_ = nullptr;
   HWND search_progress_ = nullptr;
-  HWND cell_tooltip_ = nullptr;
-  int cell_tooltip_item_ = -1;
-  int cell_tooltip_column_ = -1;
-  std::wstring cell_tooltip_text_;
   browse::Pane browse_;
   HIMAGELIST tree_images_ = nullptr;
   HIMAGELIST list_images_ = nullptr;
+  std::vector<int> value_column_subitems_;
+  std::vector<int> search_column_subitems_;
   std::vector<ColumnInfo> history_columns_;
   std::vector<int> history_column_widths_;
   std::vector<bool> history_column_visible_;
@@ -578,26 +567,19 @@ private:
   bool save_tabs_ = true;
   bool clear_tabs_on_exit_ = false;
   bool hive_list_loaded_ = false;
-  bool regedit_compatibility_mode_ = false;
   std::vector<ThemePreset> theme_presets_;
   std::wstring active_theme_preset_;
   LPARAM pending_value_list_kind_ = 0;
   std::wstring pending_value_list_name_;
   std::wstring appended_value_name_;
+  HWND last_focus_ = nullptr;
+  int pending_value_command_ = 0;
+  std::wstring retained_value_name_;
+  std::wstring retained_value_key_path_;
   std::wstring queued_external_jump_target_;
-  std::wstring regedit_compat_selected_key_path_;
-  std::wstring regedit_compat_pending_key_path_;
-  std::wstring regedit_compat_pending_value_name_;
-  bool syncing_regedit_compat_controls_ = false;
   bool jump_ui_batch_active_ = false;
   std::wstring pending_external_value_key_path_;
   std::wstring pending_external_value_name_;
-  struct RegeditCompatTreeNode {
-    std::wstring path;
-    bool populated = false;
-  };
-  std::vector<std::unique_ptr<RegeditCompatTreeNode>> regedit_compat_nodes_;
-  std::vector<std::wstring> regedit_compat_list_names_;
   std::unordered_map<std::wstring, std::wstring> hive_list_;
   std::shared_ptr<const std::unordered_set<std::wstring>> hive_roots_;
   workspace::TreeState saved_tree_state_;

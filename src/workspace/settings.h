@@ -30,7 +30,6 @@ struct Settings {
   bool always_run_as_system = false;
   bool always_run_as_trustedinstaller = false;
   bool always_on_top = false;
-  bool replace_regedit = false;
   bool single_instance = true;
   bool read_only = false;
 

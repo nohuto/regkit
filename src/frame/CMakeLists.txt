@@ -59,7 +59,6 @@ target_link_libraries(regkit_frame PRIVATE
     regkit_win32
     advapi32
     comctl32
-    comdlg32
     ole32
     pathcch
     shell32

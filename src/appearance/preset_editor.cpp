@@ -12,6 +12,8 @@
 #include "appearance/dialog_layout.h"
 #include "appearance/default_font.h"
 #include "appearance/feedback.h"
+#include "appearance/list_header.h"
+#include "win32/file_dialog.h"
 
 namespace regkit {
 
@@ -192,42 +194,15 @@ bool PromptPresetName(ThemePresetWindowState* state,
   return true;
 }
 
+constexpr wchar_t kThemeFilter[] =
+    L"RegKit Theme Presets (*.rktheme)\0*.rktheme\0All Files (*.*)\0*.*\0";
+
 bool PromptOpenThemeFile(HWND owner, std::wstring* path) {
-  if (!path) {
-    return false;
-  }
-  std::wstring buffer(32768, L'\0');
-  OPENFILENAMEW ofn = {};
-  ofn.lStructSize = sizeof(ofn);
-  ofn.hwndOwner = owner;
-  ofn.lpstrFilter = L"RegKit Theme Presets (*.rktheme)\0*.rktheme\0All Files (*.*)\0*.*\0\0";
-  ofn.lpstrFile = buffer.data();
-  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
-  ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-  if (!GetOpenFileNameW(&ofn)) {
-    return false;
-  }
-  *path = buffer.c_str();
-  return true;
+  return ui::ReportFileDialogResult(owner, win32::ChooseFileToOpen(owner, kThemeFilter, path));
 }
 
 bool PromptSaveThemeFile(HWND owner, std::wstring* path) {
-  if (!path) {
-    return false;
-  }
-  std::wstring buffer(32768, L'\0');
-  OPENFILENAMEW ofn = {};
-  ofn.lStructSize = sizeof(ofn);
-  ofn.hwndOwner = owner;
-  ofn.lpstrFilter = L"RegKit Theme Presets (*.rktheme)\0*.rktheme\0All Files (*.*)\0*.*\0\0";
-  ofn.lpstrFile = buffer.data();
-  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
-  ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
-  if (!GetSaveFileNameW(&ofn)) {
-    return false;
-  }
-  *path = buffer.c_str();
-  return true;
+  return ui::ReportFileDialogResult(owner, win32::ChooseFileToSave(owner, kThemeFilter, L"rktheme", nullptr, path));
 }
 
 bool ChooseColorFor(HWND owner, COLORREF* color, COLORREF* custom_colors) {
@@ -303,88 +278,15 @@ LRESULT CALLBACK ThemePresetHeaderProc(HWND hwnd, UINT message, WPARAM wparam, L
     return 1;
   }
   if (message == WM_PAINT) {
-    PAINTSTRUCT ps = {};
-    HDC hdc = BeginPaint(hwnd, &ps);
-    const Theme& theme = Theme::Current();
-    RECT client = {};
-    GetClientRect(hwnd, &client);
-    FillRect(hdc, &client, theme.HeaderBrush());
-
-    HFONT font = reinterpret_cast<HFONT>(SendMessageW(hwnd, WM_GETFONT, 0, 0));
-    HFONT old_font = nullptr;
-    if (font) {
-      old_font = reinterpret_cast<HFONT>(SelectObject(hdc, font));
-    }
-
-    HTHEME header_theme = OpenThemeData(hwnd, VSCLASS_HEADER);
-    SIZE arrow_size = {0, 0};
-    if (header_theme) {
-      GetThemePartSize(header_theme, hdc, HP_HEADERSORTARROW, HSAS_SORTEDUP, nullptr, TS_TRUE, &arrow_size);
-    }
-    if (arrow_size.cx <= 0 || arrow_size.cy <= 0) {
-      arrow_size.cx = 8;
-      arrow_size.cy = 8;
-    }
-
-    int count = Header_GetItemCount(hwnd);
-    for (int i = 0; i < count; ++i) {
-      RECT rect = {};
-      if (!Header_GetItemRect(hwnd, i, &rect)) {
-        continue;
-      }
-
-      wchar_t text[128] = {};
-      HDITEMW item = {};
-      item.mask = HDI_TEXT | HDI_FORMAT;
-      item.pszText = text;
-      item.cchTextMax = static_cast<int>(_countof(text));
-      Header_GetItem(hwnd, i, &item);
-
-      bool sorted_up = (item.fmt & HDF_SORTUP) != 0;
-      bool sorted_down = (item.fmt & HDF_SORTDOWN) != 0;
-
-      FillRect(hdc, &rect, theme.HeaderBrush());
-
-      RECT text_rect = rect;
-      text_rect.left += 8;
-      text_rect.right -= 8;
-      if (sorted_up || sorted_down) {
-        text_rect.right -= arrow_size.cx + 6;
-      }
-
-      UINT format = DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS;
-      if (item.fmt & HDF_RIGHT) {
-        format |= DT_RIGHT;
-      } else if (item.fmt & HDF_CENTER) {
-        format |= DT_CENTER;
-      }
-
-      SetBkMode(hdc, TRANSPARENT);
-      SetTextColor(hdc, theme.TextColor());
-      DrawTextW(hdc, text, -1, &text_rect, format);
-
-      if ((sorted_up || sorted_down) && header_theme) {
-        RECT arrow_rect = rect;
-        arrow_rect.right -= 6;
-        arrow_rect.left = arrow_rect.right - arrow_size.cx;
-        arrow_rect.top = rect.top + (rect.bottom - rect.top - arrow_size.cy) / 2;
-        arrow_rect.bottom = arrow_rect.top + arrow_size.cy;
-        int arrow_state = sorted_up ? HSAS_SORTEDUP : HSAS_SORTEDDOWN;
-        DrawThemeBackground(header_theme, hdc, HP_HEADERSORTARROW, arrow_state, &arrow_rect, nullptr);
-      }
-    }
-
-    if (header_theme) {
-      CloseThemeData(header_theme);
-    }
-    if (old_font) {
-      SelectObject(hdc, old_font);
-    }
-    EndPaint(hwnd, &ps);
+    appearance::PaintListHeader(hwnd, nullptr);
     return 0;
   }
   if (message == WM_THEMECHANGED) {
+    appearance::ReleaseListHeaderTheme(hwnd);
     InvalidateRect(hwnd, nullptr, TRUE);
+  }
+  if (message == WM_NCDESTROY) {
+    appearance::ReleaseListHeaderTheme(hwnd);
   }
   return DefSubclassProc(hwnd, message, wparam, lparam);
 }

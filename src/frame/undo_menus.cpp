@@ -579,13 +579,18 @@ void MainWindow::Impl::DrawHeaderCloseButton(const DRAWITEMSTRUCT* info) {
   COLORREF bg_color = pressed ? theme.HoverColor() : theme.HeaderColor();
   FillRect(hdc, &rect, appearance::CachedBrush(bg_color));
 
-  if (icon_font_) {
-    HFONT old_font = reinterpret_cast<HFONT>(SelectObject(hdc, icon_font_));
-    SetTextColor(hdc, theme.MutedTextColor());
-    SetBkMode(hdc, TRANSPARENT);
-    DrawTextW(hdc, L"\xE711", -1, &rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
-    SelectObject(hdc, old_font);
-  }
+  const UINT dpi = win32::DpiForWindow(info->hwndItem);
+  const int radius = util::ScaleForDpi(3, dpi);
+  const int pen_width = std::max(1, util::ScaleForDpi(1, dpi));
+  const int center_x = (rect.left + rect.right) / 2;
+  const int center_y = (rect.top + rect.bottom) / 2;
+  HPEN pen = appearance::CachedPen(theme.MutedTextColor(), pen_width);
+  HGDIOBJ old_pen = SelectObject(hdc, pen);
+  MoveToEx(hdc, center_x - radius, center_y - radius, nullptr);
+  LineTo(hdc, center_x + radius + 1, center_y + radius + 1);
+  MoveToEx(hdc, center_x + radius, center_y - radius, nullptr);
+  LineTo(hdc, center_x - radius - 1, center_y + radius + 1);
+  SelectObject(hdc, old_pen);
 }
 
 void MainWindow::Impl::AddAddressHistory(const std::wstring& path) {

@@ -7,12 +7,14 @@
 
 #include <algorithm>
 #include <commctrl.h>
+#include <uxtheme.h>
 #include <cwctype>
 #include <limits>
 #include <shellapi.h>
 #include <string>
 #include <vector>
 
+#include "cli/reg_command.h"
 #include "frame/main_window.h"
 #include "regfile/registry_transfer.h"
 #include "registry/registry_path.h"
@@ -25,15 +27,14 @@
 #include "win32/text_transform.h"
 #include "win32/file_text.h"
 #include "win32/process_rights.h"
+#include "win32/restart.h"
 #include "win32/shell_paths.h"
 
 namespace {
 
-constexpr wchar_t kRestartSystemArg[] = L"--restart-system";
-constexpr wchar_t kRestartTiArg[] = L"--restart-ti";
+using regkit::win32::kRestartSystemArg;
+using regkit::win32::kRestartTiArg;
 constexpr ULONG_PTR kExternalJumpCopyDataId = 0x52474A54;
-constexpr ULONG_PTR kRegeditCompatActivateCopyDataId = 0x52474354;
-constexpr wchar_t kRegeditWindowClassName[] = L"RegEdit_RegEdit";
 constexpr wchar_t kRegKitWindowProperty[] = L"RegKitMainWindow";
 
 using util::FormatWin32Error;
@@ -101,6 +102,17 @@ bool IsInterceptedRegeditLaunch(const std::vector<std::wstring>& args) {
     }
   }
   return false;
+}
+
+std::vector<std::wstring> StripRegeditLaunchArg(const std::vector<std::wstring>& args) {
+  std::vector<std::wstring> stripped;
+  stripped.reserve(args.size());
+  for (const auto& arg : args) {
+    if (!IsRegeditLaunchArg(arg)) {
+      stripped.push_back(arg);
+    }
+  }
+  return stripped;
 }
 
 std::vector<std::wstring> RegFilesFromArgs(const std::vector<std::wstring>& args) {
@@ -184,7 +196,14 @@ bool ResolveExternalJumpTarget(const std::vector<std::wstring>& args, std::wstri
   out->clear();
   bool intercepted_regedit = false;
   std::wstring explicit_key_path;
-  for (const auto& arg : args) {
+  for (size_t index = 0; index < args.size(); ++index) {
+    const std::wstring& arg = args[index];
+    if (_wcsicmp(arg.c_str(), L"--goto") == 0 || _wcsicmp(arg.c_str(), L"/goto") == 0) {
+      if (index + 1 < args.size()) {
+        explicit_key_path = args[++index];
+      }
+      continue;
+    }
     if (IsRegeditLaunchArg(arg)) {
       intercepted_regedit = true;
       continue;
@@ -216,13 +235,6 @@ bool ResolveExternalJumpTarget(const std::vector<std::wstring>& args, std::wstri
 
 BOOL CALLBACK FindRegKitWindowProc(HWND hwnd, LPARAM lparam) {
   if (!GetPropW(hwnd, kRegKitWindowProperty)) {
-    return TRUE;
-  }
-  wchar_t cls[64] = {};
-  if (GetClassNameW(hwnd, cls, static_cast<int>(_countof(cls))) == 0) {
-    return TRUE;
-  }
-  if (_wcsicmp(cls, kRegeditWindowClassName) != 0) {
     return TRUE;
   }
   auto* found = reinterpret_cast<HWND*>(lparam);
@@ -352,16 +364,16 @@ void ApplyStartupTheme(const StartupSettings& settings) {
   regkit::Theme::SetMode(settings.theme_mode);
 }
 
-bool RelaunchAsAdmin() {
-  std::wstring exe_path = util::GetModulePath();
+bool RelaunchAsAdmin(DWORD parent_pid) {
+  const std::wstring exe_path = util::GetModulePath();
   if (exe_path.empty()) {
     return false;
   }
-  HINSTANCE result = ShellExecuteW(nullptr, L"runas", exe_path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-  return reinterpret_cast<INT_PTR>(result) > 32;
+  return SUCCEEDED(regkit::win32::LaunchElevated(
+      nullptr, exe_path, regkit::win32::RestartArguments(nullptr, parent_pid)));
 }
 
-bool RestartAsSystem(std::wstring* error_message, bool* launched) {
+bool RestartAsSystem(DWORD parent_pid, std::wstring* error_message, bool* launched) {
   if (error_message) {
     error_message->clear();
   }
@@ -379,8 +391,9 @@ bool RestartAsSystem(std::wstring* error_message, bool* launched) {
     return false;
   }
   if (!util::IsProcessElevated()) {
-    HINSTANCE result = ShellExecuteW(nullptr, L"runas", exe_path.c_str(), kRestartSystemArg, nullptr, SW_SHOWNORMAL);
-    if (reinterpret_cast<INT_PTR>(result) <= 32) {
+    const HRESULT hr = regkit::win32::LaunchElevated(
+        nullptr, exe_path, regkit::win32::RestartArguments(kRestartSystemArg, parent_pid));
+    if (FAILED(hr)) {
       if (error_message) {
         *error_message = L"Failed to request SYSTEM restart.";
       }
@@ -395,7 +408,7 @@ bool RestartAsSystem(std::wstring* error_message, bool* launched) {
   std::wstring command_line = L"\"";
   command_line += exe_path;
   command_line += L"\" ";
-  command_line += kRestartSystemArg;
+  command_line += regkit::win32::RestartArguments(kRestartSystemArg, parent_pid);
   DWORD error = 0;
   if (!util::LaunchProcessAsSystem(command_line, L"", &error)) {
     if (error_message) {
@@ -415,7 +428,7 @@ bool RestartAsSystem(std::wstring* error_message, bool* launched) {
   return true;
 }
 
-bool RestartAsTrustedInstaller(std::wstring* error_message, bool* launched) {
+bool RestartAsTrustedInstaller(DWORD parent_pid, std::wstring* error_message, bool* launched) {
   if (error_message) {
     error_message->clear();
   }
@@ -433,8 +446,9 @@ bool RestartAsTrustedInstaller(std::wstring* error_message, bool* launched) {
     return false;
   }
   if (!util::IsProcessElevated()) {
-    HINSTANCE result = ShellExecuteW(nullptr, L"runas", exe_path.c_str(), kRestartTiArg, nullptr, SW_SHOWNORMAL);
-    if (reinterpret_cast<INT_PTR>(result) <= 32) {
+    const HRESULT hr = regkit::win32::LaunchElevated(
+        nullptr, exe_path, regkit::win32::RestartArguments(kRestartTiArg, parent_pid));
+    if (FAILED(hr)) {
       if (error_message) {
         *error_message = L"Failed to request TrustedInstaller restart.";
       }
@@ -449,7 +463,7 @@ bool RestartAsTrustedInstaller(std::wstring* error_message, bool* launched) {
   std::wstring command_line = L"\"";
   command_line += exe_path;
   command_line += L"\" ";
-  command_line += kRestartTiArg;
+  command_line += regkit::win32::RestartArguments(kRestartTiArg, parent_pid);
   DWORD error = 0;
   if (!util::LaunchProcessAsTrustedInstaller(command_line, L"", &error)) {
     if (error_message) {
@@ -483,20 +497,30 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
   icc.dwSize = sizeof(icc);
   icc.dwICC = ICC_WIN95_CLASSES | ICC_STANDARD_CLASSES | ICC_BAR_CLASSES | ICC_TAB_CLASSES | ICC_DATE_CLASSES | ICC_COOL_CLASSES | ICC_PROGRESS_CLASS;
   InitCommonControlsEx(&icc);
+  BufferedPaintInit();
 
   const auto args = GetCommandLineArgs();
+  const bool regedit_compat_requested = IsInterceptedRegeditLaunch(args);
+  int cli_exit = 0;
+  if (regkit::cli::Execute(
+          regedit_compat_requested ? StripRegeditLaunchArg(args) : args,
+          &cli_exit)) {
+    return cli_exit;
+  }
   const StartupSettings startup_settings = LoadStartupSettings();
   ApplyStartupTheme(startup_settings);
   std::wstring startup_jump_target;
-  const bool regedit_compat_requested = IsInterceptedRegeditLaunch(args);
   const bool external_jump_requested = ResolveExternalJumpTarget(args, &startup_jump_target);
   const std::vector<std::wstring> regedit_merge_files = regedit_compat_requested ? RegFilesFromArgs(args) : std::vector<std::wstring>();
-  bool restart_system = HasCommandLineArg(args, kRestartSystemArg);
-  bool restart_ti = HasCommandLineArg(args, kRestartTiArg);
+  const bool restart_system = HasCommandLineArg(args, kRestartSystemArg);
+  const bool restart_ti = HasCommandLineArg(args, kRestartTiArg);
+  const DWORD restart_parent_pid = regkit::win32::RestartParentPid(args);
+  const DWORD handoff_pid =
+      restart_parent_pid != 0 ? restart_parent_pid : GetCurrentProcessId();
   if (restart_ti) {
     std::wstring error;
     bool launched = false;
-    if (RestartAsTrustedInstaller(&error, &launched)) {
+    if (RestartAsTrustedInstaller(handoff_pid, &error, &launched)) {
       if (launched) {
         return 0;
       }
@@ -506,7 +530,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
   } else if (restart_system) {
     std::wstring error;
     bool launched = false;
-    if (RestartAsSystem(&error, &launched)) {
+    if (RestartAsSystem(handoff_pid, &error, &launched)) {
       if (launched) {
         return 0;
       }
@@ -517,7 +541,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
              !util::IsProcessTrustedInstaller()) {
     std::wstring error;
     bool launched = false;
-    if (RestartAsTrustedInstaller(&error, &launched)) {
+    if (RestartAsTrustedInstaller(handoff_pid, &error, &launched)) {
       if (launched) {
         return 0;
       }
@@ -528,7 +552,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
              !util::IsProcessSystem()) {
     std::wstring error;
     bool launched = false;
-    if (RestartAsSystem(&error, &launched)) {
+    if (RestartAsSystem(handoff_pid, &error, &launched)) {
       if (launched) {
         return 0;
       }
@@ -537,7 +561,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
     }
   } else if (startup_settings.always_run_as_admin &&
              !util::IsProcessElevated()) {
-    if (RelaunchAsAdmin()) {
+    if (RelaunchAsAdmin(handoff_pid)) {
       return 0;
     }
     regkit::ui::ShowError(nullptr, L"Administrator restart was cancelled.");
@@ -558,18 +582,14 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
     return 0;
   }
 
+  regkit::win32::WaitForParentExit(restart_parent_pid);
+
   HANDLE instance_mutex = nullptr;
-  if (!restart_system && !restart_ti && startup_settings.single_instance) {
+  if (startup_settings.single_instance) {
     instance_mutex = CreateMutexW(nullptr, TRUE, L"RegKit.SingleInstance");
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
       HWND existing = FindRunningRegKitWindow();
       if (existing) {
-        if (regedit_compat_requested) {
-          COPYDATASTRUCT compat = {};
-          compat.dwData = kRegeditCompatActivateCopyDataId;
-          DWORD_PTR ignored = 0;
-          SendMessageTimeoutW(existing, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&compat), SMTO_ABORTIFHUNG, 1500, &ignored);
-        }
         if (external_jump_requested && !startup_jump_target.empty()) {
           COPYDATASTRUCT data = {};
           data.dwData = kExternalJumpCopyDataId;
@@ -589,9 +609,6 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
   }
 
   regkit::MainWindow window;
-  if (regedit_compat_requested) {
-    window.ActivateRegeditCompatibilityMode();
-  }
   if (!window.Create(instance)) {
     regkit::ui::ShowError(nullptr, L"Failed to create the main window.");
     if (instance_mutex) {
@@ -615,5 +632,6 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show) {
   if (instance_mutex) {
     CloseHandle(instance_mutex);
   }
+  BufferedPaintUnInit();
   return static_cast<int>(msg.wParam);
 }

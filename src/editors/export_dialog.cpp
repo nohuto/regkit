@@ -5,10 +5,10 @@
 
 #include "appearance/feedback.h"
 #include "editors/dialog_support.h"
+#include "win32/file_dialog.h"
 
 #include "resource.h"
 
-#include <commdlg.h>
 #include <utility>
 
 namespace regkit::editors {
@@ -22,23 +22,13 @@ struct State {
 };
 
 bool ChoosePath(HWND owner, std::wstring* path) {
-  std::wstring buffer(32768, L'\0');
-  if (path && !path->empty()) {
-    wcsncpy_s(buffer.data(), buffer.size(), path->c_str(), _TRUNCATE);
+  const HRESULT hr = win32::ChooseFileToSave(
+      owner, L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0", L"reg",
+      path && !path->empty() ? path->c_str() : nullptr, path);
+  if (FAILED(hr) && !win32::DialogCancelled(hr)) {
+    ui::ShowError(owner, win32::FormatDialogError(hr));
   }
-  OPENFILENAMEW dialog = {};
-  dialog.lStructSize = sizeof(dialog);
-  dialog.hwndOwner = owner;
-  dialog.lpstrFilter =
-      L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0";
-  dialog.lpstrFile = buffer.data();
-  dialog.nMaxFile = static_cast<DWORD>(buffer.size());
-  dialog.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
-  if (!path || !GetSaveFileNameW(&dialog)) {
-    return false;
-  }
-  *path = buffer.c_str();
-  return true;
+  return SUCCEEDED(hr);
 }
 
 INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam,

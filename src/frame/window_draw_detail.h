@@ -17,7 +17,6 @@
 #include <limits>
 #include <regex>
 
-#include <commdlg.h>
 #include <pathcch.h>
 #include <richedit.h>
 #include <shellapi.h>
@@ -32,7 +31,11 @@
 #include "frame/command_ids.h"
 #include "registry/security_dialog.h"
 #include "appearance/feedback.h"
+#include "appearance/default_font.h"
 #include "appearance/gdi_cache.h"
+#include "appearance/list_header.h"
+#include "win32/file_dialog.h"
+#include "win32/restart.h"
 #include "registry/registry_store.h"
 #include "appearance/icon_loader.h"
 #include "win32/system_error.h"
@@ -61,9 +64,6 @@ constexpr int kToolbarId = 100;
 constexpr int kAddressEditId = 0;
 constexpr int kTreeId = 1;
 constexpr int kValueListId = 2;
-constexpr int kRegeditCompatEditId = 101;
-constexpr int kRegeditCompatTreeId = 104;
-constexpr int kRegeditCompatListId = 105;
 constexpr int kTabId = 103;
 constexpr int kHistoryListId = 106;
 constexpr int kHistoryLabelId = 107;
@@ -77,8 +77,8 @@ constexpr int kHistoryHeaderCloseId = 114;
 constexpr int kFilterEditId = 115;
 constexpr int kToolbarIconSize = 16;
 constexpr int kToolbarGlyphSize = 16;
-constexpr wchar_t kRestartSystemArg[] = L"--restart-system";
-constexpr wchar_t kRestartTiArg[] = L"--restart-ti";
+using win32::kRestartSystemArg;
+using win32::kRestartTiArg;
 template <typename T>
 inline T ClampValue(T value, T low, T high) {
   return value < low ? low : (high < value ? high : value);
@@ -106,21 +106,18 @@ constexpr DWORD kSearchResultsMaxMs = 15;
 constexpr DWORD kSearchResultsRefreshMs = 1000;
 constexpr DWORD kSearchProgressUiMs = 500;
 constexpr size_t kSearchQueueBatch = 128;
-constexpr UINT_PTR kRegeditCompatApplyTimerId = 34;
-constexpr UINT kRegeditCompatApplyDelayMs = 75;
 constexpr ULONG_PTR kExternalJumpCopyDataId = 0x52474A54;
-constexpr ULONG_PTR kRegeditCompatActivateCopyDataId = 0x52474354;
 constexpr UINT_PTR kAddressSubclassId = 1;
 constexpr UINT_PTR kTabSubclassId = 2;
 constexpr UINT_PTR kHeaderSubclassId = 3;
+constexpr UINT_PTR kBorderSubclassId = 9;
 constexpr UINT_PTR kListViewSubclassId = 4;
 constexpr UINT_PTR kTreeViewSubclassId = 5;
 constexpr UINT_PTR kAutoCompletePopupSubclassId = 6;
 constexpr UINT_PTR kAutoCompleteListBoxSubclassId = 7;
 constexpr UINT_PTR kFilterSubclassId = 8;
-constexpr wchar_t kRegeditWindowClassName[] = L"RegEdit_RegEdit";
+constexpr wchar_t kMainWindowClassName[] = L"RegKitMainWindow";
 constexpr wchar_t kRegKitWindowProperty[] = L"RegKitMainWindow";
-constexpr wchar_t kRegeditIfeoPath[] = L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\regedit.exe";
 using ui::ListViewItemSelected;
 using util::FormatWin32Error;
 using util::ToLower;
@@ -245,6 +242,12 @@ inline bool CalcTabCloseRect(const RECT& tab_rect, RECT* close_rect) {
   return close_rect->left < close_rect->right;
 }
 
+inline int MappedSubItem(const std::vector<int>& map, int display_index) {
+  return (display_index >= 0 && static_cast<size_t>(display_index) < map.size())
+             ? map[static_cast<size_t>(display_index)]
+             : display_index;
+}
+
 inline int GetListViewColumnSubItem(HWND list, int display_index) {
   if (!list || display_index < 0) {
     return display_index;
@@ -257,192 +260,78 @@ inline int GetListViewColumnSubItem(HWND list, int display_index) {
   return display_index;
 }
 
-inline bool DrawSearchMatchSubItem(const search::Result& result, int subitem, HDC hdc, const RECT& rect, HFONT font) {
-  bool match_subitem = false;
-  if (result.match_field == search::MatchField::kPath && subitem == 0) {
-    match_subitem = true;
-  } else if (result.match_field == search::MatchField::kName && subitem == 1) {
-    match_subitem = true;
-  } else if (result.match_field == search::MatchField::kData && subitem == 3) {
-    match_subitem = true;
-  }
-  if (!match_subitem || result.match_start < 0 || result.match_length <= 0) {
-    return false;
-  }
+constexpr int kCellTextPadding = 6;
+constexpr int kPanelHeaderHeight = 22;
+constexpr int kPanelCloseSize = 16;
+constexpr int kPanelCloseInset = 2;
+constexpr int kPanelBorderOverlap = 1;
 
-  const wchar_t* text = L"";
-  if (subitem == 0) {
-    text = result.key_path.c_str();
-  } else if (subitem == 1) {
-    text = result.display_name.c_str();
-  } else if (subitem == 3) {
-    text = result.data.c_str();
-  }
-  size_t text_len = wcslen(text);
-  if (result.match_start < 0 || result.match_start >= static_cast<int>(text_len)) {
-    return false;
-  }
-  size_t match_end = static_cast<size_t>(result.match_start + result.match_length);
-  if (match_end > text_len) {
-    match_end = text_len;
-  }
-  if (match_end <= static_cast<size_t>(result.match_start)) {
-    return false;
-  }
 
-  const Theme& theme = Theme::Current();
-  COLORREF fg = theme.TextColor();
-  HBRUSH bg_brush = appearance::CachedBrush(theme.PanelColor());
-  FillRect(hdc, &rect, bg_brush);
 
-  HFONT old_font = nullptr;
-  if (font) {
-    old_font = reinterpret_cast<HFONT>(SelectObject(hdc, font));
+
+inline void DrawSearchMatchOverlay(HDC hdc, const RECT& cell, const wchar_t* text,
+                                   int start, int length) {
+  if (!text || start < 0 || length <= 0) {
+    return;
   }
-  SetBkMode(hdc, TRANSPARENT);
-  int padding = 6;
-  RECT clip = rect;
-  clip.left += padding;
-  clip.right -= padding;
-  int x = clip.left;
-  SIZE size = {};
-  GetTextExtentPoint32W(hdc, L"Ag", 2, &size);
-  int y = rect.top + (rect.bottom - rect.top - size.cy) / 2;
-  size = {};
-  std::wstring prefix(text, text + result.match_start);
-  std::wstring match(text + result.match_start, text + match_end);
-  std::wstring suffix(text + match_end);
-
-  auto draw_segment = [&](const std::wstring& segment, COLORREF color) {
-    if (segment.empty()) {
+  const int total = static_cast<int>(wcslen(text));
+  if (start >= total) {
+    return;
+  }
+  if (start + length > total) {
+    length = total - start;
+  }
+  const int available = cell.right - cell.left;
+  SIZE full = {};
+  if (available <= 0 || !GetTextExtentPoint32W(hdc, text, total, &full)) {
+    return;
+  }
+  int visible = total;
+  if (full.cx > available) {
+    SIZE ellipsis = {};
+    if (!GetTextExtentPoint32W(hdc, L"...", 3, &ellipsis) ||
+        ellipsis.cx >= available) {
       return;
     }
-    SIZE seg_size = {};
-    GetTextExtentPoint32W(hdc, segment.c_str(), static_cast<int>(segment.size()), &seg_size);
-    SetTextColor(hdc, color);
-    ExtTextOutW(hdc, x, y, ETO_CLIPPED, &clip, segment.c_str(), static_cast<UINT>(segment.size()), nullptr);
-    x += seg_size.cx;
-  };
-  draw_segment(prefix, fg);
-  draw_segment(match, theme.FocusColor());
-  draw_segment(suffix, fg);
-
-  if (old_font) {
-    SelectObject(hdc, old_font);
+    SIZE fitted = {};
+    if (!GetTextExtentExPointW(hdc, text, total, available - ellipsis.cx,
+                               &visible, nullptr, &fitted)) {
+      return;
+    }
   }
-  return true;
-}
-
-inline void DrawHistoryListItem(HWND list, HDC hdc, int item_index, bool hot, HFONT font) {
-  if (!list || !hdc || item_index < 0) {
+  if (start + length > visible) {
     return;
   }
-  RECT row_rect = {};
-  if (!ListView_GetItemRect(list, item_index, &row_rect, LVIR_BOUNDS)) {
+  SIZE prefix = {};
+  if (!GetTextExtentPoint32W(hdc, text, start, &prefix)) {
     return;
   }
-  const Theme& theme = Theme::Current();
-  COLORREF bg = theme.PanelColor();
-  COLORREF fg = theme.TextColor();
-  if (hot) {
-    bg = theme.HoverColor();
-  }
-  FillRect(hdc, &row_rect, appearance::CachedBrush(bg));
-
-  HWND header = ListView_GetHeader(list);
-  int column_count = header ? Header_GetItemCount(header) : 0;
-  if (column_count <= 0) {
-    return;
-  }
-
-  HFONT old_font = nullptr;
-  if (font) {
-    old_font = reinterpret_cast<HFONT>(SelectObject(hdc, font));
-  }
-  int old_bk_mode = SetBkMode(hdc, TRANSPARENT);
-  COLORREF old_color = SetTextColor(hdc, fg);
-
-  for (int display_index = 0; display_index < column_count; ++display_index) {
-    LVCOLUMNW col = {};
-    col.mask = LVCF_FMT | LVCF_SUBITEM;
-    if (!ListView_GetColumn(list, display_index, &col)) {
-      continue;
-    }
-    int subitem = col.iSubItem;
-    RECT cell_rect = {};
-    if (!ListView_GetSubItemRect(list, item_index, subitem, LVIR_LABEL, &cell_rect)) {
-      continue;
-    }
-    wchar_t text[512] = {};
-    ListView_GetItemText(list, item_index, subitem, text, static_cast<int>(_countof(text)));
-    if (text[0] == L'\0') {
-      continue;
-    }
-    UINT format = DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS;
-    if (col.fmt & LVCFMT_RIGHT) {
-      format |= DT_RIGHT;
-    } else if (col.fmt & LVCFMT_CENTER) {
-      format |= DT_CENTER;
-    }
-    RECT text_rect = cell_rect;
-    text_rect.left += kHeaderTextPadding;
-    text_rect.right -= kHeaderTextPadding;
-    DrawTextW(hdc, text, -1, &text_rect, format);
-  }
-
-  bool show_grid = (ListView_GetExtendedListViewStyle(list) & LVS_EX_GRIDLINES) != 0;
-  COLORREF grid = theme.BorderColor();
-  HPEN pen = appearance::CachedPen(grid, 1);
-  HPEN old_pen = reinterpret_cast<HPEN>(SelectObject(hdc, pen));
-  for (int display_index = 0; header && display_index < column_count; ++display_index) {
-    RECT header_rect = {};
-    if (!Header_GetItemRect(header, display_index, &header_rect)) {
-      continue;
-    }
-    MapWindowPoints(header, list, reinterpret_cast<POINT*>(&header_rect), 2);
-    int x = header_rect.right - 1;
-    if (x <= row_rect.left || x >= row_rect.right) {
-      continue;
-    }
-    MoveToEx(hdc, x, row_rect.top, nullptr);
-    LineTo(hdc, x, row_rect.bottom);
-  }
-  if (show_grid) {
-    int y = row_rect.bottom - 1;
-    MoveToEx(hdc, row_rect.left, y, nullptr);
-    LineTo(hdc, row_rect.right, y);
-  }
-  SelectObject(hdc, old_pen);
-
+  const int x = cell.left + prefix.cx;
+  TEXTMETRICW metrics = {};
+  GetTextMetricsW(hdc, &metrics);
+  const int y = cell.top + (cell.bottom - cell.top - metrics.tmHeight) / 2;
+  const int old_mode = SetBkMode(hdc, TRANSPARENT);
+  const COLORREF old_color = SetTextColor(hdc, Theme::Current().FocusColor());
+  ExtTextOutW(hdc, x, y, ETO_CLIPPED, &cell, text + start,
+              static_cast<UINT>(length), nullptr);
   SetTextColor(hdc, old_color);
-  SetBkMode(hdc, old_bk_mode);
-  if (old_font) {
-    SelectObject(hdc, old_font);
-  }
+  SetBkMode(hdc, old_mode);
 }
 
-inline LRESULT HandleHistoryListCustomDraw(HWND list, NMLVCUSTOMDRAW* draw) {
-  if (!list || !draw) {
-    return CDRF_DODEFAULT;
+inline int SearchMatchSubItem(const search::Result& result) {
+  if (result.match_start < 0 || result.match_length <= 0) {
+    return -1;
   }
-  switch (draw->nmcd.dwDrawStage) {
-  case CDDS_PREPAINT:
-    return CDRF_NOTIFYITEMDRAW;
-  case CDDS_ITEMPREPAINT: {
-    int item_index = static_cast<int>(draw->nmcd.dwItemSpec);
-    bool selected = ListViewItemSelected(list, item_index);
-    if (selected) {
-      return CDRF_DODEFAULT;
-    }
-    bool hot = (draw->nmcd.uItemState & CDIS_HOT) != 0;
-    HFONT font = reinterpret_cast<HFONT>(SendMessageW(list, WM_GETFONT, 0, 0));
-    DrawHistoryListItem(list, draw->nmcd.hdc, item_index, hot, font);
-    return CDRF_SKIPDEFAULT;
-  }
+  switch (result.match_field) {
+  case search::MatchField::kPath:
+    return 0;
+  case search::MatchField::kName:
+    return 1;
+  case search::MatchField::kData:
+    return 3;
   default:
-    break;
+    return -1;
   }
-  return CDRF_DODEFAULT;
 }
 
 inline int FindListViewColumnBySubItem(HWND list, int subitem) {

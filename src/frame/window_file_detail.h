@@ -59,41 +59,11 @@
 
 namespace regkit::window_detail {
 inline bool PromptOpenFile(HWND owner, const wchar_t* filter, std::wstring* path) {
-  if (!path) {
-    return false;
-  }
-  std::wstring buffer(32768, L'\0');
-  OPENFILENAMEW ofn = {};
-  ofn.lStructSize = sizeof(ofn);
-  ofn.hwndOwner = owner;
-  ofn.lpstrFilter = filter;
-  ofn.lpstrFile = buffer.data();
-  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
-  ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-  if (!GetOpenFileNameW(&ofn)) {
-    return false;
-  }
-  *path = buffer.c_str();
-  return true;
+  return ui::ReportFileDialogResult(owner, win32::ChooseFileToOpen(owner, filter, path));
 }
 
 inline bool PromptSaveFile(HWND owner, const wchar_t* filter, std::wstring* path) {
-  if (!path) {
-    return false;
-  }
-  std::wstring buffer(32768, L'\0');
-  OPENFILENAMEW ofn = {};
-  ofn.lStructSize = sizeof(ofn);
-  ofn.hwndOwner = owner;
-  ofn.lpstrFilter = filter;
-  ofn.lpstrFile = buffer.data();
-  ofn.nMaxFile = static_cast<DWORD>(buffer.size());
-  ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
-  if (!GetSaveFileNameW(&ofn)) {
-    return false;
-  }
-  *path = buffer.c_str();
-  return true;
+  return ui::ReportFileDialogResult(owner, win32::ChooseFileToSave(owner, filter, nullptr, nullptr, path));
 }
 
 inline std::wstring TrimTrailingSeparators(const std::wstring& path) {
@@ -174,195 +144,8 @@ inline std::wstring AssetsIconsRoot() {
   return cached;
 }
 
-constexpr DWORD kOfflinePickFolderButtonId = 0x2001;
-
-inline std::wstring ShellItemPath(IShellItem* item) {
-  if (!item) {
-    return L"";
-  }
-  PWSTR raw = nullptr;
-  if (FAILED(item->GetDisplayName(SIGDN_FILESYSPATH, &raw)) || !raw) {
-    return L"";
-  }
-  std::wstring result(raw);
-  CoTaskMemFree(raw);
-  return result;
-}
-
-class OfflinePickerEvents final : public IFileDialogEvents, public IFileDialogControlEvents {
-public:
-  explicit OfflinePickerEvents(IFileDialog* dialog) : dialog_(dialog) {
-    if (dialog_) {
-      dialog_->AddRef();
-    }
-  }
-
-  std::wstring picked_path() const { return picked_path_; }
-
-  IFACEMETHODIMP QueryInterface(REFIID riid, void** result) override {
-    if (!result) {
-      return E_POINTER;
-    }
-    *result = nullptr;
-    if (riid == IID_IUnknown || riid == IID_IFileDialogEvents) {
-      *result = static_cast<IFileDialogEvents*>(this);
-    } else if (riid == IID_IFileDialogControlEvents) {
-      *result = static_cast<IFileDialogControlEvents*>(this);
-    } else {
-      return E_NOINTERFACE;
-    }
-    AddRef();
-    return S_OK;
-  }
-
-  IFACEMETHODIMP_(ULONG)
-  AddRef() override { return static_cast<ULONG>(InterlockedIncrement(&ref_)); }
-
-  IFACEMETHODIMP_(ULONG)
-  Release() override {
-    ULONG ref = static_cast<ULONG>(InterlockedDecrement(&ref_));
-    if (ref == 0) {
-      delete this;
-    }
-    return ref;
-  }
-
-  IFACEMETHODIMP OnFileOk(IFileDialog*) override { return S_OK; }
-  IFACEMETHODIMP OnFolderChanging(IFileDialog*, IShellItem*) override { return S_OK; }
-  IFACEMETHODIMP OnFolderChange(IFileDialog*) override { return S_OK; }
-  IFACEMETHODIMP OnSelectionChange(IFileDialog*) override { return S_OK; }
-  IFACEMETHODIMP OnShareViolation(IFileDialog*, IShellItem*, FDE_SHAREVIOLATION_RESPONSE* response) override {
-    if (response) {
-      *response = FDESVR_DEFAULT;
-    }
-    return S_OK;
-  }
-  IFACEMETHODIMP OnTypeChange(IFileDialog*) override { return S_OK; }
-  IFACEMETHODIMP OnOverwrite(IFileDialog*, IShellItem*, FDE_OVERWRITE_RESPONSE* response) override {
-    if (response) {
-      *response = FDEOR_DEFAULT;
-    }
-    return S_OK;
-  }
-
-  IFACEMETHODIMP OnItemSelected(IFileDialogCustomize*, DWORD, DWORD) override { return S_OK; }
-  IFACEMETHODIMP OnButtonClicked(IFileDialogCustomize*, DWORD id) override {
-    if (id != kOfflinePickFolderButtonId || !dialog_) {
-      return S_OK;
-    }
-    picked_path_.clear();
-    IShellItem* selection = nullptr;
-    if (SUCCEEDED(dialog_->GetCurrentSelection(&selection)) && selection) {
-      SFGAOF attrs = 0;
-      if (SUCCEEDED(selection->GetAttributes(SFGAO_FOLDER, &attrs)) && (attrs & SFGAO_FOLDER)) {
-        picked_path_ = ShellItemPath(selection);
-      }
-      selection->Release();
-    }
-    if (picked_path_.empty()) {
-      IShellItem* folder = nullptr;
-      if (SUCCEEDED(dialog_->GetFolder(&folder)) && folder) {
-        picked_path_ = ShellItemPath(folder);
-        folder->Release();
-      }
-    }
-    if (!picked_path_.empty()) {
-      dialog_->Close(S_OK);
-    }
-    return S_OK;
-  }
-  IFACEMETHODIMP OnCheckButtonToggled(IFileDialogCustomize*, DWORD, BOOL) override { return S_OK; }
-  IFACEMETHODIMP OnControlActivating(IFileDialogCustomize*, DWORD) override { return S_OK; }
-
-private:
-  ~OfflinePickerEvents() {
-    if (dialog_) {
-      dialog_->Release();
-    }
-  }
-
-  LONG ref_ = 1;
-  IFileDialog* dialog_ = nullptr;
-  std::wstring picked_path_;
-};
-
-inline bool PromptOpenFolderOrFile(HWND owner, const wchar_t* title, std::wstring* path) {
-  if (!path) {
-    return false;
-  }
-  HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-  bool uninit = false;
-  if (SUCCEEDED(hr)) {
-    uninit = true;
-  } else if (hr != RPC_E_CHANGED_MODE) {
-    return false;
-  }
-
-  IFileOpenDialog* dialog = nullptr;
-  hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&dialog));
-  if (FAILED(hr) || !dialog) {
-    if (uninit) {
-      CoUninitialize();
-    }
-    return false;
-  }
-
-  DWORD options = 0;
-  dialog->GetOptions(&options);
-  options |= FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST | FOS_PATHMUSTEXIST;
-  dialog->SetOptions(options);
-  if (title) {
-    dialog->SetTitle(title);
-  }
-  const COMDLG_FILTERSPEC filters[] = {
-      {L"Registry Hive Files (*.dat;*.hiv;*.hive;*.sav;SYSTEM;SOFTWARE;SAM;SECURITY;DEFAULT;NTUSER.DAT;USRCLASS.DAT)", L"*.dat;*.hiv;*.hive;*.sav;SYSTEM;SOFTWARE;SAM;SECURITY;DEFAULT;NTUSER.DAT;USRCLASS.DAT"},
-      {L"All Files (*.*)", L"*.*"},
-  };
-  dialog->SetFileTypes(static_cast<UINT>(_countof(filters)), filters);
-  dialog->SetFileTypeIndex(1);
-
-  IFileDialogCustomize* customize = nullptr;
-  if (SUCCEEDED(dialog->QueryInterface(IID_PPV_ARGS(&customize))) && customize) {
-    customize->AddPushButton(kOfflinePickFolderButtonId, L"Select Folder");
-    customize->Release();
-  }
-
-  OfflinePickerEvents* events = new OfflinePickerEvents(dialog);
-  DWORD cookie = 0;
-  if (events) {
-    dialog->Advise(events, &cookie);
-  }
-
-  hr = dialog->Show(owner);
-  if (cookie) {
-    dialog->Unadvise(cookie);
-  }
-
-  std::wstring selected;
-  if (events) {
-    selected = events->picked_path();
-    events->Release();
-  }
-
-  if (selected.empty() && SUCCEEDED(hr)) {
-    IShellItem* item = nullptr;
-    if (SUCCEEDED(dialog->GetResult(&item)) && item) {
-      selected = ShellItemPath(item);
-      item->Release();
-    }
-  }
-
-  dialog->Release();
-  if (uninit) {
-    CoUninitialize();
-  }
-
-  if (selected.empty() || hr == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
-    return false;
-  }
-  *path = selected;
-  return true;
-}
+constexpr wchar_t kOfflineHiveFilter[] =
+    L"Registry Hive Files\0*.dat;*.hiv;*.hive;*.sav;SYSTEM;SOFTWARE;SAM;SECURITY;DEFAULT;NTUSER.DAT;USRCLASS.DAT\0All Files (*.*)\0*.*\0";
 
 inline bool HasRegExtension(const std::wstring& path) {
   size_t dot = path.find_last_of(L'.');
@@ -430,53 +213,6 @@ inline bool StartsWithInsensitive(const std::wstring& text, const std::wstring& 
   return CompareStringOrdinal(text.c_str(), static_cast<int>(prefix.size()), prefix.c_str(), static_cast<int>(prefix.size()), TRUE) == CSTR_EQUAL;
 }
 
-inline std::wstring ReadFontSubstitute(const wchar_t* value_name) {
-  if (!value_name || !*value_name) {
-    return L"";
-  }
-  const wchar_t* subkey = L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\FontSubstitutes";
-  auto query = [&](REGSAM sam) -> std::wstring {
-    HKEY key = nullptr;
-    LONG result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, subkey, 0, sam, &key);
-    if (result != ERROR_SUCCESS) {
-      return L"";
-    }
-    DWORD type = 0;
-    DWORD bytes = 0;
-    result = RegQueryValueExW(key, value_name, nullptr, &type, nullptr, &bytes);
-    if (result != ERROR_SUCCESS || bytes == 0 || (type != REG_SZ && type != REG_EXPAND_SZ)) {
-      RegCloseKey(key);
-      return L"";
-    }
-    std::vector<wchar_t> buffer(bytes / sizeof(wchar_t) + 1, L'\0');
-    result = RegQueryValueExW(key, value_name, nullptr, &type, reinterpret_cast<LPBYTE>(buffer.data()), &bytes);
-    RegCloseKey(key);
-    if (result != ERROR_SUCCESS) {
-      return L"";
-    }
-    std::wstring value(buffer.data());
-    while (!value.empty() && value.back() == L'\0') {
-      value.pop_back();
-    }
-    if (value.empty()) {
-      return L"";
-    }
-    if (type == REG_EXPAND_SZ) {
-      std::wstring expanded = util::ExpandEnvironmentStringsDynamic(value);
-      if (!expanded.empty()) {
-        value = std::move(expanded);
-      }
-    }
-    return value;
-  };
-
-  std::wstring value = query(KEY_READ | KEY_WOW64_64KEY);
-  if (!value.empty()) {
-    return value;
-  }
-  return query(KEY_READ);
-}
-
 inline bool WindowClassEquals(HWND hwnd, const wchar_t* class_name) {
   if (!hwnd || !class_name) {
     return false;
@@ -499,32 +235,11 @@ inline std::wstring GetDefaultRegeditPath() {
     return L"";
   }
   windows_dir.resize(written);
+  BOOL wow64 = FALSE;
+  if (IsWow64Process(GetCurrentProcess(), &wow64) && wow64) {
+    return util::JoinPath(util::JoinPath(windows_dir, L"Sysnative"), L"regedt32.exe");
+  }
   return util::JoinPath(windows_dir, L"regedit.exe");
-}
-
-inline bool LaunchDefaultRegeditProcess(const std::wstring& regedit_path, DWORD* error_code) {
-  if (error_code) {
-    *error_code = ERROR_SUCCESS;
-  }
-  if (regedit_path.empty()) {
-    if (error_code) {
-      *error_code = ERROR_FILE_NOT_FOUND;
-    }
-    return false;
-  }
-  std::wstring command_line = L"\"" + regedit_path + L"\" /m";
-  STARTUPINFOW startup = {};
-  startup.cb = sizeof(startup);
-  PROCESS_INFORMATION process = {};
-  if (!CreateProcessW(nullptr, command_line.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &startup, &process)) {
-    if (error_code) {
-      *error_code = GetLastError();
-    }
-    return false;
-  }
-  CloseHandle(process.hThread);
-  CloseHandle(process.hProcess);
-  return true;
 }
 
 struct ParsedRegFileRoot {

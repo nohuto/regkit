@@ -9,6 +9,7 @@
 #include <commctrl.h>
 
 #include <string>
+#include <vector>
 
 namespace regkit {
 namespace ui {
@@ -25,7 +26,10 @@ bool ConfirmRegFileMerge(HWND owner, const std::wstring& path);
 void ShowRegFileMergeSucceeded(HWND owner, const std::wstring& path);
 void ShowRegFileMergeFailed(HWND owner, const std::wstring& path, const std::wstring& detail);
 bool ConfirmDelete(HWND owner, const std::wstring& title, const std::wstring& name);
-int PromptChoice(HWND owner, const std::wstring& message, const std::wstring& title, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label);
+bool ConfirmDelete(HWND owner, const std::wstring& title, const std::vector<std::wstring>& names);
+int PromptKeyChoice(HWND owner, const std::wstring& message, const std::wstring& key_path, const std::wstring& title, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label, int yes_button_width_dlu = 0);
+int PromptChoice(HWND owner, const std::wstring& message, const std::wstring& title, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label, int button_width_dlu = 50, int width = 420);
+bool ReportFileDialogResult(HWND owner, HRESULT hr);
 bool LaunchNewInstance();
 
 } // namespace ui

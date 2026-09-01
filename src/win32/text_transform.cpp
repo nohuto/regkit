@@ -7,6 +7,17 @@
 
 namespace util {
 
+std::wstring WindowText(HWND window) {
+  const int length = window ? GetWindowTextLengthW(window) : 0;
+  if (length <= 0) {
+    return {};
+  }
+  std::wstring text(static_cast<size_t>(length), L'\0');
+  const int copied = GetWindowTextW(window, text.data(), length + 1);
+  text.resize(copied > 0 ? static_cast<size_t>(copied) : 0);
+  return text;
+}
+
 std::wstring ToLower(const std::wstring& text) {
   std::wstring result = text;
   for (wchar_t& character : result) {

@@ -159,6 +159,7 @@ void MainWindow::Impl::ApplyValueColumns() {
     ListView_DeleteColumn(list, i);
   }
 
+  value_column_subitems_.clear();
   int insert_index = 0;
   for (size_t i = 0; i < browse_.columns().items.size(); ++i) {
     if (i < browse_.columns().visible.size() && !browse_.columns().visible[i]) {
@@ -175,6 +176,7 @@ void MainWindow::Impl::ApplyValueColumns() {
     col.fmt = browse_.columns().items[i].fmt;
     col.iSubItem = static_cast<int>(i);
     ListView_InsertColumn(list, insert_index++, &col);
+    value_column_subitems_.push_back(static_cast<int>(i));
   }
 
   UpdateListViewSort(list, browse_.columns().sort_column, browse_.columns().sort_ascending);
@@ -189,9 +191,7 @@ void MainWindow::Impl::ApplyValueColumns() {
         Header_SetItem(header, size_display, &item);
       }
     }
-    if (!GetWindowSubclass(header, HeaderProc, kHeaderSubclassId, nullptr)) {
-      SetWindowSubclass(header, HeaderProc, kHeaderSubclassId, reinterpret_cast<DWORD_PTR>(this));
-    }
+    AttachHeader(header);
   }
   RefreshColumnLayout(list);
 }
@@ -226,9 +226,7 @@ void MainWindow::Impl::ApplyHistoryColumns() {
 
   UpdateListViewSort(history_list_, history_sort_column_, history_sort_ascending_);
   header = ListView_GetHeader(history_list_);
-  if (header && !GetWindowSubclass(header, HeaderProc, kHeaderSubclassId, nullptr)) {
-    SetWindowSubclass(header, HeaderProc, kHeaderSubclassId, reinterpret_cast<DWORD_PTR>(this));
-  }
+  AttachHeader(header);
   RefreshColumnLayout(history_list_);
 }
 
@@ -268,9 +266,7 @@ void MainWindow::Impl::CreateSearchColumns() {
   }
   ApplySearchColumns(false);
   HWND header = ListView_GetHeader(search_results_list_);
-  if (header && !GetWindowSubclass(header, HeaderProc, kHeaderSubclassId, nullptr)) {
-    SetWindowSubclass(header, HeaderProc, kHeaderSubclassId, reinterpret_cast<DWORD_PTR>(this));
-  }
+  AttachHeader(header);
 }
 
 void MainWindow::Impl::ApplySearchColumns(bool compare) {
@@ -286,11 +282,13 @@ void MainWindow::Impl::ApplySearchColumns(bool compare) {
     ListView_DeleteColumn(search_results_list_, i);
   }
 
+  search_column_subitems_.clear();
   int insert_index = 0;
   for (size_t i = 0; i < columns.size(); ++i) {
     if (i < visible.size() && !visible[i]) {
       continue;
     }
+    search_column_subitems_.push_back(static_cast<int>(i));
     LVCOLUMNW col = {};
     col.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_FMT | LVCF_SUBITEM;
     col.pszText = const_cast<wchar_t*>(columns[i].title.c_str());
@@ -305,9 +303,7 @@ void MainWindow::Impl::ApplySearchColumns(bool compare) {
   }
 
   header = ListView_GetHeader(search_results_list_);
-  if (header && !GetWindowSubclass(header, HeaderProc, kHeaderSubclassId, nullptr)) {
-    SetWindowSubclass(header, HeaderProc, kHeaderSubclassId, reinterpret_cast<DWORD_PTR>(this));
-  }
+  AttachHeader(header);
   compare_columns_active_ = compare;
   RefreshColumnLayout(search_results_list_);
 }
@@ -318,6 +314,19 @@ void MainWindow::Impl::UpdateValueListForNode(RegistryNode* node) {
   }
   updating_value_list_ = true;
   appended_value_name_.clear();
+  retained_value_name_.clear();
+  retained_value_key_path_.clear();
+  if (browse_.current_node()) {
+    int selected = ListView_GetNextItem(browse_.values().hwnd(), -1, LVNI_SELECTED);
+    if (selected >= 0 && ListView_GetNextItem(browse_.values().hwnd(), selected, LVNI_SELECTED) < 0) {
+      if (const ListRow* row = browse_.values().RowAt(selected)) {
+        if (row->kind == rowkind::kValue) {
+          retained_value_name_ = row->extra;
+          retained_value_key_path_ = registry_path::Build(*browse_.current_node());
+        }
+      }
+    }
+  }
   uint64_t generation = value_list_generation_.fetch_add(1) + 1;
   HWND list_hwnd = browse_.values().hwnd();
   if (list_hwnd) {
@@ -438,106 +447,45 @@ void MainWindow::Impl::StartPendingValueListRename() {
   pending_value_list_name_.clear();
 }
 
-void MainWindow::Impl::CreateCellTooltip() {
-  if (cell_tooltip_ || !hwnd_ || !browse_.values().hwnd()) {
+void MainWindow::Impl::AttachBorder(HWND control) {
+  if (!control || GetWindowSubclass(control, BorderProc, kBorderSubclassId, nullptr)) {
     return;
   }
-  cell_tooltip_ = CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASSW, nullptr,
-                                  WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                                  CW_USEDEFAULT, hwnd_, nullptr, instance_,
-                                  nullptr);
-  if (!cell_tooltip_) {
+  if (!SetWindowSubclass(control, BorderProc, kBorderSubclassId,
+                         reinterpret_cast<DWORD_PTR>(this))) {
     return;
   }
-  TOOLINFOW info = {};
-  info.cbSize = sizeof(info);
-  info.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
-  info.hwnd = hwnd_;
-  info.uId = reinterpret_cast<UINT_PTR>(browse_.values().hwnd());
-  info.lpszText = const_cast<wchar_t*>(L"");
-  SendMessageW(cell_tooltip_, TTM_ADDTOOL, 0, reinterpret_cast<LPARAM>(&info));
-  SendMessageW(cell_tooltip_, TTM_SETMAXTIPWIDTH, 0, kCellTooltipMaxWidth);
-  SendMessageW(cell_tooltip_, TTM_ACTIVATE, FALSE, 0);
-  AllowDarkModeForWindow(cell_tooltip_, Theme::UseDarkMode());
-  SetWindowTheme(cell_tooltip_,
-                 Theme::UseDarkMode() ? L"DarkMode_Explorer" : L"Explorer",
-                 nullptr);
-  if (ui_font_) {
-    SendMessageW(cell_tooltip_, WM_SETFONT, reinterpret_cast<WPARAM>(ui_font_), FALSE);
-  }
+  const LONG_PTR style = GetWindowLongPtrW(control, GWL_STYLE);
+  SetWindowLongPtrW(control, GWL_STYLE, style | WS_BORDER);
+  SetWindowPos(control, nullptr, 0, 0, 0, 0,
+               SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 }
 
-void MainWindow::Impl::HideCellTooltip() {
-  if (!cell_tooltip_) {
+void MainWindow::Impl::AttachHeader(HWND header) {
+  if (!header || GetWindowSubclass(header, HeaderProc, kHeaderSubclassId, nullptr)) {
     return;
   }
-  cell_tooltip_item_ = -1;
-  cell_tooltip_column_ = -1;
-  cell_tooltip_text_.clear();
-  SendMessageW(cell_tooltip_, TTM_POP, 0, 0);
-  SendMessageW(cell_tooltip_, TTM_ACTIVATE, FALSE, 0);
+  SetWindowSubclass(header, HeaderProc, kHeaderSubclassId, reinterpret_cast<DWORD_PTR>(this));
 }
 
-void MainWindow::Impl::UpdateCellTooltip(POINT client_pt) {
+void MainWindow::Impl::ResetValueFilter() {
+  HWND filter = browse_.filter();
+  if (!filter || GetWindowTextLengthW(filter) == 0) {
+    return;
+  }
+  SetWindowTextW(filter, L"");
+  browse_.values().SetFilter(std::wstring());
+}
+
+void MainWindow::Impl::FocusFirstValue() {
   HWND list = browse_.values().hwnd();
-  if (!cell_tooltip_ || !list) {
+  if (!list || ListView_GetItemCount(list) <= 0) {
     return;
   }
-
-  LVHITTESTINFO hit = {};
-  hit.pt = client_pt;
-  const int item = ListView_SubItemHitTest(list, &hit);
-  const int column = hit.iSubItem;
-  if (item < 0) {
-    HideCellTooltip();
-    return;
-  }
-  if (item == cell_tooltip_item_ && column == cell_tooltip_column_) {
-    return;
-  }
-
-  ListRow* row = browse_.values().MutableRowAt(item);
-  if (!row) {
-    HideCellTooltip();
-    return;
-  }
-  const int subitem = GetListViewColumnSubItem(list, column);
-  if (subitem == kValueColData) {
-    EnsureValueRowData(row);
-  }
-  const std::wstring& text = ValueRowFieldText(*row, subitem);
-
-  RECT cell = {};
-  if (column == 0) {
-    if (!ListView_GetItemRect(list, item, &cell, LVIR_LABEL)) {
-      HideCellTooltip();
-      return;
-    }
-  } else if (!ListView_GetSubItemRect(list, item, column, LVIR_BOUNDS, &cell)) {
-    HideCellTooltip();
-    return;
-  }
-
-  cell_tooltip_item_ = item;
-  cell_tooltip_column_ = column;
-  const int available = static_cast<int>(cell.right - cell.left) - kCellTooltipPadding;
-  if (text.empty() || available <= 0 || !CellTextIsClipped(list, text, available)) {
-    cell_tooltip_text_.clear();
-    SendMessageW(cell_tooltip_, TTM_POP, 0, 0);
-    SendMessageW(cell_tooltip_, TTM_ACTIVATE, FALSE, 0);
-    return;
-  }
-
-  cell_tooltip_text_ = text;
-  TOOLINFOW info = {};
-  info.cbSize = sizeof(info);
-  info.hwnd = hwnd_;
-  info.uId = reinterpret_cast<UINT_PTR>(list);
-  info.lpszText = cell_tooltip_text_.data();
-  SendMessageW(cell_tooltip_, TTM_UPDATETIPTEXT, 0, reinterpret_cast<LPARAM>(&info));
-  SendMessageW(cell_tooltip_, TTM_POP, 0, 0);
-  SendMessageW(cell_tooltip_, TTM_ACTIVATE, TRUE, 0);
+  SetFocus(list);
+  ListView_SetItemState(list, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+  ListView_SetItemState(list, 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+  ListView_EnsureVisible(list, 0, FALSE);
 }
 
 void MainWindow::Impl::EnsureValueRowData(ListRow* row) {
@@ -578,12 +526,23 @@ void MainWindow::Impl::EnsureValueRowData(ListRow* row) {
 }
 
 void MainWindow::Impl::UpdateAddressBar(RegistryNode* node) {
-  if (!node || !browse_.address()) {
+  HWND address = browse_.address();
+  if (!address) {
     return;
   }
-  std::wstring path = registry_path::Build(*node);
-  SetWindowTextW(browse_.address(), path.c_str());
-  AddAddressHistory(path);
+  const std::wstring path = node ? registry_path::Build(*node) : std::wstring();
+  if (static_cast<size_t>(GetWindowTextLengthW(address)) == path.size()) {
+    std::wstring current(path.size() + 1, L'\0');
+    GetWindowTextW(address, current.data(), static_cast<int>(current.size()));
+    current.resize(path.size());
+    if (current == path) {
+      return;
+    }
+  }
+  SetWindowTextW(address, path.c_str());
+  if (!path.empty()) {
+    AddAddressHistory(path);
+  }
 }
 
 } // namespace regkit

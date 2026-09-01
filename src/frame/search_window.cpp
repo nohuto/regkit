@@ -305,6 +305,7 @@ void MainWindow::Impl::SyncRegFileTabSelection() {
     roots.push_back(std::move(reg_root));
   }
   ApplyRegistryRoots(roots);
+  RestoreRegistryTabState(index);
 }
 
 void MainWindow::Impl::UpdateSearchResultsView() {
@@ -519,7 +520,7 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
   }
 
   UpdateTabWidth();
-  TabCtrl_SetCurSel(tab_, tab_index);
+  SelectTabIndex(tab_index);
   active_search_tab_index_ = tab_index;
   search_results_view_tab_index_ = -1;
   search_progress_searched_.store(0);
@@ -1049,7 +1050,7 @@ void MainWindow::Impl::CloseSearchTab(int tab_index) {
   int new_count = TabCtrl_GetItemCount(tab_);
   if (was_active && new_count > 0) {
     int next = std::min(tab_index, new_count - 1);
-    TabCtrl_SetCurSel(tab_, next);
+    SelectTabIndex(next);
   }
   UpdateTabWidth();
   UpdateSearchResultsView();

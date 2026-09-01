@@ -29,8 +29,4 @@ void MainWindow::QueueExternalJump(const std::wstring& target) {
   impl_->QueueExternalJump(target);
 }
 
-void MainWindow::ActivateRegeditCompatibilityMode() {
-  impl_->ActivateRegeditCompatibilityMode();
-}
-
 } // namespace regkit
