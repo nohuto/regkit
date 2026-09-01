@@ -6,6 +6,26 @@
 namespace regkit {
 using namespace window_detail;
 
+namespace {
+
+bool ValueNameExists(const RegistryNode& node, const std::wstring& name) {
+  ValueEntry entry;
+  return RegistryStore::QueryValue(node, name, &entry);
+}
+
+bool KeyNameExists(const RegistryNode& parent, const std::wstring& name) {
+  KeyInfo info = {};
+  return RegistryStore::QueryKeyInfo(MakeChildNode(parent, name), &info);
+}
+
+void ReportNameTaken(HWND owner, const wchar_t* message, const wchar_t* title,
+                     const std::wstring& name) {
+  ui::PromptKeyChoice(owner, message, name, title, L"", L"", L"OK");
+}
+
+} // namespace
+
+
 LRESULT MainWindow::Impl::HandleNotification(LPARAM lparam) {
   auto* header = reinterpret_cast<NMHDR*>(lparam);
   if (!header) {
@@ -201,6 +221,16 @@ LRESULT MainWindow::Impl::HandleTreeNotification(NMHDR* header, LPARAM lparam) {
       std::wstring new_name = TrimWhitespace(disp->item.pszText);
       std::wstring old_name = LeafName(*node);
       if (new_name.empty() || _wcsicmp(new_name.c_str(), old_name.c_str()) == 0) {
+        return FALSE;
+      }
+      RegistryNode rename_parent = *node;
+      size_t rename_sep = rename_parent.subkey.rfind(L'\\');
+      rename_parent.subkey = (rename_sep == std::wstring::npos)
+                                 ? L""
+                                 : rename_parent.subkey.substr(0, rename_sep);
+      if (KeyNameExists(rename_parent, new_name)) {
+        ReportNameTaken(hwnd_, L"A key with this name already exists:",
+                        L"Rename key", new_name);
         return FALSE;
       }
       if (!RegistryStore::RenameKey(*node, new_name)) {
@@ -444,6 +474,11 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
     }
     if (row->kind == rowkind::kKey) {
       RegistryNode child = MakeChildNode(*browse_.current_node(), old_name);
+      if (KeyNameExists(*browse_.current_node(), new_name)) {
+        ReportNameTaken(hwnd_, L"A key with this name already exists:",
+                        L"Rename key", new_name);
+        return FALSE;
+      }
       if (!RegistryStore::RenameKey(child, new_name)) {
         ui::ShowError(hwnd_, L"Failed to rename key.");
         return FALSE;
@@ -459,6 +494,11 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
       RefreshTreeSelection();
       UpdateValueListForNode(browse_.current_node());
       return TRUE;
+    }
+    if (ValueNameExists(*browse_.current_node(), new_name)) {
+      ReportNameTaken(hwnd_, L"A value with this name already exists:",
+                      L"Rename value", new_name);
+      return FALSE;
     }
     if (!RegistryStore::RenameValue(*browse_.current_node(), old_name, new_name)) {
       ui::ShowError(hwnd_, L"Failed to rename value.");

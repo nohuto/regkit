@@ -754,6 +754,9 @@ void MainWindow::Impl::NavigateToAddress() {
         ui::ShowError(hwnd_, L"Failed to create registry key.");
         return;
       }
+      if (SelectTreePath(nearest)) {
+        RefreshTreeSelection();
+      }
       if (SelectTreePath(path)) {
         AddAddressHistory(path);
       }
