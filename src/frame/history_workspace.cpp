@@ -769,6 +769,7 @@ void MainWindow::Impl::SaveSettings() const {
   settings.show_keys_in_list = show_keys_in_list_;
   settings.show_simulated_keys = show_simulated_keys_;
   settings.show_extra_hives = show_extra_hives_;
+  settings.show_value_grid = show_value_grid_;
   settings.save_tree_state = save_tree_state_;
   settings.save_tabs = save_tabs_;
   settings.always_run_as_admin = always_run_as_admin_;

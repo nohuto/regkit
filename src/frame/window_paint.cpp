@@ -48,12 +48,6 @@ void MainWindow::Impl::OnPaint() {
     LineTo(mem_dc, split.right - 4, mid_y);
   }
 
-  HPEN top_pen = appearance::CachedPen(theme.BorderColor(), 1);
-  HGDIOBJ old_top = SelectObject(mem_dc, top_pen);
-  MoveToEx(mem_dc, 0, 0, nullptr);
-  LineTo(mem_dc, client.right, 0);
-  SelectObject(mem_dc, old_top);
-
   SelectObject(mem_dc, old_brush);
   SelectObject(mem_dc, old_pen);
 

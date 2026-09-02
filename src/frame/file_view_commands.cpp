@@ -402,6 +402,9 @@ bool MainWindow::Impl::HandleViewCommand(int command_id) {
     SaveSettings();
     BuildMenus();
     return true;
+  case cmd::kViewGridLines:
+    SetValueGridEnabled(!show_value_grid_, true);
+    return true;
   case cmd::kViewKeysInList:
     show_keys_in_list_ = !show_keys_in_list_;
     BuildMenus();

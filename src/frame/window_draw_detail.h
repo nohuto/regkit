@@ -149,6 +149,7 @@ constexpr int kMinValueListWidth = 240;
 constexpr int kMinHistoryHeight = 80;
 constexpr int kHistoryMaxPadding = 140;
 constexpr int kHistoryGap = 2;
+constexpr int kMainVerticalGap = 6;
 constexpr int kBorderInflate = 1;
 constexpr int kValueColName = 0;
 constexpr int kValueColType = 1;

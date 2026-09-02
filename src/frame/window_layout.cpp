@@ -27,10 +27,8 @@ void MainWindow::Impl::ComputeHistorySplitterLimits(int* min_height, int* max_he
   GetClientRect(hwnd_, &rect);
   int height = rect.bottom - rect.top;
 
-  const int gap = 6;
-  const int top_offset = 4;
   UINT dpi = win32::DpiForWindow(hwnd_);
-  const int address_height = CalcEditHeight(browse_.address(), ui_font_, util::ScaleForDpi(16, dpi));
+  const int address_height = CalcEditHeight(browse_.address(), ui_font_, util::ScaleForDpi(18, dpi));
   const int tabs_height = std::max(20, tab_height_);
   int status_height = 0;
   if (status_bar_ && show_status_bar_) {
@@ -42,17 +40,24 @@ void MainWindow::Impl::ComputeHistorySplitterLimits(int* min_height, int* max_he
     }
   }
 
-  int y = top_offset;
+  int y = kMainVerticalGap;
   if (show_toolbar_) {
     SendMessageW(toolbar_.hwnd(), TB_AUTOSIZE, 0, 0);
     RECT tb_rect = {};
     GetWindowRect(toolbar_.hwnd(), &tb_rect);
-    int toolbar_height = tb_rect.bottom - tb_rect.top;
-    y += toolbar_height;
+    y += tb_rect.bottom - tb_rect.top;
   }
-  y += address_height + gap;
-  y += 4;
-  y += tabs_height + gap;
+  if (show_address_bar_) {
+    y += address_height + kMainVerticalGap;
+  }
+
+  const bool show_search = IsSearchTabSelected();
+  const bool show_value = show_value_ && !show_search;
+  const bool show_tabs = show_tab_control_ && tab_;
+  const bool show_filter = show_value && show_filter_bar_ && browse_.filter();
+  if (show_tabs || show_filter) {
+    y += tabs_height + kMainVerticalGap;
+  }
 
   int status_top = height - status_height;
   int content_total_height = std::max(0, status_top - y);
@@ -144,7 +149,6 @@ void MainWindow::Impl::ApplyDragLayout() {
   const bool had_old_history_panel = get_panel_rect(history_label_, history_list_, &old_history_panel_rect);
   const bool had_old_value = GetChildRectInParent(hwnd_, browse_.values().hwnd(), &old_value_rect);
 
-  const int gap = 6;
   const bool show_search = IsSearchTabSelected();
   const bool show_tree = show_tree_ && !show_search;
   const bool show_history = show_history_ && !show_search;
@@ -175,7 +179,7 @@ void MainWindow::Impl::ApplyDragLayout() {
   } else {
     history_splitter_rect_ = {};
   }
-  int content_bottom = show_history ? splitter_top : (status_top - gap);
+  int content_bottom = show_history ? splitter_top : status_top;
   int content_height = std::max(0, content_bottom - y);
 
   int available_width = content_right - content_left;
@@ -735,6 +739,7 @@ void MainWindow::Impl::SetValueGridEnabled(bool enabled, bool persist) {
   }
   if (persist) {
     SaveSettings();
+    BuildMenus();
   }
 }
 
@@ -877,9 +882,7 @@ void MainWindow::Impl::LayoutControls(int width, int height) {
   }
 
   const int padding = 8;
-  const int gap = 6;
   const int splitter_width = kSplitterWidth;
-  const int top_offset = 4;
   UINT dpi = win32::DpiForWindow(hwnd_);
   const int address_height = CalcEditHeight(browse_.address(), ui_font_, util::ScaleForDpi(18, dpi));
   const int address_btn_width = std::max(util::ScaleForDpi(18, dpi), address_height);
@@ -906,7 +909,7 @@ void MainWindow::Impl::LayoutControls(int width, int height) {
   const bool show_history = show_history_ && !show_search;
   const bool show_value = show_value_ && !show_search;
 
-  int y = top_offset;
+  int y = kMainVerticalGap;
 
   const bool dragging_splitter = splitter_dragging_ || history_splitter_dragging_;
   auto place = [&](HWND hwnd, int x, int y_pos, int w, int h) {
@@ -922,17 +925,16 @@ void MainWindow::Impl::LayoutControls(int width, int height) {
 
   if (show_toolbar_) {
     SendMessageW(toolbar_.hwnd(), TB_AUTOSIZE, 0, 0);
+    SIZE ideal = {};
+    SendMessageW(toolbar_.hwnd(), TB_GETMAXSIZE, 0, reinterpret_cast<LPARAM>(&ideal));
     RECT tb_rect = {};
     GetWindowRect(toolbar_.hwnd(), &tb_rect);
     int toolbar_height = tb_rect.bottom - tb_rect.top;
-    int toolbar_width = tb_rect.right - tb_rect.left;
-    int toolbar_area_width = width - padding * 2;
-    if (toolbar_area_width < 0) {
-      toolbar_area_width = 0;
+    if (toolbar_height <= 0) {
+      toolbar_height = ideal.cy;
     }
-    toolbar_width = std::min(toolbar_width, toolbar_area_width);
-    place(toolbar_.hwnd(), padding, y + 2, toolbar_width, toolbar_height);
-
+    const int toolbar_area_width = std::max(0, width - padding * 2);
+    place(toolbar_.hwnd(), padding, y, toolbar_area_width, toolbar_height);
     y += toolbar_height;
   }
   if (show_address_bar_) {
@@ -944,7 +946,7 @@ void MainWindow::Impl::LayoutControls(int width, int height) {
     place(browse_.go_button(), padding + address_width, y, address_btn_width, address_height);
     SetEditMargins(browse_.address(), 6, 6);
     SetEditVerticalRect(browse_.address(), ui_font_, 2, 6, 6);
-    y += address_height + gap;
+    y += address_height + kMainVerticalGap;
   }
 
   int tabs_width = width - padding * 2;
@@ -952,7 +954,6 @@ void MainWindow::Impl::LayoutControls(int width, int height) {
   bool show_filter = show_value && show_filter_bar_ && browse_.filter();
   bool show_tab_row = show_tabs || show_filter;
   if (show_tab_row) {
-    y += 4;
     if (show_tabs && show_filter) {
       int available = std::max(0, tabs_width);
       int min_needed = kTabMinWidth + filter_min_width + filter_gap;
@@ -985,7 +986,7 @@ void MainWindow::Impl::LayoutControls(int width, int height) {
       SetEditVerticalRect(browse_.filter(), ui_font_, 2, 6, 6);
       ShowWindow(browse_.filter(), SW_SHOW);
     }
-    y += tabs_height + gap;
+    y += tabs_height + kMainVerticalGap;
   } else {
     if (tab_) {
       ShowWindow(tab_, SW_HIDE);
@@ -1034,7 +1035,7 @@ void MainWindow::Impl::LayoutControls(int width, int height) {
   } else {
     history_splitter_rect_ = {};
   }
-  int content_bottom = show_history ? splitter_top : (status_top - gap);
+  int content_bottom = show_history ? splitter_top : status_top;
   int available_width = content_right - content_left;
   int min_tree = kMinTreeWidth;
   int min_list = kMinValueListWidth;

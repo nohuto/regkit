@@ -61,7 +61,7 @@ CommandArea ClassifyCommand(int command_id) noexcept {
     return CommandArea::kNavigateClipboard;
   }
   if (command_id >= cmd::kViewRefresh &&
-      command_id <= cmd::kViewSimulatedKeys) {
+      command_id <= cmd::kViewGridLines) {
     return CommandArea::kView;
   }
   if ((command_id >= cmd::kTraceLoad23H2 &&

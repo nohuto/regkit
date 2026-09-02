@@ -77,6 +77,7 @@ constexpr int kViewSaveTreeState = 2210;
 constexpr int kViewFilterBar = 2211;
 constexpr int kViewTabControl = 2212;
 constexpr int kViewSimulatedKeys = 2213;
+constexpr int kViewGridLines = 2214;
 
 constexpr int kFavoritesAdd = 2300;
 constexpr int kFavoritesRemove = 2301;

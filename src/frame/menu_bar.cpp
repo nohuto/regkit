@@ -208,6 +208,7 @@ void MainWindow::Impl::BuildMenus() {
   AppendMenuW(view_menu, MF_STRING | (show_tab_control_ ? MF_CHECKED : MF_UNCHECKED), cmd::kViewTabControl, L"Tab Control");
   AppendMenuW(view_menu, MF_STRING | (show_tree_ ? MF_CHECKED : MF_UNCHECKED), cmd::kViewKeyTree, L"Key Tree");
   AppendMenuW(view_menu, MF_STRING | (show_keys_in_list_ ? MF_CHECKED : MF_UNCHECKED), cmd::kViewKeysInList, L"Keys in List");
+  AppendMenuW(view_menu, MF_STRING | (show_value_grid_ ? MF_CHECKED : MF_UNCHECKED), cmd::kViewGridLines, L"Grid Lines");
   UINT simulated_flags = MF_STRING | (show_simulated_keys_ ? MF_CHECKED : MF_UNCHECKED);
   if (!HasActiveTraces()) {
     simulated_flags |= MF_GRAYED;
