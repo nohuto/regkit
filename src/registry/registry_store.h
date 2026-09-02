@@ -73,6 +73,8 @@ public:
   static bool OpenOfflineHive(const std::wstring& path, HKEY* root, std::wstring* error);
   static bool SaveOfflineHive(HKEY root, const std::wstring& path, std::wstring* error);
   static bool CloseOfflineHive(HKEY root, std::wstring* error);
+  static void AddOfflineRoot(HKEY root);
+  static void RemoveOfflineRoot(HKEY root);
   static void SetOfflineRoots(const std::vector<HKEY>& roots);
   static HKEY RegisterVirtualRoot(const std::wstring& root_name, const std::shared_ptr<VirtualRegistryData>& data);
   static void UnregisterVirtualRoot(HKEY root);

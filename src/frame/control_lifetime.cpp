@@ -34,7 +34,7 @@ LRESULT MainWindow::Impl::HandleNotification(LPARAM lparam) {
   if (header->code == TTN_GETDISPINFOW || header->code == TTN_NEEDTEXTW) {
     return HandleTooltipNotification(header, lparam);
   }
-  if (header->hwndFrom == toolbar_.hwnd()) {
+  if (header->hwndFrom == toolbar_.hwnd() || header->hwndFrom == value_grid_toolbar_) {
     return HandleToolbarNotification(header, lparam);
   }
   if (header->hwndFrom == tab_) {
@@ -83,24 +83,38 @@ LRESULT MainWindow::Impl::HandleTooltipNotification(NMHDR* header, LPARAM lparam
   return 0;
 }
 
+HBRUSH MainWindow::Impl::ValueHeaderSurfaceBrush() const {
+  const COLORREF color = browse_.values().hwnd()
+                             ? ListView_GetBkColor(browse_.values().hwnd())
+                             : CLR_NONE;
+  if (color == CLR_NONE || color == CLR_DEFAULT) {
+    return Theme::Current().PanelBrush();
+  }
+  return appearance::CachedBrush(color);
+}
+
 LRESULT MainWindow::Impl::HandleToolbarNotification(NMHDR* header, LPARAM lparam) {
-  if (header->hwndFrom == toolbar_.hwnd() && header->code == NM_CUSTOMDRAW) {
+  const bool is_grid_bar = header->hwndFrom == value_grid_toolbar_;
+  if ((header->hwndFrom == toolbar_.hwnd() || is_grid_bar) &&
+      header->code == NM_CUSTOMDRAW) {
     auto* draw = reinterpret_cast<NMTBCUSTOMDRAW*>(lparam);
-    if (!draw || !Theme::UseDarkMode()) {
+    if (!draw || (!is_grid_bar && !Theme::UseDarkMode())) {
       return CDRF_DODEFAULT;
     }
+    HWND bar = header->hwndFrom;
     const Theme& theme = Theme::Current();
     switch (draw->nmcd.dwDrawStage) {
     case CDDS_PREPAINT:
-      FillRect(draw->nmcd.hdc, &draw->nmcd.rc, theme.BackgroundBrush());
+      FillRect(draw->nmcd.hdc, &draw->nmcd.rc,
+               is_grid_bar ? ValueHeaderSurfaceBrush() : theme.BackgroundBrush());
       return CDRF_NOTIFYITEMDRAW;
     case CDDS_ITEMPREPAINT: {
       bool is_separator = false;
       int command_id = static_cast<int>(draw->nmcd.dwItemSpec);
-      int index = static_cast<int>(SendMessageW(toolbar_.hwnd(), TB_COMMANDTOINDEX, command_id, 0));
+      int index = static_cast<int>(SendMessageW(bar, TB_COMMANDTOINDEX, command_id, 0));
       if (index >= 0) {
         TBBUTTON button = {};
-        if (SendMessageW(toolbar_.hwnd(), TB_GETBUTTON, index, reinterpret_cast<LPARAM>(&button))) {
+        if (SendMessageW(bar, TB_GETBUTTON, index, reinterpret_cast<LPARAM>(&button))) {
           is_separator = (button.fsStyle & BTNS_SEP) != 0;
         }
       }
@@ -110,7 +124,7 @@ LRESULT MainWindow::Impl::HandleToolbarNotification(NMHDR* header, LPARAM lparam
 
       POINT cursor = {};
       GetCursorPos(&cursor);
-      ScreenToClient(toolbar_.hwnd(), &cursor);
+      ScreenToClient(bar, &cursor);
       bool is_hovered = ((draw->nmcd.uItemState & CDIS_HOT) == CDIS_HOT) || PtInRect(&draw->nmcd.rc, cursor);
 
       draw->hbrMonoDither = theme.BackgroundBrush();
@@ -125,10 +139,12 @@ LRESULT MainWindow::Impl::HandleToolbarNotification(NMHDR* header, LPARAM lparam
       draw->nHLStringBkMode = TRANSPARENT;
 
       if (is_hovered) {
-        DrawToolbarButtonBackground(draw->nmcd.hdc, draw->nmcd.rc, theme.HoverColor(), theme.BorderColor());
+        DrawToolbarButtonBackground(draw->nmcd.hdc, draw->nmcd.rc, theme.HoverColor(),
+                                    is_grid_bar ? theme.HoverColor() : theme.BorderColor());
         draw->nmcd.uItemState &= ~(CDIS_HOT | CDIS_CHECKED);
       } else if ((draw->nmcd.uItemState & CDIS_CHECKED) == CDIS_CHECKED) {
-        DrawToolbarButtonBackground(draw->nmcd.hdc, draw->nmcd.rc, theme.SurfaceColor(), theme.BorderColor());
+        DrawToolbarButtonBackground(draw->nmcd.hdc, draw->nmcd.rc, theme.SurfaceColor(),
+                                    is_grid_bar ? theme.SurfaceColor() : theme.BorderColor());
         draw->nmcd.uItemState &= ~CDIS_CHECKED;
       }
 
@@ -597,6 +613,21 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
 }
 
 LRESULT MainWindow::Impl::HandleValueListCustomDraw(NMLVCUSTOMDRAW* draw) {
+  if (!draw) {
+    return CDRF_DODEFAULT;
+  }
+  const DWORD stage = draw->nmcd.dwDrawStage;
+  if (stage == CDDS_PREPAINT) {
+    const LRESULT result =
+        ui::HandleThemedListViewCustomDraw(browse_.values().hwnd(), draw);
+    return show_value_grid_ ? result | CDRF_NOTIFYPOSTPAINT : result;
+  }
+  if (stage == CDDS_POSTPAINT) {
+    if (show_value_grid_) {
+      ui::PaintThemedListViewGrid(browse_.values().hwnd(), draw->nmcd.hdc);
+    }
+    return CDRF_DODEFAULT;
+  }
   return ui::HandleThemedListViewCustomDraw(browse_.values().hwnd(), draw);
 }
 
@@ -751,7 +782,11 @@ LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam)
       int index = SearchIndexFromTab(sel);
       if (index >= 0 && static_cast<size_t>(index) < search_tabs_.size() && static_cast<size_t>(activate->iItem) < search_tabs_[static_cast<size_t>(index)].results.size()) {
         const auto& result = search_tabs_[static_cast<size_t>(index)].results[static_cast<size_t>(activate->iItem)];
-        ActivateRegistryTab();
+        if (SearchResultOpensInNewTab()) {
+          OpenLocalRegistryTab();
+        } else {
+          ActivateRegistryTab();
+        }
         ApplyViewVisibility();
         UpdateStatus();
         SelectTreePath(result.key_path);
@@ -1153,6 +1188,10 @@ void MainWindow::Impl::OnDestroy() {
   if (address_go_icon_) {
     DestroyIcon(address_go_icon_);
     address_go_icon_ = nullptr;
+  }
+  if (value_grid_image_list_) {
+    ImageList_Destroy(value_grid_image_list_);
+    value_grid_image_list_ = nullptr;
   }
   if (address_autocomplete_) {
     address_autocomplete_->Release();

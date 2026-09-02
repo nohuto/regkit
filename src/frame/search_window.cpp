@@ -501,6 +501,7 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
     tab.last_ui_count = 0;
     tab.is_compare = false;
     tab.sort_dirty = false;
+    tab.open_in_new_tab = options.open_in_new_tab;
     TCITEMW item = {};
     item.mask = TCIF_TEXT;
     item.pszText = const_cast<wchar_t*>(tab.label.c_str());
@@ -509,6 +510,7 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
     SearchTab tab;
     tab.label = label;
     tab.is_compare = false;
+    tab.open_in_new_tab = options.open_in_new_tab;
     search_tabs_.push_back(std::move(tab));
     search_index = static_cast<int>(search_tabs_.size() - 1);
     TCITEMW item = {};

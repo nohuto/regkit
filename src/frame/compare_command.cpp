@@ -72,6 +72,10 @@ void MainWindow::Impl::StartCompareRegistries() {
       *out_base = base;
       return true;
     }
+    if (sel.type == CompareSourceType::kOfflineHive) {
+      *out_base = NormalizeRegistryPath(sel.key_path);
+      return true;
+    }
     std::wstring base = NormalizeRegistryPath(sel.key_path);
     if (base.empty()) {
       return false;
@@ -98,6 +102,26 @@ void MainWindow::Impl::StartCompareRegistries() {
             return NormalizeRegistryPath(path);
           },
           snapshot, error);
+    }
+    if (source.type == CompareSourceType::kOfflineHive) {
+      HKEY hive = nullptr;
+      if (!RegistryStore::OpenOfflineHive(source.file_path, &hive, error)) {
+        return false;
+      }
+      RegistryStore::AddOfflineRoot(hive);
+      RegistryNode hive_node;
+      hive_node.root = hive;
+      hive_node.root_name = FileNameOnly(source.file_path);
+      hive_node.subkey = base;
+      const bool ok = search::compare::CaptureRegistry(
+          base.empty() ? hive_node.root_name : base, hive_node,
+          source.recursive, snapshot);
+      RegistryStore::RemoveOfflineRoot(hive);
+      RegistryStore::CloseOfflineHive(hive, nullptr);
+      if (!ok && error) {
+        *error = L"Failed to read the hive file: " + source.file_path;
+      }
+      return ok;
     }
 
     RegistryNode node;

@@ -147,6 +147,7 @@ void MainWindow::Impl::ShowTreeContextMenu(POINT screen_pt) {
 
   bool expanded = false;
   bool can_toggle = false;
+  bool has_children = false;
   if (target) {
     TVITEMW tvi = {};
     tvi.hItem = target;
@@ -154,12 +155,13 @@ void MainWindow::Impl::ShowTreeContextMenu(POINT screen_pt) {
     tvi.stateMask = TVIS_EXPANDED;
     if (TreeView_GetItem(browse_.tree().hwnd(), &tvi)) {
       expanded = (tvi.state & TVIS_EXPANDED) != 0;
-      bool has_child = TreeView_GetChild(browse_.tree().hwnd(), target) != nullptr || tvi.cChildren != 0;
-      can_toggle = expanded || has_child;
+      has_children = TreeView_GetChild(browse_.tree().hwnd(), target) != nullptr || tvi.cChildren != 0;
+      can_toggle = expanded || has_children;
     }
   }
   std::wstring expand_label = expanded ? L"Collapse Key" : L"Expand Key";
   UINT expand_flags = MF_STRING | (can_toggle ? 0 : MF_GRAYED);
+  UINT expand_all_flags = MF_STRING | (has_children ? 0 : MF_GRAYED);
   auto equals_insensitive = [](const std::wstring& left, const wchar_t* right) -> bool { return _wcsicmp(left.c_str(), right) == 0; };
   bool can_open_hive = false;
   if (has_node) {
@@ -193,6 +195,7 @@ void MainWindow::Impl::ShowTreeContextMenu(POINT screen_pt) {
   }
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   AppendMenuW(menu, expand_flags, cmd::kTreeToggleExpand, expand_label.c_str());
+  AppendMenuW(menu, expand_all_flags, cmd::kTreeExpandAll, L"Expand All Subkeys");
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   if (is_simulated) {
     AppendMenuW(menu, modify_flags, cmd::kCreateSimulatedKey, L"Create Key");
@@ -288,6 +291,7 @@ void MainWindow::Impl::ShowValueContextMenu(POINT screen_pt) {
     }
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, expand_flags, cmd::kTreeToggleExpand, expand_label.c_str());
+    AppendMenuW(menu, expand_flags, cmd::kTreeExpandAll, L"Expand All Subkeys");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     if (is_simulated) {
       AppendMenuW(menu, modify_flags, cmd::kCreateSimulatedKey, L"Create Key");
@@ -616,7 +620,7 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
 
   switch (command) {
   case kSearchOpenKey:
-    open_key(false);
+    open_key(SearchResultOpensInNewTab());
     return;
   case kSearchOpenKeyNewTab:
     open_key(true);

@@ -75,6 +75,8 @@ constexpr int kSearchResultsListId = 112;
 constexpr int kSearchProgressId = 113;
 constexpr int kHistoryHeaderCloseId = 114;
 constexpr int kFilterEditId = 115;
+constexpr int kValueGridButtonId = 116;
+constexpr int kValueGridButtonWidth = 22;
 constexpr int kToolbarIconSize = 16;
 constexpr int kToolbarGlyphSize = 16;
 using win32::kRestartSystemArg;

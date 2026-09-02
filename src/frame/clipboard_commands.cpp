@@ -465,9 +465,7 @@ bool MainWindow::Impl::HandleChangeHistoryCommand(int command_id) {
 bool MainWindow::Impl::HandleRegistryNavigationCommand(int command_id) {
   switch (command_id) {
   case cmd::kRegistryLocal:
-    if (SwitchToLocalRegistry()) {
-      BuildMenus();
-    }
+    OpenLocalRegistryTab();
     return true;
   case cmd::kRegistryNetwork:
     if (SwitchToRemoteRegistry()) {

@@ -56,6 +56,7 @@ bool MainWindow::Impl::HandleCreateCommand(int command_id) {
     }
     UpdateSimulatedChain(TreeView_GetSelection(browse_.tree().hwnd()));
     RefreshTreeSelection();
+    RefreshMatchingTreeNodes();
     UpdateValueListForNode(browse_.current_node());
     return true;
   }
@@ -103,6 +104,7 @@ bool MainWindow::Impl::HandleCreateCommand(int command_id) {
           TreeView_SelectItem(browse_.tree().hwnd(), parent_item);
         }
         RefreshTreeSelection();
+        RefreshMatchingTreeNodes();
 
         HTREEITEM target = nullptr;
         if (parent_item) {
@@ -269,6 +271,7 @@ bool MainWindow::Impl::HandleModifyCommand(int command_id) {
         op.new_value.data = data;
         PushUndo(std::move(op));
         RefreshTreeSelection();
+        RefreshMatchingTreeNodes();
         UpdateValueListForNode(browse_.current_node());
         return true;
       }
@@ -464,6 +467,7 @@ bool MainWindow::Impl::HandleDeleteCommand(int command_id) {
           selected_parent = SelectTreePath(parent_path);
         }
         RefreshTreeSelection();
+        RefreshMatchingTreeNodes();
         if (!selected_parent) {
           UpdateValueListForNode(browse_.current_node());
         }
@@ -547,6 +551,7 @@ bool MainWindow::Impl::HandleDeleteCommand(int command_id) {
         op.key_snapshot = std::move(snapshot);
         PushUndo(std::move(op));
         RefreshTreeSelection();
+        RefreshMatchingTreeNodes();
         UpdateValueListForNode(browse_.current_node());
       }
       return true;

@@ -24,6 +24,7 @@ struct Settings {
   bool show_keys_in_list = true;
   bool show_simulated_keys = true;
   bool show_extra_hives = false;
+  bool show_value_grid = false;
   bool save_tree_state = true;
   bool save_tabs = true;
   bool always_run_as_admin = false;

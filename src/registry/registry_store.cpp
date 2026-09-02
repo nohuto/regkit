@@ -51,6 +51,14 @@ bool RegistryStore::OpenOfflineHive(const std::wstring& path, HKEY* root,
   return registry_backend::offline::OpenHive(path, root, error);
 }
 
+void RegistryStore::AddOfflineRoot(HKEY root) {
+  registry_backend::offline::AddRoot(root);
+}
+
+void RegistryStore::RemoveOfflineRoot(HKEY root) {
+  registry_backend::offline::RemoveRoot(root);
+}
+
 bool RegistryStore::SaveOfflineHive(HKEY root, const std::wstring& path,
                                     std::wstring* error) {
   return registry_backend::offline::SaveHive(root, path, error);

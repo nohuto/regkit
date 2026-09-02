@@ -61,6 +61,7 @@ constexpr int kNavBack = 2150;
 constexpr int kNavForward = 2151;
 constexpr int kNavUp = 2152;
 constexpr int kTreeToggleExpand = 2153;
+constexpr int kTreeExpandAll = 2154;
 
 constexpr int kViewRefresh = 2200;
 constexpr int kViewToolbar = 2201;

@@ -45,6 +45,7 @@ CommandArea ClassifyCommand(int command_id) noexcept {
     return CommandArea::kMutation;
   case cmd::kEditInvertSelection:
   case cmd::kTreeToggleExpand:
+  case cmd::kTreeExpandAll:
   case cmd::kOptionsSaveTabs:
   case cmd::kOptionsReadOnly:
   case cmd::kOptionsCompareRegistries:
@@ -56,7 +57,7 @@ CommandArea ClassifyCommand(int command_id) noexcept {
        command_id <= cmd::kEditCopyValueData) ||
       (command_id >= cmd::kRegistryLocal &&
        command_id <= cmd::kRegistryOffline) ||
-      (command_id >= cmd::kNavBack && command_id <= cmd::kTreeToggleExpand)) {
+      (command_id >= cmd::kNavBack && command_id <= cmd::kTreeExpandAll)) {
     return CommandArea::kNavigateClipboard;
   }
   if (command_id >= cmd::kViewRefresh &&

@@ -14,6 +14,7 @@
 #include <shellapi.h>
 #include <uxtheme.h>
 
+#include "appearance/gdi_cache.h"
 #include "appearance/theme.h"
 #include "win32/file_dialog.h"
 #include "win32/shell_paths.h"
@@ -51,6 +52,7 @@ struct ChoiceDialogState {
   HWND yes_btn = nullptr;
   HWND no_btn = nullptr;
   HWND cancel_btn = nullptr;
+  HWND default_btn = nullptr;
   HWND owner = nullptr;
   HFONT font = nullptr;
   std::wstring title;
@@ -60,6 +62,7 @@ struct ChoiceDialogState {
   std::wstring no_label;
   std::wstring cancel_label;
   int yes_button_width_dlu = 0;
+  int default_id = 0;
   PCWSTR icon_id = nullptr;
   int button_width_dlu = 45;
   int result = IDCANCEL;
@@ -379,17 +382,30 @@ LRESULT CALLBACK ChoiceDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
         SetWindowTheme(state->detail_tip, Theme::UseDarkMode() ? L"DarkMode_Explorer" : L"Explorer", nullptr);
       }
     }
-    auto button_style = [&]() -> DWORD {
-      return (state->yes_btn || state->no_btn) ? BS_PUSHBUTTON : BS_DEFPUSHBUTTON;
-    };
     if (!state->yes_label.empty()) {
-      state->yes_btn = CreateWindowExW(0, L"BUTTON", state->yes_label.c_str(), WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDYES), nullptr, nullptr);
+      state->yes_btn = CreateWindowExW(0, L"BUTTON", state->yes_label.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDYES), nullptr, nullptr);
     }
     if (!state->no_label.empty()) {
-      state->no_btn = CreateWindowExW(0, L"BUTTON", state->no_label.c_str(), WS_CHILD | WS_VISIBLE | button_style(), 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDNO), nullptr, nullptr);
+      state->no_btn = CreateWindowExW(0, L"BUTTON", state->no_label.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDNO), nullptr, nullptr);
     }
     if (!state->cancel_label.empty()) {
-      state->cancel_btn = CreateWindowExW(0, L"BUTTON", state->cancel_label.c_str(), WS_CHILD | WS_VISIBLE | button_style(), 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDCANCEL), nullptr, nullptr);
+      state->cancel_btn = CreateWindowExW(0, L"BUTTON", state->cancel_label.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDCANCEL), nullptr, nullptr);
+    }
+    state->default_btn = nullptr;
+    if (state->default_id == IDYES) {
+      state->default_btn = state->yes_btn;
+    } else if (state->default_id == IDNO) {
+      state->default_btn = state->no_btn;
+    } else if (state->default_id == IDCANCEL) {
+      state->default_btn = state->cancel_btn;
+    }
+    if (!state->default_btn) {
+      state->default_btn = state->yes_btn ? state->yes_btn
+                          : (state->no_btn ? state->no_btn : state->cancel_btn);
+    }
+    if (state->default_btn) {
+      SetWindowLongPtrW(state->default_btn, GWL_STYLE,
+                        GetWindowLongPtrW(state->default_btn, GWL_STYLE) | BS_DEFPUSHBUTTON);
     }
 
     ApplyConfirmFonts(hwnd, state->font);
@@ -397,6 +413,9 @@ LRESULT CALLBACK ChoiceDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
     Theme::Current().ApplyToChildren(hwnd);
     FitChoiceDialogToContent(hwnd, state);
     LayoutChoiceDialog(hwnd, state);
+    if (state->default_btn) {
+      SetFocus(state->default_btn);
+    }
     return 0;
   }
   case WM_SIZE:
@@ -433,6 +452,11 @@ LRESULT CALLBACK ChoiceDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
     }
     return reinterpret_cast<INT_PTR>(Theme::Current().ControlColor(hdc, target, type));
   }
+  case DM_GETDEFID:
+    if (state && state->default_btn) {
+      return MAKELRESULT(GetDlgCtrlID(state->default_btn), DC_HASDEFID);
+    }
+    break;
   case WM_COMMAND:
     switch (LOWORD(wparam)) {
     case IDYES:
@@ -760,7 +784,7 @@ bool ShowAboutDialog(HWND owner) {
   return state.accepted;
 }
 
-bool ShowChoiceDialog(HWND owner, const std::wstring& title, const std::wstring& message, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label, int* result, PCWSTR icon_id, int width, int height, int button_width_dlu = 45, const std::wstring& detail = std::wstring(), int yes_button_width_dlu = 0) {
+bool ShowChoiceDialog(HWND owner, const std::wstring& title, const std::wstring& message, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label, int* result, PCWSTR icon_id, int width, int height, int button_width_dlu = 45, const std::wstring& detail = std::wstring(), int yes_button_width_dlu = 0, int default_id = 0) {
   WNDCLASSW wc = {};
   wc.lpfnWndProc = ChoiceDialogProc;
   wc.hInstance = GetModuleHandleW(nullptr);
@@ -780,6 +804,7 @@ bool ShowChoiceDialog(HWND owner, const std::wstring& title, const std::wstring&
   state.icon_id = icon_id;
   state.button_width_dlu = button_width_dlu;
   state.yes_button_width_dlu = yes_button_width_dlu;
+  state.default_id = default_id;
   HWND hwnd = CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_CONTROLPARENT, kChoiceClass, kAppTitle, WS_POPUP | WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, width, height, owner, nullptr, wc.hInstance, &state);
   if (!hwnd) {
     return false;
@@ -871,6 +896,78 @@ LRESULT HandleThemedListViewCustomDraw(HWND list, NMLVCUSTOMDRAW* draw) {
     break;
   }
   return CDRF_DODEFAULT;
+}
+
+void PaintThemedListViewGrid(HWND list, HDC hdc) {
+  if (!list || !hdc) {
+    return;
+  }
+  HWND header = ListView_GetHeader(list);
+  const int item_count = ListView_GetItemCount(list);
+  const int column_count = header ? Header_GetItemCount(header) : 0;
+  if (item_count <= 0 || column_count <= 0) {
+    return;
+  }
+  int first = ListView_GetTopIndex(list);
+  first = std::max(0, std::min(first, item_count - 1));
+  const int last = std::min(item_count - 1, first + ListView_GetCountPerPage(list));
+
+  RECT client = {};
+  RECT first_row = {};
+  RECT last_row = {};
+  if (!GetClientRect(list, &client) ||
+      !ListView_GetItemRect(list, first, &first_row, LVIR_BOUNDS) ||
+      !ListView_GetItemRect(list, last, &last_row, LVIR_BOUNDS)) {
+    return;
+  }
+
+  int grid_left = client.right;
+  int grid_right = client.left;
+  for (int column_index = 0; column_index < column_count; ++column_index) {
+    RECT column = {};
+    if (!Header_GetItemRect(header, column_index, &column)) {
+      continue;
+    }
+    MapWindowPoints(header, list, reinterpret_cast<POINT*>(&column), 2);
+    grid_left = std::min(grid_left, static_cast<int>(column.left));
+    grid_right = std::max(grid_right, static_cast<int>(column.right));
+  }
+
+  grid_left = std::max(static_cast<int>(client.left), grid_left);
+  grid_right = std::min(static_cast<int>(client.right), grid_right);
+  const int grid_top = std::max(client.top, first_row.top);
+  const int grid_bottom = std::min(client.bottom, last_row.bottom);
+  if (grid_left >= grid_right || grid_top >= grid_bottom) {
+    return;
+  }
+
+  HBRUSH border = appearance::CachedBrush(Theme::Current().BorderColor());
+  for (int column_index = 0; column_index < column_count; ++column_index) {
+    RECT column = {};
+    if (!Header_GetItemRect(header, column_index, &column)) {
+      continue;
+    }
+    MapWindowPoints(header, list, reinterpret_cast<POINT*>(&column), 2);
+    const int x = column.right - 1;
+    if (x < grid_left || x >= grid_right) {
+      continue;
+    }
+    RECT line = {x, grid_top, x + 1, grid_bottom};
+    FillRect(hdc, &line, border);
+  }
+
+  for (int item = first; item <= last; ++item) {
+    RECT row = {};
+    if (!ListView_GetItemRect(list, item, &row, LVIR_BOUNDS)) {
+      continue;
+    }
+    const int y = row.bottom - 1;
+    if (y < grid_top || y >= grid_bottom) {
+      continue;
+    }
+    RECT line = {grid_left, y, grid_right, y + 1};
+    FillRect(hdc, &line, border);
+  }
 }
 
 bool CopyTextToClipboard(HWND owner, const std::wstring& text) {

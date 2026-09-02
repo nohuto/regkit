@@ -179,6 +179,13 @@ private:
   std::wstring ResolveIconDir(bool use_light) const;
   std::wstring ResolveIconPath(const wchar_t* filename) const;
   HICON LoadThemeIcon(const wchar_t* filename, int light_id, int dark_id, int size, UINT dpi) const;
+  void EnsureValueGridToolbar();
+  void ApplyValueGridToolbarIcon();
+  void ApplyValueGridToolbarTheme();
+  HBRUSH ValueHeaderSurfaceBrush() const;
+  void LayoutValueGridToolbar();
+  void SetValueGridEnabled(bool enabled, bool persist);
+  int ValueGridToggleWidth(HWND header) const;
   ToolbarIcon MakeToolbarIcon(const wchar_t* filename, int light_id, int dark_id, bool use_light) const;
   void CreateValueColumns();
   void CreateHistoryColumns();
@@ -267,6 +274,7 @@ private:
   int SearchIndexFromTab(int index) const;
   int FindFirstRegistryTabIndex() const;
   void ActivateRegistryTab();
+  bool SearchResultOpensInNewTab() const;
   void UpdateTabHotState(HWND hwnd, POINT pt);
   void PaintTabControl(HWND hwnd, HDC hdc);
   void DrawTabItem(HDC hdc, int index, const RECT& item_rect, int header_bottom, bool selected);
@@ -425,7 +433,11 @@ private:
   void CaptureTreeState(std::wstring* selected_path, std::vector<std::wstring>* expanded_paths) const;
   void RestoreTreeState();
   bool ExpandTreePath(const std::wstring& path);
+  HTREEITEM FindTreeItem(const std::wstring& path);
+  void RefreshTreeItem(HTREEITEM item);
+  void RefreshTreePath(const std::wstring& path);
   void RefreshTreeSelection();
+  void RefreshMatchingTreeNodes();
   void UpdateSimulatedChain(HTREEITEM item);
   void ApplySavedWindowPlacement();
   LOGFONTW DefaultLogFont() const;
@@ -534,6 +546,9 @@ private:
   int drag_tree_header_height_ = 0;
   int drag_history_label_height_ = 0;
   HICON address_go_icon_ = nullptr;
+  HWND value_grid_toolbar_ = nullptr;
+  HIMAGELIST value_grid_image_list_ = nullptr;
+  bool show_value_grid_ = false;
   bool show_toolbar_ = true;
   bool show_address_bar_ = true;
   bool show_filter_bar_ = true;
@@ -610,6 +625,7 @@ private:
     int sort_column = -1;
     bool sort_ascending = true;
     bool sort_dirty = false;
+    bool open_in_new_tab = false;
   };
 
   struct TabEntry {

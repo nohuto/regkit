@@ -301,6 +301,7 @@ bool MainWindow::Impl::HandleViewCommand(int command_id) {
   switch (command_id) {
   case cmd::kViewRefresh:
     RefreshTreeSelection();
+    RefreshMatchingTreeNodes();
     UpdateValueListForNode(browse_.current_node());
     return true;
   case cmd::kViewAddressBar:
@@ -342,6 +343,40 @@ bool MainWindow::Impl::HandleViewCommand(int command_id) {
       return true;
     }
     TreeView_Expand(browse_.tree().hwnd(), item, expanded ? TVE_COLLAPSE : TVE_EXPAND);
+    return true;
+  }
+  case cmd::kTreeExpandAll: {
+    HWND tree = browse_.tree().hwnd();
+    HTREEITEM root = tree ? TreeView_GetSelection(tree) : nullptr;
+    if (!root) {
+      return true;
+    }
+    HCURSOR previous = SetCursor(LoadCursorW(nullptr, IDC_WAIT));
+    SendMessageW(tree, WM_SETREDRAW, FALSE, 0);
+    constexpr int kExpandAllKeyLimit = 5000;
+    std::vector<HTREEITEM> pending{root};
+    int expanded_keys = 0;
+    while (!pending.empty() && expanded_keys < kExpandAllKeyLimit) {
+      HTREEITEM item = pending.back();
+      pending.pop_back();
+      TreeView_Expand(tree, item, TVE_EXPAND);
+      ++expanded_keys;
+      for (HTREEITEM child = TreeView_GetChild(tree, item); child;
+           child = TreeView_GetNextSibling(tree, child)) {
+        pending.push_back(child);
+      }
+    }
+    const bool truncated = !pending.empty();
+    SendMessageW(tree, WM_SETREDRAW, TRUE, 0);
+    InvalidateRect(tree, nullptr, TRUE);
+    TreeView_EnsureVisible(tree, root);
+    SetCursor(previous);
+    MarkTreeStateDirty();
+    if (truncated) {
+      ui::ShowWarning(hwnd_, L"This key has too many subkeys to expand at once. " +
+                                 std::to_wstring(expanded_keys) +
+                                 L" keys were expanded.");
+    }
     return true;
   }
   case cmd::kViewSelectAll:

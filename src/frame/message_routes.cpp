@@ -984,6 +984,10 @@ std::optional<LRESULT> MainWindow::Impl::HandleBrowseMessage(UINT message,
       BuildMenus();
       return 0;
     }
+    if (HIWORD(wparam) == 0 && LOWORD(wparam) == kValueGridButtonId) {
+      SetValueGridEnabled(!show_value_grid_, true);
+      return 0;
+    }
     if (HIWORD(wparam) == BN_CLICKED && LOWORD(wparam) == kAddressGoId) {
       NavigateToAddress();
       return 0;

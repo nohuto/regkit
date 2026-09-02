@@ -63,6 +63,7 @@ enum ControlId {
   kResultGroup = 160,
   kResultReuse = 161,
   kResultNew = 162,
+  kResultOpenNewTab = 163,
   kFindButton = IDOK,
   kCancelButton = IDCANCEL,
 };
@@ -97,6 +98,7 @@ struct SearchDialogState {
   HWND exclude_button = nullptr;
   HWND result_reuse = nullptr;
   HWND result_new = nullptr;
+  HWND result_open_new_tab = nullptr;
   HWND find_button = nullptr;
   HWND cancel_button = nullptr;
   HWND owner = nullptr;
@@ -437,6 +439,7 @@ void LayoutDialog(HWND hwnd, SearchDialogState* state, HFONT font) {
   if (!hwnd || !state) {
     return;
   }
+  appearance::SetControlFont(hwnd, font);
   RECT client = {};
   GetClientRect(hwnd, &client);
   int width = client.right - client.left;
@@ -446,9 +449,29 @@ void LayoutDialog(HWND hwnd, SearchDialogState* state, HFONT font) {
   int edit_h = CalcDialogLineHeight(hwnd, font, 20);
   int line_h = std::max(edit_h + 2, 22);
   auto place_check = [&](HWND check, int x_pos, int y_pos, int width) {
-    if (check) {
-      SetWindowPos(check, nullptr, x_pos, y_pos, width, 18, SWP_NOZORDER);
+    if (!check) {
+      return;
     }
+    wchar_t label[160] = {};
+    const int length = GetWindowTextW(check, label, static_cast<int>(_countof(label)));
+    if (length > 0) {
+      if (HDC dc = GetDC(check)) {
+        HFONT drawn = reinterpret_cast<HFONT>(SendMessageW(check, WM_GETFONT, 0, 0));
+        if (!drawn) {
+          drawn = font;
+        }
+        HFONT previous = drawn ? reinterpret_cast<HFONT>(SelectObject(dc, drawn)) : nullptr;
+        SIZE text = {};
+        if (GetTextExtentPoint32W(dc, label, length, &text)) {
+          width = std::max<int>(width, text.cx + GetSystemMetrics(SM_CXMENUCHECK) + 26);
+        }
+        if (previous) {
+          SelectObject(dc, previous);
+        }
+        ReleaseDC(check, dc);
+      }
+    }
+    SetWindowPos(check, nullptr, x_pos, y_pos, width, 18, SWP_NOZORDER);
   };
 
   HWND find_label = GetDlgItem(hwnd, kFindLabel);
@@ -513,16 +536,16 @@ void LayoutDialog(HWND hwnd, SearchDialogState* state, HFONT font) {
   SetWindowPos(state->exclude_button, nullptr, x + group_w - 80, y + 40, 70, line_h, SWP_NOZORDER);
   y += exclude_h + 8;
 
-  int result_h = 70;
+  int result_h = 92;
   SetWindowPos(GetDlgItem(hwnd, kResultGroup), nullptr, x, y, group_w, result_h, SWP_NOZORDER);
   place_check(state->result_reuse, x + 12, y + 20, 220);
   place_check(state->result_new, x + 12, y + 42, 240);
+  place_check(state->result_open_new_tab, x + 12, y + 64, 200);
 
   int btn_y = client.bottom - 30;
   SetWindowPos(state->find_button, nullptr, width - 180, btn_y, 80, 22, SWP_NOZORDER);
   SetWindowPos(state->cancel_button, nullptr, width - 90, btn_y, 80, 22, SWP_NOZORDER);
 
-  appearance::SetControlFont(hwnd, font);
   appearance::SetControlFont(find_label, font);
   appearance::SetControlFont(state->find_combo, font);
   appearance::SetControlFont(state->scope_combo, font);
@@ -590,6 +613,7 @@ LRESULT CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
     CreateWindowExW(0, L"BUTTON", L"Result options", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kResultGroup), nullptr, nullptr);
     state->result_reuse = CreateWindowExW(0, L"BUTTON", L"Reuse last Find Results window", WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kResultReuse), nullptr, nullptr);
     state->result_new = CreateWindowExW(0, L"BUTTON", L"Open new Find Results window", WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kResultNew), nullptr, nullptr);
+    state->result_open_new_tab = CreateWindowExW(0, L"BUTTON", L"Open result in new tab", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | WS_GROUP, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kResultOpenNewTab), nullptr, nullptr);
 
     state->find_button = CreateWindowExW(0, L"BUTTON", L"Find", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kFindButton), nullptr, nullptr);
     state->cancel_button = CreateWindowExW(0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kCancelButton), nullptr, nullptr);
@@ -680,6 +704,7 @@ LRESULT CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
       bool new_tab = initial->result_mode == SearchResultMode::kNewTab;
       SendMessageW(state->result_reuse, BM_SETCHECK, new_tab ? BST_UNCHECKED : BST_CHECKED, 0);
       SendMessageW(state->result_new, BM_SETCHECK, new_tab ? BST_CHECKED : BST_UNCHECKED, 0);
+      SendMessageW(state->result_open_new_tab, BM_SETCHECK, initial->open_in_new_tab ? BST_CHECKED : BST_UNCHECKED, 0);
     } else {
       SendMessageW(state->options_keys, BM_SETCHECK, BST_UNCHECKED, 0);
       SendMessageW(state->options_values, BM_SETCHECK, BST_CHECKED, 0);
@@ -905,6 +930,7 @@ LRESULT CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
       state->recursive = SendMessageW(state->scope_recursive, BM_GETCHECK, 0, 0) == BST_CHECKED;
       result.criteria.recursive = scope_top ? true : state->recursive;
       result.result_mode = SendMessageW(state->result_new, BM_GETCHECK, 0, 0) == BST_CHECKED ? SearchResultMode::kNewTab : SearchResultMode::kReuseTab;
+      result.open_in_new_tab = SendMessageW(state->result_open_new_tab, BM_GETCHECK, 0, 0) == BST_CHECKED;
 
       if (SendMessageW(state->exclude_enable, BM_GETCHECK, 0, 0) == BST_CHECKED) {
         wchar_t buffer[512] = {};
@@ -973,7 +999,7 @@ HWND CreateSearchDialogWindow(HINSTANCE instance, HWND owner, SearchDialogState*
   wc.lpszClassName = kDialogClass;
   RegisterClassW(&wc);
 
-  return CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_CONTROLPARENT, kDialogClass, L"Find", WS_POPUP | WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, 600, 590, owner, nullptr, instance, state);
+  return CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_CONTROLPARENT, kDialogClass, L"Find", WS_POPUP | WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, 600, 612, owner, nullptr, instance, state);
 }
 
 } // namespace

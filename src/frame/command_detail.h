@@ -251,7 +251,30 @@ inline std::wstring BuildSelectedListViewText(HWND list) {
 enum class CompareSourceType {
   kRegistry = 0,
   kRegFile = 1,
+  kOfflineHive = 2,
 };
+
+inline const wchar_t* CompareSourceLabel(CompareSourceType type) {
+  switch (type) {
+  case CompareSourceType::kRegFile:
+    return L"Reg File";
+  case CompareSourceType::kOfflineHive:
+    return L"Offline Hive";
+  default:
+    return L"Registry";
+  }
+}
+
+inline CompareSourceType CompareSourceFromIndex(int index) {
+  switch (index) {
+  case 1:
+    return CompareSourceType::kRegFile;
+  case 2:
+    return CompareSourceType::kOfflineHive;
+  default:
+    return CompareSourceType::kRegistry;
+  }
+}
 
 struct CompareDialogSelection {
   CompareSourceType type = CompareSourceType::kRegistry;
@@ -637,13 +660,13 @@ inline INT_PTR CALLBACK CompareDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPA
     ApplyEditCustomBorder(dlg, IDC_COMPARE_RIGHT_PATH);
     ApplyEditCustomBorder(dlg, IDC_COMPARE_RIGHT_FILE);
 
-    PopulateCombo(GetDlgItem(dlg, IDC_COMPARE_LEFT_SOURCE), {L"Registry", L"Reg File"});
-    PopulateCombo(GetDlgItem(dlg, IDC_COMPARE_RIGHT_SOURCE), {L"Registry", L"Reg File"});
+    PopulateCombo(GetDlgItem(dlg, IDC_COMPARE_LEFT_SOURCE), {L"Registry", L"Reg File", L"Offline Hive"});
+    PopulateCombo(GetDlgItem(dlg, IDC_COMPARE_RIGHT_SOURCE), {L"Registry", L"Reg File", L"Offline Hive"});
     PopulateCombo(GetDlgItem(dlg, IDC_COMPARE_LEFT_ROOT), state->data.registry_roots);
     PopulateCombo(GetDlgItem(dlg, IDC_COMPARE_RIGHT_ROOT), state->data.registry_roots);
 
-    SetComboSelection(GetDlgItem(dlg, IDC_COMPARE_LEFT_SOURCE), state->data.left.type == CompareSourceType::kRegFile ? L"Reg File" : L"Registry");
-    SetComboSelection(GetDlgItem(dlg, IDC_COMPARE_RIGHT_SOURCE), state->data.right.type == CompareSourceType::kRegFile ? L"Reg File" : L"Registry");
+    SetComboSelection(GetDlgItem(dlg, IDC_COMPARE_LEFT_SOURCE), CompareSourceLabel(state->data.left.type));
+    SetComboSelection(GetDlgItem(dlg, IDC_COMPARE_RIGHT_SOURCE), CompareSourceLabel(state->data.right.type));
     SetComboSelection(GetDlgItem(dlg, IDC_COMPARE_LEFT_ROOT), state->data.left.root);
     SetComboSelection(GetDlgItem(dlg, IDC_COMPARE_RIGHT_ROOT), state->data.right.root);
     SetDialogText(dlg, IDC_COMPARE_LEFT_PATH, state->data.left.path);
@@ -743,17 +766,27 @@ inline INT_PTR CALLBACK CompareDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPA
       bool left = id == IDC_COMPARE_LEFT_SOURCE;
       HWND combo = GetDlgItem(dlg, id);
       int sel = combo ? static_cast<int>(SendMessageW(combo, CB_GETCURSEL, 0, 0)) : 0;
-      CompareSourceType type = (sel == 1) ? CompareSourceType::kRegFile : CompareSourceType::kRegistry;
+      CompareSourceType type = CompareSourceFromIndex(sel);
       ToggleCompareControls(dlg, left, type);
       return TRUE;
     }
     if (code == BN_CLICKED && (id == IDC_COMPARE_LEFT_BROWSE || id == IDC_COMPARE_RIGHT_BROWSE)) {
       bool left = id == IDC_COMPARE_LEFT_BROWSE;
+      HWND browse_source = GetDlgItem(dlg, left ? IDC_COMPARE_LEFT_SOURCE : IDC_COMPARE_RIGHT_SOURCE);
+      const CompareSourceType browse_type = CompareSourceFromIndex(
+          browse_source ? static_cast<int>(SendMessageW(browse_source, CB_GETCURSEL, 0, 0)) : 0);
       std::wstring path;
-      if (!PromptOpenFilePath(dlg, L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0\0", &path)) {
+      if (!PromptOpenFilePath(dlg,
+                              browse_type == CompareSourceType::kOfflineHive
+                                  ? L"Registry Hive Files\0*.*\0\0"
+                                  : L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0\0",
+                              &path)) {
         return TRUE;
       }
       SetDialogText(dlg, left ? IDC_COMPARE_LEFT_FILE : IDC_COMPARE_RIGHT_FILE, path);
+      if (browse_type == CompareSourceType::kOfflineHive) {
+        return TRUE;
+      }
       regfile::Document data;
       std::wstring error;
       if (regfile::Load(path, &data, &error)) {
@@ -779,7 +812,7 @@ inline INT_PTR CALLBACK CompareDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPA
         out->recursive = IsDlgButtonChecked(dlg, left ? IDC_COMPARE_LEFT_RECURSIVE : IDC_COMPARE_RIGHT_RECURSIVE) == BST_CHECKED;
         HWND source_combo = GetDlgItem(dlg, left ? IDC_COMPARE_LEFT_SOURCE : IDC_COMPARE_RIGHT_SOURCE);
         int source_index = source_combo ? static_cast<int>(SendMessageW(source_combo, CB_GETCURSEL, 0, 0)) : 0;
-        out->type = (source_index == 1) ? CompareSourceType::kRegFile : CompareSourceType::kRegistry;
+        out->type = CompareSourceFromIndex(source_index);
         if (out->type == CompareSourceType::kRegistry) {
           out->root = TrimWhitespace(ReadComboText(GetDlgItem(dlg, left ? IDC_COMPARE_LEFT_ROOT : IDC_COMPARE_RIGHT_ROOT)));
           out->path = TrimWhitespace(ReadDialogText(dlg, left ? IDC_COMPARE_LEFT_PATH : IDC_COMPARE_RIGHT_PATH));
@@ -792,8 +825,13 @@ inline INT_PTR CALLBACK CompareDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPA
         out->file_path = TrimWhitespace(ReadDialogText(dlg, left ? IDC_COMPARE_LEFT_FILE : IDC_COMPARE_RIGHT_FILE));
         out->key_path = TrimWhitespace(ReadComboText(GetDlgItem(dlg, left ? IDC_COMPARE_LEFT_KEY : IDC_COMPARE_RIGHT_KEY)));
         if (out->file_path.empty()) {
-          ui::ShowError(dlg, L"Registry file path is required.");
+          ui::ShowError(dlg, out->type == CompareSourceType::kOfflineHive
+                                 ? L"Hive file path is required."
+                                 : L"Registry file path is required.");
           return false;
+        }
+        if (out->type == CompareSourceType::kOfflineHive) {
+          return true;
         }
         regfile::Document data;
         std::wstring error;

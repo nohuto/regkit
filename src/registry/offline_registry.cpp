@@ -327,6 +327,16 @@ void SetRoots(const std::vector<HKEY>& roots) {
   }
 }
 
+void AddRoot(HKEY root) {
+  if (root && std::find(g_roots.begin(), g_roots.end(), root) == g_roots.end()) {
+    g_roots.push_back(root);
+  }
+}
+
+void RemoveRoot(HKEY root) {
+  g_roots.erase(std::remove(g_roots.begin(), g_roots.end(), root), g_roots.end());
+}
+
 bool Owns(HKEY root) {
   return root &&
          std::find(g_roots.begin(), g_roots.end(), root) != g_roots.end();

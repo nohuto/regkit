@@ -6,12 +6,78 @@
 namespace regkit {
 using namespace window_detail;
 
+void MainWindow::Impl::RefreshTreePath(const std::wstring& path) {
+  RefreshTreeItem(FindTreeItem(path));
+}
+
+void MainWindow::Impl::RefreshMatchingTreeNodes() {
+  HWND tree = browse_.tree().hwnd();
+  HTREEITEM selected = tree ? TreeView_GetSelection(tree) : nullptr;
+  if (!selected) {
+    return;
+  }
+  auto label_of = [&](HTREEITEM item, wchar_t* buffer, int size) -> bool {
+    TVITEMW info = {};
+    info.hItem = item;
+    info.mask = TVIF_TEXT;
+    info.pszText = buffer;
+    info.cchTextMax = size;
+    return TreeView_GetItem(tree, &info) != FALSE && buffer[0] != 0;
+  };
+  wchar_t wanted[256] = {};
+  if (!label_of(selected, wanted, static_cast<int>(_countof(wanted)))) {
+    return;
+  }
+
+  std::vector<std::pair<int, HTREEITEM>> matches;
+  std::vector<std::pair<int, HTREEITEM>> pending;
+  if (HTREEITEM root = TreeView_GetRoot(tree)) {
+    pending.emplace_back(0, root);
+  }
+  while (!pending.empty()) {
+    const int depth = pending.back().first;
+    HTREEITEM item = pending.back().second;
+    pending.pop_back();
+    for (HTREEITEM child = TreeView_GetChild(tree, item); child;
+         child = TreeView_GetNextSibling(tree, child)) {
+      pending.emplace_back(depth + 1, child);
+    }
+    if (item == selected || !browse_.tree().NodeFromItem(item)) {
+      continue;
+    }
+    wchar_t text[256] = {};
+    if (label_of(item, text, static_cast<int>(_countof(text))) &&
+        _wcsicmp(text, wanted) == 0) {
+      matches.emplace_back(depth, item);
+    }
+  }
+
+  // Deepest first, so refreshing a shallower match cannot invalidate a
+  // handle that is still queued.
+  std::sort(matches.begin(), matches.end(),
+            [](const std::pair<int, HTREEITEM>& left,
+               const std::pair<int, HTREEITEM>& right) {
+              return left.first > right.first;
+            });
+  for (const auto& match : matches) {
+    const bool was_expanded =
+        (TreeView_GetItemState(tree, match.second, TVIS_EXPANDED) & TVIS_EXPANDED) != 0;
+    RefreshTreeItem(match.second);
+    if (!was_expanded) {
+      TreeView_Expand(tree, match.second, TVE_COLLAPSE);
+    }
+  }
+}
+
 void MainWindow::Impl::RefreshTreeSelection() {
   if (!browse_.tree().hwnd()) {
     return;
   }
-  HTREEITEM item = TreeView_GetSelection(browse_.tree().hwnd());
-  if (!item) {
+  RefreshTreeItem(TreeView_GetSelection(browse_.tree().hwnd()));
+}
+
+void MainWindow::Impl::RefreshTreeItem(HTREEITEM item) {
+  if (!browse_.tree().hwnd() || !item) {
     return;
   }
   RegistryNode* node = browse_.tree().NodeFromItem(item);
@@ -163,29 +229,33 @@ void MainWindow::Impl::ApplySavedWindowPlacement() {
                SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
-bool MainWindow::Impl::ExpandTreePath(const std::wstring& path) {
+HTREEITEM MainWindow::Impl::FindTreeItem(const std::wstring& path) {
   if (!browse_.tree().hwnd()) {
-    return false;
+    return nullptr;
   }
   std::vector<std::wstring> parts = BuildVisibleTreePathParts(path);
   if (parts.empty()) {
-    return false;
+    return nullptr;
   }
-  HTREEITEM root = TreeView_GetRoot(browse_.tree().hwnd());
-  HTREEITEM current = root;
+  HTREEITEM current = TreeView_GetRoot(browse_.tree().hwnd());
   for (const auto& part : parts) {
     TreeView_Expand(browse_.tree().hwnd(), current, TVE_EXPAND);
     HTREEITEM child = FindChildByText(browse_.tree().hwnd(), current, part);
     if (!child) {
-      return false;
+      return nullptr;
     }
     current = child;
   }
-  if (current) {
-    TreeView_Expand(browse_.tree().hwnd(), current, TVE_EXPAND);
-    return true;
+  return current;
+}
+
+bool MainWindow::Impl::ExpandTreePath(const std::wstring& path) {
+  HTREEITEM item = FindTreeItem(path);
+  if (!item) {
+    return false;
   }
-  return false;
+  TreeView_Expand(browse_.tree().hwnd(), item, TVE_EXPAND);
+  return true;
 }
 
 } // namespace regkit

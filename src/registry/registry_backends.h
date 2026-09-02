@@ -41,6 +41,8 @@ bool SaveHive(HKEY root, const std::wstring& path, std::wstring* error);
 bool CloseHive(HKEY root, std::wstring* error);
 void SetRoots(const std::vector<HKEY>& roots);
 bool Owns(HKEY root);
+void AddRoot(HKEY root);
+void RemoveRoot(HKEY root);
 
 bool HasSubKeys(const RegistryNode& node);
 bool QueryKeyInfo(const RegistryNode& node, KeyInfo* info);

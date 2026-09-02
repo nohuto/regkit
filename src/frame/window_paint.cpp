@@ -101,6 +101,7 @@ void MainWindow::Impl::ApplyThemeToChildren() {
   theme.ApplyToToolbar(toolbar_.hwnd());
   theme.ApplyToTreeView(browse_.tree().hwnd());
   theme.ApplyToListView(browse_.values().hwnd());
+  ApplyValueGridToolbarTheme();
   theme.ApplyToListView(history_list_);
   theme.ApplyToListView(search_results_list_);
   theme.ApplyToTabControl(tab_);

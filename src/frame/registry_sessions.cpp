@@ -153,6 +153,8 @@ void MainWindow::Impl::RefreshVisibleRegistryTreeLayout(bool preserve_selection)
     CaptureTreeState(&selected_path, &expanded_paths);
   }
 
+  browse_.set_current_node(nullptr);
+  browse_.values().Clear();
   browse_.tree().SetRegeditLayout(false);
   browse_.tree().SetRootLabel(TreeRootLabel());
   browse_.tree().PopulateRoots(browse_.roots());
@@ -754,9 +756,7 @@ void MainWindow::Impl::NavigateToAddress() {
         ui::ShowError(hwnd_, L"Failed to create registry key.");
         return;
       }
-      if (SelectTreePath(nearest)) {
-        RefreshTreeSelection();
-      }
+      RefreshTreePath(nearest);
       if (SelectTreePath(path)) {
         AddAddressHistory(path);
       }
@@ -855,6 +855,15 @@ bool MainWindow::Impl::NavigateToExternalJump(const std::wstring& target) {
     return false;
   }
   return NavigateToResolvedExternalJump(key_path, value_name);
+}
+
+bool MainWindow::Impl::SearchResultOpensInNewTab() const {
+  if (!tab_) {
+    return false;
+  }
+  const int index = SearchIndexFromTab(TabCtrl_GetCurSel(tab_));
+  return index >= 0 && static_cast<size_t>(index) < search_tabs_.size() &&
+         search_tabs_[static_cast<size_t>(index)].open_in_new_tab;
 }
 
 void MainWindow::Impl::ActivateRegistryTab() {

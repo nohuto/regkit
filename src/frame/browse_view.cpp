@@ -192,6 +192,7 @@ void MainWindow::Impl::ApplyValueColumns() {
       }
     }
     AttachHeader(header);
+    EnsureValueGridToolbar();
   }
   RefreshColumnLayout(list);
 }

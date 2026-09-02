@@ -34,6 +34,7 @@ struct SearchDialogResult {
   bool search_trace_values = true;
   SearchScope scope = SearchScope::kEntireRegistry;
   SearchResultMode result_mode = SearchResultMode::kNewTab;
+  bool open_in_new_tab = false;
 };
 
 bool ShowSearchDialog(HWND owner, SearchDialogResult* result, bool trace_available, bool registry_available);

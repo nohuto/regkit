@@ -6,6 +6,8 @@
 #include "appearance/gdi_cache.h"
 #include "appearance/theme.h"
 
+#include <algorithm>
+
 #include <commctrl.h>
 #include <uxtheme.h>
 #include <vsstyle.h>
@@ -37,7 +39,7 @@ HBRUSH ListSurfaceBrush(HWND header) {
 
 } // namespace
 
-void PaintListHeader(HWND header, HFONT font) {
+void PaintListHeader(HWND header, HFONT font, int reserved_right) {
   if (!header) {
     return;
   }
@@ -72,6 +74,11 @@ void PaintListHeader(HWND header, HFONT font) {
     arrow_size.cx = 8;
     arrow_size.cy = 8;
   }
+
+  const int content_right =
+      std::max(client.left, client.right - std::max(0, reserved_right));
+  const int saved_dc = SaveDC(hdc);
+  IntersectClipRect(hdc, client.left, client.top, content_right, client.bottom);
 
   const int count = Header_GetItemCount(header);
   for (int i = 0; i < count; ++i) {
@@ -119,6 +126,7 @@ void PaintListHeader(HWND header, HFONT font) {
     }
   }
 
+  RestoreDC(hdc, saved_dc);
   if (old_font) {
     SelectObject(hdc, old_font);
   }

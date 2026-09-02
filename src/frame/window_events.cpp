@@ -581,23 +581,30 @@ LRESULT CALLBACK MainWindow::Impl::BorderProc(HWND hwnd, UINT message, WPARAM wp
 
 LRESULT CALLBACK MainWindow::Impl::HeaderProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR, DWORD_PTR ref_data) {
   auto* self = reinterpret_cast<MainWindow::Impl*>(ref_data);
+  HWND value_header = self ? ListView_GetHeader(self->browse_.values().hwnd()) : nullptr;
+  const bool is_value_header = hwnd == value_header;
   if (message == WM_ERASEBKGND) {
     return 1;
   }
   if (message == WM_PAINT) {
-    appearance::PaintListHeader(hwnd, self ? self->ui_font_ : nullptr);
+    const int reserved = is_value_header ? self->ValueGridToggleWidth(hwnd) : 0;
+    appearance::PaintListHeader(hwnd, self ? self->ui_font_ : nullptr, reserved);
     return 0;
   }
+  if (message == WM_SIZE && is_value_header) {
+    self->LayoutValueGridToolbar();
+  }
+
   if (message == WM_THEMECHANGED) {
     appearance::ReleaseListHeaderTheme(hwnd);
     InvalidateRect(hwnd, nullptr, TRUE);
   }
   if (message == WM_NCDESTROY) {
     appearance::ReleaseListHeaderTheme(hwnd);
+
   }
   if (message == WM_CONTEXTMENU) {
     if (self) {
-      HWND value_header = ListView_GetHeader(self->browse_.values().hwnd());
       HWND history_header = ListView_GetHeader(self->history_list_);
       HWND search_header = ListView_GetHeader(self->search_results_list_);
       if (hwnd == value_header) {

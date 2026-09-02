@@ -72,8 +72,26 @@ Settings ParseSettings(const std::wstring& content, Settings settings) {
     settings.member = Boolean(value);     \
   }
     REGKIT_BOOL(L"clear_history_on_exit", clear_history_on_exit)
-    else REGKIT_BOOL(L"clear_tabs_on_exit", clear_tabs_on_exit) else REGKIT_BOOL(L"view_toolbar", show_toolbar) else REGKIT_BOOL(L"view_address_bar", show_address_bar) else REGKIT_BOOL(L"view_filter_bar", show_filter_bar) else REGKIT_BOOL(L"view_tab_control", show_tab_control) else REGKIT_BOOL(L"view_tree", show_tree) else REGKIT_BOOL(L"view_history", show_history) else REGKIT_BOOL(L"view_status_bar", show_status_bar) else REGKIT_BOOL(L"view_keys_in_list", show_keys_in_list) else REGKIT_BOOL(L"view_simulated_keys", show_simulated_keys) else REGKIT_BOOL(L"view_extra_hives", show_extra_hives) else REGKIT_BOOL(L"save_tree_state", save_tree_state) else REGKIT_BOOL(L"save_tabs", save_tabs) else REGKIT_BOOL(L"always_run_as_admin", always_run_as_admin) else REGKIT_BOOL(L"always_run_as_system", always_run_as_system) else REGKIT_BOOL(L"always_run_as_trustedinstaller",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     always_run_as_trustedinstaller) else REGKIT_BOOL(L"always_on_top", always_on_top) else REGKIT_BOOL(L"single_instance", single_instance) else REGKIT_BOOL(L"read_only", read_only)
+    else REGKIT_BOOL(L"clear_tabs_on_exit",             clear_tabs_on_exit)
+    else REGKIT_BOOL(L"view_toolbar",                   show_toolbar)
+    else REGKIT_BOOL(L"view_address_bar",               show_address_bar)
+    else REGKIT_BOOL(L"view_filter_bar",                show_filter_bar)
+    else REGKIT_BOOL(L"view_tab_control",               show_tab_control)
+    else REGKIT_BOOL(L"view_tree",                      show_tree)
+    else REGKIT_BOOL(L"view_history",                   show_history)
+    else REGKIT_BOOL(L"view_status_bar",                show_status_bar)
+    else REGKIT_BOOL(L"view_keys_in_list",              show_keys_in_list)
+    else REGKIT_BOOL(L"view_simulated_keys",            show_simulated_keys)
+    else REGKIT_BOOL(L"view_extra_hives",               show_extra_hives)
+    else REGKIT_BOOL(L"view_value_grid",                show_value_grid)
+    else REGKIT_BOOL(L"save_tree_state",                save_tree_state)
+    else REGKIT_BOOL(L"save_tabs",                      save_tabs)
+    else REGKIT_BOOL(L"always_run_as_admin",            always_run_as_admin)
+    else REGKIT_BOOL(L"always_run_as_system",           always_run_as_system)
+    else REGKIT_BOOL(L"always_run_as_trustedinstaller", always_run_as_trustedinstaller)
+    else REGKIT_BOOL(L"always_on_top",                  always_on_top)
+    else REGKIT_BOOL(L"single_instance",                single_instance)
+    else REGKIT_BOOL(L"read_only",                      read_only)
 #undef REGKIT_BOOL
         else if (_wcsicmp(key.c_str(), L"window_x") == 0) {
       settings.window_x = _wtoi(value.c_str());
@@ -192,6 +210,7 @@ std::wstring SerializeSettings(const Settings& settings) {
   BooleanLine(&content, L"view_simulated_keys",
               settings.show_simulated_keys);
   BooleanLine(&content, L"view_extra_hives", settings.show_extra_hives);
+  BooleanLine(&content, L"view_value_grid", settings.show_value_grid);
   BooleanLine(&content, L"save_tree_state", settings.save_tree_state);
   BooleanLine(&content, L"save_tabs", settings.save_tabs);
   BooleanLine(&content, L"always_run_as_admin",
