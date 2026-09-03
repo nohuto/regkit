@@ -1,4 +1,4 @@
-#define AppId "4678f42c-c6a2-4df9-bc2a-dddbd2613045"
+﻿#define AppId "4678f42c-c6a2-4df9-bc2a-dddbd2613045"
 #define AppName "RegKit"
 #define AppExeName "regkit.exe"
 #define AppVersion "0.0.0.7"
@@ -47,6 +47,7 @@ OutputBaseFilename=RegKit-Setup-{#AppVersion}-{#Arch}
 [Tasks]
 Name: "startmenu"; Description: "Start Menu shortcut"; GroupDescription: "Shortcuts:"; Flags: checkedonce
 Name: "desktopicon"; Description: "Desktop shortcut"; GroupDescription: "Shortcuts:"
+Name: "replace_regedit"; Description: "Replace Regedit"; GroupDescription: "Integration:"; Check: IsAdminInstallMode
 
 [Files]
 Source: "{#BuildDir}\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
@@ -58,6 +59,9 @@ Source: "{#BuildDir}\records\25H2.txt"; DestDir: "{app}\records"; Flags: ignorev
 [Icons]
 Name: "{autoprograms}\RegKit\RegKit"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: startmenu
 Name: "{autodesktop}\RegKit"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+
+[Registry]
+Root: HKLM; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\regedit.exe"; ValueType: string; ValueName: "Debugger"; ValueData: """{app}\{#AppExeName}"""; Flags: uninsdeletevalue uninsdeletekeyifempty; Tasks: replace_regedit
 
 [Code]
 const
