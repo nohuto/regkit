@@ -143,7 +143,7 @@ constexpr int kDefaultBundledBase = 2740;
 constexpr int kDefaultBundledMax = 2759;
 
 constexpr int kResearchItemBase = 2760;
-constexpr int kResearchItemMax = 2778;
+constexpr int kResearchItemMax = 2781;
 
 constexpr int kHeaderSizeToFit = 4000;
 constexpr int kHeaderSizeAll = 4001;

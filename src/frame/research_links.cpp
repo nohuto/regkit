@@ -11,7 +11,7 @@
 namespace regkit::frame {
 namespace {
 
-constexpr std::array<ResearchLink, 19> kLinks = {{
+constexpr std::array<ResearchLink, 22> kLinks = {{
     {L"Capture Table", L"https://noverse.dev/docs/regkit/overview/#capture-table", true},
     {L"MMCSS Values", L"https://noverse.dev/docs/win-config/system/mmcss-values/#registry-values"},
     {L"DWM Values", L"https://noverse.dev/docs/win-config/system/dwm-values/#registry-values"},
@@ -21,6 +21,9 @@ constexpr std::array<ResearchLink, 19> kLinks = {{
     {L"Accessibility Values", L"https://noverse.dev/docs/win-config/system/disable-accessibility-features/#systemsettings-captures"},
     {L"Explorer Values", L"https://noverse.dev/docs/win-config/visibility/explorer-options/#explorer-captures"},
     {L"Taskbar Values", L"https://noverse.dev/docs/win-config/visibility/taskbar-settings/#systemsettings-captures"},
+    {L"UserPreferenceMask Bitmask", L"https://noverse.dev/docs/win-config/visibility/minimal-visual-effects/#userpreferencesmask"},
+    {L"DiagnosticDataSettings Values", L"https://noverse.dev/docs/win-config/privacy/disable-general-telemetry/#diagnosticdatasettings-values"},
+    {L"SubscribedContent IDs", L"https://noverse.dev/docs/win-config/privacy/disable-suggestions-tips-tricks/#subscribedcontent-ids"},
     {L"Mouse Values", L"https://noverse.dev/docs/win-config/peripheral/mouse-values/#rawmousethrottle-details"},
     {L"USBFLAGS Values", L"https://www.noverse.dev/docs/win-config/peripheral/usbflags-values/#registry-values"},
     {L"USB Values", L"https://www.noverse.dev/docs/win-config/peripheral/usb-values/#registry-values"},
