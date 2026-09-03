@@ -161,14 +161,11 @@ std::wstring ReadFontSubstitute(const wchar_t* value_name) {
 LOGFONTW DefaultUIFontLogFont() {
   LOGFONTW lf = {};
   HFONT stock = static_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT));
-  if (stock) {
-    GetObjectW(stock, sizeof(lf), &lf);
-  }
-  if (lf.lfHeight == 0) {
-    lf.lfHeight = appearance::FontHeight(9);
+  if (!stock || GetObjectW(stock, sizeof(lf), &lf) == 0) {
     lf.lfWeight = FW_NORMAL;
     lf.lfCharSet = DEFAULT_CHARSET;
   }
+  lf.lfHeight = appearance::FontHeight(9);
   std::wstring default_face = ReadFontSubstitute(L"Segoe UI");
   if (default_face.empty()) {
     default_face = L"Segoe UI";

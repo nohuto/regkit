@@ -33,6 +33,7 @@ RegKit adds functionality that standard regedit doesn't support/expose:
 - Simulated keys toggle (from traces)
 - Compare Registries (compare two registry sources or `.reg` files and see differences)
 - `.reg` / hive file/folder drag and drop support
+- Read only mode
 - Miscellaneous common functionalities
 
 ## Command Line
