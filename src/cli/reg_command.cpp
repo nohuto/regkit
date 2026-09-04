@@ -970,7 +970,10 @@ int CmdRestore(const std::vector<std::wstring>& args) {
   if (!ParseKey(positional[0], &key)) {
     return kFailed;
   }
-  EnablePrivilege(SE_RESTORE_NAME);
+  if (!EnablePrivilege(SE_RESTORE_NAME) ||
+      !EnablePrivilege(SE_BACKUP_NAME)) {
+    return Fail(ERROR_PRIVILEGE_NOT_HELD);
+  }
   HKEY handle = nullptr;
   LONG status = OpenKey(key, KEY_WRITE, options.view, &handle);
   if (status != ERROR_SUCCESS) {

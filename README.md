@@ -61,7 +61,7 @@ Using `reg` here is optional, means both `regkit reg query` & `regkit query` wor
 | `export <key> <file.reg> [/y]` | `/y` overwrites an existing file |
 | `import <file.reg>` | |
 | `save <key> <file.hiv> [/y]` | Needs the backup privilege |
-| `restore <key> <file.hiv>` | Needs the restore privilege |
+| `restore <key> <file.hiv>` | Needs the restore & backup privileges |
 | `load <key> <file.hiv>` / `unload <key>` | Mounts/releases a hive file |
 | `compare <key1> <key2> [/s]` | Exit code `0` = identical, `2` = different |
 | `/reg:32` `/reg:64` | Selects the 32/64 bit registry view |
