@@ -482,6 +482,8 @@ LRESULT CALLBACK MainWindow::Impl::ListViewProc(HWND hwnd, UINT message, WPARAM 
         note->hwndFrom == ListView_GetHeader(hwnd)) {
       auto* draw = reinterpret_cast<NMCUSTOMDRAW*>(lparam);
       if (draw->dwDrawStage == CDDS_PREPAINT) {
+        FillRect(draw->hdc, &draw->rc,
+                 appearance::CachedBrush(ListView_GetBkColor(hwnd)));
         return CDRF_NOTIFYITEMDRAW;
       }
       if (draw->dwDrawStage == CDDS_ITEMPREPAINT &&

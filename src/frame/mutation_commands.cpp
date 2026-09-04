@@ -317,6 +317,9 @@ bool MainWindow::Impl::HandleModifyCommand(int command_id) {
       }
       new_data = std::move(result.data);
     }
+    if (new_data == entry.data) {
+      return true;
+    }
     if (!RegistryStore::SetValue(*browse_.current_node(), entry.name, entry.type, new_data)) {
       ui::ShowError(hwnd_, L"Failed to update value.");
     } else {

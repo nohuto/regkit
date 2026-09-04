@@ -24,15 +24,10 @@ constexpr UINT_PTR kMultilineSubclassId = 1;
 
 LRESULT CALLBACK MultilineProc(HWND window, UINT message, WPARAM wparam,
                                LPARAM lparam, UINT_PTR, DWORD_PTR) {
-  if (message == WM_KEYDOWN && wparam == VK_RETURN &&
-      (GetKeyState(VK_SHIFT) & 0x8000)) {
-    const LONG_PTR style = GetWindowLongPtrW(window, GWL_STYLE);
-    if ((style & ES_MULTILINE) && (style & ES_WANTRETURN) && !(style & ES_READONLY)) {
-      SendMessageW(window, EM_REPLACESEL, TRUE,
-                   reinterpret_cast<LPARAM>(L"\r\n"));
-      return 0;
-    }
-  } else if (message == WM_NCDESTROY) {
+  if (message == WM_GETDLGCODE && wparam == VK_RETURN) {
+    return DefSubclassProc(window, message, wparam, lparam) | DLGC_WANTMESSAGE;
+  }
+  if (message == WM_NCDESTROY) {
     RemoveWindowSubclass(window, MultilineProc, kMultilineSubclassId);
   }
   return DefSubclassProc(window, message, wparam, lparam);

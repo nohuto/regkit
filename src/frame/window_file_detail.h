@@ -234,10 +234,6 @@ inline std::wstring GetDefaultRegeditPath() {
     return L"";
   }
   windows_dir.resize(written);
-  BOOL wow64 = FALSE;
-  if (IsWow64Process(GetCurrentProcess(), &wow64) && wow64) {
-    return util::JoinPath(util::JoinPath(windows_dir, L"Sysnative"), L"regedt32.exe");
-  }
   return util::JoinPath(windows_dir, L"regedit.exe");
 }
 

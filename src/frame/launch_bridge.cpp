@@ -12,6 +12,10 @@ void MainWindow::Impl::ShowPermissionsDialog(const RegistryNode& node) {
 
 namespace {
 
+constexpr wchar_t kRegeditImageOptionsKey[] =
+    L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution "
+    L"Options\\regedit.exe";
+
 bool BeginRestart(HWND owner, const wchar_t* target_arg, const wchar_t* failure) {
   const std::wstring exe_path = util::GetModulePath();
   if (exe_path.empty()) {
@@ -86,7 +90,7 @@ void MainWindow::Impl::SyncReplaceRegeditState() {
   }
 
   HKEY base = nullptr;
-  LONG result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\regedit.exe", 0, KEY_QUERY_VALUE, &base);
+  LONG result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, kRegeditImageOptionsKey, 0, KEY_QUERY_VALUE, &base);
   if (result != ERROR_SUCCESS) {
     replace_regedit_ = false;
     return;
@@ -216,9 +220,40 @@ bool MainWindow::Impl::OpenDefaultRegedit() {
     ui::ShowError(hwnd_, L"Failed to locate the default Regedit executable.");
     return false;
   }
+  HKEY hijack = nullptr;
+  std::wstring debugger;
+  DWORD debugger_type = REG_SZ;
+  if (replace_regedit_ &&
+      RegOpenKeyExW(HKEY_LOCAL_MACHINE, kRegeditImageOptionsKey, 0,
+                    KEY_QUERY_VALUE | KEY_SET_VALUE, &hijack) == ERROR_SUCCESS) {
+    DWORD size = 0;
+    if (RegQueryValueExW(hijack, L"Debugger", nullptr, &debugger_type, nullptr,
+                         &size) == ERROR_SUCCESS &&
+        size > 0) {
+      debugger.resize(size / sizeof(wchar_t));
+      if (RegQueryValueExW(hijack, L"Debugger", nullptr, &debugger_type,
+                           reinterpret_cast<LPBYTE>(MutableData(debugger)),
+                           &size) == ERROR_SUCCESS) {
+        while (!debugger.empty() && debugger.back() == L'\0') {
+          debugger.pop_back();
+        }
+        RegDeleteValueW(hijack, L"Debugger");
+      } else {
+        debugger.clear();
+      }
+    }
+  }
   const HRESULT hr = util::IsProcessElevated()
                          ? win32::ShellOpen(hwnd_, regedit_path.c_str())
                          : win32::LaunchElevated(hwnd_, regedit_path, L"");
+  if (hijack) {
+    if (!debugger.empty()) {
+      RegSetValueExW(hijack, L"Debugger", 0, debugger_type,
+                     reinterpret_cast<const BYTE*>(debugger.c_str()),
+                     static_cast<DWORD>((debugger.size() + 1) * sizeof(wchar_t)));
+    }
+    RegCloseKey(hijack);
+  }
   if (FAILED(hr)) {
     if (!win32::DialogCancelled(hr)) {
       ui::ShowError(hwnd_, win32::FormatDialogError(hr));

@@ -513,7 +513,18 @@ bool MainWindow::Impl::PaintHeaderItem(HWND header, NMCUSTOMDRAW* draw) {
   } else if (draw->uItemState & CDIS_HOT) {
     state = HIS_HOT;
   }
-  DrawThemeBackground(theme, draw->hdc, HP_HEADERITEM, state, &draw->rc, nullptr);
+  if (state == HIS_NORMAL) {
+    if (grid_line_color_ == CLR_INVALID) {
+      grid_line_color_ = HeaderDividerColor(header);
+    }
+    FillRect(draw->hdc, &draw->rc,
+             appearance::CachedBrush(ListView_GetBkColor(GetParent(header))));
+    RECT divider = {draw->rc.right - 1, draw->rc.top, draw->rc.right,
+                    draw->rc.bottom};
+    FillRect(draw->hdc, &divider, appearance::CachedBrush(grid_line_color_));
+  } else {
+    DrawThemeBackground(theme, draw->hdc, HP_HEADERITEM, state, &draw->rc, nullptr);
+  }
 
   wchar_t text[128] = {};
   HDITEMW item = {};

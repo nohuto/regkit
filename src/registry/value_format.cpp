@@ -114,7 +114,7 @@ std::wstring Data(DWORD type, const BYTE* data, DWORD size) {
         break;
       }
       if (!joined.empty()) {
-        joined += L"; ";
+        joined += L' ';
       }
       joined.append(current, length);
       current += length + 1;
@@ -258,10 +258,8 @@ std::vector<BYTE> MultiStringData(const std::vector<std::wstring>& items) {
 std::wstring MultiStringText(const std::vector<BYTE>& data) {
   std::wstring text;
   for (const auto& item : MultiStringItems(data)) {
-    if (!text.empty()) {
-      text += L"\r\n";
-    }
     text += item;
+    text += L"\r\n";
   }
   return text;
 }
@@ -274,7 +272,9 @@ std::vector<BYTE> MultiStringData(std::wstring_view lines) {
     if (end == std::wstring_view::npos) {
       end = lines.size();
     }
-    items.emplace_back(lines.substr(start, end - start));
+    if (end > start) {
+      items.emplace_back(lines.substr(start, end - start));
+    }
     if (end == lines.size()) {
       break;
     }
