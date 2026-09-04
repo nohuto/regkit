@@ -159,36 +159,6 @@ bool MainWindow::Impl::RevertHistoryEntry(const HistoryEntry& entry) {
   return true;
 }
 
-bool MainWindow::Impl::EnsureSearchResultDataLoaded(search::Result* result) {
-  if (!result || result->is_key || result->data_loaded) {
-    return true;
-  }
-  result->data_loaded = true;
-
-  RegistryNode node;
-  if (!ResolvePathToNode(result->key_path, &node)) {
-    result->data.clear();
-    return false;
-  }
-
-  ValueEntry entry;
-  if (!RegistryStore::QueryValue(node, result->value_name, &entry)) {
-    result->data.clear();
-    return false;
-  }
-
-  result->type = entry.type;
-  result->type_text = value_format::TypeName(entry.type);
-  result->size_text = std::to_wstring(entry.data.size());
-  constexpr size_t kMaxDisplaySize = 1024 * 1024;
-  if (entry.data.size() > kMaxDisplaySize) {
-    result->data.clear();
-    return true;
-  }
-  result->data = value_format::DisplayData(entry.type, entry.data.data(), static_cast<DWORD>(entry.data.size()));
-  return true;
-}
-
 void MainWindow::Impl::AppendHistoryCache(const HistoryEntry& entry) {
   changes::AppendHistoryFile(HistoryCachePath(), entry);
 }
@@ -247,21 +217,57 @@ bool MainWindow::Impl::EnsureSearchTabResultsLoaded(int search_index) {
     return true;
   }
 
-  std::wstring result_path = SearchTabCachePath(tab.cache_file);
-  std::vector<search::Result> loaded_results;
-  bool ok = search::LoadResults(result_path, &loaded_results);
-  if (!ok) {
-    tab.results.clear();
+  // Reading, parsing and sorting a saved tab happens on a worker.
+  if (tab.load_pending) {
     return false;
   }
-  tab.results = std::move(loaded_results);
-  if (tab.sort_column >= 0) {
-    search::SortResults(&tab.results, tab.sort_column,
-                        tab.sort_ascending, tab.is_compare);
+  tab.load_pending = true;
+  StartSearchTabLoadWorker();
+  auto task = std::make_unique<SearchTabLoadTask>();
+  task->generation = ++search_tab_load_generation_;
+  task->tab_index = search_index;
+  task->path = SearchTabCachePath(tab.cache_file);
+  task->sort_column = tab.sort_column;
+  task->sort_ascending = tab.sort_ascending;
+  task->hwnd = hwnd_;
+  tab.load_generation = task->generation;
+  // A displaced request never runs, so its tab must be able to ask again.
+  std::unique_ptr<SearchTabLoadTask> displaced =
+      search_tab_loader_.Submit(std::move(task));
+  if (displaced && displaced->tab_index >= 0 &&
+      static_cast<size_t>(displaced->tab_index) < search_tabs_.size()) {
+    SearchTab& stale = search_tabs_[static_cast<size_t>(displaced->tab_index)];
+    if (stale.load_generation == displaced->generation) {
+      stale.load_pending = false;
+    }
+  }
+  return false;
+}
+
+void MainWindow::Impl::ApplySearchTabLoad(SearchTabLoadPayload* payload) {
+  if (!payload) {
+    return;
+  }
+  std::unique_ptr<SearchTabLoadPayload> owned(payload);
+  if (owned->tab_index < 0 ||
+      static_cast<size_t>(owned->tab_index) >= search_tabs_.size()) {
+    return;
+  }
+  SearchTab& tab = search_tabs_[static_cast<size_t>(owned->tab_index)];
+  if (tab.load_generation != owned->generation) {
+    return;
+  }
+  tab.load_pending = false;
+  tab.results = std::move(owned->rows);
+  for (auto& row : tab.results) {
+    row.row_id = tab.next_row_id++;
   }
   tab.sort_dirty = false;
   tab.results_loaded = true;
-  return true;
+  if (SearchIndexFromTab(TabCtrl_GetCurSel(tab_)) == owned->tab_index) {
+    UpdateSearchResultsView();
+    UpdateStatus();
+  }
 }
 
 void MainWindow::Impl::ClearTabsCache() {
@@ -552,7 +558,8 @@ void MainWindow::Impl::RefreshValueListComments() {
   if (browse_.values().HasFilter()) {
     browse_.values().RebuildFilter();
   } else if (changed && browse_.values().hwnd()) {
-    InvalidateRect(browse_.values().hwnd(), nullptr, TRUE);
+    RedrawWindow(browse_.values().hwnd(), nullptr, nullptr,
+                 RDW_INVALIDATE | RDW_NOERASE);
   }
 }
 

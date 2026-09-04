@@ -935,7 +935,7 @@ LRESULT CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
       if (SendMessageW(state->exclude_enable, BM_GETCHECK, 0, 0) == BST_CHECKED) {
         wchar_t buffer[512] = {};
         GetWindowTextW(state->exclude_edit, buffer, static_cast<int>(_countof(buffer)));
-        result.exclude_paths = SplitExcludePaths(buffer);
+        result.criteria.exclude_paths = SplitExcludePaths(buffer);
       }
 
       result.root_paths.clear();

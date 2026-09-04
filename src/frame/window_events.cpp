@@ -228,10 +228,30 @@ bool MainWindow::Impl::TranslateAccelerator(const MSG& msg) {
       case 'N':
         OpenLocalRegistryTab();
         return true;
+      case 'R':
+        HandleMenuCommand(cmd::kRegistryNetwork);
+        return true;
+      case 'O':
+        HandleMenuCommand(cmd::kRegistryOffline);
+        return true;
       }
     }
 
     if (!ctrl && !alt) {
+      if (msg.wParam == VK_TAB && !focus_edit) {
+        HWND tree = browse_.tree().hwnd();
+        HWND values = browse_.values().hwnd();
+        const bool tree_ready = tree && IsWindowVisible(tree);
+        const bool values_ready = values && IsWindowVisible(values);
+        HWND next = (focus == values && tree_ready) ? tree
+                    : values_ready                  ? values
+                    : tree_ready                    ? tree
+                                                    : nullptr;
+        if (next) {
+          SetFocus(next);
+          return true;
+        }
+      }
       if (msg.wParam == VK_DELETE && !focus_edit) {
         HandleMenuCommand(cmd::kEditDelete);
         return true;
@@ -448,6 +468,38 @@ LRESULT CALLBACK MainWindow::Impl::TabProc(HWND hwnd, UINT message, WPARAM wpara
 
 LRESULT CALLBACK MainWindow::Impl::ListViewProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR, DWORD_PTR ref_data) {
   auto* self = reinterpret_cast<MainWindow::Impl*>(ref_data);
+  // The list view keeps its header's custom draw; it is reflected here so the
+  // item text can follow the application palette.
+  if (message == WM_NOTIFY && self) {
+    auto* note = reinterpret_cast<NMHDR*>(lparam);
+    if (note && note->code == NM_CUSTOMDRAW &&
+        note->hwndFrom == ListView_GetHeader(hwnd)) {
+      auto* draw = reinterpret_cast<NMCUSTOMDRAW*>(lparam);
+      if (draw->dwDrawStage == CDDS_PREPAINT) {
+        return CDRF_NOTIFYITEMDRAW;
+      }
+      if (draw->dwDrawStage == CDDS_ITEMPREPAINT &&
+          self->PaintHeaderItem(note->hwndFrom, draw)) {
+        return CDRF_SKIPDEFAULT;
+      }
+      return CDRF_DODEFAULT;
+    }
+  }
+  if (message == WM_MOUSEMOVE && self && self->value_tooltip_ &&
+      hwnd == self->browse_.values().hwnd()) {
+    LVHITTESTINFO hit = {};
+    hit.pt.x = GET_X_LPARAM(lparam);
+    hit.pt.y = GET_Y_LPARAM(lparam);
+    const int item = ListView_SubItemHitTest(hwnd, &hit);
+    if (item != self->value_tip_item_ || hit.iSubItem != self->value_tip_subitem_) {
+      const bool same_cell = item == self->value_tip_item_;
+      self->value_tip_item_ = item;
+      self->value_tip_subitem_ = hit.iSubItem;
+      if (!same_cell) {
+        SendMessageW(self->value_tooltip_, TTM_POP, 0, 0);
+      }
+    }
+  }
   if (message == WM_LBUTTONDOWN && self && hwnd == self->browse_.values().hwnd()) {
     POINT pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
     LVHITTESTINFO hit = {};
@@ -579,64 +631,35 @@ LRESULT CALLBACK MainWindow::Impl::BorderProc(HWND hwnd, UINT message, WPARAM wp
   return result;
 }
 
-LRESULT CALLBACK MainWindow::Impl::HeaderProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR, DWORD_PTR ref_data) {
+LRESULT CALLBACK MainWindow::Impl::HeaderProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data) {
   auto* self = reinterpret_cast<MainWindow::Impl*>(ref_data);
   HWND value_header = self ? ListView_GetHeader(self->browse_.values().hwnd()) : nullptr;
-  const bool is_value_header = hwnd == value_header;
-  if (message == WM_ERASEBKGND) {
-    return 1;
-  }
-  if (message == WM_PAINT) {
-    const int reserved = is_value_header ? self->ValueGridToggleWidth(hwnd) : 0;
-    appearance::PaintListHeader(hwnd, self ? self->ui_font_ : nullptr, reserved);
-    return 0;
-  }
-  if (message == WM_SIZE && is_value_header) {
+  if (message == WM_SIZE && hwnd == value_header) {
     self->LayoutValueGridToolbar();
   }
-
-  if (message == WM_THEMECHANGED) {
-    appearance::ReleaseListHeaderTheme(hwnd);
-    InvalidateRect(hwnd, nullptr, TRUE);
-  }
   if (message == WM_NCDESTROY) {
-    appearance::ReleaseListHeaderTheme(hwnd);
-
+    RemoveWindowSubclass(hwnd, HeaderProc, subclass_id);
   }
   if (message == WM_CONTEXTMENU) {
     if (self) {
       HWND history_header = ListView_GetHeader(self->history_list_);
       HWND search_header = ListView_GetHeader(self->search_results_list_);
+      POINT screen_pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
+      if (screen_pt.x == -1 && screen_pt.y == -1) {
+        RECT rect = {};
+        GetWindowRect(hwnd, &rect);
+        screen_pt.x = rect.left + 12;
+        screen_pt.y = rect.bottom - 4;
+      }
       if (hwnd == value_header) {
-        POINT screen_pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
-        if (screen_pt.x == -1 && screen_pt.y == -1) {
-          RECT rect = {};
-          GetWindowRect(hwnd, &rect);
-          screen_pt.x = rect.left + 12;
-          screen_pt.y = rect.bottom - 4;
-        }
         self->ShowValueHeaderMenu(screen_pt);
         return 0;
       }
       if (hwnd == history_header) {
-        POINT screen_pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
-        if (screen_pt.x == -1 && screen_pt.y == -1) {
-          RECT rect = {};
-          GetWindowRect(hwnd, &rect);
-          screen_pt.x = rect.left + 12;
-          screen_pt.y = rect.bottom - 4;
-        }
         self->ShowHistoryHeaderMenu(screen_pt);
         return 0;
       }
       if (hwnd == search_header) {
-        POINT screen_pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
-        if (screen_pt.x == -1 && screen_pt.y == -1) {
-          RECT rect = {};
-          GetWindowRect(hwnd, &rect);
-          screen_pt.x = rect.left + 12;
-          screen_pt.y = rect.bottom - 4;
-        }
         self->ShowSearchHeaderMenu(screen_pt);
         return 0;
       }

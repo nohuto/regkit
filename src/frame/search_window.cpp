@@ -127,7 +127,7 @@ void MainWindow::Impl::UpdateStatus() {
     int tab_index = SearchIndexFromTab(sel);
     size_t count = 0;
     if (tab_index >= 0 && static_cast<size_t>(tab_index) < search_tabs_.size()) {
-      count = search_tabs_[static_cast<size_t>(tab_index)].results.size();
+      count = SearchRowCount(tab_index);
     }
     unsigned long long count_value = static_cast<unsigned long long>(count);
     wchar_t buffer[256] = {};
@@ -336,16 +336,13 @@ void MainWindow::Impl::UpdateSearchResultsView() {
     tab.sort_column = -1;
   }
   UpdateListViewSort(search_results_list_, tab.sort_column, tab.sort_ascending);
-  HWND header = ListView_GetHeader(search_results_list_);
-  if (header) {
-    InvalidateRect(header, nullptr, TRUE);
-  }
-  size_t count = tab.results.size();
+  size_t count = compare ? tab.compare_rows.size() : tab.results.size();
   size_t old_count = tab.last_ui_count;
   if (force_redraw || count != old_count) {
     ListView_SetItemCountEx(search_results_list_, static_cast<int>(count), LVSICF_NOINVALIDATEALL | LVSICF_NOSCROLL);
     if (force_redraw || count < old_count) {
-      InvalidateRect(search_results_list_, nullptr, TRUE);
+      RedrawWindow(search_results_list_, nullptr, nullptr,
+                   RDW_INVALIDATE | RDW_NOERASE);
     } else if (count > old_count) {
       int first = static_cast<int>(old_count);
       int last = static_cast<int>(count - 1);
@@ -361,9 +358,13 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
     return;
   }
 
-  bool matcher_ok = true;
-  TextMatcher matcher(options.criteria.query, options.criteria.use_regex, options.criteria.match_case, options.criteria.match_whole, &matcher_ok);
-  if (!matcher_ok) {
+  search::TextOptions match_options;
+  match_options.query = options.criteria.query;
+  match_options.match_case = options.criteria.match_case;
+  match_options.match_whole = options.criteria.match_whole;
+  match_options.use_regex = options.criteria.use_regex;
+  auto matcher = std::make_shared<const search::Matcher>(match_options);
+  if (!matcher->valid()) {
     ui::ShowError(hwnd_, L"Invalid regex.");
     return;
   }
@@ -467,7 +468,6 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
 
   search::Criteria criteria = options.criteria;
   criteria.start_nodes = start_nodes;
-  criteria.exclude_paths = options.exclude_paths;
 
   std::wstring label = L"Find";
   if (!criteria.query.empty()) {
@@ -532,7 +532,9 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
   search_posted_.store(false);
   {
     std::lock_guard<std::mutex> lock(search_mutex_);
-    std::vector<PendingSearchResult>().swap(search_pending_);
+    search_pending_batches_.clear();
+    search_pending_rows_ = 0;
+    search_producer_done_ = false;
   }
   search_last_refresh_tick_ = 0;
   search_start_tick_ = GetTickCount64();
@@ -549,7 +551,18 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
   UpdateStatus();
 
   std::vector<ActiveTrace> traces = active_traces_;
-  std::vector<std::wstring> exclude_paths = options.exclude_paths;
+  switch (registry_mode_) {
+  case RegistryMode::kRemote:
+    criteria.provider = search::Provider::kRemote;
+    break;
+  case RegistryMode::kOffline:
+    criteria.provider = search::Provider::kOffline;
+    break;
+  default:
+    criteria.provider = search::Provider::kLocal;
+    break;
+  }
+  std::vector<std::wstring> exclude_paths = criteria.exclude_paths;
   std::wstring scope_lower = ToLower(scope_path);
   bool scope_recursive = criteria.recursive;
   bool trace_enabled = want_trace;
@@ -561,43 +574,53 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
           uint64_t generation, std::atomic_bool& cancel) mutable {
         auto should_stop = [&]() { return cancel.load(); };
 
-        std::vector<PendingSearchResult> batch;
-        batch.reserve(kSearchQueueBatch);
-        std::mutex batch_mutex;
-
-        auto flush = [&]() {
-          std::vector<PendingSearchResult> pending;
-          {
-            std::lock_guard<std::mutex> lock(batch_mutex);
-            if (batch.empty()) {
-              return;
-            }
-            pending.swap(batch);
+        // Whole batches cross the boundary; a row is moved exactly once.
+        auto publish_batch = [&](search::ResultBatch&& rows) -> bool {
+          if (rows.empty()) {
+            return !cancel.load();
           }
+          PendingSearchBatch pending;
+          pending.generation = generation;
+          pending.rows = std::move(rows);
+          const size_t added = pending.rows.size();
           {
-            std::lock_guard<std::mutex> lock(search_mutex_);
-            search_pending_.reserve(search_pending_.size() + pending.size());
-            for (auto& item : pending) {
-              search_pending_.push_back(std::move(item));
+            std::unique_lock<std::mutex> lock(search_mutex_);
+            // Backpressure: bound transient queue memory.
+            search_queue_space_.wait(lock, [&]() {
+              return cancel.load() ||
+                     search_pending_rows_ < kSearchPendingRowLimit;
+            });
+            if (cancel.load()) {
+              return false;
             }
+            search_pending_batches_.push_back(std::move(pending));
+            search_pending_rows_ += added;
           }
           if (!search_posted_.exchange(true)) {
-            PostMessageW(hwnd_, frame::message_id::kSearchResults, static_cast<WPARAM>(generation), 0);
+            if (!PostMessageW(hwnd_, frame::message_id::kSearchResults,
+                              static_cast<WPARAM>(generation), 0)) {
+              search_posted_.store(false);
+            }
+          }
+          return !cancel.load();
+        };
+
+        search::ResultBatch trace_batch;
+        trace_batch.reserve(kSearchQueueBatch);
+        auto queue_result = [&](search::Result&& result) {
+          trace_batch.push_back(std::move(result));
+          if (trace_batch.size() >= kSearchQueueBatch) {
+            publish_batch(std::move(trace_batch));
+            trace_batch.clear();
+            trace_batch.reserve(kSearchQueueBatch);
           }
         };
 
-        auto queue_result = [&](search::Result&& result) {
-          bool should_flush = false;
-          {
-            std::lock_guard<std::mutex> lock(batch_mutex);
-            PendingSearchResult pending;
-            pending.generation = generation;
-            pending.result = std::move(result);
-            batch.push_back(std::move(pending));
-            should_flush = batch.size() >= kSearchQueueBatch;
-          }
-          if (should_flush) {
-            flush();
+        auto flush = [&]() {
+          if (!trace_batch.empty()) {
+            publish_batch(std::move(trace_batch));
+            trace_batch.clear();
+            trace_batch.reserve(kSearchQueueBatch);
           }
         };
 
@@ -665,17 +688,19 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
               std::wstring key_name = registry_path::Leaf(key_path);
 
               if (criteria.search_keys) {
-                TextMatch match = matcher.Match(key_name);
+                const search::Match match = matcher->Find(key_name);
                 if (match.matched) {
                   search::Result result;
                   result.key_path = key_path;
-                  result.key_name = key_name;
-                  result.type_text = L"Trace Key";
-                  result.is_key = true;
-                  size_t path_start = key_path.size() >= key_name.size() ? key_path.size() - key_name.size() : 0;
+                  result.kind = search::ResultKind::kTraceKey;
+                  result.data_state = search::DataState::kNotApplicable;
+                  const size_t path_start = key_path.size() >= key_name.size()
+                                                ? key_path.size() - key_name.size()
+                                                : 0;
                   result.match_field = search::MatchField::kPath;
-                  result.match_start = static_cast<int>(path_start + match.start);
-                  result.match_length = static_cast<int>(match.length);
+                  result.match_start =
+                      static_cast<uint32_t>(path_start + match.start);
+                  result.match_length = static_cast<uint32_t>(match.length);
                   queue_result(std::move(result));
                 }
               }
@@ -693,21 +718,20 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
                                               value_lower)) {
                       continue;
                     }
-                    std::wstring display = value_name.empty() ? L"(Default)" : value_name;
-                    TextMatch match = matcher.Match(display);
+                    const std::wstring display =
+                        value_name.empty() ? std::wstring(L"(Default)") : value_name;
+                    const search::Match match = matcher->Find(display);
                     if (!match.matched) {
                       continue;
                     }
                     search::Result result;
                     result.key_path = key_path;
-                    result.key_name = key_name;
                     result.value_name = value_name;
-                    result.display_name = display;
-                    result.type_text = L"Trace Value";
-                    result.is_key = false;
+                    result.kind = search::ResultKind::kTraceValue;
+                    result.data_state = search::DataState::kNotApplicable;
                     result.match_field = search::MatchField::kName;
-                    result.match_start = static_cast<int>(match.start);
-                    result.match_length = static_cast<int>(match.length);
+                    result.match_start = static_cast<uint32_t>(match.start);
+                    result.match_length = static_cast<uint32_t>(match.length);
                     queue_result(std::move(result));
                   }
                 }
@@ -733,16 +757,15 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
               }
             }
           };
-          bool ok = search::Run(
+          const bool ok = search::Run(
               criteria, &cancel,
-              [&](search::Result&& result) -> bool {
+              [&](search::ResultBatch&& rows) -> bool {
                 if (should_stop()) {
                   return false;
                 }
-                queue_result(std::move(result));
-                return !should_stop();
+                return publish_batch(std::move(rows));
               },
-              progress_cb, false);
+              progress_cb);
           flush();
           if (!ok) {
             PostMessageW(hwnd_, frame::message_id::kSearchFailed, static_cast<WPARAM>(generation), 0);
@@ -751,7 +774,16 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
         }
 
         flush();
-        PostMessageW(hwnd_, frame::message_id::kSearchFinished, static_cast<WPARAM>(generation), 0);
+        {
+          std::lock_guard<std::mutex> lock(search_mutex_);
+          search_producer_done_ = true;
+        }
+        if (!search_posted_.exchange(true)) {
+          if (!PostMessageW(hwnd_, frame::message_id::kSearchResults,
+                            static_cast<WPARAM>(generation), 0)) {
+            search_posted_.store(false);
+          }
+        }
       });
   search_tabs_[static_cast<size_t>(search_index)].generation = generation;
 }
@@ -998,6 +1030,7 @@ void MainWindow::Impl::StopReplace() {
 void MainWindow::Impl::CancelSearch() {
   search_session_.CancelAndJoin();
   search_running_ = false;
+  search_preview_request_posted_ = false;
   search_start_tick_ = 0;
   search_duration_ms_ = 0;
   search_duration_valid_ = false;
@@ -1008,7 +1041,9 @@ void MainWindow::Impl::CancelSearch() {
   search_posted_.store(false);
   {
     std::lock_guard<std::mutex> lock(search_mutex_);
-    std::vector<PendingSearchResult>().swap(search_pending_);
+    search_pending_batches_.clear();
+    search_pending_rows_ = 0;
+    search_producer_done_ = false;
   }
   if (search_progress_) {
     SendMessageW(search_progress_, PBM_SETMARQUEE, FALSE, 0);

@@ -29,12 +29,7 @@ std::wstring ValueRowIdentity(const ListRow& row) {
 }
 
 std::wstring SearchResultIdentity(const search::Result& result) {
-  std::wstring key(1, result.is_key ? L'K' : L'V');
-  AppendIdentityPart(&key, result.key_path);
-  AppendIdentityPart(&key, result.value_name);
-  AppendIdentityPart(&key, result.display_name);
-  AppendIdentityPart(&key, result.type_text);
-  return key;
+  return std::to_wstring(result.row_id);
 }
 
 std::wstring HistoryEntryIdentity(const HistoryEntry& entry) {
@@ -97,7 +92,7 @@ void RestoreListSelection(HWND list, const StableListSelection& state,
   if (focused_index >= 0) {
     ListView_EnsureVisible(list, focused_index, FALSE);
   }
-  InvalidateRect(list, nullptr, TRUE);
+  RedrawWindow(list, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE);
 }
 
 } // namespace
@@ -158,11 +153,7 @@ void MainWindow::Impl::SortValueList(int column, bool toggle) {
     UpdateStatus();
   }
 
-  HWND header = ListView_GetHeader(browse_.values().hwnd());
-  if (header) {
-    UpdateListViewSort(browse_.values().hwnd(), browse_.columns().sort_column, browse_.columns().sort_ascending);
-    InvalidateRect(header, nullptr, TRUE);
-  }
+  UpdateListViewSort(browse_.values().hwnd(), browse_.columns().sort_column, browse_.columns().sort_ascending);
 }
 
 void MainWindow::Impl::SortHistoryList(int column, bool toggle) {
@@ -181,15 +172,11 @@ void MainWindow::Impl::SortHistoryList(int column, bool toggle) {
   }
 
   auto history_key_at = [this](int index) {
-    LVITEMW item = {};
-    item.mask = LVIF_PARAM;
-    item.iItem = index;
-    if (!ListView_GetItem(history_list_, &item) || item.lParam < 0 ||
-        static_cast<size_t>(item.lParam) >= change_history_.entries().size()) {
+    const auto& entries = change_history_.entries();
+    if (index < 0 || static_cast<size_t>(index) >= entries.size()) {
       return std::wstring();
     }
-    return HistoryEntryIdentity(
-        change_history_.entries()[static_cast<size_t>(item.lParam)]);
+    return HistoryEntryIdentity(entries[static_cast<size_t>(index)]);
   };
   StableListSelection selection =
       CaptureListSelection(history_list_, history_key_at);
@@ -197,11 +184,7 @@ void MainWindow::Impl::SortHistoryList(int column, bool toggle) {
   RebuildHistoryList();
   RestoreListSelection(history_list_, selection, history_key_at);
 
-  HWND header = ListView_GetHeader(history_list_);
-  if (header) {
-    UpdateListViewSort(history_list_, history_sort_column_, history_sort_ascending_);
-    InvalidateRect(header, nullptr, TRUE);
-  }
+  UpdateListViewSort(history_list_, history_sort_column_, history_sort_ascending_);
 }
 
 void MainWindow::Impl::SortSearchTabResults(SearchTab* tab) {
@@ -211,13 +194,29 @@ void MainWindow::Impl::SortSearchTabResults(SearchTab* tab) {
     }
     return;
   }
-  if (!tab->is_compare && tab->sort_column == 3) {
-    for (auto& result : tab->results) {
-      EnsureSearchResultDataLoaded(&result);
+  if (tab->is_compare) {
+    search::compare::SortRows(&tab->compare_rows, tab->sort_column,
+                              tab->sort_ascending);
+    tab->sort_dirty = false;
+    return;
+  }
+  // Sorting by Data needs values the scan deliberately left unresolved, so the
+  // hydrate-and-sort pass runs on a worker and publishes the ordered vector.
+  if (tab->sort_column == 3) {
+    bool unresolved = false;
+    for (const auto& result : tab->results) {
+      if (result.data_state == search::DataState::kNotLoaded) {
+        unresolved = true;
+        break;
+      }
+    }
+    if (unresolved) {
+      QueueSearchSort(tab);
+      tab->sort_dirty = false;
+      return;
     }
   }
-  search::SortResults(&tab->results, tab->sort_column,
-                      tab->sort_ascending, tab->is_compare);
+  search::SortResults(&tab->results, tab->sort_column, tab->sort_ascending);
   tab->sort_dirty = false;
 }
 
@@ -252,11 +251,7 @@ void MainWindow::Impl::SortSearchResults(int column, bool toggle) {
   SortSearchTabResults(&tab);
   RestoreListSelection(search_results_list_, selection, search_key_at);
   UpdateListViewSort(search_results_list_, tab.sort_column, tab.sort_ascending);
-  HWND header = ListView_GetHeader(search_results_list_);
-  if (header) {
-    InvalidateRect(header, nullptr, TRUE);
-  }
-  InvalidateRect(search_results_list_, nullptr, TRUE);
+  RedrawWindow(search_results_list_, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE);
 }
 
 void MainWindow::Impl::ClearHistoryItems(bool delete_cache) {
@@ -278,32 +273,13 @@ void MainWindow::Impl::RebuildHistoryList() {
   if (!history_list_) {
     return;
   }
-  SendMessageW(history_list_, WM_SETREDRAW, FALSE, 0);
-  ListView_DeleteAllItems(history_list_);
-
-  int index = 0;
-  for (const auto& entry : change_history_.entries()) {
-    LVITEMW item = {};
-    item.mask = LVIF_TEXT | LVIF_PARAM;
-    item.iItem = index;
-    item.pszText = const_cast<wchar_t*>(entry.time_text.c_str());
-    item.lParam = static_cast<LPARAM>(index);
-    int inserted = ListView_InsertItem(history_list_, &item);
-    if (inserted >= 0) {
-      ListView_SetItemText(history_list_, inserted, 1, const_cast<wchar_t*>(entry.action.c_str()));
-      ListView_SetItemText(history_list_, inserted, 2, const_cast<wchar_t*>(entry.old_data.c_str()));
-      ListView_SetItemText(history_list_, inserted, 3, const_cast<wchar_t*>(entry.new_data.c_str()));
-    }
-    ++index;
+  const int count = static_cast<int>(change_history_.entries().size());
+  ListView_SetItemCountEx(history_list_, count,
+                          LVSICF_NOINVALIDATEALL | LVSICF_NOSCROLL);
+  RedrawWindow(history_list_, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE);
+  if (history_sort_column_ == 0 && history_sort_ascending_ && count > 0) {
+    ListView_EnsureVisible(history_list_, count - 1, FALSE);
   }
-
-  SendMessageW(history_list_, WM_SETREDRAW, TRUE, 0);
-  if (history_sort_column_ == 0 && history_sort_ascending_ &&
-      ListView_GetItemCount(history_list_) > 0) {
-    ListView_EnsureVisible(history_list_, ListView_GetItemCount(history_list_) - 1,
-                           FALSE);
-  }
-  InvalidateRect(history_list_, nullptr, TRUE);
 }
 
 void MainWindow::Impl::ResetNavigationState() {

@@ -23,6 +23,56 @@ void ReportNameTaken(HWND owner, const wchar_t* message, const wchar_t* title,
   ui::PromptKeyChoice(owner, message, name, title, L"", L"", L"OK");
 }
 
+constexpr int kDividerProbeWidth = 32;
+constexpr int kDividerProbeHeight = 16;
+
+// The header part carries no divider colour property, so the theme draws one
+// item off-screen and its trailing edge pixel is the exact divider shade.
+COLORREF HeaderDividerColor(HWND header) {
+  COLORREF color = Theme::Current().BorderColor();
+  HTHEME theme = OpenThemeData(header, VSCLASS_HEADER);
+  if (!theme) {
+    return color;
+  }
+  HDC screen = GetDC(nullptr);
+  if (HDC mem = CreateCompatibleDC(screen)) {
+    if (HBITMAP bitmap =
+            CreateCompatibleBitmap(screen, kDividerProbeWidth, kDividerProbeHeight)) {
+      HGDIOBJ previous = SelectObject(mem, bitmap);
+      RECT probe = {0, 0, kDividerProbeWidth, kDividerProbeHeight};
+      if (SUCCEEDED(DrawThemeBackground(theme, mem, HP_HEADERITEM, HIS_NORMAL,
+                                        &probe, nullptr))) {
+        const COLORREF edge =
+            GetPixel(mem, kDividerProbeWidth - 1, kDividerProbeHeight / 2);
+        if (edge != CLR_INVALID) {
+          color = edge;
+        }
+      }
+      SelectObject(mem, previous);
+      DeleteObject(bitmap);
+    }
+    DeleteDC(mem);
+  }
+  ReleaseDC(nullptr, screen);
+  CloseThemeData(theme);
+  return color;
+}
+
+void FormatCellFileTime(const FILETIME& filetime, wchar_t* buffer, int capacity) {
+  buffer[0] = L'\0';
+  if (filetime.dwLowDateTime == 0 && filetime.dwHighDateTime == 0) {
+    return;
+  }
+  FILETIME local = {};
+  SYSTEMTIME st = {};
+  if (!FileTimeToLocalFileTime(&filetime, &local) ||
+      !FileTimeToSystemTime(&local, &st)) {
+    return;
+  }
+  swprintf_s(buffer, static_cast<size_t>(capacity), L"%d/%d/%d %d:%02d",
+             st.wMonth, st.wDay, st.wYear, st.wHour, st.wMinute);
+}
+
 } // namespace
 
 
@@ -31,7 +81,8 @@ LRESULT MainWindow::Impl::HandleNotification(LPARAM lparam) {
   if (!header) {
     return 0;
   }
-  if (header->code == TTN_GETDISPINFOW || header->code == TTN_NEEDTEXTW) {
+  if (header->code == TTN_GETDISPINFOW || header->code == TTN_NEEDTEXTW ||
+      header->code == TTN_SHOW) {
     return HandleTooltipNotification(header, lparam);
   }
   if (header->hwndFrom == toolbar_.hwnd() || header->hwndFrom == value_grid_toolbar_) {
@@ -60,9 +111,85 @@ LRESULT MainWindow::Impl::HandleNotification(LPARAM lparam) {
   return 0;
 }
 
+bool MainWindow::Impl::ValueCellTooltipText(std::wstring* out) {
+  HWND list = browse_.values().hwnd();
+  if (!out || !list) {
+    return false;
+  }
+  POINT pt = {};
+  GetCursorPos(&pt);
+  ScreenToClient(list, &pt);
+  LVHITTESTINFO hit = {};
+  hit.pt = pt;
+  const int item = ListView_SubItemHitTest(list, &hit);
+  if (item < 0) {
+    return false;
+  }
+  ListRow* row = browse_.values().MutableRowAt(item);
+  if (!row) {
+    return false;
+  }
+  const int subitem = MappedSubItem(value_column_subitems_, hit.iSubItem);
+  const std::wstring& text = ValueRowFieldText(*row, subitem);
+  RECT cell = {};
+  const bool measured =
+      hit.iSubItem == 0
+          ? ListView_GetItemRect(list, item, &cell, LVIR_LABEL) != FALSE
+          : ListView_GetSubItemRect(list, item, hit.iSubItem, LVIR_BOUNDS, &cell) != FALSE;
+  const int available = static_cast<int>(cell.right - cell.left) - kCellTooltipPadding;
+  if (!measured || text.empty() || available <= 0 ||
+      !CellTextIsClipped(list, text, available)) {
+    return false;
+  }
+  size_t limit = std::min(text.size(), kValueTooltipTextLimit);
+  size_t lines = 0;
+  for (size_t i = 0; i < limit; ++i) {
+    if (text[i] == L'\n' && ++lines == kValueTooltipLineLimit) {
+      limit = i;
+      break;
+    }
+  }
+  out->assign(text, 0, limit);
+  if (limit < text.size()) {
+    out->append(L"...");
+  }
+  return true;
+}
+
 LRESULT MainWindow::Impl::HandleTooltipNotification(NMHDR* header, LPARAM lparam) {
+  if (header->code == TTN_SHOW && header->hwndFrom == value_tooltip_) {
+    RECT tip = {};
+    POINT pt = {};
+    MONITORINFO monitor = {};
+    monitor.cbSize = sizeof(monitor);
+    if (!GetWindowRect(value_tooltip_, &tip) || !GetCursorPos(&pt) ||
+        !GetMonitorInfoW(MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST), &monitor)) {
+      return 0;
+    }
+    const int width = tip.right - tip.left;
+    const int height = tip.bottom - tip.top;
+    int x = pt.x + kValueTooltipCursorGap;
+    int y = pt.y + kValueTooltipCursorGap;
+    if (x + width > monitor.rcWork.right) {
+      x = std::max<LONG>(monitor.rcWork.left, pt.x - kValueTooltipCursorGap - width);
+    }
+    if (y + height > monitor.rcWork.bottom) {
+      y = std::max<LONG>(monitor.rcWork.top, pt.y - kValueTooltipCursorGap - height);
+    }
+    SetWindowPos(value_tooltip_, HWND_TOPMOST, x, y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE);
+    return TRUE;
+  }
   if (header->code == TTN_GETDISPINFOW || header->code == TTN_NEEDTEXTW) {
     auto* info = reinterpret_cast<LPTOOLTIPTEXTW>(lparam);
+    if (info && header->hwndFrom == value_tooltip_) {
+      value_tooltip_text_.clear();
+      if (ValueCellTooltipText(&value_tooltip_text_)) {
+        info->lpszText = value_tooltip_text_.data();
+      } else {
+        info->lpszText = const_cast<wchar_t*>(L"");
+      }
+      return 0;
+    }
     if (info) {
       int command_id = static_cast<int>(info->hdr.idFrom);
       std::wstring tip = CommandTooltipText(command_id);
@@ -335,8 +462,13 @@ LRESULT MainWindow::Impl::HandleHeaderNotification(NMHDR* header, LPARAM lparam)
       int subitem = GetListViewColumnSubItem(browse_.values().hwnd(), info->iItem);
       if (subitem >= 0 && static_cast<size_t>(subitem) < browse_.columns().widths.size()) {
         browse_.columns().widths[static_cast<size_t>(subitem)] = info->pitem->cxy;
-        SaveSettings();
+        if (header->code == HDN_ENDTRACKW || header->code == HDN_ENDTRACKA) {
+          SaveSettings();
+        }
       }
+      // The application owns the grid pixels, so the resized column has to be
+      // repainted; the control only refreshes what lies beyond its new edge.
+      InvalidateValueGridColumn(info->iItem);
     }
   }
   if (header->hwndFrom == history_header && (header->code == HDN_ENDTRACKW || header->code == HDN_ENDTRACKA || header->code == HDN_ITEMCHANGEDW || header->code == HDN_ITEMCHANGEDA)) {
@@ -359,32 +491,70 @@ LRESULT MainWindow::Impl::HandleHeaderNotification(NMHDR* header, LPARAM lparam)
       }
     }
   }
-  if (header->code == NM_CUSTOMDRAW) {
-    return CDRF_DODEFAULT;
-  }
   return 0;
 }
 
-const wchar_t* SearchRowText(const search::Result& result, int subitem) {
-  switch (subitem) {
-  case 0:
-    return result.key_path.c_str();
-  case 1:
-    return result.display_name.c_str();
-  case 2:
-    return result.type_text.c_str();
-  case 3:
-    return result.data.c_str();
-  case 4:
-    return result.size_text.c_str();
-  case 5:
-    return result.date_text.c_str();
-  default:
-    return L"";
+// The header draws its own text in a colour that follows neither the theme nor
+// the device context, so the item is redrawn here from the same theme parts.
+bool MainWindow::Impl::PaintHeaderItem(HWND header, NMCUSTOMDRAW* draw) {
+  HTHEME theme = OpenThemeData(header, VSCLASS_HEADER);
+  if (!theme) {
+    return false;
   }
+  int state = HIS_NORMAL;
+  if (draw->uItemState & CDIS_SELECTED) {
+    state = HIS_PRESSED;
+  } else if (draw->uItemState & CDIS_HOT) {
+    state = HIS_HOT;
+  }
+  DrawThemeBackground(theme, draw->hdc, HP_HEADERITEM, state, &draw->rc, nullptr);
+
+  wchar_t text[128] = {};
+  HDITEMW item = {};
+  item.mask = HDI_TEXT | HDI_FORMAT;
+  item.pszText = text;
+  item.cchTextMax = static_cast<int>(_countof(text));
+  Header_GetItem(header, static_cast<int>(draw->dwItemSpec), &item);
+
+  if (item.fmt & (HDF_SORTUP | HDF_SORTDOWN)) {
+    const int arrow_state = (item.fmt & HDF_SORTUP) ? HSAS_SORTEDUP : HSAS_SORTEDDOWN;
+    SIZE size = {};
+    if (SUCCEEDED(GetThemePartSize(theme, draw->hdc, HP_HEADERSORTARROW,
+                                   arrow_state, nullptr, TS_TRUE, &size))) {
+      RECT arrow = draw->rc;
+      arrow.bottom = arrow.top + size.cy;
+      DrawThemeBackground(theme, draw->hdc, HP_HEADERSORTARROW, arrow_state,
+                          &arrow, nullptr);
+    }
+  }
+
+  RECT text_rect = draw->rc;
+  text_rect.left += kHeaderTextPadding;
+  text_rect.right -= kHeaderTextPadding;
+  UINT format = DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS;
+  if (item.fmt & HDF_RIGHT) {
+    format |= DT_RIGHT;
+  } else if (item.fmt & HDF_CENTER) {
+    format |= DT_CENTER;
+  }
+  const int saved = SaveDC(draw->hdc);
+  SetBkMode(draw->hdc, TRANSPARENT);
+  SetTextColor(draw->hdc, Theme::Current().TextColor());
+  DrawTextW(draw->hdc, text, -1, &text_rect, format);
+  RestoreDC(draw->hdc, saved);
+  CloseThemeData(theme);
+  return true;
 }
 
 LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) {
+  if (header->hwndFrom == browse_.values().hwnd() &&
+      header->code == LVN_ODCACHEHINT) {
+    auto* hint = reinterpret_cast<NMLVCACHEHINT*>(lparam);
+    if (hint) {
+      QueueValuePreviews(hint->iFrom, hint->iTo);
+    }
+    return 0;
+  }
   if (header->hwndFrom == browse_.values().hwnd() && header->code == LVN_GETDISPINFOW) {
     auto* disp = reinterpret_cast<NMLVDISPINFOW*>(lparam);
     ListRow* mutable_row = browse_.values().MutableRowAt(disp->item.iItem);
@@ -402,52 +572,25 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
     }
     if (disp->item.mask & LVIF_TEXT) {
       const int subitem = MappedSubItem(value_column_subitems_, disp->item.iSubItem);
-      if (subitem == kValueColData && mutable_row) {
-        EnsureValueRowData(mutable_row);
+      if (subitem == kValueColData && mutable_row && !mutable_row->data_ready &&
+          !value_preview_request_posted_) {
+        value_preview_request_posted_ = true;
+        if (!PostMessageW(hwnd_, frame::message_id::kValuePreviewRequest,
+                          static_cast<WPARAM>(disp->item.iItem), 0)) {
+          value_preview_request_posted_ = false;
+        }
       }
-      const wchar_t* text = ValueRowFieldText(*row, subitem).c_str();
-      disp->item.pszText = const_cast<wchar_t*>(text);
+      const std::wstring& text = ValueRowFieldText(*row, subitem);
+      if (text.size() > kCellTextDrawLimit && disp->item.pszText &&
+          disp->item.cchTextMax > 0) {
+        lstrcpynW(disp->item.pszText, text.c_str(), disp->item.cchTextMax);
+      } else {
+        disp->item.pszText = const_cast<wchar_t*>(text.c_str());
+      }
     }
     if (disp->item.mask & LVIF_IMAGE) {
       disp->item.iImage = row->image_index;
     }
-    return 0;
-  }
-  if (header->hwndFrom == browse_.values().hwnd() && header->code == LVN_GETINFOTIPW) {
-    auto* tip = reinterpret_cast<NMLVGETINFOTIPW*>(lparam);
-    if (!tip || !tip->pszText || tip->cchTextMax <= 0) {
-      return 0;
-    }
-    tip->pszText[0] = L'\0';
-    HWND list = browse_.values().hwnd();
-    POINT pt = {};
-    GetCursorPos(&pt);
-    ScreenToClient(list, &pt);
-    LVHITTESTINFO hit = {};
-    hit.pt = pt;
-    if (ListView_SubItemHitTest(list, &hit) != tip->iItem) {
-      return 0;
-    }
-    ListRow* row = browse_.values().MutableRowAt(tip->iItem);
-    if (!row) {
-      return 0;
-    }
-    const int subitem = MappedSubItem(value_column_subitems_, hit.iSubItem);
-    if (subitem == kValueColData) {
-      EnsureValueRowData(row);
-    }
-    const std::wstring& text = ValueRowFieldText(*row, subitem);
-    RECT cell = {};
-    const bool measured =
-        hit.iSubItem == 0
-            ? ListView_GetItemRect(list, tip->iItem, &cell, LVIR_LABEL) != FALSE
-            : ListView_GetSubItemRect(list, tip->iItem, hit.iSubItem, LVIR_BOUNDS, &cell) != FALSE;
-    const int available = static_cast<int>(cell.right - cell.left) - kCellTooltipPadding;
-    if (!measured || text.empty() || available <= 0 ||
-        !CellTextIsClipped(list, text, available)) {
-      return 0;
-    }
-    lstrcpynW(tip->pszText, text.c_str(), tip->cchTextMax);
     return 0;
   }
   if (header->hwndFrom == browse_.values().hwnd() && header->code == LVN_BEGINLABELEDITW) {
@@ -607,30 +750,133 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
   }
 
   if (header->code == NM_CUSTOMDRAW) {
-    return HandleValueListCustomDraw(reinterpret_cast<NMLVCUSTOMDRAW*>(lparam));
+    auto* draw = reinterpret_cast<NMLVCUSTOMDRAW*>(lparam);
+    if (!draw) {
+      return CDRF_DODEFAULT;
+    }
+    switch (draw->nmcd.dwDrawStage) {
+    case CDDS_PREPAINT:
+      return show_value_grid_ ? (CDRF_NOTIFYITEMDRAW | CDRF_NOTIFYPOSTPAINT)
+                              : CDRF_NOTIFYITEMDRAW;
+    case CDDS_ITEMPREPAINT:
+      draw->nmcd.uItemState &= ~CDIS_FOCUS;
+      return show_value_grid_ ? CDRF_NOTIFYPOSTPAINT : CDRF_DODEFAULT;
+    case CDDS_ITEMPOSTPAINT: {
+      // Each row repaints its own lines, so a hover or a tracked column cannot
+      // leave a gap behind.
+      RECT row = {};
+      if (ListView_GetItemRect(browse_.values().hwnd(),
+                               static_cast<int>(draw->nmcd.dwItemSpec), &row,
+                               LVIR_BOUNDS)) {
+        PaintValueGridLines(draw->nmcd.hdc, row, row.bottom - 1, row.bottom - row.top);
+      }
+      return CDRF_DODEFAULT;
+    }
+    case CDDS_POSTPAINT:
+      PaintValueGridTail(draw->nmcd.hdc);
+      return CDRF_DODEFAULT;
+    default:
+      return CDRF_DODEFAULT;
+    }
   }
   return 0;
 }
 
-LRESULT MainWindow::Impl::HandleValueListCustomDraw(NMLVCUSTOMDRAW* draw) {
-  if (!draw) {
-    return CDRF_DODEFAULT;
+// comctl32 draws LVS_EX_GRIDLINES in COLOR_3DFACE, which no API can change, so
+// the grid is painted here in the list's own pass from the header geometry.
+void MainWindow::Impl::PaintValueGridLines(HDC hdc, const RECT& area,
+                                           int first_line_y, int row_height) {
+  HWND list = browse_.values().hwnd();
+  HWND header = list ? ListView_GetHeader(list) : nullptr;
+  if (!hdc || !header || area.top >= area.bottom) {
+    return;
   }
-  const DWORD stage = draw->nmcd.dwDrawStage;
-  if (stage == CDDS_PREPAINT) {
-    const LRESULT result =
-        ui::HandleThemedListViewCustomDraw(browse_.values().hwnd(), draw);
-    return show_value_grid_ ? result | CDRF_NOTIFYPOSTPAINT : result;
+  RECT header_rect = {};
+  if (!GetWindowRect(header, &header_rect)) {
+    return;
   }
-  if (stage == CDDS_POSTPAINT) {
-    if (show_value_grid_) {
-      ui::PaintThemedListViewGrid(browse_.values().hwnd(), draw->nmcd.hdc);
+  MapWindowPoints(nullptr, list, reinterpret_cast<POINT*>(&header_rect), 2);
+  RECT client = {};
+  GetClientRect(list, &client);
+  if (grid_line_color_ == CLR_INVALID) {
+    grid_line_color_ = HeaderDividerColor(header);
+  }
+  HBRUSH brush = appearance::CachedBrush(grid_line_color_);
+
+  const int count = Header_GetItemCount(header);
+  for (int i = 0; i < count; ++i) {
+    RECT item = {};
+    if (!Header_GetItemRect(header, i, &item)) {
+      continue;
     }
-    return CDRF_DODEFAULT;
+    const int x = header_rect.left + item.right - 1;
+    if (x < client.left || x >= client.right) {
+      continue;
+    }
+    RECT line = {x, area.top, x + 1, area.bottom};
+    FillRect(hdc, &line, brush);
   }
-  return ui::HandleThemedListViewCustomDraw(browse_.values().hwnd(), draw);
+
+  if (row_height <= 0) {
+    return;
+  }
+  for (int y = first_line_y; y < area.bottom; y += row_height) {
+    if (y < area.top) {
+      continue;
+    }
+    RECT line = {client.left, y, client.right, y + 1};
+    FillRect(hdc, &line, brush);
+  }
 }
 
+void MainWindow::Impl::InvalidateValueGridColumn(int display_index) {
+  HWND list = browse_.values().hwnd();
+  HWND header = list ? ListView_GetHeader(list) : nullptr;
+  if (!show_value_grid_ || !header || display_index < 0) {
+    return;
+  }
+  RECT column = {};
+  RECT header_rect = {};
+  RECT client = {};
+  if (!Header_GetItemRect(header, display_index, &column) ||
+      !GetWindowRect(header, &header_rect) || !GetClientRect(list, &client)) {
+    return;
+  }
+  MapWindowPoints(nullptr, list, reinterpret_cast<POINT*>(&header_rect), 2);
+  RECT band = {header_rect.left + column.left, client.top,
+               header_rect.left + column.right + 1, client.bottom};
+  RedrawWindow(list, &band, nullptr, RDW_INVALIDATE | RDW_NOERASE);
+}
+
+void MainWindow::Impl::PaintValueGridTail(HDC hdc) {
+  HWND list = browse_.values().hwnd();
+  HWND header = list ? ListView_GetHeader(list) : nullptr;
+  if (!hdc || !header) {
+    return;
+  }
+  RECT client = {};
+  GetClientRect(list, &client);
+  RECT header_rect = {};
+  if (!GetWindowRect(header, &header_rect)) {
+    return;
+  }
+  MapWindowPoints(nullptr, list, reinterpret_cast<POINT*>(&header_rect), 2);
+
+  RECT area = client;
+  area.top = header_rect.bottom;
+  int row_height = 0;
+  const int count = ListView_GetItemCount(list);
+  if (count > 0) {
+    RECT last = {};
+    if (ListView_GetItemRect(list, count - 1, &last, LVIR_BOUNDS)) {
+      row_height = last.bottom - last.top;
+      if (last.bottom > area.top) {
+        area.top = last.bottom;
+      }
+    }
+  }
+  PaintValueGridLines(hdc, area, area.top + row_height - 1, row_height);
+}
 
 search::Result* MainWindow::Impl::SearchResultAt(int item) {
   const int tab_index = SearchIndexFromTab(TabCtrl_GetCurSel(tab_));
@@ -638,9 +884,35 @@ search::Result* MainWindow::Impl::SearchResultAt(int item) {
     return nullptr;
   }
   SearchTab& tab = search_tabs_[static_cast<size_t>(tab_index)];
+  if (tab.is_compare) {
+    return nullptr;
+  }
   return static_cast<size_t>(item) < tab.results.size()
              ? &tab.results[static_cast<size_t>(item)]
              : nullptr;
+}
+
+// Compare and search rows are different models; both expose a key path.
+std::wstring MainWindow::Impl::SearchRowKeyPath(int tab_index, int item) const {
+  if (item < 0 || tab_index < 0 ||
+      static_cast<size_t>(tab_index) >= search_tabs_.size()) {
+    return std::wstring();
+  }
+  const SearchTab& tab = search_tabs_[static_cast<size_t>(tab_index)];
+  const size_t row = static_cast<size_t>(item);
+  if (tab.is_compare) {
+    return row < tab.compare_rows.size() ? tab.compare_rows[row].key_path
+                                         : std::wstring();
+  }
+  return row < tab.results.size() ? tab.results[row].key_path : std::wstring();
+}
+
+size_t MainWindow::Impl::SearchRowCount(int tab_index) const {
+  if (tab_index < 0 || static_cast<size_t>(tab_index) >= search_tabs_.size()) {
+    return 0;
+  }
+  const SearchTab& tab = search_tabs_[static_cast<size_t>(tab_index)];
+  return tab.is_compare ? tab.compare_rows.size() : tab.results.size();
 }
 
 LRESULT MainWindow::Impl::HandleSearchListCustomDraw(NMLVCUSTOMDRAW* draw) {
@@ -660,7 +932,6 @@ LRESULT MainWindow::Impl::HandleSearchListCustomDraw(NMLVCUSTOMDRAW* draw) {
         SearchMatchSubItem(*result) != MappedSubItem(search_column_subitems_, draw->iSubItem)) {
       return CDRF_DODEFAULT;
     }
-    EnsureSearchResultDataLoaded(result);
     return CDRF_NOTIFYPOSTPAINT;
   }
   case CDDS_ITEMPOSTPAINT | CDDS_SUBITEM: {
@@ -690,10 +961,25 @@ LRESULT MainWindow::Impl::HandleSearchListCustomDraw(NMLVCUSTOMDRAW* draw) {
     if (cell.left >= cell.right) {
       return CDRF_DODEFAULT;
     }
+    std::wstring_view cell_text;
+    switch (subitem) {
+    case 0:
+      cell_text = result->key_path;
+      break;
+    case 1:
+      cell_text = search::DisplayName(*result);
+      break;
+    case 3:
+      cell_text = result->data_text;
+      break;
+    default:
+      return CDRF_DODEFAULT;
+    }
     HFONT font = reinterpret_cast<HFONT>(SendMessageW(search_results_list_, WM_GETFONT, 0, 0));
     HFONT old_font = font ? reinterpret_cast<HFONT>(SelectObject(draw->nmcd.hdc, font)) : nullptr;
-    DrawSearchMatchOverlay(draw->nmcd.hdc, cell, SearchRowText(*result, subitem),
-                           result->match_start, result->match_length);
+    DrawSearchMatchOverlay(draw->nmcd.hdc, cell, cell_text,
+                           static_cast<int>(result->match_start),
+                           static_cast<int>(result->match_length));
     if (old_font) {
       SelectObject(draw->nmcd.hdc, old_font);
     }
@@ -705,6 +991,30 @@ LRESULT MainWindow::Impl::HandleSearchListCustomDraw(NMLVCUSTOMDRAW* draw) {
 }
 
 LRESULT MainWindow::Impl::HandleHistoryNotification(NMHDR* header, LPARAM lparam) {
+  if (header->hwndFrom == history_list_ && header->code == LVN_GETDISPINFOW) {
+    auto* disp = reinterpret_cast<NMLVDISPINFOW*>(lparam);
+    const auto& entries = change_history_.entries();
+    if (!disp || disp->item.iItem < 0 ||
+        static_cast<size_t>(disp->item.iItem) >= entries.size()) {
+      if (disp && (disp->item.mask & LVIF_TEXT) && disp->item.pszText &&
+          disp->item.cchTextMax > 0) {
+        disp->item.pszText[0] = L'\0';
+      }
+      return 0;
+    }
+    if (disp->item.mask & LVIF_TEXT) {
+      const auto& entry = entries[static_cast<size_t>(disp->item.iItem)];
+      const std::wstring* text = &entry.time_text;
+      switch (disp->item.iSubItem) {
+      case 1: text = &entry.action; break;
+      case 2: text = &entry.old_data; break;
+      case 3: text = &entry.new_data; break;
+      default: break;
+      }
+      disp->item.pszText = const_cast<wchar_t*>(text->c_str());
+    }
+    return 0;
+  }
   if (header->hwndFrom == history_list_ && header->code == LVN_COLUMNCLICK) {
     auto* info = reinterpret_cast<NMLISTVIEW*>(lparam);
     if (info) {
@@ -713,51 +1023,155 @@ LRESULT MainWindow::Impl::HandleHistoryNotification(NMHDR* header, LPARAM lparam
     return 0;
   }
   if (header->code == NM_CUSTOMDRAW) {
-    return ui::HandleThemedListViewCustomDraw(history_list_, reinterpret_cast<NMLVCUSTOMDRAW*>(lparam));
+    auto* draw = reinterpret_cast<NMLVCUSTOMDRAW*>(lparam);
+    if (!draw) {
+      return CDRF_DODEFAULT;
+    }
+    if (draw->nmcd.dwDrawStage == CDDS_PREPAINT) {
+      return CDRF_NOTIFYITEMDRAW;
+    }
+    if (draw->nmcd.dwDrawStage == CDDS_ITEMPREPAINT) {
+      draw->nmcd.uItemState &= ~CDIS_FOCUS;
+    }
+    return CDRF_DODEFAULT;
   }
-
   return 0;
 }
 
 LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam) {
+  if (header->hwndFrom == search_results_list_ &&
+      header->code == LVN_ODCACHEHINT) {
+    auto* hint = reinterpret_cast<NMLVCACHEHINT*>(lparam);
+    if (hint) {
+      QueueSearchPreviews(hint->iFrom, hint->iTo);
+    }
+    return 0;
+  }
   if (header->hwndFrom == search_results_list_ && header->code == LVN_GETDISPINFOW) {
     auto* disp = reinterpret_cast<NMLVDISPINFOW*>(lparam);
-    search::Result* result = nullptr;
-    int sel = TabCtrl_GetCurSel(tab_);
-    int index = SearchIndexFromTab(sel);
-    if (index >= 0 && static_cast<size_t>(index) < search_tabs_.size()) {
-      if (disp->item.iItem >= 0 && static_cast<size_t>(disp->item.iItem) < search_tabs_[static_cast<size_t>(index)].results.size()) {
-        result = &search_tabs_[static_cast<size_t>(index)].results[static_cast<size_t>(disp->item.iItem)];
-      }
-    }
-    if (!result) {
-      if (disp->item.mask & LVIF_TEXT) {
-        if (disp->item.pszText && disp->item.cchTextMax > 0) {
-          disp->item.pszText[0] = L'\0';
-        }
+    const int index = SearchIndexFromTab(TabCtrl_GetCurSel(tab_));
+    SearchTab* tab = index >= 0 && static_cast<size_t>(index) < search_tabs_.size()
+                         ? &search_tabs_[static_cast<size_t>(index)]
+                         : nullptr;
+    auto clear_cell = [&]() {
+      if ((disp->item.mask & LVIF_TEXT) && disp->item.pszText &&
+          disp->item.cchTextMax > 0) {
+        disp->item.pszText[0] = L'\0';
       }
       if (disp->item.mask & LVIF_IMAGE) {
         disp->item.iImage = 0;
       }
+    };
+    if (!tab || disp->item.iItem < 0) {
+      clear_cell();
       return 0;
     }
-    bool compare = false;
-    if (index >= 0 && static_cast<size_t>(index) < search_tabs_.size()) {
-      compare = search_tabs_[static_cast<size_t>(index)].is_compare;
-    }
+    const size_t row_index = static_cast<size_t>(disp->item.iItem);
     const int subitem = MappedSubItem(search_column_subitems_, disp->item.iSubItem);
-    if (!compare && subitem == 3) {
-      EnsureSearchResultDataLoaded(result);
+
+    if (tab->is_compare) {
+      if (row_index >= tab->compare_rows.size()) {
+        clear_cell();
+        return 0;
+      }
+      const search::compare::Row& row = tab->compare_rows[row_index];
+      if (disp->item.mask & LVIF_TEXT) {
+        if (disp->item.pszText && disp->item.cchTextMax > 0) {
+          disp->item.pszText[0] = L'\0';
+        }
+        switch (subitem) {
+        case 0:
+          disp->item.pszText = const_cast<wchar_t*>(row.key_path.c_str());
+          break;
+        case 1:
+          if (row.is_key) {
+            disp->item.pszText = const_cast<wchar_t*>(L"(Key)");
+          } else if (row.value_name.empty()) {
+            disp->item.pszText = const_cast<wchar_t*>(L"(Default)");
+          } else {
+            disp->item.pszText = const_cast<wchar_t*>(row.value_name.c_str());
+          }
+          break;
+        case 2:
+          disp->item.pszText = const_cast<wchar_t*>(row.first_text.c_str());
+          break;
+        case 3:
+          disp->item.pszText = const_cast<wchar_t*>(row.second_text.c_str());
+          break;
+        default:
+          break;
+        }
+      }
+      if (disp->item.mask & LVIF_IMAGE) {
+        disp->item.iImage = row.is_key ? kFolderIconIndex : kValueIconIndex;
+      }
+      return 0;
+    }
+
+    if (row_index >= tab->results.size()) {
+      clear_cell();
+      return 0;
+    }
+    search::Result& result = tab->results[row_index];
+    // Unresolved data is hydrated in the background, never from this callback.
+    if (subitem == 3 && result.data_state == search::DataState::kNotLoaded &&
+        !search_preview_request_posted_) {
+      search_preview_request_posted_ = true;
+      if (!PostMessageW(hwnd_, frame::message_id::kSearchPreviewRequest, 0, 0)) {
+        search_preview_request_posted_ = false;
+      }
     }
     if (disp->item.mask & LVIF_TEXT) {
-      const int column = (compare && subitem > 3) ? -1 : subitem;
-      const wchar_t* text = SearchRowText(*result, column);
-      disp->item.pszText = const_cast<wchar_t*>(text);
+      wchar_t* buffer = disp->item.pszText;
+      const int capacity = disp->item.cchTextMax;
+      if (buffer && capacity > 0) {
+        buffer[0] = L'\0';
+      }
+      switch (subitem) {
+      case 0:
+        disp->item.pszText = const_cast<wchar_t*>(result.key_path.c_str());
+        break;
+      case 1:
+        if (search::IsKeyRow(result)) {
+          disp->item.pszText = const_cast<wchar_t*>(L"");
+        } else if (result.value_name.empty()) {
+          disp->item.pszText = const_cast<wchar_t*>(L"(Default)");
+        } else {
+          disp->item.pszText = const_cast<wchar_t*>(result.value_name.c_str());
+        }
+        break;
+      case 2:
+        if (search::IsKeyRow(result)) {
+          disp->item.pszText = const_cast<wchar_t*>(L"Key");
+        } else if (result.kind == search::ResultKind::kTraceValue) {
+          disp->item.pszText = const_cast<wchar_t*>(L"TRACE");
+        } else if (buffer && capacity > 0) {
+          lstrcpynW(buffer, value_format::TypeName(result.type).c_str(), capacity);
+        }
+        break;
+      case 3:
+        disp->item.pszText = const_cast<wchar_t*>(result.data_text.c_str());
+        break;
+      case 4:
+        if (buffer && capacity > 0 && !search::IsKeyRow(result) &&
+            result.kind != search::ResultKind::kTraceValue) {
+          swprintf_s(buffer, static_cast<size_t>(capacity), L"%lu",
+                     static_cast<unsigned long>(result.data_size));
+        }
+        break;
+      case 5:
+        if (buffer && capacity > 0) {
+          FormatCellFileTime(result.modified, buffer, capacity);
+        }
+        break;
+      default:
+        break;
+      }
     }
     if (disp->item.mask & LVIF_IMAGE) {
-      if (result->is_key) {
+      if (search::IsKeyRow(result)) {
         disp->item.iImage = kFolderIconIndex;
-      } else if (UseBinaryValueIcon(result->type)) {
+      } else if (UseBinaryValueIcon(result.type)) {
         disp->item.iImage = kBinaryIconIndex;
       } else {
         disp->item.iImage = kValueIconIndex;
@@ -780,8 +1194,10 @@ LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam)
     if (activate && activate->iItem >= 0) {
       int sel = TabCtrl_GetCurSel(tab_);
       int index = SearchIndexFromTab(sel);
-      if (index >= 0 && static_cast<size_t>(index) < search_tabs_.size() && static_cast<size_t>(activate->iItem) < search_tabs_[static_cast<size_t>(index)].results.size()) {
-        const auto& result = search_tabs_[static_cast<size_t>(index)].results[static_cast<size_t>(activate->iItem)];
+      if (index >= 0 &&
+          static_cast<size_t>(activate->iItem) < SearchRowCount(index)) {
+        const std::wstring activated_path =
+            SearchRowKeyPath(index, activate->iItem);
         if (SearchResultOpensInNewTab()) {
           OpenLocalRegistryTab();
         } else {
@@ -789,9 +1205,10 @@ LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam)
         }
         ApplyViewVisibility();
         UpdateStatus();
-        SelectTreePath(result.key_path);
-        if (!result.is_key) {
-          SelectValueByName(result.value_name);
+        SelectTreePath(activated_path);
+        const search::Result* row = SearchResultAt(activate->iItem);
+        if (row && !search::IsKeyRow(*row)) {
+          SelectValueByName(row->value_name);
         }
       }
     }
@@ -866,6 +1283,24 @@ bool MainWindow::Impl::OnCreate() {
     return false;
   }
 
+  value_tooltip_ = CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASSW, nullptr,
+                                   WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+                                   CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                                   CW_USEDEFAULT, hwnd_, nullptr, instance_, nullptr);
+  if (value_tooltip_) {
+    TOOLINFOW info = {};
+    info.cbSize = sizeof(info);
+    info.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+    info.hwnd = hwnd_;
+    info.uId = reinterpret_cast<UINT_PTR>(browse_.values().hwnd());
+    info.lpszText = LPSTR_TEXTCALLBACKW;
+    SendMessageW(value_tooltip_, TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&info));
+    SendMessageW(value_tooltip_, TTM_SETMAXTIPWIDTH, 0, kValueTooltipMaxWidth);
+    AllowDarkModeForWindow(value_tooltip_, Theme::UseDarkMode());
+    SetWindowTheme(value_tooltip_,
+                   Theme::UseDarkMode() ? L"DarkMode_Explorer" : L"Explorer", nullptr);
+  }
+
   tab_ = CreateWindowExW(0, WC_TABCONTROLW, L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | TCS_TABS | TCS_FOCUSNEVER, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kTabId)), instance_, nullptr);
   ApplyFont(tab_, ui_font_);
   TabCtrl_SetPadding(tab_, kTabTextPaddingX, kTabInsetY);
@@ -894,10 +1329,10 @@ bool MainWindow::Impl::OnCreate() {
     SendMessageW(search_progress_, PBM_SETRANGE32, 0, 1);
     ShowWindow(search_progress_, SW_HIDE);
   }
-  history_list_ = CreateWindowExW(0, WC_LISTVIEWW, L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | LVS_REPORT | LVS_SHOWSELALWAYS, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kHistoryListId)), instance_, nullptr);
+  history_list_ = CreateWindowExW(0, WC_LISTVIEWW, L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kHistoryListId)), instance_, nullptr);
 
   DWORD ex_mask = LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_BORDERSELECT | LVS_EX_TRACKSELECT | LVS_EX_ONECLICKACTIVATE | LVS_EX_TWOCLICKACTIVATE | LVS_EX_UNDERLINEHOT;
-  DWORD ex_style = LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER;
+  DWORD ex_style = LVS_EX_FULLROWSELECT;
   ListView_SetExtendedListViewStyleEx(history_list_, ex_mask, ex_style);
   ListView_SetExtendedListViewStyleEx(search_results_list_, ex_mask, ex_style);
   SendMessageW(search_results_list_, WM_CHANGEUISTATE, MAKEWPARAM(UIS_SET, UISF_HIDEFOCUS), 0);
@@ -917,10 +1352,11 @@ bool MainWindow::Impl::OnCreate() {
 
   ApplyUIFontToControls();
 
-  ApplyThemeToChildren();
   CreateValueColumns();
   CreateHistoryColumns();
   CreateSearchColumns();
+  ApplyThemeToChildren();
+  SetValueGridEnabled(show_value_grid_, false);
   if (toolbar_.hwnd()) {
     SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditUndo, 0);
     SendMessageW(toolbar_.hwnd(), TB_SETSTATE, cmd::kEditRedo, 0);
@@ -1217,7 +1653,8 @@ void MainWindow::Impl::DiscardWorkerMessages() {
       frame::message_id::kTraceLoadReady, frame::message_id::kDefaultLoadReady,
       frame::message_id::kStartupCacheReady, frame::message_id::kRegFileLoadReady,
       frame::message_id::kTraceParseBatch, frame::message_id::kDefaultParseBatch,
-      frame::message_id::kValueListReady, frame::message_id::kReplaceReady};
+      frame::message_id::kValueListReady, frame::message_id::kReplaceReady,
+      frame::message_id::kValuePreviewReady};
   for (const UINT id : payload_messages) {
     while (PeekMessageW(&message, hwnd_, id, id, PM_REMOVE)) {
       switch (id) {
@@ -1241,6 +1678,9 @@ void MainWindow::Impl::DiscardWorkerMessages() {
         break;
       case frame::message_id::kValueListReady:
         delete reinterpret_cast<ValueListPayload*>(message.lParam);
+        break;
+      case frame::message_id::kValuePreviewReady:
+        delete reinterpret_cast<ValuePreviewPayload*>(message.lParam);
         break;
       case frame::message_id::kReplaceReady:
         delete reinterpret_cast<ReplacePayload*>(message.lParam);

@@ -167,7 +167,8 @@ bool EnumKeyStreaming(
     RegistryStore::KeyEnumResult* out_info,
     const RegistryStore::ValueStreamCallback& value_callback,
     const RegistryStore::SubkeyStreamCallback& subkey_callback,
-    DWORD max_data_size) {
+    DWORD max_data_size, EnumerationScratch* scratch, bool ordered) {
+  (void)scratch;
   const VirtualRegistryKey* key = FindKey(data.root.get(), node.subkey);
   if (!key) {
     return false;
@@ -184,10 +185,12 @@ bool EnumKeyStreaming(
     for (const auto& value : key->values) {
       values.push_back(&value.second);
     }
-    std::sort(values.begin(), values.end(),
-              [](const RegistryValue* left, const RegistryValue* right) {
-                return _wcsicmp(left->name.c_str(), right->name.c_str()) < 0;
-              });
+    if (ordered) {
+      std::sort(values.begin(), values.end(),
+                [](const RegistryValue* left, const RegistryValue* right) {
+                  return _wcsicmp(left->name.c_str(), right->name.c_str()) < 0;
+                });
+    }
     for (const RegistryValue* value : values) {
       ValueInfo info;
       info.name = value->name;
@@ -204,7 +207,7 @@ bool EnumKeyStreaming(
     }
   }
   if (include_subkeys && subkey_callback) {
-    for (const auto& name : ChildNames(*key, true)) {
+    for (const auto& name : ChildNames(*key, ordered)) {
       if (!subkey_callback(name)) {
         return false;
       }

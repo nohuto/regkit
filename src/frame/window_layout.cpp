@@ -731,7 +731,7 @@ void MainWindow::Impl::LayoutValueGridToolbar() {
 void MainWindow::Impl::SetValueGridEnabled(bool enabled, bool persist) {
   show_value_grid_ = enabled;
   if (HWND list = browse_.values().hwnd()) {
-    InvalidateRect(list, nullptr, TRUE);
+    RedrawWindow(list, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
   }
   if (value_grid_toolbar_) {
     SendMessageW(value_grid_toolbar_, TB_CHECKBUTTON, kValueGridButtonId,
@@ -739,7 +739,6 @@ void MainWindow::Impl::SetValueGridEnabled(bool enabled, bool persist) {
   }
   if (persist) {
     SaveSettings();
-    BuildMenus();
   }
 }
 
@@ -776,8 +775,9 @@ void MainWindow::Impl::EnsureValueGridToolbar() {
   button.iString = static_cast<INT_PTR>(string_index);
   SendMessageW(value_grid_toolbar_, TB_ADDBUTTONSW, 1, reinterpret_cast<LPARAM>(&button));
   ApplyValueGridToolbarTheme();
+  SendMessageW(value_grid_toolbar_, TB_CHECKBUTTON, kValueGridButtonId,
+               MAKELPARAM(show_value_grid_ ? TRUE : FALSE, 0));
   LayoutValueGridToolbar();
-  SetValueGridEnabled(show_value_grid_, false);
 }
 
 HICON MainWindow::Impl::LoadThemeIcon(const wchar_t* filename, int light_id, int dark_id, int size, UINT dpi) const {

@@ -141,7 +141,7 @@ You can set your own ico set via `%LOCALAPPDATA%\Noverse\RegKit\icons` (use nami
 
 ### Symlink Icon <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/lucide/light/symlink.ico?raw=true" width="16" height="16">
 
-A key created with `REG_OPTION_CREATE_LINK` is a registry symbolic link key, which let the Configuration Manager redirect lookups to another key (they're created by passing `REG_CREATE_LINK` to `RegCreateKey`/`RegCreateKeyEx`). Internally, the link is saved as a `REG_LINK` value named `SymbolicLinkValue` that holds the path.
+A key created with `REG_OPTION_CREATE_LINK` is a registry symbolic link key, which let the Configuration Manager redirect lookups to another key. Internally, the link is saved as a `REG_LINK` value named `SymbolicLinkValue` that holds the path.
 
 RegKit displays keys as symbolic links when the registry reports a link (done by checking for a symbolic link during key enumeration), the value is usually not visible in regedit.
 
@@ -310,7 +310,7 @@ The registry is a database that looks a lot like a filesystem, keys are like dir
 
 Most values are `REG_DWORD`, `REG_BINARY`, or `REG_SZ`, but the registry supports 12 value types.
 
-Some values are stored with extra flag bits in the upper 16 bits (e.g. `0x20000`, `0x40000`). These aren't new base types, the actual base type is `type & 0xFFFF`, and regkit displays them as `REG_* (0xXXXX)` (for example `0x20001` is `REG_SZ` with a flag, `0x20004` is `REG_DWORD`, and `0x40007` is `REG_MULTI_SZ`). These flagged types are included in the '*Find > Data Types filter*'. Note that this is currently my personal assumption and isn't validated by any official documentation.
+Some values are stored with extra flag bits in the upper 16 bits (e.g. `0x20000`, `0x40000`). These aren't new base types, the actual base type is `type & 0xFFFF`, and regkit displays them as `REG_* (0xXXXX)` (for example `0x20001` is `REG_SZ` with a flag, `0x20004` is `REG_DWORD`, and `0x40007` is `REG_MULTI_SZ`). These flagged types are included in the '*Find > Data Types filter*'. Note that this is currently my personal assumption and isn't validated by any official documentation (CM doesn't seem to handle them like that).
 
 | Type | Description |
 | --- | --- |
@@ -355,7 +355,7 @@ Low level view of the REGISTRY ([*](https://projectzero.google/2024/10/the-windo
 
 ### Hives and on-disk files
 
-On disk, the registry is a set of hive files, the Configuration Manager records loaded hive paths under `HKLM\SYSTEM\CurrentControlSet\Control\Hivelist` (WinDbg cmd to get HiceAddr etc. = `!reg hivelist`) as they are mounted. Each hive is a PRIMARY file plus `.LOG<1/2>` (also possible to only be a `.LOG` if REG_HIVE_SINGLE_LOG) used during flushing/crash recovery.
+On disk, the registry is a set of hive files, the Configuration Manager records loaded hive paths under `HKLM\SYSTEM\CurrentControlSet\Control\Hivelist` (WinDbg cmd to get HiceAddr etc. = `!reg hivelist`) as they are mounted. Each (nonvolatile) hive is a PRIMARY file plus `.LOG<1/2>` (also possible to only be a `.LOG` if REG_HIVE_SINGLE_LOG) used during flushing/crash recovery.
 
 | Hive registry path | Hive file path |
 | --- | --- |

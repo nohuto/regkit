@@ -887,87 +887,15 @@ LRESULT HandleThemedListViewCustomDraw(HWND list, NMLVCUSTOMDRAW* draw) {
     return CDRF_NOTIFYITEMDRAW;
   case CDDS_ITEMPREPAINT:
     draw->nmcd.uItemState &= ~(CDIS_FOCUS | CDIS_HOT);
-    if (ListViewItemSelected(list, static_cast<int>(draw->nmcd.dwItemSpec))) {
+    if (draw->nmcd.uItemState & CDIS_SELECTED) {
       return CDRF_DODEFAULT;
     }
     ApplyListViewThemeColors(draw, Theme::Current());
-    return CDRF_NEWFONT;
+    return CDRF_DODEFAULT;
   default:
     break;
   }
   return CDRF_DODEFAULT;
-}
-
-void PaintThemedListViewGrid(HWND list, HDC hdc) {
-  if (!list || !hdc) {
-    return;
-  }
-  HWND header = ListView_GetHeader(list);
-  const int item_count = ListView_GetItemCount(list);
-  const int column_count = header ? Header_GetItemCount(header) : 0;
-  if (item_count <= 0 || column_count <= 0) {
-    return;
-  }
-  int first = ListView_GetTopIndex(list);
-  first = std::max(0, std::min(first, item_count - 1));
-  const int last = std::min(item_count - 1, first + ListView_GetCountPerPage(list));
-
-  RECT client = {};
-  RECT first_row = {};
-  RECT last_row = {};
-  if (!GetClientRect(list, &client) ||
-      !ListView_GetItemRect(list, first, &first_row, LVIR_BOUNDS) ||
-      !ListView_GetItemRect(list, last, &last_row, LVIR_BOUNDS)) {
-    return;
-  }
-
-  int grid_left = client.right;
-  int grid_right = client.left;
-  for (int column_index = 0; column_index < column_count; ++column_index) {
-    RECT column = {};
-    if (!Header_GetItemRect(header, column_index, &column)) {
-      continue;
-    }
-    MapWindowPoints(header, list, reinterpret_cast<POINT*>(&column), 2);
-    grid_left = std::min(grid_left, static_cast<int>(column.left));
-    grid_right = std::max(grid_right, static_cast<int>(column.right));
-  }
-
-  grid_left = std::max(static_cast<int>(client.left), grid_left);
-  grid_right = std::min(static_cast<int>(client.right), grid_right);
-  const int grid_top = std::max(client.top, first_row.top);
-  const int grid_bottom = std::min(client.bottom, last_row.bottom);
-  if (grid_left >= grid_right || grid_top >= grid_bottom) {
-    return;
-  }
-
-  HBRUSH border = appearance::CachedBrush(Theme::Current().BorderColor());
-  for (int column_index = 0; column_index < column_count; ++column_index) {
-    RECT column = {};
-    if (!Header_GetItemRect(header, column_index, &column)) {
-      continue;
-    }
-    MapWindowPoints(header, list, reinterpret_cast<POINT*>(&column), 2);
-    const int x = column.right - 1;
-    if (x < grid_left || x >= grid_right) {
-      continue;
-    }
-    RECT line = {x, grid_top, x + 1, grid_bottom};
-    FillRect(hdc, &line, border);
-  }
-
-  for (int item = first; item <= last; ++item) {
-    RECT row = {};
-    if (!ListView_GetItemRect(list, item, &row, LVIR_BOUNDS)) {
-      continue;
-    }
-    const int y = row.bottom - 1;
-    if (y < grid_top || y >= grid_bottom) {
-      continue;
-    }
-    RECT line = {grid_left, y, grid_right, y + 1};
-    FillRect(hdc, &line, border);
-  }
 }
 
 bool CopyTextToClipboard(HWND owner, const std::wstring& text) {

@@ -15,7 +15,6 @@ namespace regkit {
 namespace ui {
 
 LRESULT HandleThemedListViewCustomDraw(HWND list, NMLVCUSTOMDRAW* draw);
-void PaintThemedListViewGrid(HWND list, HDC hdc);
 bool ListViewItemSelected(HWND list, int item_index);
 
 bool CopyTextToClipboard(HWND owner, const std::wstring& text);

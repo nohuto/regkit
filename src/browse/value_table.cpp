@@ -11,7 +11,6 @@
 namespace regkit {
 
 namespace {
-constexpr int kCellTooltipMaxWidth = 900;
 
 void AppendSearchField(std::wstring* out, const std::wstring& text) {
   if (!out || text.empty()) {
@@ -47,11 +46,11 @@ std::wstring BuildSearchText(const ListRow& row) {
 
 void ValueList::Create(HWND parent, HINSTANCE instance, int control_id) {
   hwnd_ = CreateWindowExW(0, WC_LISTVIEWW, L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA | LVS_EDITLABELS, 0, 0, 100, 100, parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(control_id)), instance, nullptr);
-  DWORD ex_mask = LVS_EX_INFOTIP | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_BORDERSELECT | LVS_EX_TRACKSELECT | LVS_EX_ONECLICKACTIVATE | LVS_EX_TWOCLICKACTIVATE | LVS_EX_UNDERLINEHOT | LVS_EX_GRIDLINES;
-  DWORD ex_style = LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_INFOTIP;
+  DWORD ex_mask = LVS_EX_INFOTIP | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_BORDERSELECT | LVS_EX_TRACKSELECT | LVS_EX_ONECLICKACTIVATE | LVS_EX_TWOCLICKACTIVATE | LVS_EX_UNDERLINEHOT;
+  DWORD ex_style = LVS_EX_FULLROWSELECT;
   ListView_SetExtendedListViewStyleEx(hwnd_, ex_mask, ex_style);
   SendMessageW(hwnd_, WM_CHANGEUISTATE, MAKEWPARAM(UIS_SET, UISF_HIDEFOCUS), 0);
-  SendMessageW(ListView_GetToolTips(hwnd_), TTM_SETMAXTIPWIDTH, 0, kCellTooltipMaxWidth);
+  SendMessageW(ListView_GetToolTips(hwnd_), TTM_SETMAXTIPWIDTH, 0, kValueTooltipMaxWidth);
 }
 
 HWND ValueList::hwnd() const {
@@ -104,7 +103,7 @@ void ValueList::Clear() {
   filter_cache_.clear();
   filter_cache_valid_.clear();
   ListView_SetItemCountEx(hwnd_, 0, LVSICF_NOINVALIDATEALL | LVSICF_NOSCROLL);
-  InvalidateRect(hwnd_, nullptr, TRUE);
+  RedrawWindow(hwnd_, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE);
 }
 
 void ValueList::SetFilter(const std::wstring& text) {
@@ -139,7 +138,7 @@ void ValueList::RebuildFilter() {
     }
   }
   ListView_SetItemCountEx(hwnd_, static_cast<int>(visible_indices_.size()), LVSICF_NOINVALIDATEALL | LVSICF_NOSCROLL);
-  InvalidateRect(hwnd_, nullptr, TRUE);
+  RedrawWindow(hwnd_, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE);
 }
 
 void ValueList::InvalidateFilterCache() {

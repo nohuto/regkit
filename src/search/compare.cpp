@@ -56,15 +56,6 @@ std::wstring Combine(const std::wstring& base,
   return base + L"\\" + relative;
 }
 
-std::wstring Leaf(const std::wstring& path) {
-  const size_t separator = path.find_last_of(L"\\/");
-  return separator == std::wstring::npos ? path : path.substr(separator + 1);
-}
-
-std::wstring DisplayName(const std::wstring& name) {
-  return name.empty() ? L"(Default)" : name;
-}
-
 std::wstring DataText(const Value& value) {
   if (value.data.empty()) {
     return L"";
@@ -81,21 +72,6 @@ std::wstring EntryText(const Value* value) {
   const std::wstring type = value_format::TypeName(value->type);
   const std::wstring data = DataText(*value);
   return data.empty() ? type : type + L": " + data;
-}
-
-std::wstring SizeText(const Value* first, const Value* second) {
-  if (first && second) {
-    return L"First: " + std::to_wstring(first->data.size()) +
-           L" bytes | Second: " +
-           std::to_wstring(second->data.size()) + L" bytes";
-  }
-  if (first) {
-    return L"First: " + std::to_wstring(first->data.size()) + L" bytes";
-  }
-  if (second) {
-    return L"Second: " + std::to_wstring(second->data.size()) + L" bytes";
-  }
-  return L"";
 }
 
 template <typename Map>
@@ -248,7 +224,31 @@ bool LoadRegFile(const std::wstring& file_path,
   return true;
 }
 
-std::vector<Result> Diff(const Snapshot& first, const Snapshot& second,
+void SortRows(std::vector<Row>* rows, int column, bool ascending) {
+  if (!rows || rows->size() < 2) {
+    return;
+  }
+  auto field = [column](const Row& row) -> const std::wstring& {
+    switch (column) {
+    case 1:
+      return row.value_name;
+    case 2:
+      return row.first_text;
+    case 3:
+      return row.second_text;
+    default:
+      return row.key_path;
+    }
+  };
+  std::stable_sort(rows->begin(), rows->end(),
+                   [&](const Row& left, const Row& right) {
+                     const int result =
+                         _wcsicmp(field(left).c_str(), field(right).c_str());
+                     return result != 0 && (ascending ? result < 0 : result > 0);
+                   });
+}
+
+std::vector<Row> Diff(const Snapshot& first, const Snapshot& second,
                          std::atomic_bool* cancel) {
   std::vector<std::wstring> keys;
   keys.reserve(first.keys.size() + second.keys.size());
@@ -270,7 +270,7 @@ std::vector<Result> Diff(const Snapshot& first, const Snapshot& second,
                               key_display(right).c_str()) < 0;
             });
 
-  std::vector<Result> results;
+  std::vector<Row> results;
   for (const auto& key_name : keys) {
     if (Cancelled(cancel)) {
       break;
@@ -286,13 +286,11 @@ std::vector<Result> Diff(const Snapshot& first, const Snapshot& second,
     const std::wstring second_path = Combine(second.base_path, relative);
 
     if (!first_key || !second_key) {
-      Result result;
+      Row result;
       result.is_key = true;
       result.key_path = first_key ? first_path : second_path;
-      result.key_name = Leaf(result.key_path);
-      result.display_name = L"(Key)";
-      result.type_text = first_key ? L"Present" : L"(Missing)";
-      result.data = second_key ? L"Present" : L"(Missing)";
+      result.first_text = first_key ? L"Present" : L"(Missing)";
+      result.second_text = second_key ? L"Present" : L"(Missing)";
       results.push_back(std::move(result));
       continue;
     }
@@ -327,20 +325,11 @@ std::vector<Result> Diff(const Snapshot& first, const Snapshot& second,
         continue;
       }
 
-      Result result;
+      Row result;
       result.key_path = first_path;
-      result.key_name = Leaf(first_path);
       result.value_name = left ? left->name : right->name;
-      result.display_name = DisplayName(result.value_name);
-      result.type = left ? left->type : right->type;
-      result.type_text = EntryText(left);
-      result.data = EntryText(right);
-      result.size_text = SizeText(left, right);
-      if (left && right) {
-        result.comment =
-            left->type == right->type ? L"Data mismatch"
-                                      : L"Type mismatch";
-      }
+      result.first_text = EntryText(left);
+      result.second_text = EntryText(right);
       results.push_back(std::move(result));
     }
   }

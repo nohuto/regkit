@@ -195,8 +195,11 @@ std::optional<LRESULT> MainWindow::Impl::HandleWorkerMessage(UINT message,
                                                              LPARAM lparam) {
   switch (message) {
   case frame::message_id::kSearchResults:
+  case frame::message_id::kSearchPreviewRequest:
+  case frame::message_id::kSearchPreviewReady:
+  case frame::message_id::kSearchSortReady:
+  case frame::message_id::kSearchTabLoadReady:
   case frame::message_id::kSearchProgress:
-  case frame::message_id::kSearchFinished:
   case frame::message_id::kSearchFailed:
   case frame::message_id::kReplaceReady:
     return HandleSearchWorkerMessage(message, wparam, lparam);
@@ -214,10 +217,39 @@ std::optional<LRESULT> MainWindow::Impl::HandleWorkerMessage(UINT message,
   case frame::message_id::kDefaultParseBatch:
     return HandleDefaultWorkerMessage(message, wparam, lparam);
   case frame::message_id::kValueListReady:
+  case frame::message_id::kValuePreviewReady:
+  case frame::message_id::kValuePreviewRequest:
     return HandleValueWorkerMessage(message, wparam, lparam);
   default:
     return std::nullopt;
   }
+}
+
+void MainWindow::Impl::FinishSearchSession(uint64_t generation) {
+  if (!search_running_ || !search_session_.IsCurrent(generation)) {
+    return;
+  }
+  search_session_.Join();
+  search_running_ = false;
+  for (auto& search_tab : search_tabs_) {
+    if (search_tab.generation == generation && search_tab.sort_dirty) {
+      SortSearchTabResults(&search_tab);
+      break;
+    }
+  }
+  if (search_start_tick_ != 0) {
+    search_duration_ms_ = GetTickCount64() - search_start_tick_;
+    search_duration_valid_ = true;
+  } else {
+    search_duration_ms_ = 0;
+    search_duration_valid_ = false;
+  }
+  if (IsSearchTabIndex(TabCtrl_GetCurSel(tab_))) {
+    search_last_refresh_tick_ = GetTickCount64();
+    UpdateSearchResultsView();
+  }
+  ApplyViewVisibility();
+  UpdateStatus();
 }
 
 std::optional<LRESULT> MainWindow::Impl::HandleSearchWorkerMessage(UINT message,
@@ -225,127 +257,177 @@ std::optional<LRESULT> MainWindow::Impl::HandleSearchWorkerMessage(UINT message,
                                                                    LPARAM lparam) {
   switch (message) {
   case frame::message_id::kSearchResults: {
-    uint64_t generation = static_cast<uint64_t>(wparam);
+    const uint64_t generation = static_cast<uint64_t>(wparam);
     if (!search_session_.IsCurrent(generation)) {
       return 0;
     }
-    std::vector<PendingSearchResult> pending;
+    // Released before the drain so a producer can always post a successor.
+    search_posted_.store(false);
+    const int index = IsSearchTabIndex(active_search_tab_index_)
+                          ? SearchIndexFromTab(active_search_tab_index_)
+                          : -1;
+    SearchTab* tab = index >= 0 && static_cast<size_t>(index) < search_tabs_.size()
+                         ? &search_tabs_[static_cast<size_t>(index)]
+                         : nullptr;
+
+    const uint64_t start_tick = GetTickCount64();
+    bool appended = false;
+    for (;;) {
+      PendingSearchBatch batch;
+      {
+        std::lock_guard<std::mutex> lock(search_mutex_);
+        if (search_pending_batches_.empty()) {
+          break;
+        }
+        batch = std::move(search_pending_batches_.front());
+        search_pending_batches_.pop_front();
+        search_pending_rows_ -= batch.rows.size();
+      }
+      search_queue_space_.notify_all();
+      if (batch.generation != generation || !tab) {
+        continue;
+      }
+      for (auto& row : batch.rows) {
+        row.row_id = tab->next_row_id++;
+      }
+      // One move per row: batch into the tab.
+      if (tab->results.empty()) {
+        tab->results = std::move(batch.rows);
+      } else {
+        tab->results.insert(tab->results.end(),
+                            std::make_move_iterator(batch.rows.begin()),
+                            std::make_move_iterator(batch.rows.end()));
+      }
+      appended = true;
+      if ((GetTickCount64() - start_tick) >= kSearchResultsMaxMs) {
+        break;
+      }
+    }
+
+    if (appended && tab && tab->sort_column >= 0) {
+      tab->sort_dirty = true;
+    }
+
+    bool more_pending = false;
+    bool producer_done = false;
     {
       std::lock_guard<std::mutex> lock(search_mutex_);
-      if (search_pending_.empty()) {
+      more_pending = !search_pending_batches_.empty();
+      producer_done = search_producer_done_;
+    }
+    // At most one outstanding drain message per generation.
+    if (more_pending && !search_posted_.exchange(true)) {
+      if (!PostMessageW(hwnd_, frame::message_id::kSearchResults,
+                        static_cast<WPARAM>(generation), 0)) {
         search_posted_.store(false);
-        return 0;
-      }
-      pending.swap(search_pending_);
-      search_posted_.store(false);
-    }
-    bool should_refresh = false;
-    if (IsSearchTabIndex(active_search_tab_index_)) {
-      int index = SearchIndexFromTab(active_search_tab_index_);
-      if (index >= 0 && static_cast<size_t>(index) < search_tabs_.size()) {
-        uint64_t start_tick = GetTickCount64();
-        size_t processed = 0;
-        size_t stop_at = pending.size();
-        for (size_t i = 0; i < pending.size(); ++i) {
-          auto& item = pending[i];
-          if (item.generation != generation) {
-            continue;
-          }
-          search_tabs_[static_cast<size_t>(index)].results.push_back(std::move(item.result));
-          ++processed;
-          if (processed >= kSearchResultsBatch || (GetTickCount64() - start_tick) >= kSearchResultsMaxMs) {
-            stop_at = i + 1;
-            break;
-          }
-        }
-        auto& tab = search_tabs_[static_cast<size_t>(index)];
-        if (processed > 0 && tab.sort_column >= 0) {
-          tab.sort_dirty = true;
-        }
-        if (stop_at < pending.size()) {
-          std::vector<PendingSearchResult> remainder;
-          remainder.reserve(pending.size() - stop_at);
-          for (size_t i = stop_at; i < pending.size(); ++i) {
-            if (pending[i].generation != generation) {
-              continue;
-            }
-            remainder.push_back(std::move(pending[i]));
-          }
-          if (!remainder.empty()) {
-            std::lock_guard<std::mutex> lock(search_mutex_);
-            std::vector<PendingSearchResult> merged;
-            merged.reserve(remainder.size() + search_pending_.size());
-            for (auto& item : remainder) {
-              merged.push_back(std::move(item));
-            }
-            for (auto& item : search_pending_) {
-              merged.push_back(std::move(item));
-            }
-            search_pending_.swap(merged);
-            if (!search_posted_.exchange(true)) {
-              PostMessageW(hwnd_, frame::message_id::kSearchResults, static_cast<WPARAM>(generation), 0);
-            }
-          }
-        }
-        if (TabCtrl_GetCurSel(tab_) == active_search_tab_index_) {
-          should_refresh = true;
-        }
       }
     }
-    if (should_refresh) {
-      uint64_t now = GetTickCount64();
+
+    if (appended && TabCtrl_GetCurSel(tab_) == active_search_tab_index_) {
+      const uint64_t now = GetTickCount64();
       if (now - search_last_refresh_tick_ >= kSearchResultsRefreshMs) {
         search_last_refresh_tick_ = now;
         UpdateSearchResultsView();
         UpdateStatus();
       }
     }
+
+    // Completion is owned by the drain, not by a separate repost loop.
+    if (!more_pending && producer_done) {
+      FinishSearchSession(generation);
+    }
     return 0;
   }
+  case frame::message_id::kSearchPreviewRequest: {
+    search_preview_request_posted_ = false;
+    if (!search_results_list_) {
+      return 0;
+    }
+    const int top = ListView_GetTopIndex(search_results_list_);
+    const int page = ListView_GetCountPerPage(search_results_list_);
+    const int count = ListView_GetItemCount(search_results_list_);
+    QueueSearchPreviews(std::max(0, top),
+                        std::min(count - 1, top + std::max(page, 1)));
+    return 0;
+  }
+  case frame::message_id::kSearchPreviewReady: {
+    auto* raw = reinterpret_cast<SearchPreviewPayload*>(lparam);
+    if (!raw) {
+      return 0;
+    }
+    std::unique_ptr<SearchPreviewPayload> owned(raw);
+    if (owned->tab_index < 0 ||
+        static_cast<size_t>(owned->tab_index) >= search_tabs_.size()) {
+      return 0;
+    }
+    SearchTab& tab = search_tabs_[static_cast<size_t>(owned->tab_index)];
+    if (tab.generation != owned->generation) {
+      return 0;
+    }
+    int first = -1;
+    int last = -1;
+    for (auto& item : owned->items) {
+      // Sorting can move a row while its preview is in flight, so the stable
+      // row id decides where the payload lands.
+      int index = -1;
+      if (item.index >= 0 && static_cast<size_t>(item.index) < tab.results.size() &&
+          tab.results[static_cast<size_t>(item.index)].row_id == item.row_id) {
+        index = item.index;
+      } else {
+        for (size_t i = 0; i < tab.results.size(); ++i) {
+          if (tab.results[i].row_id == item.row_id) {
+            index = static_cast<int>(i);
+            break;
+          }
+        }
+      }
+      if (index < 0) {
+        continue;
+      }
+      search::Result& row = tab.results[static_cast<size_t>(index)];
+      row.data_text = std::move(item.preview);
+      row.type = item.type;
+      row.data_size = item.data_size;
+      row.data_state = search::DataState::kLoaded;
+      first = first < 0 ? index : std::min(first, index);
+      last = std::max(last, index);
+    }
+    if (first >= 0 && search_results_list_ &&
+        SearchIndexFromTab(TabCtrl_GetCurSel(tab_)) == owned->tab_index) {
+      ListView_RedrawItems(search_results_list_, first, last);
+    }
+    return 0;
+  }
+  case frame::message_id::kSearchSortReady: {
+    auto* raw = reinterpret_cast<SearchSortPayload*>(lparam);
+    if (!raw) {
+      return 0;
+    }
+    std::unique_ptr<SearchSortPayload> owned(raw);
+    if (owned->tab_index < 0 ||
+        static_cast<size_t>(owned->tab_index) >= search_tabs_.size()) {
+      return 0;
+    }
+    SearchTab& tab = search_tabs_[static_cast<size_t>(owned->tab_index)];
+    if (tab.generation != owned->generation ||
+        tab.results.size() != owned->rows.size()) {
+      return 0;
+    }
+    tab.results = std::move(owned->rows);
+    if (SearchIndexFromTab(TabCtrl_GetCurSel(tab_)) == owned->tab_index) {
+      UpdateSearchResultsView();
+    }
+    return 0;
+  }
+  case frame::message_id::kSearchTabLoadReady:
+    ApplySearchTabLoad(reinterpret_cast<SearchTabLoadPayload*>(lparam));
+    return 0;
   case frame::message_id::kSearchProgress: {
     uint64_t generation = static_cast<uint64_t>(wparam);
     if (!search_session_.IsCurrent(generation)) {
       return 0;
     }
     search_progress_posted_.store(false);
-    UpdateStatus();
-    return 0;
-  }
-  case frame::message_id::kSearchFinished: {
-    uint64_t generation = static_cast<uint64_t>(wparam);
-    if (!search_session_.IsCurrent(generation)) {
-      return 0;
-    }
-    bool results_pending = search_posted_.load();
-    {
-      std::lock_guard<std::mutex> lock(search_mutex_);
-      results_pending = results_pending || !search_pending_.empty();
-    }
-    if (results_pending) {
-      PostMessageW(hwnd_, frame::message_id::kSearchFinished, wparam, 0);
-      return 0;
-    }
-    search_session_.Join();
-    search_running_ = false;
-    for (auto& search_tab : search_tabs_) {
-      if (search_tab.generation == generation && search_tab.sort_dirty) {
-        SortSearchTabResults(&search_tab);
-        break;
-      }
-    }
-    if (search_session_.IsCurrent(generation) &&
-        search_start_tick_ != 0) {
-      search_duration_ms_ = GetTickCount64() - search_start_tick_;
-      search_duration_valid_ = true;
-    } else {
-      search_duration_ms_ = 0;
-      search_duration_valid_ = false;
-    }
-    if (IsSearchTabIndex(TabCtrl_GetCurSel(tab_))) {
-      search_last_refresh_tick_ = GetTickCount64();
-      UpdateSearchResultsView();
-    }
-    ApplyViewVisibility();
     UpdateStatus();
     return 0;
   }
@@ -674,6 +756,70 @@ std::optional<LRESULT> MainWindow::Impl::HandleValueWorkerMessage(UINT message,
                                                                   LPARAM lparam) {
   (void)wparam;
   switch (message) {
+  case frame::message_id::kValuePreviewRequest: {
+    value_preview_request_posted_ = false;
+    HWND list = browse_.values().hwnd();
+    if (!list) {
+      return 0;
+    }
+    const int top = ListView_GetTopIndex(list);
+    const int page = ListView_GetCountPerPage(list);
+    const int count = ListView_GetItemCount(list);
+    QueueValuePreviews(std::max(0, top),
+                       std::min(count - 1, top + std::max(page, 1)));
+    return 0;
+  }
+  case frame::message_id::kValuePreviewReady: {
+    auto* raw = reinterpret_cast<ValuePreviewPayload*>(lparam);
+    if (!raw) {
+      return 0;
+    }
+    std::unique_ptr<ValuePreviewPayload> owned(raw);
+    if (owned->generation != value_list_generation_.load()) {
+      return 0;
+    }
+    int first = -1;
+    int last = -1;
+    for (const auto& item : owned->items) {
+      int index = item.index;
+      ListRow* row = browse_.values().MutableRowAt(index);
+      if (!row || row->extra != item.name) {
+        row = nullptr;
+        const int count = static_cast<int>(browse_.values().RowCount());
+        for (int i = 0; i < count; ++i) {
+          ListRow* candidate = browse_.values().MutableRowAt(i);
+          if (candidate && candidate->kind == rowkind::kValue &&
+              candidate->extra == item.name) {
+            row = candidate;
+            index = i;
+            break;
+          }
+        }
+      }
+      if (!row) {
+        continue;
+      }
+      row->data = item.preview;
+      row->value_type = item.type;
+      row->value_data_size = item.size;
+      if (row->type.empty()) {
+        row->type = value_format::TypeName(item.type);
+      }
+      row->size_value = item.size;
+      row->has_size = true;
+      if (row->size.empty() && item.size > 0) {
+        row->size = std::to_wstring(item.size);
+      }
+      row->data_ready = true;
+      browse_.values().InvalidateFilterCache(row);
+      first = first < 0 ? index : std::min(first, index);
+      last = std::max(last, index);
+    }
+    if (first >= 0 && browse_.values().hwnd()) {
+      ListView_RedrawItems(browse_.values().hwnd(), first, last);
+    }
+    return 0;
+  }
   case frame::message_id::kValueListReady: {
     auto* payload = reinterpret_cast<ValueListPayload*>(lparam);
     if (!payload) {
@@ -693,7 +839,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleValueWorkerMessage(UINT message,
     current_value_count_ = payload->value_count;
     if (list_hwnd && !jump_ui_batch_active_) {
       SendMessageW(list_hwnd, WM_SETREDRAW, TRUE, 0);
-      InvalidateRect(list_hwnd, nullptr, TRUE);
+      RedrawWindow(list_hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE);
     }
     value_list_loading_ = false;
     UpdateStatus();
@@ -872,6 +1018,8 @@ std::optional<LRESULT> MainWindow::Impl::HandleAppearanceMessage(UINT message,
   }
   case WM_INITMENUPOPUP: {
     HMENU menu = reinterpret_cast<HMENU>(wparam);
+    CheckMenuItem(menu, cmd::kViewGridLines,
+                  MF_BYCOMMAND | (show_value_grid_ ? MF_CHECKED : MF_UNCHECKED));
     UINT state = browse_.current_node() ? MF_ENABLED : MF_GRAYED;
     EnableMenuItem(menu, cmd::kEditPermissions, MF_BYCOMMAND | state);
     const int selected_count = browse_.values().hwnd() ? ListView_GetSelectedCount(browse_.values().hwnd()) : 0;

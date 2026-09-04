@@ -27,7 +27,6 @@ enum class SearchResultMode {
 struct SearchDialogResult {
   search::Criteria criteria;
   std::wstring start_key;
-  std::vector<std::wstring> exclude_paths;
   std::vector<std::wstring> root_paths;
   bool search_standard_hives = true;
   bool search_registry_root = true;

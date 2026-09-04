@@ -44,6 +44,13 @@ private:
   bool valid_ = true;
 };
 
+enum class Provider : uint8_t {
+  kLocal,
+  kRemote,
+  kOffline,
+  kVirtual,
+};
+
 struct Criteria {
   std::wstring query;
   bool search_keys = true;
@@ -64,42 +71,59 @@ struct Criteria {
   std::vector<DWORD> allowed_types;
   std::vector<RegistryNode> start_nodes;
   std::vector<std::wstring> exclude_paths;
+  Provider provider = Provider::kLocal;
 };
 
-enum class MatchField {
+enum class MatchField : uint8_t {
   kNone,
   kPath,
   kName,
   kData,
 };
 
+enum class ResultKind : uint8_t {
+  kKey,
+  kValue,
+  kTraceKey,
+  kTraceValue,
+};
+
+enum class DataState : uint8_t {
+  kNotApplicable,
+  kNotLoaded,
+  kLoaded,
+};
+
 struct Result {
   std::wstring key_path;
-  std::wstring key_name;
   std::wstring value_name;
-  std::wstring display_name;
-  std::wstring type_text;
+  std::wstring data_text;
   DWORD type = 0;
-  std::wstring data;
-  std::wstring size_text;
-  std::wstring date_text;
-  std::wstring comment;
-  bool is_key = false;
-  bool data_loaded = true;
+  DWORD data_size = 0;
+  FILETIME modified = {};
+  uint64_t row_id = 0;
+  uint32_t match_start = 0;
+  uint32_t match_length = 0;
   MatchField match_field = MatchField::kNone;
-  int match_start = -1;
-  int match_length = 0;
+  ResultKind kind = ResultKind::kValue;
+  DataState data_state = DataState::kNotApplicable;
 };
+
+bool IsKeyRow(const Result& result) noexcept;
+std::wstring_view DisplayName(const Result& result) noexcept;
+std::wstring TypeText(const Result& result);
+std::wstring SizeText(const Result& result);
+std::wstring DateText(const Result& result);
+std::wstring_view KeyLeaf(const Result& result) noexcept;
 
 using ProgressCallback =
     std::function<void(uint64_t searched, uint64_t total)>;
-using ResultCallback = std::function<bool(Result&& result)>;
+using ResultBatch = std::vector<Result>;
+using BatchCallback = std::function<bool(ResultBatch&&)>;
 
 bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
-         const ResultCallback& callback,
-         const ProgressCallback& progress, bool stop_on_first);
+         const BatchCallback& publish, const ProgressCallback& progress);
 
-void SortResults(std::vector<Result>* results, int column,
-                 bool ascending, bool compare);
+void SortResults(std::vector<Result>* results, int column, bool ascending);
 
 } // namespace regkit::search

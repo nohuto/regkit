@@ -275,6 +275,8 @@ inline int CompareUint64(uint64_t left, uint64_t right) {
 
 constexpr int kCellTooltipPadding = 8;
 constexpr size_t kCellTooltipMeasureLimit = 512;
+constexpr size_t kCellTextDrawLimit = 512;
+constexpr size_t kValuePreviewLimit = 4096;
 
 inline const std::wstring& ValueRowFieldText(const ListRow& row, int subitem) {
   switch (subitem) {
@@ -388,10 +390,15 @@ inline void UpdateListViewSort(HWND list, int column, bool ascending) {
     if (!Header_GetItem(header, i, &item)) {
       continue;
     }
-    item.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
+    const int current = item.fmt & (HDF_SORTUP | HDF_SORTDOWN);
+    int wanted = 0;
     if (column >= 0 && GetListViewColumnSubItem(list, i) == column) {
-      item.fmt |= ascending ? HDF_SORTUP : HDF_SORTDOWN;
+      wanted = ascending ? HDF_SORTUP : HDF_SORTDOWN;
     }
+    if (current == wanted) {
+      continue;
+    }
+    item.fmt = (item.fmt & ~(HDF_SORTUP | HDF_SORTDOWN)) | wanted;
     Header_SetItem(header, i, &item);
   }
 }

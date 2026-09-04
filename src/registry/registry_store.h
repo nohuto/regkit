@@ -45,6 +45,12 @@ struct ValueInfo {
   DWORD data_size = 0;
 };
 
+struct EnumerationScratch {
+  std::wstring value_name;
+  std::wstring subkey_name;
+  std::vector<BYTE> value_data;
+};
+
 struct KeyInfo {
   DWORD subkey_count = 0;
   DWORD value_count = 0;
@@ -66,7 +72,8 @@ public:
     KeyInfo info;
     bool info_valid = false;
   };
-  static bool EnumKeyStreaming(const RegistryNode& node, bool include_values, bool include_data, bool include_subkeys, KeyEnumResult* out_info, const ValueStreamCallback& value_callback, const SubkeyStreamCallback& subkey_callback, DWORD max_data_size = MAXDWORD);
+  static bool EnumKeyStreaming(const RegistryNode& node, bool include_values, bool include_data, bool include_subkeys, KeyEnumResult* out_info, const ValueStreamCallback& value_callback, const SubkeyStreamCallback& subkey_callback, DWORD max_data_size = MAXDWORD, EnumerationScratch* scratch = nullptr, bool ordered = true);
+  static bool IsOfflineRoot(HKEY root);
   static bool QueryValue(const RegistryNode& node, const std::wstring& value_name, ValueEntry* out);
   static bool QueryKeyInfo(const RegistryNode& node, KeyInfo* info);
   static bool QuerySymbolicLinkTarget(const RegistryNode& node, std::wstring* target);

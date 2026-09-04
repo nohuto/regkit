@@ -154,13 +154,13 @@ void MainWindow::Impl::StartCompareRegistries() {
     return;
   }
 
-  std::vector<search::Result> results =
+  std::vector<search::compare::Row> rows =
       search::compare::Diff(left_snapshot, right_snapshot);
   std::wstring tab_label = L"Registry Comparision";
 
   SearchTab tab;
   tab.label = std::move(tab_label);
-  tab.results = std::move(results);
+  tab.compare_rows = std::move(rows);
   tab.is_compare = true;
   search_tabs_.push_back(std::move(tab));
   int search_index = static_cast<int>(search_tabs_.size() - 1);

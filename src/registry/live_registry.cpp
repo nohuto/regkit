@@ -158,7 +158,10 @@ bool EnumKeyStreaming(
     bool include_subkeys, RegistryStore::KeyEnumResult* out_info,
     const RegistryStore::ValueStreamCallback& value_callback,
     const RegistryStore::SubkeyStreamCallback& subkey_callback,
-    DWORD max_data_size) {
+    DWORD max_data_size, EnumerationScratch* scratch, bool ordered) {
+  (void)ordered;
+  EnumerationScratch local;
+  EnumerationScratch& buffers = scratch ? *scratch : local;
   util::UniqueHKey key = OpenKey(node, KEY_READ);
   if (!key.get()) {
     return false;
@@ -184,10 +187,16 @@ bool EnumKeyStreaming(
   }
 
   if (include_values && value_callback) {
-    std::wstring name(max_value_name_length + 1, L'\0');
-    std::vector<BYTE> data;
+    std::wstring& name = buffers.value_name;
+    std::vector<BYTE>& data = buffers.value_data;
+    if (name.size() < static_cast<size_t>(max_value_name_length) + 1) {
+      name.resize(static_cast<size_t>(max_value_name_length) + 1);
+    }
     if (include_data) {
-      data.resize(std::min(max_value_data_length, max_data_size));
+      const size_t needed = std::min(max_value_data_length, max_data_size);
+      if (data.size() < needed) {
+        data.resize(needed);
+      }
     }
     for (DWORD index = 0; index < value_count; ++index) {
       DWORD name_length = static_cast<DWORD>(name.size());
@@ -200,7 +209,9 @@ bool EnumKeyStreaming(
           &data_length);
       if (result == ERROR_MORE_DATA && include_data &&
           data_length <= max_data_size) {
-        data.resize(data_length);
+        if (data.size() < data_length) {
+          data.resize(data_length);
+        }
         name_length = static_cast<DWORD>(name.size());
         data_length = static_cast<DWORD>(data.size());
         result = RegEnumValueW(
@@ -228,7 +239,10 @@ bool EnumKeyStreaming(
   }
 
   if (include_subkeys && subkey_callback) {
-    std::wstring name(max_subkey_length + 1, L'\0');
+    std::wstring& name = buffers.subkey_name;
+    if (name.size() < static_cast<size_t>(max_subkey_length) + 1) {
+      name.resize(static_cast<size_t>(max_subkey_length) + 1);
+    }
     for (DWORD index = 0; index < subkey_count; ++index) {
       DWORD name_length = static_cast<DWORD>(name.size());
       FILETIME child_write = {};

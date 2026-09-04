@@ -8,17 +8,6 @@ using namespace window_detail;
 
 namespace {
 
-void RefreshColumnLayout(HWND list) {
-  HWND header = list ? ListView_GetHeader(list) : nullptr;
-  const int last = header ? Header_GetItemCount(header) - 1 : -1;
-  if (last < 0) {
-    return;
-  }
-  const int width = ListView_GetColumnWidth(list, last);
-  ListView_SetColumnWidth(list, last, width + 1);
-  ListView_SetColumnWidth(list, last, width);
-}
-
 } // namespace
 
 void MainWindow::Impl::BuildImageLists() {
@@ -154,6 +143,11 @@ void MainWindow::Impl::ApplyValueColumns() {
     return;
   }
   HWND header = ListView_GetHeader(list);
+  SendMessageW(list, WM_SETREDRAW, FALSE, 0);
+  if (header) {
+    SendMessageW(header, WM_SETREDRAW, FALSE, 0);
+  }
+
   int count = header ? Header_GetItemCount(header) : 0;
   for (int i = count - 1; i >= 0; --i) {
     ListView_DeleteColumn(list, i);
@@ -179,7 +173,6 @@ void MainWindow::Impl::ApplyValueColumns() {
     value_column_subitems_.push_back(static_cast<int>(i));
   }
 
-  UpdateListViewSort(list, browse_.columns().sort_column, browse_.columns().sort_ascending);
   header = ListView_GetHeader(list);
   if (header) {
     int size_display = FindListViewColumnBySubItem(list, kValueColSize);
@@ -191,10 +184,16 @@ void MainWindow::Impl::ApplyValueColumns() {
         Header_SetItem(header, size_display, &item);
       }
     }
+  }
+  UpdateListViewSort(list, browse_.columns().sort_column, browse_.columns().sort_ascending);
+  if (header) {
     AttachHeader(header);
     EnsureValueGridToolbar();
+    SendMessageW(header, WM_SETREDRAW, TRUE, 0);
   }
-  RefreshColumnLayout(list);
+  SendMessageW(list, WM_SETREDRAW, TRUE, 0);
+  RedrawWindow(list, nullptr, nullptr,
+               RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
 }
 
 void MainWindow::Impl::ApplyHistoryColumns() {
@@ -202,6 +201,11 @@ void MainWindow::Impl::ApplyHistoryColumns() {
     return;
   }
   HWND header = ListView_GetHeader(history_list_);
+  SendMessageW(history_list_, WM_SETREDRAW, FALSE, 0);
+  if (header) {
+    SendMessageW(header, WM_SETREDRAW, FALSE, 0);
+  }
+
   int count = header ? Header_GetItemCount(header) : 0;
   for (int i = count - 1; i >= 0; --i) {
     ListView_DeleteColumn(history_list_, i);
@@ -227,8 +231,13 @@ void MainWindow::Impl::ApplyHistoryColumns() {
 
   UpdateListViewSort(history_list_, history_sort_column_, history_sort_ascending_);
   header = ListView_GetHeader(history_list_);
-  AttachHeader(header);
-  RefreshColumnLayout(history_list_);
+  if (header) {
+    AttachHeader(header);
+    SendMessageW(header, WM_SETREDRAW, TRUE, 0);
+  }
+  SendMessageW(history_list_, WM_SETREDRAW, TRUE, 0);
+  RedrawWindow(history_list_, nullptr, nullptr,
+               RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
 }
 
 void MainWindow::Impl::CreateSearchColumns() {
@@ -278,6 +287,11 @@ void MainWindow::Impl::ApplySearchColumns(bool compare) {
   auto& widths = compare ? compare_column_widths_ : search_column_widths_;
   auto& visible = compare ? compare_column_visible_ : search_column_visible_;
   HWND header = ListView_GetHeader(search_results_list_);
+  SendMessageW(search_results_list_, WM_SETREDRAW, FALSE, 0);
+  if (header) {
+    SendMessageW(header, WM_SETREDRAW, FALSE, 0);
+  }
+
   int count = header ? Header_GetItemCount(header) : 0;
   for (int i = count - 1; i >= 0; --i) {
     ListView_DeleteColumn(search_results_list_, i);
@@ -304,9 +318,14 @@ void MainWindow::Impl::ApplySearchColumns(bool compare) {
   }
 
   header = ListView_GetHeader(search_results_list_);
-  AttachHeader(header);
+  if (header) {
+    AttachHeader(header);
+    SendMessageW(header, WM_SETREDRAW, TRUE, 0);
+  }
+  SendMessageW(search_results_list_, WM_SETREDRAW, TRUE, 0);
+  RedrawWindow(search_results_list_, nullptr, nullptr,
+               RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
   compare_columns_active_ = compare;
-  RefreshColumnLayout(search_results_list_);
 }
 
 void MainWindow::Impl::UpdateValueListForNode(RegistryNode* node) {
@@ -340,7 +359,7 @@ void MainWindow::Impl::UpdateValueListForNode(RegistryNode* node) {
   if (!node) {
     if (list_hwnd && !jump_ui_batch_active_) {
       SendMessageW(list_hwnd, WM_SETREDRAW, TRUE, 0);
-      InvalidateRect(list_hwnd, nullptr, TRUE);
+      RedrawWindow(list_hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE);
     }
     UpdateStatus();
     updating_value_list_ = false;
@@ -378,7 +397,7 @@ void MainWindow::Impl::UpdateValueListForNode(RegistryNode* node) {
 
   if (list_hwnd && !jump_ui_batch_active_) {
     SendMessageW(list_hwnd, WM_SETREDRAW, TRUE, 0);
-    InvalidateRect(list_hwnd, nullptr, TRUE);
+    RedrawWindow(list_hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE);
   }
   UpdateStatus();
   updating_value_list_ = false;

@@ -17,7 +17,6 @@
 #include <exception>
 #include <functional>
 #include <limits>
-#include <regex>
 
 #include <commdlg.h>
 #include <pathcch.h>
@@ -345,90 +344,5 @@ inline bool ParseRegFileToVirtualRoots(const std::wstring& path, std::vector<Par
   }
   return true;
 }
-struct TextMatch {
-  bool matched = false;
-  size_t start = std::wstring::npos;
-  size_t length = 0;
-};
-
-class TextMatcher {
-public:
-  TextMatcher(const std::wstring& query, bool use_regex, bool match_case, bool match_whole, bool* ok) : query_(query), use_regex_(use_regex), match_case_(match_case), match_whole_(match_whole) {
-    if (use_regex_) {
-      try {
-        auto flags = std::regex_constants::ECMAScript;
-        if (!match_case_) {
-          flags |= std::regex_constants::icase;
-        }
-        regex_ = std::wregex(query_, flags);
-      } catch (const std::regex_error&) {
-        if (ok) {
-          *ok = false;
-        }
-      }
-    }
-  }
-
-  TextMatch Match(const std::wstring& text) const {
-    TextMatch match;
-    if (text.empty()) {
-      return match;
-    }
-    if (use_regex_) {
-      std::wsmatch regex_match;
-      if (match_whole_) {
-        if (std::regex_match(text, regex_match, regex_)) {
-          match.matched = true;
-          match.start = 0;
-          match.length = regex_match.length();
-        }
-      } else if (std::regex_search(text, regex_match, regex_)) {
-        match.matched = true;
-        match.start = regex_match.position();
-        match.length = regex_match.length();
-      }
-      return match;
-    }
-
-    if (match_whole_) {
-      if (match_case_) {
-        if (text == query_) {
-          match.matched = true;
-          match.start = 0;
-          match.length = text.size();
-        }
-      } else if (CompareStringOrdinal(text.c_str(), static_cast<int>(text.size()), query_.c_str(), static_cast<int>(query_.size()), TRUE) == CSTR_EQUAL) {
-        match.matched = true;
-        match.start = 0;
-        match.length = text.size();
-      }
-      return match;
-    }
-
-    if (match_case_) {
-      size_t pos = text.find(query_);
-      if (pos != std::wstring::npos) {
-        match.matched = true;
-        match.start = pos;
-        match.length = query_.size();
-      }
-    } else {
-      int pos = FindStringOrdinal(FIND_FROMSTART, text.c_str(), static_cast<int>(text.size()), query_.c_str(), static_cast<int>(query_.size()), TRUE);
-      if (pos >= 0) {
-        match.matched = true;
-        match.start = static_cast<size_t>(pos);
-        match.length = query_.size();
-      }
-    }
-    return match;
-  }
-
-private:
-  std::wstring query_;
-  bool use_regex_ = false;
-  bool match_case_ = false;
-  bool match_whole_ = false;
-  std::wregex regex_;
-};
 
 } // namespace regkit::window_detail

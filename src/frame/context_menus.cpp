@@ -190,7 +190,7 @@ void MainWindow::Impl::ShowTreeContextMenu(POINT screen_pt) {
   if (!is_simulated) {
     AppendMenuW(menu, modify_flags, cmd::kEditPermissions, L"Permissions...");
     if (can_open_hive) {
-      AppendMenuW(menu, MF_STRING, cmd::kOptionsHiveFileDir, L"Open Hive File");
+      AppendMenuW(menu, MF_STRING, cmd::kOptionsHiveFileDir, L"On-Disk Hive File");
     }
   }
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
@@ -286,7 +286,7 @@ void MainWindow::Impl::ShowValueContextMenu(POINT screen_pt) {
     if (!is_simulated) {
       AppendMenuW(menu, modify_flags, cmd::kEditPermissions, L"Permissions...");
       if (can_open_hive) {
-        AppendMenuW(menu, MF_STRING, cmd::kOptionsHiveFileDir, L"Open Hive File");
+        AppendMenuW(menu, MF_STRING, cmd::kOptionsHiveFileDir, L"On-Disk Hive File");
       }
     }
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
@@ -432,16 +432,10 @@ void MainWindow::Impl::ShowHistoryContextMenu(POINT screen_pt) {
     }
   } else if (command == cmd::kHistoryRevert && entry) {
     RevertHistoryEntry(*entry);
-  } else if (command == cmd::kEditCopyKey && index >= 0) {
-    wchar_t time[128] = {};
-    wchar_t action[256] = {};
-    wchar_t old_data[256] = {};
-    wchar_t new_data[256] = {};
-    ListView_GetItemText(history_list_, index, 0, time, _countof(time));
-    ListView_GetItemText(history_list_, index, 1, action, _countof(action));
-    ListView_GetItemText(history_list_, index, 2, old_data, _countof(old_data));
-    ListView_GetItemText(history_list_, index, 3, new_data, _countof(new_data));
-    std::wstring combined = std::wstring(time) + L" | " + action + L" | " + old_data + L" | " + new_data;
+  } else if (command == cmd::kEditCopyKey && entry) {
+    const std::wstring combined = entry->time_text + L" | " + entry->action +
+                                  L" | " + entry->old_data + L" | " +
+                                  entry->new_data;
     ui::CopyTextToClipboard(hwnd_, combined);
   } else if (command == cmd::kEditDelete) {
     ClearHistoryItems(true);
@@ -466,7 +460,7 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
   if (search_index < 0 || static_cast<size_t>(search_index) >= search_tabs_.size()) {
     return;
   }
-  if (static_cast<size_t>(index) >= search_tabs_[static_cast<size_t>(search_index)].results.size()) {
+  if (static_cast<size_t>(index) >= SearchRowCount(search_index)) {
     return;
   }
 
@@ -478,8 +472,10 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
   ListView_SetItemState(search_results_list_, index,
                         LVIS_SELECTED | LVIS_FOCUSED,
                         LVIS_SELECTED | LVIS_FOCUSED);
-  const search::Result& result = search_tabs_[static_cast<size_t>(search_index)].results[static_cast<size_t>(index)];
-  std::wstring key_path = result.key_path;
+  std::wstring key_path = SearchRowKeyPath(search_index, index);
+  // Null on compare tabs, where value operations do not apply.
+  const search::Result* result = SearchResultAt(index);
+  const bool is_key_row = !result || search::IsKeyRow(*result);
   if (key_path.empty()) {
     return;
   }
@@ -489,8 +485,8 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
   KeyInfo info = {};
   bool key_exists = node_ok && RegistryStore::QueryKeyInfo(node, &info);
   bool can_modify = !read_only_;
-  bool can_rename = key_exists && can_modify && (!result.is_key || !node.subkey.empty());
-  bool can_delete = key_exists && can_modify && (!result.is_key || !node.subkey.empty());
+  bool can_rename = key_exists && can_modify && (!is_key_row || !node.subkey.empty());
+  bool can_delete = key_exists && can_modify && (!is_key_row || !node.subkey.empty());
   bool can_export = key_exists;
   bool can_permissions = key_exists && can_modify;
   bool can_open_hive = false;
@@ -542,7 +538,7 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
   AppendMenuW(menu, MF_STRING, kSearchOpenKey, L"Open Key");
   AppendMenuW(menu, MF_STRING, kSearchOpenKeyNewTab, L"Open Key in New Tab");
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-  if (!result.is_key) {
+  if (!is_key_row) {
     UINT modify_flags = MF_STRING | (can_modify ? 0 : MF_GRAYED);
     AppendMenuW(menu, modify_flags, kSearchModify, L"Modify...");
     AppendMenuW(menu, modify_flags, kSearchModifyBinary, L"Modify Binary Data...");
@@ -555,7 +551,7 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
   UINT permissions_flags = MF_STRING | (can_permissions ? 0 : MF_GRAYED);
   AppendMenuW(menu, permissions_flags, kSearchPermissions, L"Permissions...");
   UINT open_hive_flags = MF_STRING | (can_open_hive ? 0 : MF_GRAYED);
-  AppendMenuW(menu, open_hive_flags, kSearchOpenHive, L"Open Hive File");
+  AppendMenuW(menu, open_hive_flags, kSearchOpenHive, L"On-Disk Hive File");
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   UINT export_flags = MF_STRING | (can_export ? 0 : MF_GRAYED);
   AppendMenuW(menu, export_flags, kSearchExport, L"Export...");
@@ -591,11 +587,11 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
     }
   };
   auto run_on_value = [&](int command) {
-    if (result.is_key) {
+    if (is_key_row) {
       return;
     }
     open_key(false);
-    if (SelectValueByName(result.value_name)) {
+    if (SelectValueByName(result->value_name)) {
       if (browse_.values().hwnd()) {
         SetFocus(browse_.values().hwnd());
       }
@@ -603,7 +599,7 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
       return;
     }
     pending_external_value_key_path_ = key_path;
-    pending_external_value_name_ = result.value_name;
+    pending_external_value_name_ = result->value_name;
     pending_value_command_ = command;
   };
   auto run_on_key = [&](int command) {
@@ -611,7 +607,7 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
     HandleMenuCommand(command);
   };
   auto run_on_target = [&](int command) {
-    if (result.is_key) {
+    if (is_key_row) {
       run_on_key(command);
     } else {
       run_on_value(command);

@@ -14,6 +14,14 @@
 
 namespace regkit::search::compare {
 
+struct Row {
+  std::wstring key_path;
+  std::wstring value_name;
+  std::wstring first_text;
+  std::wstring second_text;
+  bool is_key = false;
+};
+
 struct Value {
   std::wstring name;
   DWORD type = REG_NONE;
@@ -44,7 +52,9 @@ bool LoadRegFile(const std::wstring& file_path,
                  std::wstring* error,
                  std::atomic_bool* cancel = nullptr);
 
-std::vector<Result> Diff(const Snapshot& first, const Snapshot& second,
-                         std::atomic_bool* cancel = nullptr);
+void SortRows(std::vector<Row>* rows, int column, bool ascending);
+
+std::vector<Row> Diff(const Snapshot& first, const Snapshot& second,
+                      std::atomic_bool* cancel = nullptr);
 
 } // namespace regkit::search::compare

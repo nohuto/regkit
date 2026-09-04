@@ -10,14 +10,19 @@ namespace regkit::frame {
 MessageArea ClassifyMessage(UINT message) noexcept {
   switch (message) {
   case message_id::kSearchResults:
-  case message_id::kSearchFinished:
   case message_id::kSearchFailed:
   case message_id::kSearchProgress:
+  case message_id::kSearchPreviewRequest:
+  case message_id::kSearchPreviewReady:
+  case message_id::kSearchSortReady:
+  case message_id::kSearchTabLoadReady:
   case message_id::kLoadTraces:
   case message_id::kTraceLoadReady:
   case message_id::kLoadDefaults:
   case message_id::kDefaultLoadReady:
   case message_id::kValueListReady:
+  case message_id::kValuePreviewReady:
+  case message_id::kValuePreviewRequest:
   case message_id::kTraceParseBatch:
   case message_id::kDefaultParseBatch:
   case message_id::kRegFileLoadReady:

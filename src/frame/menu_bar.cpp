@@ -9,6 +9,12 @@ using namespace command_detail;
 
 std::wstring MainWindow::Impl::CommandShortcutText(int command_id) const {
   switch (command_id) {
+  case cmd::kRegistryLocal:
+    return L"Ctrl+N";
+  case cmd::kRegistryNetwork:
+    return L"Ctrl+R";
+  case cmd::kRegistryOffline:
+    return L"Ctrl+O";
   case cmd::kEditCopy:
     return L"Ctrl+C";
   case cmd::kEditPaste:
@@ -224,7 +230,7 @@ void MainWindow::Impl::BuildMenus() {
   AppendMenuW(view_menu, MF_SEPARATOR, 0, nullptr);
   UINT hive_flags = MF_STRING |
                     (ResolveSelectedHiveFilePath().empty() ? MF_GRAYED : 0);
-  append_menu(view_menu, hive_flags, cmd::kOptionsHiveFileDir, L"Open Hive File");
+  append_menu(view_menu, hive_flags, cmd::kOptionsHiveFileDir, L"On-Disk Hive File");
   AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(view_menu), L"View");
 
   HMENU options_menu = CreatePopupMenu();

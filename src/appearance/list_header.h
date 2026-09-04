@@ -9,7 +9,7 @@
 
 namespace regkit::appearance {
 
-void PaintListHeader(HWND header, HFONT font, int reserved_right = 0);
+void PaintListHeader(HWND header, HFONT font);
 void ReleaseListHeaderTheme(HWND header);
 
 } // namespace regkit::appearance

@@ -91,6 +91,7 @@ void MainWindow::Impl::PaintMenuBarSeparator() {
 
 void MainWindow::Impl::ApplyThemeToChildren() {
   const Theme& theme = Theme::Current();
+  grid_line_color_ = CLR_INVALID;
 
   theme.ApplyToToolbar(toolbar_.hwnd());
   theme.ApplyToTreeView(browse_.tree().hwnd());

@@ -420,8 +420,283 @@ void MainWindow::Impl::StartValueListWorker() {
       });
 }
 
+void MainWindow::Impl::StartValuePreviewWorker() {
+  if (value_preview_loader_.running()) {
+    return;
+  }
+  value_preview_loader_.Start(
+      [this](std::unique_ptr<ValuePreviewTask> task, const std::atomic_bool& stopping) {
+        if (!task || task->generation != value_list_generation_.load()) {
+          return;
+        }
+        auto payload = std::make_unique<ValuePreviewPayload>();
+        payload->generation = task->generation;
+        payload->items.reserve(task->indices.size());
+        for (size_t i = 0; i < task->indices.size(); ++i) {
+          if (stopping.load() || task->generation != value_list_generation_.load()) {
+            return;
+          }
+          ValueEntry entry;
+          ValuePreviewItem item;
+          item.index = task->indices[i];
+          item.name = task->names[i];
+          const bool ok =
+              RegistryStore::QueryValue(task->snapshot, item.name, &entry);
+          if (ok) {
+            item.type = entry.type;
+            item.size = static_cast<DWORD>(entry.data.size());
+            item.preview = value_format::DisplayData(entry.type, entry.data.data(),
+                                                     item.size);
+            if (item.preview.size() > kValuePreviewLimit) {
+              item.preview.resize(kValuePreviewLimit);
+            }
+          }
+          payload->items.push_back(std::move(item));
+        }
+        if (stopping.load() || task->generation != value_list_generation_.load()) {
+          return;
+        }
+        if (PostMessageW(task->hwnd, frame::message_id::kValuePreviewReady,
+                         static_cast<WPARAM>(task->generation),
+                         reinterpret_cast<LPARAM>(payload.get())) != 0) {
+          payload.release();
+        }
+      });
+}
+
+void MainWindow::Impl::QueueValuePreviews(int first, int last) {
+  if (!browse_.current_node() || first < 0 || last < first) {
+    return;
+  }
+  auto task = std::make_unique<ValuePreviewTask>();
+  for (int i = first; i <= last; ++i) {
+    ListRow* row = browse_.values().MutableRowAt(i);
+    if (!row || row->kind != rowkind::kValue || row->data_ready) {
+      continue;
+    }
+    if (row->value_data_size == 0) {
+      row->data.clear();
+      row->data_ready = true;
+      browse_.values().InvalidateFilterCache(row);
+      continue;
+    }
+    task->indices.push_back(i);
+    task->names.push_back(row->extra);
+  }
+  if (task->indices.empty()) {
+    return;
+  }
+  StartValuePreviewWorker();
+  task->generation = value_list_generation_.load();
+  task->snapshot = *browse_.current_node();
+  task->hwnd = hwnd_;
+  value_preview_loader_.Submit(std::move(task));
+}
+
+void MainWindow::Impl::StartSearchPreviewWorker() {
+  if (search_preview_loader_.running()) {
+    return;
+  }
+  search_preview_loader_.Start(
+      [this](std::unique_ptr<SearchPreviewTask> task,
+             const std::atomic_bool& stopping) {
+        if (!task) {
+          return;
+        }
+        auto payload = std::make_unique<SearchPreviewPayload>();
+        payload->generation = task->generation;
+        payload->tab_index = task->tab_index;
+        payload->items.reserve(task->requests.size());
+        for (const auto& request : task->requests) {
+          if (stopping.load()) {
+            return;
+          }
+          ValueEntry entry;
+          SearchPreviewItem item;
+          item.index = request.index;
+          item.row_id = request.row_id;
+          if (RegistryStore::QueryValue(request.node, request.value_name, &entry)) {
+            item.type = entry.type;
+            item.data_size = static_cast<DWORD>(entry.data.size());
+            item.preview = value_format::DisplayData(entry.type, entry.data.data(),
+                                                     item.data_size);
+            if (item.preview.size() > kValuePreviewLimit) {
+              item.preview.resize(kValuePreviewLimit);
+            }
+          }
+          payload->items.push_back(std::move(item));
+        }
+        if (stopping.load()) {
+          return;
+        }
+        if (PostMessageW(task->hwnd, frame::message_id::kSearchPreviewReady,
+                         static_cast<WPARAM>(task->generation),
+                         reinterpret_cast<LPARAM>(payload.get())) != 0) {
+          payload.release();
+        }
+      });
+}
+
+void MainWindow::Impl::QueueSearchPreviews(int first, int last) {
+  const int index = SearchIndexFromTab(TabCtrl_GetCurSel(tab_));
+  if (index < 0 || static_cast<size_t>(index) >= search_tabs_.size()) {
+    return;
+  }
+  SearchTab& tab = search_tabs_[static_cast<size_t>(index)];
+  if (tab.is_compare || first < 0 || last < first) {
+    return;
+  }
+  auto task = std::make_unique<SearchPreviewTask>();
+  const size_t count = tab.results.size();
+  for (int i = first; i <= last && static_cast<size_t>(i) < count; ++i) {
+    search::Result& row = tab.results[static_cast<size_t>(i)];
+    if (row.data_state != search::DataState::kNotLoaded ||
+        search::IsKeyRow(row)) {
+      continue;
+    }
+    SearchPreviewRequest request;
+    if (!ResolvePathToNode(row.key_path, &request.node)) {
+      row.data_text.clear();
+      row.data_state = search::DataState::kLoaded;
+      continue;
+    }
+    request.index = i;
+    request.row_id = row.row_id;
+    request.value_name = row.value_name;
+    task->requests.push_back(std::move(request));
+  }
+  if (task->requests.empty()) {
+    return;
+  }
+  StartSearchPreviewWorker();
+  task->generation = tab.generation;
+  task->tab_index = index;
+  task->hwnd = hwnd_;
+  search_preview_loader_.Submit(std::move(task));
+}
+
+void MainWindow::Impl::StartSearchSortWorker() {
+  if (search_sort_loader_.running()) {
+    return;
+  }
+  search_sort_loader_.Start(
+      [this](std::unique_ptr<SearchSortTask> task,
+             const std::atomic_bool& stopping) {
+        if (!task) {
+          return;
+        }
+        for (size_t i = 0; i < task->rows.size(); ++i) {
+          if (stopping.load()) {
+            return;
+          }
+          search::Result& row = task->rows[i];
+          if (row.data_state != search::DataState::kNotLoaded) {
+            continue;
+          }
+          row.data_state = search::DataState::kLoaded;
+          ValueEntry entry;
+          if (!RegistryStore::QueryValue(task->nodes[i], row.value_name,
+                                         &entry)) {
+            row.data_text.clear();
+            continue;
+          }
+          row.type = entry.type;
+          row.data_size = static_cast<DWORD>(entry.data.size());
+          std::wstring preview = value_format::DisplayData(
+              entry.type, entry.data.data(), row.data_size);
+          if (preview.size() > kValuePreviewLimit) {
+            preview.resize(kValuePreviewLimit);
+          }
+          row.data_text = std::move(preview);
+        }
+        if (stopping.load()) {
+          return;
+        }
+        search::SortResults(&task->rows, task->column, task->ascending);
+        auto payload = std::make_unique<SearchSortPayload>();
+        payload->generation = task->generation;
+        payload->tab_index = task->tab_index;
+        payload->rows = std::move(task->rows);
+        if (PostMessageW(task->hwnd, frame::message_id::kSearchSortReady,
+                         static_cast<WPARAM>(task->generation),
+                         reinterpret_cast<LPARAM>(payload.get())) != 0) {
+          payload.release();
+        }
+      });
+}
+
+void MainWindow::Impl::QueueSearchSort(SearchTab* tab) {
+  if (!tab) {
+    return;
+  }
+  int tab_index = -1;
+  for (size_t i = 0; i < search_tabs_.size(); ++i) {
+    if (&search_tabs_[i] == tab) {
+      tab_index = static_cast<int>(i);
+      break;
+    }
+  }
+  if (tab_index < 0) {
+    return;
+  }
+  auto task = std::make_unique<SearchSortTask>();
+  task->rows = tab->results;
+  task->nodes.resize(task->rows.size());
+  for (size_t i = 0; i < task->rows.size(); ++i) {
+    if (task->rows[i].data_state == search::DataState::kNotLoaded) {
+      RegistryNode node;
+      if (ResolvePathToNode(task->rows[i].key_path, &node)) {
+        task->nodes[i] = std::move(node);
+      } else {
+        task->rows[i].data_state = search::DataState::kLoaded;
+      }
+    }
+  }
+  StartSearchSortWorker();
+  task->generation = tab->generation;
+  task->tab_index = tab_index;
+  task->column = tab->sort_column;
+  task->ascending = tab->sort_ascending;
+  task->hwnd = hwnd_;
+  search_sort_loader_.Submit(std::move(task));
+}
+
+void MainWindow::Impl::StartSearchTabLoadWorker() {
+  if (search_tab_loader_.running()) {
+    return;
+  }
+  search_tab_loader_.Start(
+      [](std::unique_ptr<SearchTabLoadTask> task,
+         const std::atomic_bool& stopping) {
+        if (!task) {
+          return;
+        }
+        auto payload = std::make_unique<SearchTabLoadPayload>();
+        payload->generation = task->generation;
+        payload->tab_index = task->tab_index;
+        // File read, decode, parse and the initial sort all run here.
+        payload->ok = search::LoadResults(task->path, &payload->rows);
+        if (payload->ok && task->sort_column >= 0) {
+          search::SortResults(&payload->rows, task->sort_column,
+                              task->sort_ascending);
+        }
+        if (stopping.load()) {
+          return;
+        }
+        if (PostMessageW(task->hwnd, frame::message_id::kSearchTabLoadReady,
+                         static_cast<WPARAM>(task->generation),
+                         reinterpret_cast<LPARAM>(payload.get())) != 0) {
+          payload.release();
+        }
+      });
+}
+
 void MainWindow::Impl::StopValueListWorker() {
   value_loader_.Stop();
+  value_preview_loader_.Stop();
+  search_preview_loader_.Stop();
+  search_sort_loader_.Stop();
+  search_tab_loader_.Stop();
 }
 
 } // namespace regkit

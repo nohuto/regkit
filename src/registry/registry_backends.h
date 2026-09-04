@@ -20,7 +20,7 @@ bool EnumKeyStreaming(
     bool include_subkeys, RegistryStore::KeyEnumResult* out_info,
     const RegistryStore::ValueStreamCallback& value_callback,
     const RegistryStore::SubkeyStreamCallback& subkey_callback,
-    DWORD max_data_size);
+    DWORD max_data_size, EnumerationScratch* scratch, bool ordered);
 bool QueryValue(const RegistryNode& node, const std::wstring& value_name,
                 ValueEntry* out);
 bool CreateKey(const RegistryNode& node, const std::wstring& name);
@@ -54,7 +54,7 @@ bool EnumKeyStreaming(
     bool include_subkeys, RegistryStore::KeyEnumResult* out_info,
     const RegistryStore::ValueStreamCallback& value_callback,
     const RegistryStore::SubkeyStreamCallback& subkey_callback,
-    DWORD max_data_size);
+    DWORD max_data_size, EnumerationScratch* scratch, bool ordered);
 bool QueryValue(const RegistryNode& node, const std::wstring& value_name,
                 ValueEntry* out);
 bool CreateKey(const RegistryNode& node, const std::wstring& name);
@@ -88,7 +88,7 @@ bool EnumKeyStreaming(
     RegistryStore::KeyEnumResult* out_info,
     const RegistryStore::ValueStreamCallback& value_callback,
     const RegistryStore::SubkeyStreamCallback& subkey_callback,
-    DWORD max_data_size);
+    DWORD max_data_size, EnumerationScratch* scratch, bool ordered);
 bool QueryValue(const VirtualRegistryData& data, const RegistryNode& node,
                 const std::wstring& value_name, ValueEntry* out);
 bool CreateKey(VirtualRegistryData& data, const RegistryNode& node,

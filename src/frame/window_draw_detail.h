@@ -16,6 +16,7 @@
 #include <functional>
 #include <limits>
 #include <regex>
+#include <string_view>
 
 #include <pathcch.h>
 #include <richedit.h>
@@ -25,6 +26,7 @@
 #include <shobjidl.h>
 #include <uxtheme.h>
 #include <vsstyle.h>
+#include <vssym32.h>
 #include <windowsx.h>
 #include <winternl.h>
 
@@ -33,7 +35,6 @@
 #include "appearance/feedback.h"
 #include "appearance/default_font.h"
 #include "appearance/gdi_cache.h"
-#include "appearance/list_header.h"
 #include "win32/file_dialog.h"
 #include "win32/restart.h"
 #include "registry/registry_store.h"
@@ -103,11 +104,11 @@ inline void ReleasePostedPayload(std::unique_ptr<T>& payload) {
 constexpr wchar_t kStandardGroupLabel[] = L"Standart Hives";
 constexpr wchar_t kRealGroupLabel[] = L"REGISTRY";
 
-constexpr size_t kSearchResultsBatch = 1024;
 constexpr DWORD kSearchResultsMaxMs = 15;
 constexpr DWORD kSearchResultsRefreshMs = 1000;
 constexpr DWORD kSearchProgressUiMs = 500;
 constexpr size_t kSearchQueueBatch = 128;
+constexpr size_t kSearchPendingRowLimit = 8192;
 constexpr ULONG_PTR kExternalJumpCopyDataId = 0x52474A54;
 constexpr UINT_PTR kAddressSubclassId = 1;
 constexpr UINT_PTR kTabSubclassId = 2;
@@ -272,12 +273,13 @@ constexpr int kPanelBorderOverlap = 1;
 
 
 
-inline void DrawSearchMatchOverlay(HDC hdc, const RECT& cell, const wchar_t* text,
-                                   int start, int length) {
-  if (!text || start < 0 || length <= 0) {
+inline void DrawSearchMatchOverlay(HDC hdc, const RECT& cell,
+                                   std::wstring_view text, int start,
+                                   int length) {
+  if (text.empty() || start < 0 || length <= 0) {
     return;
   }
-  const int total = static_cast<int>(wcslen(text));
+  const int total = static_cast<int>(text.size());
   if (start >= total) {
     return;
   }
@@ -286,7 +288,7 @@ inline void DrawSearchMatchOverlay(HDC hdc, const RECT& cell, const wchar_t* tex
   }
   const int available = cell.right - cell.left;
   SIZE full = {};
-  if (available <= 0 || !GetTextExtentPoint32W(hdc, text, total, &full)) {
+  if (available <= 0 || !GetTextExtentPoint32W(hdc, text.data(), total, &full)) {
     return;
   }
   int visible = total;
@@ -297,7 +299,7 @@ inline void DrawSearchMatchOverlay(HDC hdc, const RECT& cell, const wchar_t* tex
       return;
     }
     SIZE fitted = {};
-    if (!GetTextExtentExPointW(hdc, text, total, available - ellipsis.cx,
+    if (!GetTextExtentExPointW(hdc, text.data(), total, available - ellipsis.cx,
                                &visible, nullptr, &fitted)) {
       return;
     }
@@ -306,7 +308,7 @@ inline void DrawSearchMatchOverlay(HDC hdc, const RECT& cell, const wchar_t* tex
     return;
   }
   SIZE prefix = {};
-  if (!GetTextExtentPoint32W(hdc, text, start, &prefix)) {
+  if (!GetTextExtentPoint32W(hdc, text.data(), start, &prefix)) {
     return;
   }
   const int x = cell.left + prefix.cx;
@@ -315,14 +317,14 @@ inline void DrawSearchMatchOverlay(HDC hdc, const RECT& cell, const wchar_t* tex
   const int y = cell.top + (cell.bottom - cell.top - metrics.tmHeight) / 2;
   const int old_mode = SetBkMode(hdc, TRANSPARENT);
   const COLORREF old_color = SetTextColor(hdc, Theme::Current().FocusColor());
-  ExtTextOutW(hdc, x, y, ETO_CLIPPED, &cell, text + start,
+  ExtTextOutW(hdc, x, y, ETO_CLIPPED, &cell, text.data() + start,
               static_cast<UINT>(length), nullptr);
   SetTextColor(hdc, old_color);
   SetBkMode(hdc, old_mode);
 }
 
 inline int SearchMatchSubItem(const search::Result& result) {
-  if (result.match_start < 0 || result.match_length <= 0) {
+  if (result.match_length == 0) {
     return -1;
   }
   switch (result.match_field) {

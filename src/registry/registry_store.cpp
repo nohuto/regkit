@@ -148,7 +148,8 @@ bool RegistryStore::EnumKeyStreaming(
     const RegistryNode& node, bool include_values, bool include_data,
     bool include_subkeys, KeyEnumResult* out_info,
     const ValueStreamCallback& value_callback,
-    const SubkeyStreamCallback& subkey_callback, DWORD max_data_size) {
+    const SubkeyStreamCallback& subkey_callback, DWORD max_data_size,
+    EnumerationScratch* scratch, bool ordered) {
   if (out_info) {
     out_info->info = {};
     out_info->info_valid = false;
@@ -158,18 +159,23 @@ bool RegistryStore::EnumKeyStreaming(
       [&](const VirtualRegistryData& data) {
         return registry_backend::virtual_store::EnumKeyStreaming(
             data, node, include_values, include_data, include_subkeys,
-            out_info, value_callback, subkey_callback, max_data_size);
+            out_info, value_callback, subkey_callback, max_data_size, scratch,
+            ordered);
       },
       [&] {
         return registry_backend::offline::EnumKeyStreaming(
             node, include_values, include_data, include_subkeys, out_info,
-            value_callback, subkey_callback, max_data_size);
+            value_callback, subkey_callback, max_data_size, scratch, ordered);
       },
       [&] {
         return registry_backend::live::EnumKeyStreaming(
             node, include_values, include_data, include_subkeys, out_info,
-            value_callback, subkey_callback, max_data_size);
+            value_callback, subkey_callback, max_data_size, scratch, ordered);
       });
+}
+
+bool RegistryStore::IsOfflineRoot(HKEY root) {
+  return registry_backend::offline::Owns(root);
 }
 
 bool RegistryStore::QueryValue(const RegistryNode& node,

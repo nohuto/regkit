@@ -12,6 +12,8 @@
 
 #include <atomic>
 #include <memory>
+#include <condition_variable>
+#include <deque>
 #include <mutex>
 #include <optional>
 #include <shared_mutex>
@@ -27,6 +29,7 @@
 #include "frame/toolbar.h"
 #include "trace/trace_dialog.h"
 #include "registry/registry_store.h"
+#include "search/compare.h"
 #include "search/search.h"
 #include "defaults/default_data.h"
 #include "trace/trace_data.h"
@@ -75,6 +78,7 @@ private:
   };
   struct TabEntry;
   struct SearchTab;
+  struct SearchTabLoadPayload;
   struct TraceParseSession;
   struct DefaultParseSession;
   struct StartupCachePayload : work::MoveOnly {
@@ -136,16 +140,19 @@ private:
                                              LPARAM lparam);
   LRESULT HandleNotification(LPARAM lparam);
   LRESULT HandleTooltipNotification(NMHDR* header, LPARAM lparam);
+  bool ValueCellTooltipText(std::wstring* out);
   LRESULT HandleToolbarNotification(NMHDR* header, LPARAM lparam);
   LRESULT HandleTabNotification(NMHDR* header, LPARAM lparam);
   LRESULT HandleTreeNotification(NMHDR* header, LPARAM lparam);
   LRESULT HandleHeaderNotification(NMHDR* header, LPARAM lparam);
+  bool PaintHeaderItem(HWND header, NMCUSTOMDRAW* draw);
   LRESULT HandleValueNotification(NMHDR* header, LPARAM lparam);
   LRESULT HandleHistoryNotification(NMHDR* header, LPARAM lparam);
   LRESULT HandleSearchNotification(NMHDR* header, LPARAM lparam);
-  LRESULT HandleValueListCustomDraw(NMLVCUSTOMDRAW* draw);
   LRESULT HandleSearchListCustomDraw(NMLVCUSTOMDRAW* draw);
   search::Result* SearchResultAt(int item);
+  std::wstring SearchRowKeyPath(int tab_index, int item) const;
+  size_t SearchRowCount(int tab_index) const;
   bool OnCreate();
   void RunDeferredStartup();
   void OnDestroy();
@@ -185,6 +192,10 @@ private:
   HBRUSH ValueHeaderSurfaceBrush() const;
   void LayoutValueGridToolbar();
   void SetValueGridEnabled(bool enabled, bool persist);
+  void PaintValueGridLines(HDC hdc, const RECT& area, int first_line_y,
+                           int row_height);
+  void PaintValueGridTail(HDC hdc);
+  void InvalidateValueGridColumn(int display_index);
   int ValueGridToggleWidth(HWND header) const;
   ToolbarIcon MakeToolbarIcon(const wchar_t* filename, int light_id, int dark_id, bool use_light) const;
   void CreateValueColumns();
@@ -199,6 +210,15 @@ private:
   void ResetValueFilter();
   void FocusFirstValue();
   void EnsureValueRowData(ListRow* row);
+  void StartValuePreviewWorker();
+  void QueueValuePreviews(int first, int last);
+  void QueueSearchPreviews(int first, int last);
+  void QueueSearchSort(SearchTab* tab);
+  void StartSearchSortWorker();
+  void StartSearchTabLoadWorker();
+  void ApplySearchTabLoad(SearchTabLoadPayload* payload);
+  void FinishSearchSession(uint64_t generation);
+  void StartSearchPreviewWorker();
   void StartValueListWorker();
   void StopValueListWorker();
   void StartTraceLoadWorker();
@@ -343,7 +363,6 @@ private:
   bool PrepareHistoryRevert(const HistoryEntry& entry, HistoryEntry* prepared) const;
   bool OpenHistoryTarget(const HistoryEntry& entry);
   bool RevertHistoryEntry(const HistoryEntry& entry);
-  bool EnsureSearchResultDataLoaded(search::Result* result);
   void ShowAddressContextMenu(HWND edit, POINT screen_pt);
   void ShowTreeContextMenu(POINT screen_pt);
   void ShowValueContextMenu(POINT screen_pt);
@@ -547,8 +566,13 @@ private:
   int drag_history_label_height_ = 0;
   HICON address_go_icon_ = nullptr;
   HWND value_grid_toolbar_ = nullptr;
+  HWND value_tooltip_ = nullptr;
+  int value_tip_item_ = -1;
+  int value_tip_subitem_ = -1;
+  std::wstring value_tooltip_text_;
   HIMAGELIST value_grid_image_list_ = nullptr;
   bool show_value_grid_ = false;
+  COLORREF grid_line_color_ = CLR_INVALID;
   bool show_toolbar_ = true;
   bool show_address_bar_ = true;
   bool show_filter_bar_ = true;
@@ -617,6 +641,10 @@ private:
   struct SearchTab {
     std::wstring label;
     std::vector<search::Result> results;
+    std::vector<search::compare::Row> compare_rows;
+    uint64_t next_row_id = 1;
+    bool load_pending = false;
+    uint64_t load_generation = 0;
     std::wstring cache_file;
     bool results_loaded = true;
     uint64_t generation = 0;
@@ -655,9 +683,9 @@ private:
     bool reg_file_loading = false;
   };
 
-  struct PendingSearchResult {
+  struct PendingSearchBatch {
     uint64_t generation = 0;
-    search::Result result;
+    std::vector<search::Result> rows;
   };
 
   struct TraceLoadPayload;
@@ -666,9 +694,14 @@ private:
   HWND search_results_list_ = nullptr;
   std::vector<TabEntry> tabs_;
   std::vector<SearchTab> search_tabs_;
-  std::vector<PendingSearchResult> search_pending_;
+  std::deque<PendingSearchBatch> search_pending_batches_;
+  size_t search_pending_rows_ = 0;
+  bool search_producer_done_ = false;
   std::mutex search_mutex_;
+  std::condition_variable search_queue_space_;
   std::atomic_bool search_posted_{false};
+  bool search_preview_request_posted_ = false;
+  bool value_preview_request_posted_ = false;
   std::atomic<uint64_t> search_progress_searched_{0};
   std::atomic<uint64_t> search_progress_total_{0};
   std::atomic_bool search_progress_posted_{false};
@@ -772,6 +805,81 @@ private:
     std::vector<ActiveDefault> default_data_list;
     std::shared_ptr<const std::unordered_set<std::wstring>> hive_roots;
   };
+  struct ValuePreviewTask {
+    uint64_t generation = 0;
+    RegistryNode snapshot;
+    std::vector<int> indices;
+    std::vector<std::wstring> names;
+    HWND hwnd = nullptr;
+  };
+  struct ValuePreviewItem {
+    int index = 0;
+    std::wstring name;
+    DWORD type = 0;
+    DWORD size = 0;
+    std::wstring preview;
+  };
+  struct ValuePreviewPayload {
+    uint64_t generation = 0;
+    std::vector<ValuePreviewItem> items;
+  };
+  work::LatestTask<ValuePreviewTask> value_preview_loader_;
+  struct SearchPreviewRequest {
+    int index = 0;
+    uint64_t row_id = 0;
+    RegistryNode node;
+    std::wstring value_name;
+  };
+  struct SearchPreviewTask {
+    uint64_t generation = 0;
+    int tab_index = -1;
+    std::vector<SearchPreviewRequest> requests;
+    HWND hwnd = nullptr;
+  };
+  struct SearchPreviewItem {
+    int index = 0;
+    uint64_t row_id = 0;
+    DWORD type = 0;
+    DWORD data_size = 0;
+    std::wstring preview;
+  };
+  struct SearchPreviewPayload {
+    uint64_t generation = 0;
+    int tab_index = -1;
+    std::vector<SearchPreviewItem> items;
+  };
+  work::LatestTask<SearchPreviewTask> search_preview_loader_;
+  struct SearchSortTask {
+    uint64_t generation = 0;
+    int tab_index = -1;
+    int column = 0;
+    bool ascending = true;
+    std::vector<search::Result> rows;
+    std::vector<RegistryNode> nodes;
+    HWND hwnd = nullptr;
+  };
+  struct SearchSortPayload {
+    uint64_t generation = 0;
+    int tab_index = -1;
+    std::vector<search::Result> rows;
+  };
+  work::LatestTask<SearchSortTask> search_sort_loader_;
+  struct SearchTabLoadTask {
+    uint64_t generation = 0;
+    int tab_index = -1;
+    std::wstring path;
+    int sort_column = -1;
+    bool sort_ascending = true;
+    HWND hwnd = nullptr;
+  };
+  struct SearchTabLoadPayload {
+    uint64_t generation = 0;
+    int tab_index = -1;
+    bool ok = false;
+    std::vector<search::Result> rows;
+  };
+  work::LatestTask<SearchTabLoadTask> search_tab_loader_;
+  uint64_t search_tab_load_generation_ = 0;
   std::vector<ActiveTrace> active_traces_;
   std::unordered_map<std::wstring, trace::Selection> trace_selection_cache_;
   workspace::RecentItems recent_trace_paths_{10};

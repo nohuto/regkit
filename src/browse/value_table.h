@@ -14,6 +14,11 @@
 
 namespace regkit {
 
+inline constexpr int kValueTooltipMaxWidth = 900;
+inline constexpr int kValueTooltipCursorGap = 18;
+inline constexpr size_t kValueTooltipTextLimit = 2000;
+inline constexpr size_t kValueTooltipLineLimit = 60;
+
 struct ColumnInfo {
   std::wstring title;
   int width = 0;

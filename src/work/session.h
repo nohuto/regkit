@@ -76,18 +76,22 @@ public:
     thread_ = std::thread([this]() { Run(); });
   }
 
-  void Submit(std::unique_ptr<Task> task) {
+  // Returns the task this one displaced, so a caller can undo its bookkeeping.
+  std::unique_ptr<Task> Submit(std::unique_ptr<Task> task) {
     if (!task) {
-      return;
+      return nullptr;
     }
+    std::unique_ptr<Task> displaced;
     {
       std::lock_guard<std::mutex> lock(mutex_);
       if (stopping_.load()) {
-        return;
+        return nullptr;
       }
+      displaced = std::move(pending_);
       pending_ = std::move(task);
     }
     ready_.notify_one();
+    return displaced;
   }
 
   void Stop() noexcept {
