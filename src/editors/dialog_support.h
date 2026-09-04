@@ -12,6 +12,7 @@ namespace regkit::editors::dialog_support {
 
 void Initialize(HWND dialog, HFONT* owned_font,
                 std::initializer_list<int> bordered_edits);
+void AllowNewlines(HWND dialog, int control_id);
 void ReleaseFont(HFONT* font);
 bool HandleThemeMessage(HWND dialog, UINT message, WPARAM wparam,
                         LPARAM lparam, INT_PTR* result);

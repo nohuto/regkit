@@ -182,6 +182,12 @@ void Initialize(HWND dialog, HFONT* owned_font,
   Center(dialog);
 }
 
+void AllowNewlines(HWND dialog, int control_id) {
+  if (HWND edit = GetDlgItem(dialog, control_id)) {
+    RemoveWindowSubclass(edit, SingleLineProc, kSingleLineSubclassId);
+  }
+}
+
 void ReleaseFont(HFONT* font) {
   if (font && *font) {
     DeleteObject(*font);

@@ -1085,6 +1085,9 @@ INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPAR
     }
     dialog_support::Initialize(
         dlg, &state->ui_font, {IDC_VALUE_NAME, IDC_EDIT});
+    if (state->base_type == REG_MULTI_SZ) {
+      dialog_support::AllowNewlines(dlg, IDC_EDIT);
+    }
     if (IsMultilineEdit(dlg, IDC_EDIT)) {
       using namespace appearance;
       state->resizer.Attach(dlg, {
