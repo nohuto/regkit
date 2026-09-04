@@ -905,7 +905,7 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
       }
 
       publish_batch(batch);
-      flush_progress(true);
+      flush_progress(false);
 
       {
         std::lock_guard<std::mutex> lock(mutex);

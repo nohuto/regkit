@@ -845,7 +845,7 @@ void MainWindow::Impl::InvalidateValueGridColumn(int display_index) {
   MapWindowPoints(nullptr, list, reinterpret_cast<POINT*>(&header_rect), 2);
   RECT band = {header_rect.left + column.left, client.top,
                header_rect.left + column.right + 1, client.bottom};
-  RedrawWindow(list, &band, nullptr, RDW_INVALIDATE | RDW_NOERASE);
+  RedrawWindow(list, &band, nullptr, RDW_INVALIDATE | RDW_NOERASE | RDW_UPDATENOW);
 }
 
 void MainWindow::Impl::PaintValueGridTail(HDC hdc) {

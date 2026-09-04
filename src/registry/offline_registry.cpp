@@ -481,14 +481,10 @@ bool EnumKeyStreaming(
   if (include_values && value_callback) {
     std::wstring& name = buffers.value_name;
     std::vector<BYTE>& data = buffers.value_data;
-    if (name.size() < static_cast<size_t>(max_value_name_length) + 1) {
-      name.resize(static_cast<size_t>(max_value_name_length) + 1);
-    }
+    name.resize(static_cast<size_t>(max_value_name_length) + 1);
     if (include_data) {
       const size_t needed = std::min(max_value_data_length, max_data_size);
-      if (data.size() < needed) {
-        data.resize(needed);
-      }
+      data.resize(needed);
     }
     for (DWORD index = 0; index < value_count; ++index) {
       DWORD name_length = static_cast<DWORD>(name.size());
@@ -531,9 +527,7 @@ bool EnumKeyStreaming(
 
   if (include_subkeys && subkey_callback) {
     std::wstring& name = buffers.subkey_name;
-    if (name.size() < static_cast<size_t>(max_subkey_length) + 1) {
-      name.resize(static_cast<size_t>(max_subkey_length) + 1);
-    }
+    name.resize(static_cast<size_t>(max_subkey_length) + 1);
     for (DWORD index = 0; index < subkey_count; ++index) {
       DWORD name_length = static_cast<DWORD>(name.size());
       if (api->enum_key(key.get(), index, name.data(), &name_length, nullptr,
