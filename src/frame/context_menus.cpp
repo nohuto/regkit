@@ -473,7 +473,7 @@ void MainWindow::Impl::ShowSearchResultContextMenu(POINT screen_pt) {
                         LVIS_SELECTED | LVIS_FOCUSED,
                         LVIS_SELECTED | LVIS_FOCUSED);
   std::wstring key_path = SearchRowKeyPath(search_index, index);
-  // Null on compare tabs, where value operations do not apply.
+
   const search::Result* result = SearchResultAt(index);
   const bool is_key_row = !result || search::IsKeyRow(*result);
   if (key_path.empty()) {

@@ -217,7 +217,7 @@ bool MainWindow::Impl::EnsureSearchTabResultsLoaded(int search_index) {
     return true;
   }
 
-  // Reading, parsing and sorting a saved tab happens on a worker.
+
   if (tab.load_pending) {
     return false;
   }
@@ -231,7 +231,7 @@ bool MainWindow::Impl::EnsureSearchTabResultsLoaded(int search_index) {
   task->sort_ascending = tab.sort_ascending;
   task->hwnd = hwnd_;
   tab.load_generation = task->generation;
-  // A displaced request never runs, so its tab must be able to ask again.
+
   std::unique_ptr<SearchTabLoadTask> displaced =
       search_tab_loader_.Submit(std::move(task));
   if (displaced && displaced->tab_index >= 0 &&

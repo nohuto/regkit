@@ -195,7 +195,6 @@ private:
   void PaintValueGridLines(HDC hdc, const RECT& area, int first_line_y,
                            int row_height);
   void PaintValueGridTail(HDC hdc);
-  void InvalidateValueGridColumn(int display_index);
   int ValueGridToggleWidth(HWND header) const;
   ToolbarIcon MakeToolbarIcon(const wchar_t* filename, int light_id, int dark_id, bool use_light) const;
   void CreateValueColumns();

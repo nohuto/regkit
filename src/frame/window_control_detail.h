@@ -375,6 +375,70 @@ inline void SortValueRows(std::vector<ListRow>* rows, int column, bool ascending
   });
 }
 
+constexpr wchar_t kListScrollProp[] = L"RegKitListScrollX";
+
+inline void InvalidateListViewTail(HWND list, bool immediate = false) {
+  RECT tail = {};
+  if (!list || !GetClientRect(list, &tail)) {
+    return;
+  }
+  const int count = ListView_GetItemCount(list);
+  if (count > 0) {
+    RECT last = {};
+    if (!ListView_GetItemRect(list, count - 1, &last, LVIR_BOUNDS)) {
+      return;
+    }
+    tail.top = last.bottom;
+  } else if (HWND header = ListView_GetHeader(list)) {
+    RECT header_rect = {};
+    if (!GetWindowRect(header, &header_rect)) {
+      return;
+    }
+    MapWindowPoints(nullptr, list, reinterpret_cast<POINT*>(&header_rect), 2);
+    tail.top = header_rect.bottom;
+  }
+  if (tail.top < tail.bottom) {
+
+
+    if (immediate) {
+      RedrawWindow(list, &tail, nullptr,
+                   RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
+    } else {
+      InvalidateRect(list, &tail, TRUE);
+    }
+  }
+}
+
+
+
+inline void InvalidateListViewColumn(HWND list, int display_index) {
+  HWND header = list ? ListView_GetHeader(list) : nullptr;
+  if (!header || display_index < 0) {
+    return;
+  }
+  RECT column = {};
+  RECT header_rect = {};
+  RECT client = {};
+  if (!Header_GetItemRect(header, display_index, &column) ||
+      !GetWindowRect(header, &header_rect) || !GetClientRect(list, &client)) {
+    return;
+  }
+  MapWindowPoints(nullptr, list, reinterpret_cast<POINT*>(&header_rect), 2);
+  RECT band = {header_rect.left + column.left, client.top,
+               header_rect.left + column.right + 1, client.bottom};
+  RedrawWindow(list, &band, nullptr,
+               RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
+}
+
+inline void RefreshListViewTailOnScroll(HWND list) {
+  const INT_PTR position = GetScrollPos(list, SB_HORZ) + 1;
+  if (GetPropW(list, kListScrollProp) == reinterpret_cast<HANDLE>(position)) {
+    return;
+  }
+  SetPropW(list, kListScrollProp, reinterpret_cast<HANDLE>(position));
+  InvalidateListViewTail(list);
+}
+
 inline void UpdateListViewSort(HWND list, int column, bool ascending) {
   if (!list) {
     return;

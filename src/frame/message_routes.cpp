@@ -261,7 +261,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleSearchWorkerMessage(UINT message,
     if (!search_session_.IsCurrent(generation)) {
       return 0;
     }
-    // Released before the drain so a producer can always post a successor.
+
     search_posted_.store(false);
     const int index = IsSearchTabIndex(active_search_tab_index_)
                           ? SearchIndexFromTab(active_search_tab_index_)
@@ -290,7 +290,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleSearchWorkerMessage(UINT message,
       for (auto& row : batch.rows) {
         row.row_id = tab->next_row_id++;
       }
-      // One move per row: batch into the tab.
+
       if (tab->results.empty()) {
         tab->results = std::move(batch.rows);
       } else {
@@ -315,7 +315,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleSearchWorkerMessage(UINT message,
       more_pending = !search_pending_batches_.empty();
       producer_done = search_producer_done_;
     }
-    // At most one outstanding drain message per generation.
+
     if (more_pending && !search_posted_.exchange(true)) {
       if (!PostMessageW(hwnd_, frame::message_id::kSearchResults,
                         static_cast<WPARAM>(generation), 0)) {
@@ -332,7 +332,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleSearchWorkerMessage(UINT message,
       }
     }
 
-    // Completion is owned by the drain, not by a separate repost loop.
+
     if (!more_pending && producer_done) {
       FinishSearchSession(generation);
     }
@@ -367,8 +367,8 @@ std::optional<LRESULT> MainWindow::Impl::HandleSearchWorkerMessage(UINT message,
     int first = -1;
     int last = -1;
     for (auto& item : owned->items) {
-      // Sorting can move a row while its preview is in flight, so the stable
-      // row id decides where the payload lands.
+
+
       int index = -1;
       if (item.index >= 0 && static_cast<size_t>(item.index) < tab.results.size() &&
           tab.results[static_cast<size_t>(item.index)].row_id == item.row_id) {

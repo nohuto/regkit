@@ -224,7 +224,7 @@ void SortResults(std::vector<Result>* results, int column, bool ascending) {
     return;
   }
   if (column == 2) {
-    // One formatted type string per distinct kind and registry type.
+
     std::map<std::pair<ResultKind, DWORD>, std::wstring> labels;
     auto label_of = [&labels](const Result& row) -> const std::wstring& {
       const auto key = std::make_pair(row.kind, row.type);
@@ -257,12 +257,15 @@ void SortResults(std::vector<Result>* results, int column, bool ascending) {
 
 namespace {
 
-// One owned subkey string per queued key. The root display name is owned once
-// per search by RootContext, and full display paths are built only for matches.
+
+
 struct RootContext {
   HKEY root = nullptr;
   std::wstring root_name;
   std::wstring display_root;
+  std::wstring base_subkey;
+  std::wstring mirror_root;
+  std::wstring mirror_prefix;
 };
 
 struct NodeTask {
@@ -300,11 +303,47 @@ std::wstring_view TaskLeaf(const NodeTask& task) {
   return std::wstring_view(task.subkey).substr(slash + 1);
 }
 
+
+
+std::wstring BuildMirrorPath(const NodeTask& task) {
+  const RootContext* context = task.context;
+  if (!context || context->mirror_root.empty()) {
+    return std::wstring();
+  }
+  const std::wstring& prefix = context->mirror_prefix;
+  const std::wstring& subkey = task.subkey;
+  if (subkey.size() < prefix.size() ||
+      CompareStringOrdinal(subkey.c_str(), static_cast<int>(prefix.size()),
+                           prefix.c_str(), static_cast<int>(prefix.size()),
+                           TRUE) != CSTR_EQUAL) {
+    return std::wstring();
+  }
+  if (subkey.size() > prefix.size() && subkey[prefix.size()] != L'\\') {
+    return std::wstring();
+  }
+  std::wstring path = context->mirror_root;
+  if (subkey.size() > prefix.size()) {
+    path.push_back(L'\\');
+    path.append(subkey, prefix.size() + 1, std::wstring::npos);
+  }
+  return path;
+}
+
 RegistryNode TaskNode(const NodeTask& task) {
   RegistryNode node;
   if (task.context) {
     node.root = task.context->root;
     node.root_name = task.context->root_name;
+    const std::wstring& base = task.context->base_subkey;
+    if (!base.empty()) {
+      node.subkey.reserve(base.size() + task.subkey.size() + 1);
+      node.subkey.append(base);
+      if (!task.subkey.empty()) {
+        node.subkey.push_back(L'\\');
+        node.subkey.append(task.subkey);
+      }
+      return node;
+    }
   }
   node.subkey = task.subkey;
   return node;
@@ -475,7 +514,7 @@ DataMatch MatchValueData(const Matcher& matcher,
         return result;
       }
     }
-    // Byte-to-wide compatibility scan reuses the worker's widening buffer.
+
     if (scratch) {
       scratch->assign(size, L'\0');
       for (DWORD i = 0; i < size; ++i) {
@@ -487,7 +526,7 @@ DataMatch MatchValueData(const Matcher& matcher,
         return result;
       }
     }
-    // UTF-16 payloads are matched in place when the buffer is aligned.
+
     if (size >= sizeof(wchar_t) && (size % sizeof(wchar_t)) == 0 &&
         (reinterpret_cast<uintptr_t>(data) % alignof(wchar_t)) == 0) {
       const std::wstring_view wide(reinterpret_cast<const wchar_t*>(data),
@@ -575,7 +614,7 @@ constexpr unsigned int kLocalWorkerLimit = 4;
 constexpr unsigned int kRemoteWorkerLimit = 2;
 constexpr unsigned int kOfflineWorkerLimit = 4;
 
-// Provider and scope decide the worker cap, not the number of start roots.
+
 unsigned int WorkerPolicy(const Criteria& criteria) {
   if (!criteria.recursive) {
     return 1u;
@@ -637,18 +676,74 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
   std::condition_variable cv;
   std::vector<NodeTask> stack;
   stack.reserve(criteria.start_nodes.size());
+
+
+
+
+
+  const wchar_t kClassesSubkey[] = L"SOFTWARE\\Classes";
+  std::wstring merged_classes_root;
+  bool machine_in_scope = false;
+  bool user_in_scope = false;
+  if (criteria.provider == Provider::kLocal) {
+    for (const auto& node : criteria.start_nodes) {
+      if (!node.subkey.empty()) {
+        continue;
+      }
+      if (node.root == HKEY_CLASSES_ROOT) {
+        RegistryNode root_only = node;
+        merged_classes_root = registry_path::Build(root_only);
+      } else if (node.root == HKEY_LOCAL_MACHINE) {
+        machine_in_scope = true;
+      } else if (node.root == HKEY_CURRENT_USER) {
+        user_in_scope = true;
+      }
+    }
+  }
+  const bool mirror_classes = !merged_classes_root.empty();
+
   for (const auto& node : criteria.start_nodes) {
-    auto context = std::make_unique<RootContext>();
-    context->root = node.root;
-    context->root_name = node.root_name;
     RegistryNode root_only = node;
     root_only.subkey.clear();
-    context->display_root = registry_path::Build(root_only);
-    NodeTask task;
-    task.context = context.get();
-    task.subkey = node.subkey;
-    stack.push_back(std::move(task));
-    contexts.push_back(std::move(context));
+    const std::wstring display_root = registry_path::Build(root_only);
+    const bool whole_root = node.subkey.empty();
+
+    struct Store {
+      HKEY root;
+      const wchar_t* base;
+    };
+    Store stores[2] = {{node.root, nullptr}, {nullptr, nullptr}};
+    size_t store_count = 1;
+    if (mirror_classes && whole_root && node.root == HKEY_CLASSES_ROOT) {
+      store_count = 0;
+      if (!machine_in_scope) {
+        stores[store_count++] = {HKEY_LOCAL_MACHINE, kClassesSubkey};
+      }
+      if (!user_in_scope) {
+        stores[store_count++] = {HKEY_CURRENT_USER, kClassesSubkey};
+      }
+    }
+
+    for (size_t i = 0; i < store_count; ++i) {
+      auto context = std::make_unique<RootContext>();
+      context->root = stores[i].root;
+      context->display_root = display_root;
+      if (stores[i].base) {
+        context->base_subkey = stores[i].base;
+      } else {
+        context->root_name = node.root_name;
+        if (mirror_classes && whole_root &&
+            (node.root == HKEY_LOCAL_MACHINE || node.root == HKEY_CURRENT_USER)) {
+          context->mirror_root = merged_classes_root;
+          context->mirror_prefix = kClassesSubkey;
+        }
+      }
+      NodeTask task;
+      task.context = context.get();
+      task.subkey = node.subkey;
+      stack.push_back(std::move(task));
+      contexts.push_back(std::move(context));
+    }
   }
 
   std::atomic<uint64_t> searched_keys(0);
@@ -688,7 +783,7 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
     }
   };
 
-  // One move per result: worker batch to sink.
+
   auto publish_batch = [&](ResultBatch& batch) -> bool {
     if (batch.empty()) {
       return true;
@@ -741,7 +836,7 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
         if (stack.empty()) {
           continue;
         }
-        // Transfer a chunk of nodes under one lock instead of one per key.
+
         const size_t take = std::min(kNodeChunkSize, stack.size());
         local.insert(local.end(),
                      std::make_move_iterator(stack.end() - take),
@@ -762,6 +857,22 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
             display_path = BuildDisplayPath(entry);
           }
           return display_path;
+        };
+
+
+
+        std::wstring mirror_path;
+        bool mirror_built = false;
+        auto mirror_text = [&]() -> const std::wstring& {
+          if (!mirror_built) {
+            mirror_built = true;
+            mirror_path = BuildMirrorPath(entry);
+            if (!mirror_path.empty() && has_excludes &&
+                IsExcludedPath(mirror_path, criteria.exclude_paths)) {
+              mirror_path.clear();
+            }
+          }
+          return mirror_path;
         };
 
         if (has_excludes &&
@@ -801,7 +912,7 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
           if (criteria.search_values) {
             name_match = matcher.Find(display_name);
           }
-          // Data matching cannot change emission once the name matched.
+
           DataMatch data_match;
           if (!name_match.matched && criteria.search_data) {
             data_match = MatchValueData(matcher, hex_query, value.type, data,
@@ -830,13 +941,20 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
                   static_cast<uint32_t>(data_match.match.length);
             }
           } else {
-            // A name match defers data to the background hydrator.
+
             result.data_state = DataState::kNotLoaded;
           }
           if (name_match.matched) {
             result.match_field = MatchField::kName;
             result.match_start = static_cast<uint32_t>(name_match.start);
             result.match_length = static_cast<uint32_t>(name_match.length);
+          }
+
+
+          if (!mirror_text().empty()) {
+            Result merged = result;
+            merged.key_path = mirror_text();
+            batch.push_back(std::move(merged));
           }
           batch.push_back(std::move(result));
           if (batch.size() >= kResultBatchSize && !publish_batch(batch)) {
@@ -870,7 +988,7 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
                          : RegistryStore::SubkeyStreamCallback(),
             enum_max_data, &scratch, false);
 
-        // A key that could not be opened must not produce a key result.
+
         if (enumerated && enum_result.info_valid && criteria.search_keys &&
             is_key_in_range()) {
           const std::wstring_view leaf = TaskLeaf(entry);
@@ -888,6 +1006,19 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
             result.match_start =
                 static_cast<uint32_t>(path_start + key_match.start);
             result.match_length = static_cast<uint32_t>(key_match.length);
+
+
+            if (!mirror_text().empty()) {
+              Result merged = result;
+              merged.key_path = mirror_text();
+              const size_t merged_start =
+                  merged.key_path.size() >= leaf.size()
+                      ? merged.key_path.size() - leaf.size()
+                      : 0;
+              merged.match_start =
+                  static_cast<uint32_t>(merged_start + key_match.start);
+              batch.push_back(std::move(merged));
+            }
             batch.push_back(std::move(result));
             if (batch.size() >= kResultBatchSize && !publish_batch(batch)) {
               break;
@@ -932,7 +1063,7 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
   worker_count = std::min<unsigned int>(
       worker_count, std::max<size_t>(1, criteria.start_nodes.size() * 4));
 
-  // The calling thread is worker zero, so no idle coordinator is created.
+
   std::vector<std::thread> workers;
   workers.reserve(worker_count > 0 ? worker_count - 1 : 0);
   for (unsigned int i = 1; i < worker_count; ++i) {

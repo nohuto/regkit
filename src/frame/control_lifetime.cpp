@@ -26,8 +26,8 @@ void ReportNameTaken(HWND owner, const wchar_t* message, const wchar_t* title,
 constexpr int kDividerProbeWidth = 32;
 constexpr int kDividerProbeHeight = 16;
 
-// The header part carries no divider colour property, so the theme draws one
-// item off-screen and its trailing edge pixel is the exact divider shade.
+
+
 COLORREF HeaderDividerColor(HWND header) {
   COLORREF color = Theme::Current().BorderColor();
   HTHEME theme = OpenThemeData(header, VSCLASS_HEADER);
@@ -456,6 +456,7 @@ LRESULT MainWindow::Impl::HandleHeaderNotification(NMHDR* header, LPARAM lparam)
   HWND value_header = ListView_GetHeader(browse_.values().hwnd());
   HWND history_header = ListView_GetHeader(history_list_);
   HWND search_header = ListView_GetHeader(search_results_list_);
+
   if (header->hwndFrom == value_header && (header->code == HDN_ENDTRACKW || header->code == HDN_ENDTRACKA || header->code == HDN_ITEMCHANGEDW || header->code == HDN_ITEMCHANGEDA)) {
     auto* info = reinterpret_cast<NMHEADERW*>(lparam);
     if (info && info->iItem >= 0 && info->pitem && (info->pitem->mask & HDI_WIDTH)) {
@@ -466,9 +467,10 @@ LRESULT MainWindow::Impl::HandleHeaderNotification(NMHDR* header, LPARAM lparam)
           SaveSettings();
         }
       }
-      // The application owns the grid pixels, so the resized column has to be
-      // repainted; the control only refreshes what lies beyond its new edge.
-      InvalidateValueGridColumn(info->iItem);
+
+
+      InvalidateListViewColumn(browse_.values().hwnd(), info->iItem);
+      InvalidateListViewTail(browse_.values().hwnd(), true);
     }
   }
   if (header->hwndFrom == history_header && (header->code == HDN_ENDTRACKW || header->code == HDN_ENDTRACKA || header->code == HDN_ITEMCHANGEDW || header->code == HDN_ITEMCHANGEDA)) {
@@ -478,6 +480,8 @@ LRESULT MainWindow::Impl::HandleHeaderNotification(NMHDR* header, LPARAM lparam)
       if (subitem >= 0 && static_cast<size_t>(subitem) < history_column_widths_.size()) {
         history_column_widths_[static_cast<size_t>(subitem)] = info->pitem->cxy;
       }
+      InvalidateListViewColumn(history_list_, info->iItem);
+      InvalidateListViewTail(history_list_, true);
     }
   }
   if (header->hwndFrom == search_header && (header->code == HDN_ENDTRACKW || header->code == HDN_ENDTRACKA || header->code == HDN_ITEMCHANGEDW || header->code == HDN_ITEMCHANGEDA)) {
@@ -489,13 +493,15 @@ LRESULT MainWindow::Impl::HandleHeaderNotification(NMHDR* header, LPARAM lparam)
       if (subitem >= 0 && static_cast<size_t>(subitem) < widths.size()) {
         widths[static_cast<size_t>(subitem)] = info->pitem->cxy;
       }
+      InvalidateListViewColumn(search_results_list_, info->iItem);
+      InvalidateListViewTail(search_results_list_, true);
     }
   }
   return 0;
 }
 
-// The header draws its own text in a colour that follows neither the theme nor
-// the device context, so the item is redrawn here from the same theme parts.
+
+
 bool MainWindow::Impl::PaintHeaderItem(HWND header, NMCUSTOMDRAW* draw) {
   HTHEME theme = OpenThemeData(header, VSCLASS_HEADER);
   if (!theme) {
@@ -762,8 +768,8 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
       draw->nmcd.uItemState &= ~CDIS_FOCUS;
       return show_value_grid_ ? CDRF_NOTIFYPOSTPAINT : CDRF_DODEFAULT;
     case CDDS_ITEMPOSTPAINT: {
-      // Each row repaints its own lines, so a hover or a tracked column cannot
-      // leave a gap behind.
+
+
       RECT row = {};
       if (ListView_GetItemRect(browse_.values().hwnd(),
                                static_cast<int>(draw->nmcd.dwItemSpec), &row,
@@ -782,8 +788,8 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
   return 0;
 }
 
-// comctl32 draws LVS_EX_GRIDLINES in COLOR_3DFACE, which no API can change, so
-// the grid is painted here in the list's own pass from the header geometry.
+
+
 void MainWindow::Impl::PaintValueGridLines(HDC hdc, const RECT& area,
                                            int first_line_y, int row_height) {
   HWND list = browse_.values().hwnd();
@@ -829,24 +835,6 @@ void MainWindow::Impl::PaintValueGridLines(HDC hdc, const RECT& area,
   }
 }
 
-void MainWindow::Impl::InvalidateValueGridColumn(int display_index) {
-  HWND list = browse_.values().hwnd();
-  HWND header = list ? ListView_GetHeader(list) : nullptr;
-  if (!show_value_grid_ || !header || display_index < 0) {
-    return;
-  }
-  RECT column = {};
-  RECT header_rect = {};
-  RECT client = {};
-  if (!Header_GetItemRect(header, display_index, &column) ||
-      !GetWindowRect(header, &header_rect) || !GetClientRect(list, &client)) {
-    return;
-  }
-  MapWindowPoints(nullptr, list, reinterpret_cast<POINT*>(&header_rect), 2);
-  RECT band = {header_rect.left + column.left, client.top,
-               header_rect.left + column.right + 1, client.bottom};
-  RedrawWindow(list, &band, nullptr, RDW_INVALIDATE | RDW_NOERASE | RDW_UPDATENOW);
-}
 
 void MainWindow::Impl::PaintValueGridTail(HDC hdc) {
   HWND list = browse_.values().hwnd();
@@ -892,7 +880,7 @@ search::Result* MainWindow::Impl::SearchResultAt(int item) {
              : nullptr;
 }
 
-// Compare and search rows are different models; both expose a key path.
+
 std::wstring MainWindow::Impl::SearchRowKeyPath(int tab_index, int item) const {
   if (item < 0 || tab_index < 0 ||
       static_cast<size_t>(tab_index) >= search_tabs_.size()) {
@@ -1113,7 +1101,7 @@ LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam)
       return 0;
     }
     search::Result& result = tab->results[row_index];
-    // Unresolved data is hydrated in the background, never from this callback.
+
     if (subitem == 3 && result.data_state == search::DataState::kNotLoaded &&
         !search_preview_request_posted_) {
       search_preview_request_posted_ = true;

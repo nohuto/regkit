@@ -674,7 +674,7 @@ void MainWindow::Impl::StartSearchTabLoadWorker() {
         auto payload = std::make_unique<SearchTabLoadPayload>();
         payload->generation = task->generation;
         payload->tab_index = task->tab_index;
-        // File read, decode, parse and the initial sort all run here.
+
         payload->ok = search::LoadResults(task->path, &payload->rows);
         if (payload->ok && task->sort_column >= 0) {
           search::SortResults(&payload->rows, task->sort_column,

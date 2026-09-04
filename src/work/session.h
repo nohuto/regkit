@@ -76,7 +76,7 @@ public:
     thread_ = std::thread([this]() { Run(); });
   }
 
-  // Returns the task this one displaced, so a caller can undo its bookkeeping.
+
   std::unique_ptr<Task> Submit(std::unique_ptr<Task> task) {
     if (!task) {
       return nullptr;

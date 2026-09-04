@@ -34,9 +34,9 @@ BEGIN
   END
 END
 
-// IDR_TRACE_23H2 RCDATA "../records/23H2.txt"
-// IDR_TRACE_24H2 RCDATA "../records/24H2.txt"
-// IDR_TRACE_25H2 RCDATA "../records/25H2.txt"
+
+
+
 
 #include "icons.rc"
 #include "editor_dialogs.rc"

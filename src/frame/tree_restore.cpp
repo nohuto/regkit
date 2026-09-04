@@ -52,8 +52,8 @@ void MainWindow::Impl::RefreshMatchingTreeNodes() {
     }
   }
 
-  // Deepest first, so refreshing a shallower match cannot invalidate a
-  // handle that is still queued.
+
+
   std::sort(matches.begin(), matches.end(),
             [](const std::pair<int, HTREEITEM>& left,
                const std::pair<int, HTREEITEM>& right) {

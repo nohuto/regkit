@@ -574,7 +574,7 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
           uint64_t generation, std::atomic_bool& cancel) mutable {
         auto should_stop = [&]() { return cancel.load(); };
 
-        // Whole batches cross the boundary; a row is moved exactly once.
+
         auto publish_batch = [&](search::ResultBatch&& rows) -> bool {
           if (rows.empty()) {
             return !cancel.load();
@@ -585,7 +585,7 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
           const size_t added = pending.rows.size();
           {
             std::unique_lock<std::mutex> lock(search_mutex_);
-            // Backpressure: bound transient queue memory.
+
             search_queue_space_.wait(lock, [&]() {
               return cancel.load() ||
                      search_pending_rows_ < kSearchPendingRowLimit;

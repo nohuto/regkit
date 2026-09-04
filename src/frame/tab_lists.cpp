@@ -200,8 +200,8 @@ void MainWindow::Impl::SortSearchTabResults(SearchTab* tab) {
     tab->sort_dirty = false;
     return;
   }
-  // Sorting by Data needs values the scan deliberately left unresolved, so the
-  // hydrate-and-sort pass runs on a worker and publishes the ordered vector.
+
+
   if (tab->sort_column == 3) {
     bool unresolved = false;
     for (const auto& result : tab->results) {

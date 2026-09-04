@@ -468,8 +468,14 @@ LRESULT CALLBACK MainWindow::Impl::TabProc(HWND hwnd, UINT message, WPARAM wpara
 
 LRESULT CALLBACK MainWindow::Impl::ListViewProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR, DWORD_PTR ref_data) {
   auto* self = reinterpret_cast<MainWindow::Impl*>(ref_data);
-  // The list view keeps its header's custom draw; it is reflected here so the
-  // item text can follow the application palette.
+  if (message == WM_PAINT) {
+    RefreshListViewTailOnScroll(hwnd);
+  }
+  if (message == WM_NCDESTROY) {
+    RemovePropW(hwnd, kListScrollProp);
+  }
+
+
   if (message == WM_NOTIFY && self) {
     auto* note = reinterpret_cast<NMHDR*>(lparam);
     if (note && note->code == NM_CUSTOMDRAW &&
@@ -634,6 +640,7 @@ LRESULT CALLBACK MainWindow::Impl::BorderProc(HWND hwnd, UINT message, WPARAM wp
 LRESULT CALLBACK MainWindow::Impl::HeaderProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data) {
   auto* self = reinterpret_cast<MainWindow::Impl*>(ref_data);
   HWND value_header = self ? ListView_GetHeader(self->browse_.values().hwnd()) : nullptr;
+
   if (message == WM_SIZE && hwnd == value_header) {
     self->LayoutValueGridToolbar();
   }
