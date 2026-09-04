@@ -19,7 +19,10 @@ bool MainWindow::Impl::Create(HINSTANCE instance) {
   wc.lpszClassName = kMainWindowClassName;
   wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
   wc.hIcon = LoadIconW(instance, MAKEINTRESOURCEW(IDI_APPICON));
-  wc.hIconSm = LoadIconW(instance, MAKEINTRESOURCEW(IDI_APPICON));
+  wc.hIconSm = static_cast<HICON>(
+      LoadImageW(instance, MAKEINTRESOURCEW(IDI_APPICON), IMAGE_ICON,
+                 GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
+                 LR_DEFAULTCOLOR));
   wc.hbrBackground = nullptr;
 
   RegisterClassExW(&wc);
