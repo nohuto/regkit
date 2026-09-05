@@ -223,20 +223,6 @@ inline bool WindowClassEquals(HWND hwnd, const wchar_t* class_name) {
   return _wcsicmp(buffer, class_name) == 0;
 }
 
-inline std::wstring GetDefaultRegeditPath() {
-  DWORD needed = GetWindowsDirectoryW(nullptr, 0);
-  if (needed == 0) {
-    return L"";
-  }
-  std::wstring windows_dir(needed, L'\0');
-  DWORD written = GetWindowsDirectoryW(windows_dir.data(), needed);
-  if (written == 0 || written >= needed) {
-    return L"";
-  }
-  windows_dir.resize(written);
-  return util::JoinPath(windows_dir, L"regedit.exe");
-}
-
 struct ParsedRegFileRoot {
   std::wstring name;
   std::shared_ptr<VirtualRegistryData> data;

@@ -196,71 +196,38 @@ void MainWindow::Impl::ReplaceRegedit(bool enable) {
   } else {
     HKEY app_key = nullptr;
     result = RegOpenKeyExW(base, subkey.c_str(), 0, KEY_READ | KEY_WRITE, &app_key);
-    if (result == ERROR_SUCCESS) {
-      RegDeleteValueW(app_key, L"Debugger");
-      DWORD subkeys = 0;
-      DWORD values = 0;
-      if (RegQueryInfoKeyW(app_key, nullptr, nullptr, nullptr, &subkeys, nullptr, nullptr, &values, nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS && subkeys == 0 && values == 0) {
-        RegCloseKey(app_key);
-        RegDeleteKeyW(base, subkey.c_str());
-      } else {
-        RegCloseKey(app_key);
+    if (result != ERROR_SUCCESS) {
+      RegCloseKey(base);
+      if (result == ERROR_FILE_NOT_FOUND) {
+        replace_regedit_ = false;
+        BuildMenus();
+        return;
       }
+      ui::ShowError(hwnd_, FormatWin32Error(result));
+      return;
+    }
+    result = RegDeleteValueW(app_key, L"Debugger");
+    if (result != ERROR_SUCCESS && result != ERROR_FILE_NOT_FOUND) {
+      RegCloseKey(app_key);
+      RegCloseKey(base);
+      ui::ShowError(hwnd_, FormatWin32Error(result));
+      SyncReplaceRegeditState();
+      BuildMenus();
+      return;
+    }
+    DWORD subkeys = 0;
+    DWORD values = 0;
+    if (RegQueryInfoKeyW(app_key, nullptr, nullptr, nullptr, &subkeys, nullptr, nullptr, &values, nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS && subkeys == 0 && values == 0) {
+      RegCloseKey(app_key);
+      RegDeleteKeyW(base, subkey.c_str());
+    } else {
+      RegCloseKey(app_key);
     }
     RegCloseKey(base);
     replace_regedit_ = false;
   }
 
   BuildMenus();
-}
-
-bool MainWindow::Impl::OpenDefaultRegedit() {
-  const std::wstring regedit_path = GetDefaultRegeditPath();
-  if (regedit_path.empty()) {
-    ui::ShowError(hwnd_, L"Failed to locate the default Regedit executable.");
-    return false;
-  }
-  HKEY hijack = nullptr;
-  std::wstring debugger;
-  DWORD debugger_type = REG_SZ;
-  if (replace_regedit_ &&
-      RegOpenKeyExW(HKEY_LOCAL_MACHINE, kRegeditImageOptionsKey, 0,
-                    KEY_QUERY_VALUE | KEY_SET_VALUE, &hijack) == ERROR_SUCCESS) {
-    DWORD size = 0;
-    if (RegQueryValueExW(hijack, L"Debugger", nullptr, &debugger_type, nullptr,
-                         &size) == ERROR_SUCCESS &&
-        size > 0) {
-      debugger.resize(size / sizeof(wchar_t));
-      if (RegQueryValueExW(hijack, L"Debugger", nullptr, &debugger_type,
-                           reinterpret_cast<LPBYTE>(debugger.data()),
-                           &size) == ERROR_SUCCESS) {
-        while (!debugger.empty() && debugger.back() == L'\0') {
-          debugger.pop_back();
-        }
-        RegDeleteValueW(hijack, L"Debugger");
-      } else {
-        debugger.clear();
-      }
-    }
-  }
-  const HRESULT hr = util::IsProcessElevated()
-                         ? win32::ShellOpen(hwnd_, regedit_path.c_str())
-                         : win32::LaunchElevated(hwnd_, regedit_path, L"");
-  if (hijack) {
-    if (!debugger.empty()) {
-      RegSetValueExW(hijack, L"Debugger", 0, debugger_type,
-                     reinterpret_cast<const BYTE*>(debugger.c_str()),
-                     static_cast<DWORD>((debugger.size() + 1) * sizeof(wchar_t)));
-    }
-    RegCloseKey(hijack);
-  }
-  if (FAILED(hr)) {
-    if (!win32::DialogCancelled(hr)) {
-      ui::ShowError(hwnd_, win32::FormatDialogError(hr));
-    }
-    return false;
-  }
-  return true;
 }
 
 std::wstring MainWindow::Impl::ResolveSelectedHiveFilePath() {

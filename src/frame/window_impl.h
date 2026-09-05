@@ -383,7 +383,6 @@ private:
   void DrawAddressButton(const DRAWITEMSTRUCT* info);
   void DrawHeaderCloseButton(const DRAWITEMSTRUCT* info);
   void ShowPermissionsDialog(const RegistryNode& node);
-  bool OpenDefaultRegedit();
   void ReplaceRegedit(bool enable);
   void SyncReplaceRegeditState();
   void OpenHiveFileDir();

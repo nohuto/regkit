@@ -110,7 +110,6 @@ constexpr int kOptionsThemeCustom = 2461;
 constexpr int kOptionsCompareRegistries = 2462;
 constexpr int kOptionsRestartSystem = 2463;
 constexpr int kOptionsAlwaysRunSystem = 2464;
-constexpr int kOptionsOpenDefaultRegedit = 2465;
 constexpr int kOptionsRestartTrustedInstaller = 2466;
 constexpr int kOptionsAlwaysRunTrustedInstaller = 2467;
 constexpr int kOptionsThemePresets = 2468;

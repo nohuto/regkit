@@ -36,7 +36,6 @@ bool MainWindow::Impl::HandleWorkspaceAppearanceCommand(int command_id) {
   case cmd::kOptionsAlwaysRunSystem:
   case cmd::kOptionsRestartTrustedInstaller:
   case cmd::kOptionsAlwaysRunTrustedInstaller:
-  case cmd::kOptionsOpenDefaultRegedit:
   case cmd::kOptionsReplaceRegedit:
   case cmd::kOptionsSingleInstance:
   case cmd::kOptionsHiveFileDir:
@@ -180,9 +179,6 @@ bool MainWindow::Impl::HandleLaunchHelpCommand(int command_id) {
         !util::IsProcessTrustedInstaller()) {
       RestartAsTrustedInstaller();
     }
-    return true;
-  case cmd::kOptionsOpenDefaultRegedit:
-    OpenDefaultRegedit();
     return true;
   case cmd::kOptionsReplaceRegedit:
     ReplaceRegedit(!replace_regedit_);
