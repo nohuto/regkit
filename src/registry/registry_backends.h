@@ -23,6 +23,9 @@ bool EnumKeyStreaming(
     DWORD max_data_size, EnumerationScratch* scratch, bool ordered);
 bool QueryValue(const RegistryNode& node, const std::wstring& value_name,
                 ValueEntry* out);
+bool CreateRegistryLink(const RegistryNode& node, const std::wstring& name,
+                        const std::wstring& nt_target, DWORD* error);
+bool ReadKeyLink(const RegistryNode& node, std::wstring* target);
 bool CreateKey(const RegistryNode& node, const std::wstring& name);
 bool DeleteKey(const RegistryNode& node);
 bool RenameKey(const RegistryNode& node, const std::wstring& new_name);

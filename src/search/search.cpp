@@ -437,6 +437,9 @@ DataMatch MatchValueData(const Matcher& matcher,
     result.matched = true;
     result.match = match;
     result.data_text = value_format::DisplayData(type, data, size);
+    if (result.data_text != view) {
+      result.match = matcher.Find(result.data_text);
+    }
     return result;
   }
 

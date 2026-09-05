@@ -1038,6 +1038,8 @@ std::optional<LRESULT> MainWindow::Impl::HandleAppearanceMessage(UINT message,
     const UINT modify_state = can_modify_value ? MF_ENABLED : MF_GRAYED;
     EnableMenuItem(menu, cmd::kEditModify, MF_BYCOMMAND | modify_state);
     EnableMenuItem(menu, cmd::kEditModifyBinary, MF_BYCOMMAND | modify_state);
+    EnableMenuItem(menu, cmd::kEditChangeType, MF_BYCOMMAND | modify_state);
+    RefreshResetDefaultMenu(menu);
     const bool hives_allowed = !read_only_ && registry_mode_ != RegistryMode::kRemote;
     const RegistryNode* hive_node = browse_.current_node();
     const bool hive_selected =
@@ -1139,7 +1141,8 @@ std::optional<LRESULT> MainWindow::Impl::HandleBrowseMessage(UINT message,
       BuildMenus();
       return 0;
     }
-    if (HIWORD(wparam) == 0 && LOWORD(wparam) == kValueGridButtonId) {
+    if (HIWORD(wparam) == 0 && (LOWORD(wparam) == kValueGridButtonId ||
+                                LOWORD(wparam) == kSearchGridButtonId)) {
       SetValueGridEnabled(!show_value_grid_, true);
       return 0;
     }

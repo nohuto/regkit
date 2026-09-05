@@ -475,7 +475,7 @@ bool MainWindow::Impl::LoadOfflineRegistryFromPath(const std::wstring& path, boo
   if (is_dir) {
     CollectOfflineHivesInFolder(selection_path, &candidates);
     if (candidates.empty()) {
-      ui::ShowError(hwnd_, L"The selected folder does not contain a registry hive file.");
+      ui::ShowError(hwnd_, L"The selected folder doesn't contain a registry hive file.");
       return false;
     }
   } else {

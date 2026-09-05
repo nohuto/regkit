@@ -675,6 +675,7 @@ void MainWindow::Impl::LoadSettings() {
   settings.single_instance = single_instance_;
   settings.read_only = read_only_;
   settings.auto_check_updates = auto_check_updates_;
+  settings.default_reset_enabled = default_reset_enabled_;
   settings.window_x = window_x_;
   settings.window_y = window_y_;
   settings.window_width = window_width_;
@@ -718,6 +719,7 @@ void MainWindow::Impl::LoadSettings() {
   single_instance_ = settings.single_instance;
   read_only_ = settings.read_only;
   auto_check_updates_ = settings.auto_check_updates;
+  default_reset_enabled_ = settings.default_reset_enabled;
   window_placement_loaded_ = settings.window_placement_present;
   window_x_ = settings.window_x;
   window_y_ = settings.window_y;
@@ -784,6 +786,7 @@ void MainWindow::Impl::SaveSettings() const {
   settings.single_instance = single_instance_;
   settings.read_only = read_only_;
   settings.auto_check_updates = auto_check_updates_;
+  settings.default_reset_enabled = default_reset_enabled_;
   settings.window_x = window_x_;
   settings.window_y = window_y_;
   settings.window_width = window_width_;

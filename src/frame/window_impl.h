@@ -146,6 +146,9 @@ private:
   LRESULT HandleNotification(LPARAM lparam);
   LRESULT HandleTooltipNotification(NMHDR* header, LPARAM lparam);
   bool ValueCellTooltipText(std::wstring* out);
+  bool SearchCellTooltipText(std::wstring* out);
+  bool ListCellTooltipText(std::wstring* out);
+  std::wstring SearchCellFieldText(const search::Result& result, int subitem) const;
   LRESULT HandleToolbarNotification(NMHDR* header, LPARAM lparam);
   LRESULT HandleTabNotification(NMHDR* header, LPARAM lparam);
   LRESULT HandleTreeNotification(NMHDR* header, LPARAM lparam);
@@ -192,14 +195,16 @@ private:
   std::wstring ResolveIconPath(const wchar_t* filename) const;
   HICON LoadThemeIcon(const wchar_t* filename, int light_id, int dark_id, int size, UINT dpi) const;
   void EnsureValueGridToolbar();
-  void ApplyValueGridToolbarIcon();
-  void ApplyValueGridToolbarTheme();
+  void ApplyGridToolbarIcons();
+  void LayoutGridToolbar(HWND list, HWND toolbar);
+  void EnsureGridToolbar(HWND list, HWND* toolbar_slot, int command_id);
+  void ApplyGridToolbarTheme(HWND toolbar);
   HBRUSH ValueHeaderSurfaceBrush() const;
   void LayoutValueGridToolbar();
   void SetValueGridEnabled(bool enabled, bool persist);
-  void PaintValueGridLines(HDC hdc, const RECT& area, int first_line_y,
+  void PaintValueGridLines(HWND list, HDC hdc, const RECT& area, int first_line_y,
                            int row_height);
-  void PaintValueGridTail(HDC hdc);
+  void PaintValueGridTail(HWND list, HDC hdc);
   int ValueGridToggleWidth(HWND header) const;
   ToolbarIcon MakeToolbarIcon(const wchar_t* filename, int light_id, int dark_id, bool use_light) const;
   void CreateValueColumns();
@@ -448,6 +453,20 @@ private:
   bool BuildRegFileContent(const TabEntry& entry, std::wstring* out) const;
   void ReleaseRegFileRoots(TabEntry* entry);
   bool RemoveDefaultByPath(const std::wstring& path);
+  struct DefaultValueChoice {
+    std::wstring label;
+    bool present = false;
+    DWORD type = REG_NONE;
+    std::vector<BYTE> data;
+  };
+  std::vector<DefaultValueChoice> CollectDefaultChoices(
+      const std::wstring& value_name) const;
+  bool HandleResetDefaultCommand(int command_id);
+  std::vector<DefaultValueChoice> SelectedValueDefaultChoices() const;
+  HMENU BuildResetDefaultMenu(
+      const std::vector<DefaultValueChoice>& choices) const;
+  void AppendResetDefaultMenu(HMENU menu);
+  void RefreshResetDefaultMenu(HMENU menu);
   std::wstring TreeStatePath() const;
   void LoadTreeState();
   void StartTreeStateWorker();
@@ -571,7 +590,9 @@ private:
   int drag_history_label_height_ = 0;
   HICON address_go_icon_ = nullptr;
   HWND value_grid_toolbar_ = nullptr;
+  HWND search_grid_toolbar_ = nullptr;
   HWND value_tooltip_ = nullptr;
+  HWND value_tip_list_ = nullptr;
   int value_tip_item_ = -1;
   int value_tip_subitem_ = -1;
   std::wstring value_tooltip_text_;
@@ -579,6 +600,8 @@ private:
   bool show_value_grid_ = false;
   COLORREF grid_line_color_ = CLR_INVALID;
   bool auto_check_updates_ = false;
+  bool default_reset_enabled_ = false;
+  HMENU reset_default_menu_ = nullptr;
   bool update_check_running_ = false;
   bool show_toolbar_ = true;
   bool show_address_bar_ = true;
@@ -898,6 +921,7 @@ private:
   bool favorites_loaded_ = false;
 
   struct BundledDefault {
+    std::wstring group;
     std::wstring label;
     std::wstring path;
   };

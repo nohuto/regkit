@@ -85,7 +85,8 @@ LRESULT MainWindow::Impl::HandleNotification(LPARAM lparam) {
       header->code == TTN_SHOW) {
     return HandleTooltipNotification(header, lparam);
   }
-  if (header->hwndFrom == toolbar_.hwnd() || header->hwndFrom == value_grid_toolbar_) {
+  if (header->hwndFrom == toolbar_.hwnd() || header->hwndFrom == value_grid_toolbar_ ||
+      header->hwndFrom == search_grid_toolbar_) {
     return HandleToolbarNotification(header, lparam);
   }
   if (header->hwndFrom == tab_) {
@@ -156,6 +157,77 @@ bool MainWindow::Impl::ValueCellTooltipText(std::wstring* out) {
   return true;
 }
 
+std::wstring MainWindow::Impl::SearchCellFieldText(const search::Result& result,
+                                                  int subitem) const {
+  switch (subitem) {
+  case 0:
+    return result.key_path;
+  case 1:
+    return std::wstring(search::DisplayName(result));
+  case 2:
+    return search::TypeText(result);
+  case 3:
+    return result.data_text;
+  case 4:
+    return search::IsKeyRow(result) ||
+                   result.kind == search::ResultKind::kTraceValue
+               ? std::wstring()
+               : std::to_wstring(result.data_size);
+  default:
+    return std::wstring();
+  }
+}
+
+bool MainWindow::Impl::SearchCellTooltipText(std::wstring* out) {
+  HWND list = search_results_list_;
+  if (!out || !list) {
+    return false;
+  }
+  POINT pt = {};
+  GetCursorPos(&pt);
+  ScreenToClient(list, &pt);
+  LVHITTESTINFO hit = {};
+  hit.pt = pt;
+  const int item = ListView_SubItemHitTest(list, &hit);
+  if (item < 0) {
+    return false;
+  }
+  const search::Result* result = SearchResultAt(item);
+  if (!result) {
+    return false;
+  }
+  const std::wstring text = SearchCellFieldText(
+      *result, MappedSubItem(search_column_subitems_, hit.iSubItem));
+  RECT cell = {};
+  const bool measured =
+      hit.iSubItem == 0
+          ? ListView_GetItemRect(list, item, &cell, LVIR_LABEL) != FALSE
+          : ListView_GetSubItemRect(list, item, hit.iSubItem, LVIR_BOUNDS, &cell) != FALSE;
+  const int available = static_cast<int>(cell.right - cell.left) - kCellTooltipPadding;
+  if (!measured || text.empty() || available <= 0 ||
+      !CellTextIsClipped(list, text, available)) {
+    return false;
+  }
+  out->assign(text, 0, std::min(text.size(), kValueTooltipTextLimit));
+  if (out->size() < text.size()) {
+    out->append(L"...");
+  }
+  return true;
+}
+
+bool MainWindow::Impl::ListCellTooltipText(std::wstring* out) {
+  POINT pt = {};
+  GetCursorPos(&pt);
+  HWND under = WindowFromPoint(pt);
+  if (under == search_results_list_) {
+    return SearchCellTooltipText(out);
+  }
+  if (under == browse_.values().hwnd()) {
+    return ValueCellTooltipText(out);
+  }
+  return false;
+}
+
 LRESULT MainWindow::Impl::HandleTooltipNotification(NMHDR* header, LPARAM lparam) {
   if (header->code == TTN_SHOW && header->hwndFrom == value_tooltip_) {
     RECT tip = {};
@@ -183,7 +255,7 @@ LRESULT MainWindow::Impl::HandleTooltipNotification(NMHDR* header, LPARAM lparam
     auto* info = reinterpret_cast<LPTOOLTIPTEXTW>(lparam);
     if (info && header->hwndFrom == value_tooltip_) {
       value_tooltip_text_.clear();
-      if (ValueCellTooltipText(&value_tooltip_text_)) {
+      if (ListCellTooltipText(&value_tooltip_text_)) {
         info->lpszText = value_tooltip_text_.data();
       } else {
         info->lpszText = const_cast<wchar_t*>(L"");
@@ -221,7 +293,8 @@ HBRUSH MainWindow::Impl::ValueHeaderSurfaceBrush() const {
 }
 
 LRESULT MainWindow::Impl::HandleToolbarNotification(NMHDR* header, LPARAM lparam) {
-  const bool is_grid_bar = header->hwndFrom == value_grid_toolbar_;
+  const bool is_grid_bar = header->hwndFrom == value_grid_toolbar_ ||
+                           header->hwndFrom == search_grid_toolbar_;
   if ((header->hwndFrom == toolbar_.hwnd() || is_grid_bar) &&
       header->code == NM_CUSTOMDRAW) {
     auto* draw = reinterpret_cast<NMTBCUSTOMDRAW*>(lparam);
@@ -779,12 +852,13 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
       if (ListView_GetItemRect(browse_.values().hwnd(),
                                static_cast<int>(draw->nmcd.dwItemSpec), &row,
                                LVIR_BOUNDS)) {
-        PaintValueGridLines(draw->nmcd.hdc, row, row.bottom - 1, row.bottom - row.top);
+        PaintValueGridLines(browse_.values().hwnd(), draw->nmcd.hdc, row,
+                            row.bottom - 1, row.bottom - row.top);
       }
       return CDRF_DODEFAULT;
     }
     case CDDS_POSTPAINT:
-      PaintValueGridTail(draw->nmcd.hdc);
+      PaintValueGridTail(browse_.values().hwnd(), draw->nmcd.hdc);
       return CDRF_DODEFAULT;
     default:
       return CDRF_DODEFAULT;
@@ -795,9 +869,8 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
 
 
 
-void MainWindow::Impl::PaintValueGridLines(HDC hdc, const RECT& area,
+void MainWindow::Impl::PaintValueGridLines(HWND list, HDC hdc, const RECT& area,
                                            int first_line_y, int row_height) {
-  HWND list = browse_.values().hwnd();
   HWND header = list ? ListView_GetHeader(list) : nullptr;
   if (!hdc || !header || area.top >= area.bottom) {
     return;
@@ -841,8 +914,7 @@ void MainWindow::Impl::PaintValueGridLines(HDC hdc, const RECT& area,
 }
 
 
-void MainWindow::Impl::PaintValueGridTail(HDC hdc) {
-  HWND list = browse_.values().hwnd();
+void MainWindow::Impl::PaintValueGridTail(HWND list, HDC hdc) {
   HWND header = list ? ListView_GetHeader(list) : nullptr;
   if (!hdc || !header) {
     return;
@@ -868,7 +940,7 @@ void MainWindow::Impl::PaintValueGridTail(HDC hdc) {
       }
     }
   }
-  PaintValueGridLines(hdc, area, area.top + row_height - 1, row_height);
+  PaintValueGridLines(list, hdc, area, area.top + row_height - 1, row_height);
 }
 
 search::Result* MainWindow::Impl::SearchResultAt(int item) {
@@ -914,11 +986,32 @@ LRESULT MainWindow::Impl::HandleSearchListCustomDraw(NMLVCUSTOMDRAW* draw) {
   }
   const int item = static_cast<int>(draw->nmcd.dwItemSpec);
   switch (draw->nmcd.dwDrawStage) {
+  case CDDS_PREPAINT:
+    return show_value_grid_ ? (CDRF_NOTIFYITEMDRAW | CDRF_NOTIFYPOSTPAINT)
+                            : CDRF_NOTIFYITEMDRAW;
   case CDDS_ITEMPREPAINT: {
-    const LRESULT stage = ui::HandleThemedListViewCustomDraw(search_results_list_, draw);
+    draw->nmcd.uItemState &= ~CDIS_FOCUS;
+    LRESULT stage = show_value_grid_ ? CDRF_NOTIFYPOSTPAINT : CDRF_DODEFAULT;
     const search::Result* result = SearchResultAt(item);
-    return result && result->match_length > 0 ? stage | CDRF_NOTIFYSUBITEMDRAW : stage;
+    if (result && result->match_length > 0) {
+      stage |= CDRF_NOTIFYSUBITEMDRAW;
+    }
+    return stage;
   }
+  case CDDS_ITEMPOSTPAINT: {
+    RECT row = {};
+    if (show_value_grid_ &&
+        ListView_GetItemRect(search_results_list_, item, &row, LVIR_BOUNDS)) {
+      PaintValueGridLines(search_results_list_, draw->nmcd.hdc, row,
+                          row.bottom - 1, row.bottom - row.top);
+    }
+    return CDRF_DODEFAULT;
+  }
+  case CDDS_POSTPAINT:
+    if (show_value_grid_) {
+      PaintValueGridTail(search_results_list_, draw->nmcd.hdc);
+    }
+    return CDRF_DODEFAULT;
   case CDDS_ITEMPREPAINT | CDDS_SUBITEM: {
     search::Result* result = SearchResultAt(item);
     if (!result ||
@@ -979,7 +1072,7 @@ LRESULT MainWindow::Impl::HandleSearchListCustomDraw(NMLVCUSTOMDRAW* draw) {
     return CDRF_DODEFAULT;
   }
   default:
-    return ui::HandleThemedListViewCustomDraw(search_results_list_, draw);
+    return CDRF_DODEFAULT;
   }
 }
 
@@ -1004,7 +1097,12 @@ LRESULT MainWindow::Impl::HandleHistoryNotification(NMHDR* header, LPARAM lparam
       case 3: text = &entry.new_data; break;
       default: break;
       }
-      disp->item.pszText = const_cast<wchar_t*>(text->c_str());
+      if (text->size() > kCellTextDrawLimit && disp->item.pszText &&
+          disp->item.cchTextMax > 0) {
+        lstrcpynW(disp->item.pszText, text->c_str(), disp->item.cchTextMax);
+      } else {
+        disp->item.pszText = const_cast<wchar_t*>(text->c_str());
+      }
     }
     return 0;
   }
@@ -1072,9 +1170,17 @@ LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam)
         if (disp->item.pszText && disp->item.cchTextMax > 0) {
           disp->item.pszText[0] = L'\0';
         }
+        auto set_text = [&](const std::wstring& text) {
+          if (text.size() > kCellTextDrawLimit && disp->item.pszText &&
+              disp->item.cchTextMax > 0) {
+            lstrcpynW(disp->item.pszText, text.c_str(), disp->item.cchTextMax);
+          } else {
+            disp->item.pszText = const_cast<wchar_t*>(text.c_str());
+          }
+        };
         switch (subitem) {
         case 0:
-          disp->item.pszText = const_cast<wchar_t*>(row.key_path.c_str());
+          set_text(row.key_path);
           break;
         case 1:
           if (row.is_key) {
@@ -1082,14 +1188,14 @@ LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam)
           } else if (row.value_name.empty()) {
             disp->item.pszText = const_cast<wchar_t*>(L"(Default)");
           } else {
-            disp->item.pszText = const_cast<wchar_t*>(row.value_name.c_str());
+            set_text(row.value_name);
           }
           break;
         case 2:
-          disp->item.pszText = const_cast<wchar_t*>(row.first_text.c_str());
+          set_text(row.first_text);
           break;
         case 3:
-          disp->item.pszText = const_cast<wchar_t*>(row.second_text.c_str());
+          set_text(row.second_text);
           break;
         default:
           break;
@@ -1120,9 +1226,16 @@ LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam)
       if (buffer && capacity > 0) {
         buffer[0] = L'\0';
       }
+      auto set_text = [&](const std::wstring& text) {
+        if (text.size() > kCellTextDrawLimit && buffer && capacity > 0) {
+          lstrcpynW(buffer, text.c_str(), capacity);
+        } else {
+          disp->item.pszText = const_cast<wchar_t*>(text.c_str());
+        }
+      };
       switch (subitem) {
       case 0:
-        disp->item.pszText = const_cast<wchar_t*>(result.key_path.c_str());
+        set_text(result.key_path);
         break;
       case 1:
         if (search::IsKeyRow(result)) {
@@ -1143,7 +1256,7 @@ LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam)
         }
         break;
       case 3:
-        disp->item.pszText = const_cast<wchar_t*>(result.data_text.c_str());
+        set_text(result.data_text);
         break;
       case 4:
         if (buffer && capacity > 0 && !search::IsKeyRow(result) &&
@@ -1328,6 +1441,17 @@ bool MainWindow::Impl::OnCreate() {
   DWORD ex_style = LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER;
   ListView_SetExtendedListViewStyleEx(history_list_, ex_mask, ex_style);
   ListView_SetExtendedListViewStyleEx(search_results_list_, ex_mask, ex_style);
+  if (value_tooltip_) {
+    TOOLINFOW tip = {};
+    tip.cbSize = sizeof(tip);
+    tip.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+    tip.hwnd = hwnd_;
+    tip.lpszText = LPSTR_TEXTCALLBACKW;
+    tip.uId = reinterpret_cast<UINT_PTR>(search_results_list_);
+    SendMessageW(value_tooltip_, TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&tip));
+    tip.uId = reinterpret_cast<UINT_PTR>(history_list_);
+    SendMessageW(value_tooltip_, TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&tip));
+  }
   SendMessageW(search_results_list_, WM_CHANGEUISTATE, MAKEWPARAM(UIS_SET, UISF_HIDEFOCUS), 0);
   SendMessageW(history_list_, WM_CHANGEUISTATE, MAKEWPARAM(UIS_SET, UISF_HIDEFOCUS), 0);
   SetWindowSubclass(history_list_, ListViewProc, kListViewSubclassId, reinterpret_cast<DWORD_PTR>(this));
@@ -1590,7 +1714,7 @@ void MainWindow::Impl::OnDestroy() {
   if (clear_tabs_on_exit_) {
     ClearTabsCache();
   } else if (save_tabs_ && !SaveTabs()) {
-    ui::ShowError(hwnd_, L"The open tabs could not be saved for the next session.");
+    ui::ShowError(hwnd_, L"The open tabs couldn't be saved for the next session.");
   }
   ClearHistoryItems(false);
   if (clear_history_on_exit_) {

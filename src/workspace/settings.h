@@ -34,6 +34,7 @@ struct Settings {
   bool single_instance = true;
   bool read_only = false;
   bool auto_check_updates = false;
+  bool default_reset_enabled = false;
 
   bool window_placement_present = false;
   int window_x = 0;

@@ -31,6 +31,8 @@
 #include "regfile/reg_file.h"
 #include "editors/binary_editor.h"
 #include "editors/value_editor.h"
+#include "editors/hive_dialog.h"
+#include "registry/registry_backends.h"
 #include "frame/command_dispatch.h"
 #include "registry/registry_path.h"
 #include "registry/value_format.h"
@@ -43,6 +45,7 @@ namespace regkit::command_detail {
 using window_detail::EqualsInsensitive;
 using window_detail::FetchListViewItemText;
 using window_detail::FileBaseName;
+using window_detail::ShortDefaultLabel;
 using window_detail::FileNameOnly;
 using window_detail::FindChildByText;
 using window_detail::LeafName;
@@ -861,7 +864,7 @@ inline INT_PTR CALLBACK CompareDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPA
           }
         }
         if (!found) {
-          ui::ShowError(dlg, L"The selected key path was not found in the .reg file.");
+          ui::ShowError(dlg, L"The selected key path wasn't found in the .reg file.");
           return false;
         }
         return true;

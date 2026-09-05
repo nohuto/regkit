@@ -77,6 +77,7 @@ constexpr int kSearchProgressId = 113;
 constexpr int kHistoryHeaderCloseId = 114;
 constexpr int kFilterEditId = 115;
 constexpr int kValueGridButtonId = 116;
+constexpr int kSearchGridButtonId = 117;
 constexpr int kValueGridButtonWidth = 22;
 constexpr int kToolbarIconSize = 16;
 constexpr int kToolbarGlyphSize = 16;
@@ -221,6 +222,19 @@ inline bool CalcTabCloseRect(const RECT& tab_rect, RECT* close_rect) {
   close_rect->top = tab_rect.top + (height - size) / 2;
   close_rect->bottom = close_rect->top + size;
   return close_rect->left < close_rect->right;
+}
+
+inline void DrawCloseGlyph(HDC hdc, const RECT& rect, COLORREF color, UINT dpi) {
+  const int radius = util::ScaleForDpi(3, dpi);
+  const int pen_width = std::max(1, util::ScaleForDpi(1, dpi));
+  const int center_x = (rect.left + rect.right) / 2;
+  const int center_y = (rect.top + rect.bottom) / 2;
+  HGDIOBJ old_pen = SelectObject(hdc, appearance::CachedPen(color, pen_width));
+  MoveToEx(hdc, center_x - radius, center_y - radius, nullptr);
+  LineTo(hdc, center_x + radius + 1, center_y + radius + 1);
+  MoveToEx(hdc, center_x + radius, center_y - radius, nullptr);
+  LineTo(hdc, center_x - radius - 1, center_y + radius + 1);
+  SelectObject(hdc, old_pen);
 }
 
 inline int MappedSubItem(const std::vector<int>& map, int display_index) {

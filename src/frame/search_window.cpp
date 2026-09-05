@@ -397,7 +397,7 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
           if (!normalized.empty() && ResolvePathToNode(normalized, &node)) {
             start_nodes.push_back(node);
           } else {
-            ui::ShowError(hwnd_, L"Starting key path was not found.");
+            ui::ShowError(hwnd_, L"Starting key path wasn't found.");
             return;
           }
         }
@@ -796,7 +796,7 @@ void MainWindow::Impl::StartReplace(const ReplaceDialogResult& options) {
   RegistryNode start;
   if (!options.start_key.empty()) {
     if (!ResolvePathToNode(options.start_key, &start)) {
-      ui::ShowError(hwnd_, L"Starting key path was not found.");
+      ui::ShowError(hwnd_, L"Starting key path wasn't found.");
       return;
     }
   } else if (browse_.current_node()) {

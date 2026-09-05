@@ -137,7 +137,37 @@ std::wstring MainWindow::Impl::ResolveBundledDefaultPath(const std::wstring& lab
   }
   std::wstring assets = util::JoinPath(module_dir, L"assets");
   std::wstring defaults = util::JoinPath(assets, L"defaults");
-  return util::JoinPath(defaults, file);
+  std::wstring direct = util::JoinPath(defaults, file);
+  if (FileExists(direct)) {
+    return direct;
+  }
+  std::wstring requested = FileBaseName(file);
+  for (const auto& entry : bundled_defaults_) {
+    if (EqualsInsensitive(entry.label, FileBaseName(label)) ||
+        EqualsInsensitive(FileBaseName(entry.path), requested)) {
+      return entry.path;
+    }
+  }
+  WIN32_FIND_DATAW data = {};
+  HANDLE find =
+      FindFirstFileW(util::JoinPath(defaults, L"*").c_str(), &data);
+  if (find != INVALID_HANDLE_VALUE) {
+    do {
+      if (!(data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ||
+          wcscmp(data.cFileName, L".") == 0 ||
+          wcscmp(data.cFileName, L"..") == 0) {
+        continue;
+      }
+      std::wstring directory = util::JoinPath(defaults, data.cFileName);
+      std::wstring candidate = util::JoinPath(directory, file);
+      if (FileExists(candidate)) {
+        FindClose(find);
+        return candidate;
+      }
+    } while (FindNextFileW(find, &data));
+    FindClose(find);
+  }
+  return direct;
 }
 
 bool MainWindow::Impl::AddTraceFromFile(

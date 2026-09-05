@@ -20,6 +20,7 @@ struct KeyValueDialogEntry {
   std::wstring value_name;
   DWORD value_type = 0;
   std::wstring value_data;
+  std::vector<BYTE> value_raw;
 };
 
 struct TraceDialogOptions {

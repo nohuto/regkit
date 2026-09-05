@@ -228,7 +228,7 @@ bool MainWindow::Impl::HandleFileCommand(int command_id) {
       return true;
     }
     if (registry_mode_ == RegistryMode::kRemote) {
-      ui::ShowError(hwnd_, L"Loading hives is not supported for remote registries.");
+      ui::ShowError(hwnd_, L"Loading hives isn't supported for remote registries.");
       return true;
     }
     std::wstring error;
@@ -249,7 +249,7 @@ bool MainWindow::Impl::HandleFileCommand(int command_id) {
       return true;
     }
     if (registry_mode_ == RegistryMode::kRemote) {
-      ui::ShowError(hwnd_, L"Unloading hives is not supported for remote registries.");
+      ui::ShowError(hwnd_, L"Unloading hives isn't supported for remote registries.");
       return true;
     }
     HKEY root = HKEY_LOCAL_MACHINE;
@@ -531,6 +531,11 @@ bool MainWindow::Impl::HandleTraceDefaultCommand(int command_id) {
     return true;
   case cmd::kDefaultClear:
     ClearDefaults();
+    return true;
+  case cmd::kDefaultResetEnable:
+    default_reset_enabled_ = !default_reset_enabled_;
+    BuildMenus();
+    SaveSettings();
     return true;
   case cmd::kDefaultEditActive: {
     std::vector<std::wstring> active;

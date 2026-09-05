@@ -14,6 +14,24 @@
 namespace regkit::registry_backend::live {
 namespace {
 
+constexpr wchar_t kSymbolicLinkValue[] = L"SymbolicLinkValue";
+
+util::UniqueHKey OpenLinkKey(HKEY parent, const std::wstring& name,
+                             REGSAM access) {
+  util::UniqueHKey link;
+  if (RegOpenKeyExW(parent, name.c_str(), REG_OPTION_OPEN_LINK, access,
+                    link.put()) != ERROR_SUCCESS) {
+    return {};
+  }
+  DWORD type = 0;
+  if (RegQueryValueExW(link.get(), kSymbolicLinkValue, nullptr, &type, nullptr,
+                       nullptr) != ERROR_SUCCESS ||
+      type != REG_LINK) {
+    return {};
+  }
+  return link;
+}
+
 util::UniqueHKey OpenKey(const RegistryNode& node, REGSAM access) {
   util::UniqueHKey key;
   if (!node.root) {
@@ -296,6 +314,82 @@ bool CreateKey(const RegistryNode& node, const std::wstring& name) {
          ERROR_SUCCESS;
 }
 
+bool CreateRegistryLink(const RegistryNode& node, const std::wstring& name,
+                        const std::wstring& nt_target, DWORD* error) {
+  if (error) {
+    *error = ERROR_SUCCESS;
+  }
+  util::UniqueHKey parent = OpenKey(node, KEY_WRITE);
+  if (!parent.get()) {
+    if (error) {
+      *error = ERROR_ACCESS_DENIED;
+    }
+    return false;
+  }
+  util::UniqueHKey created;
+  DWORD disposition = 0;
+  LONG result = RegCreateKeyExW(
+      parent.get(), name.c_str(), 0, nullptr,
+      REG_OPTION_NON_VOLATILE | REG_OPTION_CREATE_LINK,
+      KEY_SET_VALUE | KEY_CREATE_LINK, nullptr, created.put(), &disposition);
+  if (result != ERROR_SUCCESS) {
+    if (error) {
+      *error = static_cast<DWORD>(result);
+    }
+    return false;
+  }
+  result = RegSetValueExW(
+      created.get(), L"SymbolicLinkValue", 0, REG_LINK,
+      reinterpret_cast<const BYTE*>(nt_target.c_str()),
+      static_cast<DWORD>(nt_target.size() * sizeof(wchar_t)));
+  if (result != ERROR_SUCCESS) {
+    if (error) {
+      *error = static_cast<DWORD>(result);
+    }
+    created.reset();
+    RegDeleteKeyW(parent.get(), name.c_str());
+    return false;
+  }
+  return true;
+}
+
+bool ReadKeyLink(const RegistryNode& node, std::wstring* target) {
+  RegistryNode parent;
+  std::wstring name;
+  if (!SplitNode(node, &parent, &name)) {
+    return false;
+  }
+  util::UniqueHKey key = OpenKey(parent, KEY_READ);
+  if (!key.get()) {
+    return false;
+  }
+  util::UniqueHKey link = OpenLinkKey(key.get(), name, KEY_QUERY_VALUE);
+  if (!link.get()) {
+    return false;
+  }
+  DWORD type = 0;
+  DWORD size = 0;
+  if (RegQueryValueExW(link.get(), kSymbolicLinkValue, nullptr, &type, nullptr,
+                       &size) != ERROR_SUCCESS) {
+    return false;
+  }
+  std::wstring value(size / sizeof(wchar_t), L'\0');
+  if (!value.empty() &&
+      RegQueryValueExW(link.get(), kSymbolicLinkValue, nullptr, &type,
+                       reinterpret_cast<BYTE*>(&value[0]),
+                       &size) != ERROR_SUCCESS) {
+    return false;
+  }
+  value.resize(size / sizeof(wchar_t));
+  while (!value.empty() && value.back() == L'\0') {
+    value.pop_back();
+  }
+  if (target) {
+    *target = std::move(value);
+  }
+  return true;
+}
+
 bool DeleteKey(const RegistryNode& node) {
   RegistryNode parent;
   std::wstring name;
@@ -303,8 +397,15 @@ bool DeleteKey(const RegistryNode& node) {
     return false;
   }
   util::UniqueHKey key = OpenKey(parent, KEY_WRITE);
-  return key.get() &&
-         RegDeleteTreeW(key.get(), name.c_str()) == ERROR_SUCCESS;
+  if (!key.get()) {
+    return false;
+  }
+  util::UniqueHKey link =
+      OpenLinkKey(key.get(), name, KEY_QUERY_VALUE | DELETE);
+  if (link.get()) {
+    return util::DeleteNativeRegistryKey(link.get());
+  }
+  return RegDeleteTreeW(key.get(), name.c_str()) == ERROR_SUCCESS;
 }
 
 bool RenameKey(const RegistryNode& node, const std::wstring& new_name) {

@@ -212,6 +212,27 @@ bool RegistryStore::CreateKey(const RegistryNode& node,
       [&] { return registry_backend::live::CreateKey(node, name); });
 }
 
+bool RegistryStore::CreateKeyLink(const RegistryNode& node,
+                                  const std::wstring& name,
+                                  const std::wstring& nt_target) {
+  return Dispatch(
+      node, [&](VirtualRegistryData&) { return false; }, [&] { return false; },
+      [&] {
+        return registry_backend::live::CreateRegistryLink(node, name, nt_target,
+                                                          nullptr);
+      });
+}
+
+bool RegistryStore::ReadKeyLink(const RegistryNode& node,
+                                std::wstring* target) {
+  if (node.subkey.empty()) {
+    return false;
+  }
+  return Dispatch(
+      node, [&](VirtualRegistryData&) { return false; }, [&] { return false; },
+      [&] { return registry_backend::live::ReadKeyLink(node, target); });
+}
+
 bool RegistryStore::DeleteKey(const RegistryNode& node) {
   if (node.subkey.empty()) {
     return false;

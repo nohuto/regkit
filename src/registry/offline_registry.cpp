@@ -4,6 +4,7 @@
 #include "registry/registry_backends.h"
 
 #include "registry/registry_path.h"
+#include "win32/shell_paths.h"
 #include "win32/system_error.h"
 
 #include <algorithm>
@@ -46,8 +47,12 @@ Function LoadFunction(HMODULE module, const char* name) {
 class OffregApi {
 public:
   OffregApi() {
-    module_ = LoadLibraryW(L"offreg.dll");
+    const std::wstring directory = util::GetModuleDirectory();
+    const std::wstring path =
+        directory.empty() ? std::wstring() : util::JoinPath(directory, L"offreg.dll");
+    module_ = path.empty() ? nullptr : LoadLibraryW(path.c_str());
     if (!module_) {
+      load_error_ = path.empty() ? ERROR_MOD_NOT_FOUND : GetLastError();
       return;
     }
     open_hive = LoadFunction<OROpenHiveFn>(module_, "OROpenHive");
@@ -65,6 +70,7 @@ public:
     enum_value = LoadFunction<OREnumValueFn>(module_, "OREnumValue");
     rename_key = LoadFunction<ORRenameKeyFn>(module_, "ORRenameKey");
     if (!valid()) {
+      load_error_ = ERROR_PROC_NOT_FOUND;
       FreeLibrary(module_);
       module_ = nullptr;
     }
@@ -100,13 +106,32 @@ public:
   OREnumValueFn enum_value = nullptr;
   ORRenameKeyFn rename_key = nullptr;
 
+  DWORD load_error() const noexcept { return load_error_; }
+
 private:
   HMODULE module_ = nullptr;
+  DWORD load_error_ = ERROR_SUCCESS;
 };
 
-OffregApi* Api() {
+OffregApi& OffregInstance() {
   static OffregApi api;
+  return api;
+}
+
+OffregApi* Api() {
+  OffregApi& api = OffregInstance();
   return api.valid() ? &api : nullptr;
+}
+
+std::wstring OffregLoadFailure() {
+  std::wstring message = L"offreg.dll couldn't be loaded.";
+  const std::wstring detail =
+      util::FormatWin32Error(OffregInstance().load_error());
+  if (!detail.empty()) {
+    message += L"\n";
+    message += detail;
+  }
+  return message;
 }
 
 class OfflineKey {
@@ -248,7 +273,7 @@ bool OpenHive(const std::wstring& path, HKEY* root, std::wstring* error) {
   OffregApi* api = Api();
   if (!api) {
     if (error) {
-      *error = L"offreg.dll is not available.";
+      *error = OffregLoadFailure();
     }
     return false;
   }
@@ -274,7 +299,7 @@ bool SaveHive(HKEY root, const std::wstring& path, std::wstring* error) {
   OffregApi* api = Api();
   if (!api) {
     if (error) {
-      *error = L"offreg.dll is not available.";
+      *error = OffregLoadFailure();
     }
     return false;
   }
@@ -303,7 +328,7 @@ bool CloseHive(HKEY root, std::wstring* error) {
   OffregApi* api = Api();
   if (!api) {
     if (error) {
-      *error = L"offreg.dll is not available.";
+      *error = OffregLoadFailure();
     }
     return false;
   }

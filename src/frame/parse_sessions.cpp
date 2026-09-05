@@ -42,6 +42,7 @@ void MainWindow::Impl::MergeDefaultEntries(
     value.value_name = entry.value_name;
     value.type = entry.value_type;
     value.data = entry.value_data;
+    value.raw = entry.value_raw;
     parsed.push_back(std::move(value));
   }
   defaults::Merge(session->data.get(), parsed, [](const std::wstring& path) { return MapControlSetToCurrent(path); }, affected_keys);
@@ -183,6 +184,7 @@ void MainWindow::Impl::StartDefaultParseThread(DefaultParseSession* session) {
           entry.value_name = std::move(parsed.value_name);
           entry.value_type = parsed.type;
           entry.value_data = std::move(parsed.data);
+          entry.value_raw = std::move(parsed.raw);
           entries.push_back(std::move(entry));
           flush_if_needed();
         }

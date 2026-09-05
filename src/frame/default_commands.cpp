@@ -147,4 +147,44 @@ void MainWindow::Impl::AddRecentDefaultPath(const std::wstring& path) {
   recent_default_paths_.Add(path);
 }
 
+std::vector<MainWindow::Impl::DefaultValueChoice>
+MainWindow::Impl::CollectDefaultChoices(const std::wstring& value_name) const {
+  std::vector<DefaultValueChoice> choices;
+  const RegistryNode* node = browse_.current_node();
+  if (!node || active_defaults_.empty()) {
+    return choices;
+  }
+  std::wstring path = registry_path::Build(*node);
+  std::wstring default_path = NormalizeTraceKeyPathBasic(path);
+  if (default_path.empty()) {
+    default_path = path;
+  }
+  const std::wstring key_lower = ToLower(default_path);
+  const std::wstring value_lower = ToLower(value_name);
+  for (const auto& defaults : active_defaults_) {
+    if (!defaults.data || !defaults.selection) {
+      continue;
+    }
+    if (!trace::IncludesKey(*defaults.selection, key_lower) ||
+        !trace::IncludesValue(*defaults.selection, key_lower, value_lower)) {
+      continue;
+    }
+    std::shared_lock<std::shared_mutex> lock(*defaults.data->mutex);
+    auto key = defaults.data->values_by_key.find(key_lower);
+    if (key == defaults.data->values_by_key.end()) {
+      continue;
+    }
+    DefaultValueChoice choice;
+    choice.label = ShortDefaultLabel(defaults.label, defaults.source_path);
+    auto value = key->second.values.find(value_lower);
+    if (value != key->second.values.end()) {
+      choice.present = true;
+      choice.type = value->second.type;
+      choice.data = value->second.raw;
+    }
+    choices.push_back(std::move(choice));
+  }
+  return choices;
+}
+
 } // namespace regkit

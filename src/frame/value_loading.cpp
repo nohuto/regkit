@@ -154,6 +154,7 @@ void MainWindow::Impl::StartValueListWorker() {
         }
 
         struct DefaultMatch {
+          std::wstring label;
           defaults::Key values;
           const trace::Selection* selection = nullptr;
         };
@@ -174,7 +175,9 @@ void MainWindow::Impl::StartValueListWorker() {
             if (it == defaults.data->values_by_key.end()) {
               continue;
             }
-            default_keys.push_back({it->second, defaults.selection.get()});
+            default_keys.push_back(
+                {ShortDefaultLabel(defaults.label, defaults.source_path),
+                 it->second, defaults.selection.get()});
           }
         }
         auto resolve_default_data = [&](const std::wstring& value_name) -> std::wstring {
@@ -182,7 +185,11 @@ void MainWindow::Impl::StartValueListWorker() {
             return {};
           }
           std::wstring value_lower = ToLower(value_name);
-          bool applies = false;
+          struct DefaultGroup {
+            std::wstring text;
+            std::wstring labels;
+          };
+          std::vector<DefaultGroup> groups;
           for (const auto& match : default_keys) {
             if (match.selection &&
                 !trace::IncludesValue(*match.selection,
@@ -190,13 +197,41 @@ void MainWindow::Impl::StartValueListWorker() {
                                       value_lower)) {
               continue;
             }
-            applies = true;
             auto it = match.values.values.find(value_lower);
-            if (it != match.values.values.end()) {
-              return it->second.data;
+            std::wstring text = it != match.values.values.end()
+                                    ? it->second.data
+                                    : std::wstring(L"(Missing)");
+            auto group = std::find_if(
+                groups.begin(), groups.end(),
+                [&](const DefaultGroup& entry) { return entry.text == text; });
+            if (group == groups.end()) {
+              groups.push_back({std::move(text), match.label});
+              continue;
+            }
+            if (!match.label.empty()) {
+              if (!group->labels.empty()) {
+                group->labels.append(L", ");
+              }
+              group->labels.append(match.label);
             }
           }
-          return applies ? L"(Missing)" : std::wstring();
+          if (groups.empty()) {
+            return {};
+          }
+          if (groups.size() == 1) {
+            return std::move(groups.front().text);
+          }
+          std::wstring text;
+          for (size_t i = 0; i < groups.size(); ++i) {
+            if (i > 0) {
+              text.append(L" - ");
+            }
+            text.append(groups[i].text);
+            if (!groups[i].labels.empty()) {
+              text.append(L" (").append(groups[i].labels).append(L")");
+            }
+          }
+          return text;
         };
 
         if (task->show_keys_in_list) {
@@ -445,8 +480,9 @@ void MainWindow::Impl::StartValuePreviewWorker() {
           if (ok) {
             item.type = entry.type;
             item.size = static_cast<DWORD>(entry.data.size());
-            item.preview = value_format::DisplayData(entry.type, entry.data.data(),
-                                                     item.size);
+            item.preview = value_format::DisplayData(
+                entry.type, entry.data.data(),
+                std::min<DWORD>(item.size, kValuePreviewBytes));
             if (item.preview.size() > kValuePreviewLimit) {
               item.preview.resize(kValuePreviewLimit);
             }
@@ -518,8 +554,9 @@ void MainWindow::Impl::StartSearchPreviewWorker() {
           if (RegistryStore::QueryValue(request.node, request.value_name, &entry)) {
             item.type = entry.type;
             item.data_size = static_cast<DWORD>(entry.data.size());
-            item.preview = value_format::DisplayData(entry.type, entry.data.data(),
-                                                     item.data_size);
+            item.preview = value_format::DisplayData(
+                entry.type, entry.data.data(),
+                std::min<DWORD>(item.data_size, kValuePreviewBytes));
             if (item.preview.size() > kValuePreviewLimit) {
               item.preview.resize(kValuePreviewLimit);
             }
@@ -603,7 +640,8 @@ void MainWindow::Impl::StartSearchSortWorker() {
           row.type = entry.type;
           row.data_size = static_cast<DWORD>(entry.data.size());
           std::wstring preview = value_format::DisplayData(
-              entry.type, entry.data.data(), row.data_size);
+              entry.type, entry.data.data(),
+              std::min<DWORD>(row.data_size, kValuePreviewBytes));
           if (preview.size() > kValuePreviewLimit) {
             preview.resize(kValuePreviewLimit);
           }

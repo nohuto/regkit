@@ -90,7 +90,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam,
       return TRUE;
     }
     if (state->value.key_name.find(L'\\') != std::wstring::npos) {
-      ui::ShowError(dialog, L"The key name cannot contain a backslash.");
+      ui::ShowError(dialog, L"The key name can't contain a backslash.");
       return TRUE;
     }
     state->value.root =
@@ -124,6 +124,96 @@ bool ChooseHiveToLoad(HWND owner, LoadHiveResult* result) {
   }
   *result = std::move(state.value);
   return true;
+}
+
+
+namespace {
+
+struct SymbolicLinkDialogState {
+  SymbolicLinkResult* result = nullptr;
+  const BrowseKeyCallback* browse = nullptr;
+};
+
+INT_PTR CALLBACK SymbolicLinkDialogProc(HWND dlg, UINT msg, WPARAM wparam,
+                                        LPARAM lparam) {
+  auto* dialog = reinterpret_cast<SymbolicLinkDialogState*>(
+      GetWindowLongPtrW(dlg, DWLP_USER));
+  SymbolicLinkResult* state = dialog ? dialog->result : nullptr;
+  INT_PTR themed = 0;
+  if (msg != WM_INITDIALOG && msg != WM_DESTROY &&
+      dialog_support::HandleThemeMessage(dlg, msg, wparam, lparam, &themed)) {
+    return themed;
+  }
+  switch (msg) {
+  case WM_INITDIALOG: {
+    dialog = reinterpret_cast<SymbolicLinkDialogState*>(lparam);
+    state = dialog ? dialog->result : nullptr;
+    SetWindowLongPtrW(dlg, DWLP_USER, static_cast<LONG_PTR>(lparam));
+    if (state) {
+      SetDlgItemTextW(dlg, IDC_SYMLINK_NAME, state->name.c_str());
+      SetDlgItemTextW(dlg, IDC_SYMLINK_TARGET, state->target.c_str());
+    }
+    dialog_support::Initialize(dlg, nullptr,
+                               {IDC_SYMLINK_NAME, IDC_SYMLINK_TARGET});
+    return TRUE;
+  }
+  case WM_COMMAND:
+    switch (LOWORD(wparam)) {
+    case IDOK: {
+      if (state) {
+        wchar_t name_buffer[256] = {};
+        wchar_t target_buffer[1024] = {};
+        GetDlgItemTextW(dlg, IDC_SYMLINK_NAME, name_buffer,
+                        static_cast<int>(_countof(name_buffer)));
+        GetDlgItemTextW(dlg, IDC_SYMLINK_TARGET, target_buffer,
+                        static_cast<int>(_countof(target_buffer)));
+        state->name = name_buffer;
+        state->target = target_buffer;
+        if (state->name.empty() || state->target.empty()) {
+          ui::ShowWarning(dlg, L"Enter a link name and a target key.");
+          return TRUE;
+        }
+      }
+      EndDialog(dlg, IDOK);
+      return TRUE;
+    }
+    case IDC_SYMLINK_BROWSE: {
+      std::wstring selected;
+      if (dialog && dialog->browse && (*dialog->browse)(dlg, &selected) &&
+          !selected.empty()) {
+        SetDlgItemTextW(dlg, IDC_SYMLINK_TARGET, selected.c_str());
+      }
+      return TRUE;
+    }
+    case IDCANCEL:
+      EndDialog(dlg, IDCANCEL);
+      return TRUE;
+    default:
+      break;
+    }
+    break;
+  default:
+    break;
+  }
+  return FALSE;
+}
+
+} // namespace
+
+bool PromptSymbolicLink(HWND owner, const std::wstring& suggested_name,
+                        const BrowseKeyCallback& browse,
+                        SymbolicLinkResult* result) {
+  if (!result) {
+    return false;
+  }
+  result->name = suggested_name;
+  SymbolicLinkDialogState dialog;
+  dialog.result = result;
+  dialog.browse = &browse;
+  return DialogBoxParamW(GetModuleHandleW(nullptr),
+                         MAKEINTRESOURCEW(IDD_NEW_SYMLINK), owner,
+                         SymbolicLinkDialogProc,
+                         reinterpret_cast<LPARAM>(&dialog)) == IDOK;
 }
 
 } // namespace regkit::editors

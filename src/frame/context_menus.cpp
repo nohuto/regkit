@@ -182,6 +182,8 @@ void MainWindow::Impl::ShowTreeContextMenu(POINT screen_pt) {
   AppendMenuW(new_value, MF_STRING, cmd::kNewDword, L"DWORD (32-bit) Value");
   AppendMenuW(new_value, MF_STRING, cmd::kNewQword, L"QWORD (64-bit) Value");
   AppendMenuW(new_value, MF_STRING, cmd::kNewMultiString, L"Multi-String Value");
+    AppendMenuW(new_value, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(new_value, MF_STRING, cmd::kNewSymbolicLink, L"Symbolic Link");
   AppendMenuW(new_value, MF_STRING, cmd::kNewExpandString, L"Expandable String Value");
 
   AppendMenuW(menu, edit_flags, cmd::kEditCopyKey, L"Copy Key Name");
@@ -279,6 +281,8 @@ void MainWindow::Impl::ShowValueContextMenu(POINT screen_pt) {
     AppendMenuW(new_value, MF_STRING, cmd::kNewQword, L"QWORD (64-bit) Value");
     AppendMenuW(new_value, MF_STRING, cmd::kNewMultiString, L"Multi-String Value");
     AppendMenuW(new_value, MF_STRING, cmd::kNewExpandString, L"Expandable String Value");
+    AppendMenuW(new_value, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(new_value, MF_STRING, cmd::kNewSymbolicLink, L"Symbolic Link");
 
     AppendMenuW(menu, edit_flags, cmd::kEditCopyKey, L"Copy Key Name");
     AppendMenuW(menu, edit_flags, cmd::kEditCopyKeyPath, L"Copy Key Path");
@@ -328,6 +332,8 @@ void MainWindow::Impl::ShowValueContextMenu(POINT screen_pt) {
     UINT comment_flags = MF_STRING | (can_comment ? 0 : MF_GRAYED);
     AppendMenuW(menu, modify_flags, cmd::kEditModify, L"Modify...");
     AppendMenuW(menu, modify_flags, cmd::kEditModifyBinary, L"Modify Binary Data...");
+    AppendMenuW(menu, modify_flags, cmd::kEditChangeType, L"Change Data Type...");
+    AppendResetDefaultMenu(menu);
     AppendMenuW(menu, comment_flags, cmd::kEditModifyComment, L"Modify Comment...");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, single_flags, cmd::kEditCopyValueName, L"Copy Value Name");
@@ -348,6 +354,8 @@ void MainWindow::Impl::ShowValueContextMenu(POINT screen_pt) {
     AppendMenuW(new_value, MF_STRING, cmd::kNewQword, L"QWORD (64-bit) Value");
     AppendMenuW(new_value, MF_STRING, cmd::kNewMultiString, L"Multi-String Value");
     AppendMenuW(new_value, MF_STRING, cmd::kNewExpandString, L"Expandable String Value");
+    AppendMenuW(new_value, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(new_value, MF_STRING, cmd::kNewSymbolicLink, L"Symbolic Link");
 
     AppendMenuW(menu, edit_flags, cmd::kEditCopyKey, L"Copy Key Name");
     AppendMenuW(menu, edit_flags, cmd::kEditCopyKeyPath, L"Copy Key Path");

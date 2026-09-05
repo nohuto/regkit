@@ -17,12 +17,20 @@ namespace {
 #endif
 
 using NtOpenKey = NTSTATUS(NTAPI*)(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES);
+using NtDeleteKey = NTSTATUS(NTAPI*)(HANDLE);
 
 NtOpenKey ResolveNtOpenKey() {
   HMODULE module = GetModuleHandleW(L"ntdll.dll");
   return module
              ? reinterpret_cast<NtOpenKey>(GetProcAddress(module, "NtOpenKey"))
              : nullptr;
+}
+
+NtDeleteKey ResolveNtDeleteKey() {
+  HMODULE module = GetModuleHandleW(L"ntdll.dll");
+  return module ? reinterpret_cast<NtDeleteKey>(
+                      GetProcAddress(module, "NtDeleteKey"))
+                : nullptr;
 }
 
 } // namespace
@@ -51,6 +59,12 @@ UniqueHKey OpenNativeRegistryKey(const std::wstring& path, REGSAM access,
 
 UniqueHKey OpenNativeRegistryRoot() {
   return OpenNativeRegistryKey(L"\\REGISTRY", KEY_READ);
+}
+
+bool DeleteNativeRegistryKey(HKEY key) {
+  static const NtDeleteKey delete_key = ResolveNtDeleteKey();
+  return key && delete_key &&
+         NT_SUCCESS(delete_key(reinterpret_cast<HANDLE>(key)));
 }
 
 } // namespace util

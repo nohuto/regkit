@@ -847,7 +847,7 @@ bool ExportKeyToFile(const KeyRef& key, const std::wstring& path,
   }
   if (!any) {
     if (error) {
-      *error = L"The key does not exist: " + key.display;
+      *error = L"The key doesn't exist: " + key.display;
     }
     return false;
   }
@@ -1114,7 +1114,7 @@ void PrintUsage() {
       L"  regkit --help                   show this text\n"
       L"\n"
       L"Key names accept HKLM, HKCU, HKCR, HKU, HKCC and their full forms.\n"
-      L"reg flags is not implemented, every other verb above is.");
+      L"reg flags isn't implemented, every other verb above is.");
 }
 
 int RunVerb(const std::wstring& verb, const std::vector<std::wstring>& args) {
@@ -1130,7 +1130,7 @@ int RunVerb(const std::wstring& verb, const std::vector<std::wstring>& args) {
   if (EqualsInsensitive(verb, L"unload")) return CmdUnload(args);
   if (EqualsInsensitive(verb, L"compare")) return CmdCompare(args);
   if (EqualsInsensitive(verb, L"flags")) {
-    PrintError(L"reg flags is not implemented.");
+    PrintError(L"reg flags isn't implemented.");
     return kFailed;
   }
   return -1;
@@ -1181,7 +1181,7 @@ bool Execute(const std::vector<std::wstring>& args, int* exit_code) {
       std::wstring error;
       bool ok = true;
       if (name.empty()) {
-        PrintError(L"Exporting the whole registry is not supported, name a key.");
+        PrintError(L"Exporting the whole registry isn't supported, name a key.");
         ok = false;
       } else {
         KeyRef key;

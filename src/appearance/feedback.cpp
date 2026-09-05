@@ -953,10 +953,10 @@ void ShowAbout(HWND owner) {
 
 bool ConfirmRegFileMerge(HWND owner, const std::wstring& path) {
   std::wstring message = L"Adding information can unintentionally change or delete values and\n"
-                         L"cause components to stop working correctly. If you do not trust the\n"
+                         L"cause components to stop working correctly. If you don't trust the\n"
                          L"source of this information in ";
   message += path;
-  message += L",\ndo not add it to the registry.\n\n"
+  message += L",\ndon't add it to the registry.\n\n"
              L"Are you sure you want to continue?";
   int result = IDCANCEL;
   if (ShowChoiceDialog(owner, kAppTitle, message, L"Yes", L"No", L"", &result, IDI_WARNING, 560, 200, 36)) {
@@ -983,7 +983,7 @@ void ShowRegFileMergeSucceeded(HWND owner, const std::wstring& path) {
 }
 
 void ShowRegFileMergeFailed(HWND owner, const std::wstring& path, const std::wstring& detail) {
-  std::wstring message = L"Cannot import ";
+  std::wstring message = L"Can't import ";
   message += path;
   message += L".";
   if (!detail.empty()) {

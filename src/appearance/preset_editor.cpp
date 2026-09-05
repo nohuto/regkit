@@ -187,7 +187,7 @@ bool PromptPresetName(ThemePresetWindowState* state,
     return false;
   }
   if (name.empty()) {
-    ui::ShowError(owner, L"Preset name cannot be empty.");
+    ui::ShowError(owner, L"Preset name can't be empty.");
     return false;
   }
   *out_name = name;

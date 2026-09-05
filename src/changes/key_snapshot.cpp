@@ -21,6 +21,9 @@ RegistryNode ChildNode(const RegistryNode& parent, const std::wstring& name) {
 KeySnapshot CaptureKey(const RegistryNode& node) {
   KeySnapshot snapshot;
   snapshot.name = registry_path::Leaf(node.subkey);
+  if (RegistryStore::ReadKeyLink(node, &snapshot.link_target)) {
+    return snapshot;
+  }
   RegistryStore::KeyEnumResult result;
   bool reserved = false;
   RegistryStore::EnumKeyStreaming(
@@ -52,8 +55,14 @@ KeySnapshot CaptureKey(const RegistryNode& node) {
 }
 
 bool RestoreKey(const RegistryNode& parent, const KeySnapshot& snapshot) {
-  if (snapshot.name.empty() ||
-      !RegistryStore::CreateKey(parent, snapshot.name)) {
+  if (snapshot.name.empty()) {
+    return false;
+  }
+  if (!snapshot.link_target.empty()) {
+    return RegistryStore::CreateKeyLink(parent, snapshot.name,
+                                        snapshot.link_target);
+  }
+  if (!RegistryStore::CreateKey(parent, snapshot.name)) {
     return false;
   }
   const RegistryNode node = ChildNode(parent, snapshot.name);

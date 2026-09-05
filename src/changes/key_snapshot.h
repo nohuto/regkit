@@ -12,6 +12,7 @@ namespace regkit::changes {
 
 struct KeySnapshot {
   std::wstring name;
+  std::wstring link_target;
   std::vector<ValueEntry> values;
   std::vector<KeySnapshot> children;
 };

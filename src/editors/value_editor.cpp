@@ -73,59 +73,6 @@ struct ExtendedValueDialogState {
   appearance::DialogResizer resizer;
 };
 
-constexpr UINT_PTR kMultiLineNumbersSubclassId = 21;
-
-void SyncMultiLineNumbers(HWND dlg) {
-  HWND edit = GetDlgItem(dlg, IDC_EDIT);
-  HWND numbers = GetDlgItem(dlg, IDC_MULTI_LINE_NUMBERS);
-  if (!edit || !numbers) {
-    return;
-  }
-  const int count =
-      std::max(1, static_cast<int>(SendMessageW(edit, EM_GETLINECOUNT, 0, 0)));
-  std::wstring text;
-  text.reserve(static_cast<size_t>(count) * 4);
-  for (int line = 1; line <= count; ++line) {
-    if (line > 1) {
-      text += L"\r\n";
-    }
-    text += std::to_wstring(line);
-  }
-  wchar_t current[16] = {};
-  GetWindowTextW(numbers, current, static_cast<int>(_countof(current)));
-  if (text != current || count > 1) {
-    SetWindowTextW(numbers, text.c_str());
-  }
-  const int top =
-      static_cast<int>(SendMessageW(edit, EM_GETFIRSTVISIBLELINE, 0, 0));
-  const int shown =
-      static_cast<int>(SendMessageW(numbers, EM_GETFIRSTVISIBLELINE, 0, 0));
-  if (top != shown) {
-    SendMessageW(numbers, EM_LINESCROLL, 0, top - shown);
-  }
-}
-
-LRESULT CALLBACK MultiLineNumbersProc(HWND window, UINT message, WPARAM wparam,
-                                      LPARAM lparam, UINT_PTR, DWORD_PTR ref) {
-  if (message == WM_NCDESTROY) {
-    RemoveWindowSubclass(window, MultiLineNumbersProc,
-                         kMultiLineNumbersSubclassId);
-  }
-  const LRESULT result = DefSubclassProc(window, message, wparam, lparam);
-  switch (message) {
-  case WM_VSCROLL:
-  case WM_MOUSEWHEEL:
-  case WM_KEYDOWN:
-  case WM_LBUTTONDOWN:
-  case WM_SIZE:
-    SyncMultiLineNumbers(reinterpret_cast<HWND>(ref));
-    break;
-  default:
-    break;
-  }
-  return result;
-}
-
 std::wstring RegDataToString(const std::vector<BYTE>& data);
 bool ParseNumberValue(const std::wstring& text, int base, unsigned long long* value);
 
@@ -575,6 +522,116 @@ void WriteUnsignedToBytesBigEndian(unsigned long long value, size_t bytes, std::
   }
 }
 
+bool ConvertValueData(DWORD from, const std::vector<BYTE>& data, DWORD to,
+                      std::vector<BYTE>* out) {
+  if (!out || from == to) {
+    return false;
+  }
+  const DWORD src = value_format::NormalizeType(from);
+  const DWORD dst = value_format::NormalizeType(to);
+  auto is_text = [](DWORD type) {
+    return type == REG_SZ || type == REG_EXPAND_SZ || type == REG_LINK;
+  };
+  auto is_number = [](DWORD type) {
+    return type == REG_DWORD || type == REG_DWORD_BIG_ENDIAN || type == REG_QWORD;
+  };
+  auto is_raw = [](DWORD type) { return type == REG_BINARY || type == REG_NONE; };
+
+  if (is_text(src) && is_text(dst)) {
+    *out = data;
+    return true;
+  }
+  if (is_text(src) && dst == REG_MULTI_SZ) {
+    *out = value_format::MultiStringData(RegDataToString(data));
+    return true;
+  }
+  if (src == REG_MULTI_SZ && is_text(dst)) {
+    const std::vector<std::wstring> items = value_format::MultiStringItems(data);
+    if (items.size() != 1) {
+      return false;
+    }
+    *out = value_format::StringData(items.front());
+    return true;
+  }
+  if (is_number(src) && is_number(dst)) {
+    const size_t src_size = src == REG_QWORD ? sizeof(unsigned long long) : sizeof(DWORD);
+    const unsigned long long value =
+        src == REG_DWORD_BIG_ENDIAN ? ReadUnsignedFromBytesBigEndian(data, src_size)
+                                    : ReadUnsignedFromBytes(data, src_size);
+    if (dst != REG_QWORD && value > std::numeric_limits<DWORD>::max()) {
+      return false;
+    }
+    if (dst == REG_DWORD_BIG_ENDIAN) {
+      WriteUnsignedToBytesBigEndian(value, sizeof(DWORD), out);
+      return true;
+    }
+    const size_t dst_size = dst == REG_QWORD ? sizeof(unsigned long long) : sizeof(DWORD);
+    out->assign(dst_size, 0);
+    std::memcpy(out->data(), &value, dst_size);
+    return true;
+  }
+  if (is_raw(dst)) {
+    *out = data;
+    return true;
+  }
+  if (is_raw(src) && is_number(dst)) {
+    const size_t dst_size = dst == REG_QWORD ? sizeof(unsigned long long) : sizeof(DWORD);
+    if (data.size() != dst_size) {
+      return false;
+    }
+    *out = data;
+    return true;
+  }
+  if (is_raw(src) && (is_text(dst) || dst == REG_MULTI_SZ)) {
+    if (data.empty() || data.size() % sizeof(wchar_t) != 0) {
+      return false;
+    }
+    *out = data;
+    return true;
+  }
+  return false;
+}
+
+void PopulateTraceValueEditors(HWND dlg, TraceValueDialogState* state) {
+  if (!dlg || !state || state->data.empty()) {
+    return;
+  }
+  switch (value_format::NormalizeType(state->type)) {
+  case REG_SZ:
+  case REG_LINK:
+    SetDlgItemTextW(dlg, IDC_REG_SZ_EDIT, RegDataToString(state->data).c_str());
+    break;
+  case REG_EXPAND_SZ:
+    SetDlgItemTextW(dlg, IDC_REG_EXPAND_EDIT, RegDataToString(state->data).c_str());
+    break;
+  case REG_MULTI_SZ:
+    SetDlgItemTextW(dlg, IDC_REG_MULTI_EDIT,
+                    value_format::MultiStringText(state->data).c_str());
+    break;
+  case REG_DWORD:
+    SetDlgItemTextW(dlg, IDC_REG_DWORD_EDIT,
+                    FormatNumberValue(ReadUnsignedFromBytes(state->data, sizeof(DWORD)),
+                                      state->dword_base).c_str());
+    break;
+  case REG_DWORD_BIG_ENDIAN:
+    SetDlgItemTextW(dlg, IDC_REG_DWORD_EDIT,
+                    FormatNumberValue(ReadUnsignedFromBytesBigEndian(state->data, sizeof(DWORD)),
+                                      state->dword_base).c_str());
+    break;
+  case REG_QWORD:
+    SetDlgItemTextW(dlg, IDC_REG_QWORD_EDIT,
+                    FormatNumberValue(ReadUnsignedFromBytes(state->data, sizeof(unsigned long long)),
+                                      state->qword_base).c_str());
+    break;
+  case REG_NONE:
+    SetDlgItemTextW(dlg, IDC_REG_NONE_EDIT, binary_text::Hex(state->data).c_str());
+    break;
+  default:
+    SetDlgItemTextW(dlg, IDC_REG_BINARY_EDIT, binary_text::Hex(state->data).c_str());
+    break;
+  }
+}
+
 INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lparam) {
   auto* state = reinterpret_cast<TraceValueDialogState*>(GetWindowLongPtrW(dlg, DWLP_USER));
   if (msg != WM_INITDIALOG && msg != WM_DESTROY) {
@@ -604,6 +661,7 @@ INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM
       std::wstring name = state->value_name.empty() ? L"(Default)" : state->value_name;
       ConfigureReadOnlyNameField(dlg, name);
       SelectTraceType(dlg, state, state->type);
+      PopulateTraceValueEditors(dlg, state);
     } else {
       ConfigureReadOnlyNameField(dlg, L"");
       TraceValueDialogState temp;
@@ -710,8 +768,16 @@ INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM
     int id = LOWORD(wparam);
     int code = HIWORD(wparam);
     if (code == CBN_SELCHANGE && id == IDC_TYPE_COMBO) {
-      DWORD type = ReadTraceType(dlg, state);
+      const DWORD previous = state->type;
+      const DWORD type = ReadTraceType(dlg, state);
+      std::vector<BYTE> carried;
+      const bool convertible =
+          ConvertValueData(previous, state->data, type, &carried);
       SelectTraceType(dlg, state, type);
+      if (convertible) {
+        state->data = std::move(carried);
+        PopulateTraceValueEditors(dlg, state);
+      }
       return TRUE;
     }
 
@@ -1010,7 +1076,6 @@ INT_PTR CALLBACK TextDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lparam
           {IDC_VALUE_TYPE, kAnchorLeft | kAnchorTop | kAnchorRight},
           {IDC_LABEL, kAnchorLeft | kAnchorTop | kAnchorRight},
           {IDC_EDIT, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
-          {IDC_MULTI_LINE_NUMBERS, kAnchorLeft | kAnchorTop | kAnchorBottom},
           {IDOK, kAnchorRight | kAnchorBottom},
           {IDCANCEL, kAnchorRight | kAnchorBottom},
       });
@@ -1091,12 +1156,6 @@ INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPAR
         {IDC_VALUE_NAME, IDC_EDIT});
     if (state->base_type == REG_MULTI_SZ) {
       dialog_support::AllowNewlines(dlg, IDC_EDIT);
-      if (HWND multi_edit = GetDlgItem(dlg, IDC_EDIT)) {
-        SetWindowSubclass(multi_edit, MultiLineNumbersProc,
-                          kMultiLineNumbersSubclassId,
-                          reinterpret_cast<DWORD_PTR>(dlg));
-      }
-      SyncMultiLineNumbers(dlg);
     }
     if (IsMultilineEdit(dlg, IDC_EDIT)) {
       using namespace appearance;
@@ -1122,12 +1181,6 @@ INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPAR
     }
     int id = LOWORD(wparam);
     int code = HIWORD(wparam);
-
-    if (id == IDC_EDIT && state->base_type == REG_MULTI_SZ &&
-        (code == EN_CHANGE || code == EN_VSCROLL)) {
-      SyncMultiLineNumbers(dlg);
-      return TRUE;
-    }
 
     if (code == BN_CLICKED) {
       switch (id) {
@@ -1278,6 +1331,7 @@ bool EditCustomValue(HWND owner, const CustomValueRequest& request,
   TraceValueDialogState state;
   state.value_name = request.value_name;
   state.type = request.type;
+  state.data = request.data;
   const INT_PTR dialog_result = DialogBoxParamW(
       GetModuleHandleW(nullptr), MAKEINTRESOURCEW(IDD_CUSTOM_VALUE), owner,
       CustomValueDialogProc, reinterpret_cast<LPARAM>(&state));

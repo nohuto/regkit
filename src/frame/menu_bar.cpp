@@ -4,6 +4,8 @@
 #include "frame/command_detail.h"
 #include "frame/research_links.h"
 
+#include <filesystem>
+
 namespace regkit {
 using namespace command_detail;
 
@@ -171,6 +173,8 @@ void MainWindow::Impl::BuildMenus() {
   UINT modify_flags = MF_STRING | (can_modify ? 0 : MF_GRAYED);
   append_menu(edit_menu, modify_flags, cmd::kEditModify, L"Modify...");
   append_menu(edit_menu, modify_flags, cmd::kEditModifyBinary, L"Modify Binary Data...");
+  append_menu(edit_menu, modify_flags, cmd::kEditChangeType, L"Change Data Type...");
+  AppendResetDefaultMenu(edit_menu);
   AppendMenuW(edit_menu, MF_SEPARATOR, 0, nullptr);
   append_menu(edit_menu, modify_flags, cmd::kEditUndo, L"Undo");
   append_menu(edit_menu, modify_flags, cmd::kEditRedo, L"Redo");
@@ -183,6 +187,8 @@ void MainWindow::Impl::BuildMenus() {
   AppendMenuW(edit_new, MF_STRING, cmd::kNewQword, L"QWORD (64-bit) Value");
   AppendMenuW(edit_new, MF_STRING, cmd::kNewMultiString, L"Multi-String Value");
   AppendMenuW(edit_new, MF_STRING, cmd::kNewExpandString, L"Expandable String Value");
+  AppendMenuW(edit_new, MF_SEPARATOR, 0, nullptr);
+  AppendMenuW(edit_new, MF_STRING, cmd::kNewSymbolicLink, L"Symbolic Link");
   AppendMenuW(edit_menu, MF_POPUP | (can_modify ? 0 : MF_GRAYED), reinterpret_cast<UINT_PTR>(edit_new), L"New");
   AppendMenuW(edit_menu, MF_SEPARATOR, 0, nullptr);
   append_menu(edit_menu, MF_STRING, cmd::kEditCopy, L"Copy");
@@ -356,13 +362,24 @@ void MainWindow::Impl::BuildMenus() {
     }
     return false;
   };
+  HMENU bundled_menu = nullptr;
+  std::wstring bundled_group;
   for (size_t i = 0; i < bundled_defaults_.size(); ++i) {
     const auto& entry = bundled_defaults_[i];
+    if (!bundled_menu || entry.group != bundled_group) {
+      bundled_group = entry.group;
+      bundled_menu = CreatePopupMenu();
+      AppendMenuW(default_menu, MF_POPUP,
+                  reinterpret_cast<UINT_PTR>(bundled_menu),
+                  bundled_group.c_str());
+    }
     UINT flags = MF_STRING;
     if (has_default_path(entry.path)) {
       flags |= MF_CHECKED;
     }
-    append_menu(default_menu, flags, cmd::kDefaultBundledBase + static_cast<int>(i), entry.label.c_str());
+    append_menu(bundled_menu, flags,
+                cmd::kDefaultBundledBase + static_cast<int>(i),
+                entry.label.c_str());
   }
   bool has_recent_default = false;
   int default_recent_limit = std::min(static_cast<int>(recent_default_paths_.items().size()), cmd::kDefaultRecentMax - cmd::kDefaultRecentBase + 1);
@@ -372,7 +389,11 @@ void MainWindow::Impl::BuildMenus() {
       continue;
     }
     has_recent_default = true;
-    std::wstring name = FileNameOnly(path);
+    std::wstring name = FileBaseName(path);
+    const std::wstring build = ShortDefaultLabel(std::wstring(), path);
+    if (!build.empty()) {
+      name = build + L" - " + name;
+    }
     if (name.empty()) {
       name = L"Default";
     }
@@ -389,6 +410,10 @@ void MainWindow::Impl::BuildMenus() {
   append_menu(default_menu, MF_STRING, cmd::kDefaultEditActive, L"Edit Active Defaults...");
   UINT clear_default_flags = MF_STRING | (!active_defaults_.empty() ? 0 : MF_GRAYED);
   append_menu(default_menu, clear_default_flags, cmd::kDefaultClear, L"Clear Defaults");
+  AppendMenuW(default_menu, MF_SEPARATOR, 0, nullptr);
+  append_menu(default_menu,
+              MF_STRING | (default_reset_enabled_ ? MF_CHECKED : MF_UNCHECKED),
+              cmd::kDefaultResetEnable, L"Enable Context Menu (risky)");
 
   HMENU help_menu = CreatePopupMenu();
   AppendMenuW(help_menu, MF_STRING, cmd::kHelpContents, L"Help");
@@ -438,29 +463,42 @@ void MainWindow::Impl::RefreshBundledDefaultsCache() {
   }
   std::wstring assets = util::JoinPath(module_dir, L"assets");
   std::wstring defaults_dir = util::JoinPath(assets, L"defaults");
-  std::wstring pattern = util::JoinPath(defaults_dir, L"*.reg");
-  WIN32_FIND_DATAW data = {};
-  HANDLE find = FindFirstFileW(pattern.c_str(), &data);
-  if (find == INVALID_HANDLE_VALUE) {
-    return;
+  std::error_code error;
+  const std::filesystem::path root(defaults_dir);
+  for (const auto& folder : std::filesystem::directory_iterator(
+           root, std::filesystem::directory_options::skip_permission_denied,
+           error)) {
+    if (!folder.is_directory(error)) {
+      error.clear();
+      continue;
+    }
+    for (const auto& file : std::filesystem::directory_iterator(
+             folder.path(),
+             std::filesystem::directory_options::skip_permission_denied,
+             error)) {
+      if (!file.is_regular_file(error) ||
+          _wcsicmp(file.path().extension().c_str(), L".reg") != 0) {
+        error.clear();
+        continue;
+      }
+      BundledDefault entry;
+      entry.group = folder.path().filename().wstring();
+      entry.label = file.path().stem().wstring();
+      entry.path = file.path().wstring();
+      bundled_defaults_.push_back(std::move(entry));
+    }
+    error.clear();
   }
-  do {
-    if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-      continue;
-    }
-    std::wstring file_name = data.cFileName;
-    std::wstring label = FileBaseName(file_name);
-    if (label.empty()) {
-      continue;
-    }
-    BundledDefault entry;
-    entry.label = std::move(label);
-    entry.path = util::JoinPath(defaults_dir, file_name);
-    bundled_defaults_.push_back(std::move(entry));
-  } while (FindNextFileW(find, &data));
-  FindClose(find);
 
-  std::sort(bundled_defaults_.begin(), bundled_defaults_.end(), [](const BundledDefault& left, const BundledDefault& right) { return _wcsicmp(left.label.c_str(), right.label.c_str()) < 0; });
+  std::sort(bundled_defaults_.begin(), bundled_defaults_.end(),
+            [](const BundledDefault& left, const BundledDefault& right) {
+              const int group =
+                  _wcsicmp(left.group.c_str(), right.group.c_str());
+              return group != 0
+                         ? group < 0
+                         : _wcsicmp(left.label.c_str(), right.label.c_str()) <
+                               0;
+            });
   size_t bundled_limit = std::min(bundled_defaults_.size(), static_cast<size_t>(cmd::kDefaultBundledMax - cmd::kDefaultBundledBase + 1));
   if (bundled_defaults_.size() > bundled_limit) {
     bundled_defaults_.resize(bundled_limit);
@@ -492,6 +530,83 @@ bool MainWindow::Impl::HandleMenuCommand(int command_id) {
     return static_cast<MainWindow::Impl*>(value)->HandleMutationCommand(id);
   };
   return frame::DispatchCommand(command_id, context);
+}
+
+std::vector<MainWindow::Impl::DefaultValueChoice>
+MainWindow::Impl::SelectedValueDefaultChoices() const {
+  if (!default_reset_enabled_ || read_only_ || active_defaults_.empty()) {
+    return {};
+  }
+  std::vector<ListRow> rows = SelectedListRows(browse_.values());
+  if (rows.size() != 1 || rows.front().kind != rowkind::kValue ||
+      rows.front().simulated) {
+    return {};
+  }
+  return CollectDefaultChoices(rows.front().extra);
+}
+
+HMENU MainWindow::Impl::BuildResetDefaultMenu(
+    const std::vector<DefaultValueChoice>& choices) const {
+  HMENU menu = CreatePopupMenu();
+  const int limit = cmd::kResetDefaultMax - cmd::kResetDefaultBase + 1;
+  for (size_t i = 0; i < choices.size() && static_cast<int>(i) < limit; ++i) {
+    std::wstring text =
+        choices[i].label.empty() ? std::wstring(L"Default") : choices[i].label;
+    if (!choices[i].present) {
+      text.append(L" (Missing)");
+    }
+    AppendMenuW(menu, MF_STRING, cmd::kResetDefaultBase + static_cast<int>(i),
+                text.c_str());
+  }
+  return menu;
+}
+
+void MainWindow::Impl::AppendResetDefaultMenu(HMENU menu) {
+  const std::vector<DefaultValueChoice> choices = SelectedValueDefaultChoices();
+  if (choices.size() < 2) {
+    AppendMenuW(menu, MF_STRING | (choices.empty() ? MF_GRAYED : 0),
+                cmd::kEditResetDefault, L"Reset to Default");
+    return;
+  }
+  AppendMenuW(menu, MF_POPUP,
+              reinterpret_cast<UINT_PTR>(BuildResetDefaultMenu(choices)),
+              L"Reset to Default");
+}
+
+void MainWindow::Impl::RefreshResetDefaultMenu(HMENU menu) {
+  const int count = GetMenuItemCount(menu);
+  int position = -1;
+  for (int i = 0; i < count; ++i) {
+    MENUITEMINFOW info = {};
+    info.cbSize = sizeof(info);
+    info.fMask = MIIM_ID | MIIM_SUBMENU;
+    if (!GetMenuItemInfoW(menu, i, TRUE, &info)) {
+      continue;
+    }
+    if (info.wID == static_cast<UINT>(cmd::kEditResetDefault) ||
+        (info.hSubMenu != nullptr && info.hSubMenu == reset_default_menu_)) {
+      position = i;
+      break;
+    }
+  }
+  if (position < 0) {
+    return;
+  }
+  const std::vector<DefaultValueChoice> choices = SelectedValueDefaultChoices();
+  MENUITEMINFOW item = {};
+  item.cbSize = sizeof(item);
+  item.fMask = MIIM_ID | MIIM_STATE | MIIM_SUBMENU;
+  if (choices.size() < 2) {
+    item.wID = cmd::kEditResetDefault;
+    item.hSubMenu = nullptr;
+    item.fState = choices.empty() ? MFS_GRAYED : MFS_ENABLED;
+  } else {
+    item.wID = cmd::kEditResetDefault;
+    item.hSubMenu = BuildResetDefaultMenu(choices);
+    item.fState = MFS_ENABLED;
+  }
+  SetMenuItemInfoW(menu, position, TRUE, &item);
+  reset_default_menu_ = item.hSubMenu;
 }
 
 } // namespace regkit

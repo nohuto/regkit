@@ -90,6 +90,10 @@ It includes built in presets and a theme editor to customize colors, presets can
 
 ![](https://github.com/nohuto/regkit/blob/main/assets/images/default-light.png?raw=true)
 
+##### W7 Light
+
+![](https://github.com/nohuto/regkit/blob/main/assets/images/default-light-w7.png?raw=true)
+
 #### Ayu Dark
 
 ![](https://github.com/nohuto/regkit/blob/main/assets/images/ayu-dark.png?raw=true)
@@ -172,9 +176,26 @@ Loading traces affects startup time and memory consumption, therefore, it's reco
 
 ## Default Menu
 
-Default presets are `.reg` exports that fill the value list's `Default` column with data from new installations. If a value is included in the registry but not in the defaults list, it'll be displayed as `(Missing)`. Loading your entire *Computer* export in here isn't recommended as it'll take a long time to parse the file, therefore split top level keys into smaller parts.
+Default presets are `.reg` exports that fill the value list's `Default` column with data from installation images. If a value is included in the registry but not in the loaded defaults, it'll be displayed as `(Missing)`. Currently all (beside two 25H2 exports were directly read from the hive files of images)
 
-The current built in list isn't complete, I'll expand it over time.
+`HKLM-SYSTEM-IMAGE.reg` for example is from `Windows\System32\config\SYSTEM`, `HKCU-DEFAULT-IMAGE.reg` from `Users\Default\NTUSER.DAT`, which is the template used when a user profile is created. 
+
+These are the exact builds for each file:
+
+| Windows release | Edition | Architecture | Exact build | Preset source |
+| --- | --- | --- | --- | --- |
+| Windows XP SP1 | Professional x64 Edition | x64 | `5.2.3790.1830` | `AMD64\SETUPREG.HIV` |
+| Windows Vista RTM | Business | x64 | `6.0.6000.16386` | WIM index 1 |
+| Windows 7 RTM | Professional | x64 | `6.1.7600.16385` | WIM index 3 |
+| Windows 8 | Pro | x64 | `6.2.9200.16384` | WIM index 1 |
+| Windows 8.1 | Pro | x64 | `6.3.9600.16384` | WIM index 1 |
+| Windows 10 21H2 | Home | x64 | `10.0.19044.3086` | WIM index 1 |
+| Windows 10 22H2 | Home | x64 | `10.0.19045.6456` | WIM index 1 |
+| Windows 11 21H2 | Home | x64 | `10.0.22000.978` | WIM index 1 |
+| Windows 11 22H2 | Home | x64 | `10.0.22621.963` | WIM index 1 |
+| Windows 11 23H2 | Home | x64 | `10.0.22631.6060` | WIM index 1 |
+| Windows 11 24H2 | Home | x64 | `10.0.26100.9168` | WIM index 1 |
+| Windows 11 25H2 | Home | x64 | `10.0.26200.8037` | WIM index 1 and first-sign-in capture |
 
 ## Rights and Elevation
 

@@ -88,6 +88,9 @@ public:
   static bool IsVirtualRoot(HKEY root);
   static bool GetVirtualRootName(HKEY root, std::wstring* root_name);
   static bool CreateKey(const RegistryNode& node, const std::wstring& name);
+  static bool CreateKeyLink(const RegistryNode& node, const std::wstring& name,
+                            const std::wstring& nt_target);
+  static bool ReadKeyLink(const RegistryNode& node, std::wstring* target);
   static bool DeleteKey(const RegistryNode& node);
   static bool RenameKey(const RegistryNode& node, const std::wstring& new_name);
   static bool DeleteValue(const RegistryNode& node, const std::wstring& value_name);

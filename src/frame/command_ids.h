@@ -27,10 +27,13 @@ constexpr int kNewDword = 2013;
 constexpr int kNewQword = 2014;
 constexpr int kNewMultiString = 2015;
 constexpr int kNewExpandString = 2016;
+constexpr int kNewSymbolicLink = 2019;
 
 constexpr int kEditModify = 2100;
 constexpr int kEditModifyBinary = 2101;
 constexpr int kEditModifyComment = 2115;
+constexpr int kEditChangeType = 2116;
+constexpr int kEditResetDefault = 2117;
 constexpr int kEditRename = 2102;
 constexpr int kEditDelete = 2103;
 constexpr int kEditCopyKey = 2104;
@@ -140,13 +143,17 @@ constexpr int kDefaultLoadCustom = 2720;
 constexpr int kDefaultClear = 2721;
 constexpr int kDefaultEditRecent = 2722;
 constexpr int kDefaultEditActive = 2723;
+constexpr int kDefaultResetEnable = 2724;
 constexpr int kDefaultRecentBase = 2730;
 constexpr int kDefaultRecentMax = 2739;
 constexpr int kDefaultBundledBase = 2740;
-constexpr int kDefaultBundledMax = 2759;
+constexpr int kDefaultBundledMax = 2799;
 
-constexpr int kResearchItemBase = 2760;
-constexpr int kResearchItemMax = 2781;
+constexpr int kResetDefaultBase = 2900;
+constexpr int kResetDefaultMax = 2959;
+
+constexpr int kResearchItemBase = 2800;
+constexpr int kResearchItemMax = 2821;
 
 constexpr int kHeaderSizeToFit = 4000;
 constexpr int kHeaderSizeAll = 4001;

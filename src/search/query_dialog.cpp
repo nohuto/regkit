@@ -455,7 +455,7 @@ void LayoutDialog(HWND hwnd, SearchDialogState* state, HFONT font) {
   int label_w = 94;
   int edit_h = CalcDialogLineHeight(hwnd, font, 20);
   int line_h = std::max(edit_h + 2, 22);
-  auto place_check = [&](HWND check, int x_pos, int y_pos, int width) {
+  auto place_check = [&](HWND check, int x_pos, int y_pos, int width, int limit = 0) {
     if (!check) {
       return;
     }
@@ -470,13 +470,16 @@ void LayoutDialog(HWND hwnd, SearchDialogState* state, HFONT font) {
         HFONT previous = drawn ? reinterpret_cast<HFONT>(SelectObject(dc, drawn)) : nullptr;
         SIZE text = {};
         if (GetTextExtentPoint32W(dc, label, length, &text)) {
-          width = std::max<int>(width, text.cx + GetSystemMetrics(SM_CXMENUCHECK) + 26);
+          width = std::max<int>(width, text.cx + GetSystemMetrics(SM_CXMENUCHECK) + 12);
         }
         if (previous) {
           SelectObject(dc, previous);
         }
         ReleaseDC(check, dc);
       }
+    }
+    if (limit > 0) {
+      width = std::min(width, limit);
     }
     SetWindowPos(check, nullptr, x_pos, y_pos, width, 18, SWP_NOZORDER);
   };
@@ -517,9 +520,9 @@ void LayoutDialog(HWND hwnd, SearchDialogState* state, HFONT font) {
   place_check(state->options_registry, left_x, gy + 88, 200);
   place_check(state->options_trace, left_x, gy + 110, 200);
 
-  place_check(state->min_size, right_x, gy, 180);
+  place_check(state->min_size, right_x, gy, 180, 180);
   SetWindowPos(state->min_size_edit, nullptr, right_x + 188, gy - 4, 76, line_h, SWP_NOZORDER);
-  place_check(state->max_size, right_x, gy + 22, 180);
+  place_check(state->max_size, right_x, gy + 22, 180, 180);
   SetWindowPos(state->max_size_edit, nullptr, right_x + 188, gy + 18, 76, line_h, SWP_NOZORDER);
   place_check(state->match_case, right_x, gy + 44, 140);
   place_check(state->match_whole, right_x, gy + 66, 160);
@@ -548,8 +551,8 @@ void LayoutDialog(HWND hwnd, SearchDialogState* state, HFONT font) {
   place_check(state->result_reuse, x + 12, y + 20, 220);
   place_check(state->result_new, x + 12, y + 42, 240);
   place_check(state->result_open_new_tab, x + 12, y + 64, 200);
-  place_check(state->result_limit_enable, x + 12, y + 88, 132);
-  SetWindowPos(state->result_limit_edit, nullptr, x + 150, y + 86, 70, line_h, SWP_NOZORDER);
+  place_check(state->result_limit_enable, x + 12, y + 88, 140, 140);
+  SetWindowPos(state->result_limit_edit, nullptr, x + 160, y + 86, 70, line_h, SWP_NOZORDER);
 
   int btn_y = client.bottom - 30;
   SetWindowPos(state->find_button, nullptr, width - 180, btn_y, 80, 22, SWP_NOZORDER);
@@ -939,7 +942,7 @@ LRESULT CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
         result.criteria.modified_to = modified_to;
       }
       if (result.criteria.use_min_size && result.criteria.use_max_size && result.criteria.min_size > result.criteria.max_size) {
-        ui::ShowWarning(hwnd, L"Minimum data size cannot exceed maximum data size.");
+        ui::ShowWarning(hwnd, L"Minimum data size can't exceed maximum data size.");
         return 0;
       }
       if (has_modified_from && has_modified_to && CompareFileTime(&modified_from, &modified_to) > 0) {

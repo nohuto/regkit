@@ -43,6 +43,7 @@ void Merge(Data* data, const std::vector<Entry>& entries,
     Value value;
     value.type = entry.type;
     value.data = entry.data;
+    value.raw = entry.raw;
     const std::wstring name = Lower(entry.value_name);
     data->values_by_key[key].values[name] = value;
 

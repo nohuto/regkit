@@ -5,6 +5,7 @@
 
 #include <windows.h>
 
+#include <functional>
 #include <string>
 
 namespace regkit::editors {
@@ -16,5 +17,16 @@ struct LoadHiveResult {
 };
 
 bool ChooseHiveToLoad(HWND owner, LoadHiveResult* result);
+
+struct SymbolicLinkResult {
+  std::wstring name;
+  std::wstring target;
+};
+
+using BrowseKeyCallback = std::function<bool(HWND, std::wstring*)>;
+
+bool PromptSymbolicLink(HWND owner, const std::wstring& suggested_name,
+                        const BrowseKeyCallback& browse,
+                        SymbolicLinkResult* result);
 
 } // namespace regkit::editors

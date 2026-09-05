@@ -76,6 +76,7 @@ bool Load(const std::wstring& path, const NormalizePath& normalize,
       }
       Value value;
       value.type = pair.second.type;
+      value.raw = pair.second.data;
       value.data = value_format::DisplayData(
           pair.second.type,
           pair.second.data.empty() ? nullptr : pair.second.data.data(),
@@ -96,6 +97,7 @@ bool Load(const std::wstring& path, const NormalizePath& normalize,
         entry.has_value = true;
         entry.value_name = pair.second.name;
         entry.type = value.type;
+        entry.raw = value.raw;
         entry.data = std::move(value.data);
         parsed_entries.push_back(std::move(entry));
       }

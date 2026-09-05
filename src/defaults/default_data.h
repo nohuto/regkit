@@ -18,6 +18,7 @@ namespace regkit::defaults {
 struct Value {
   DWORD type = REG_NONE;
   std::wstring data;
+  std::vector<BYTE> raw;
 };
 
 struct Key {
@@ -37,6 +38,7 @@ struct Entry {
   std::wstring value_name;
   DWORD type = REG_NONE;
   std::wstring data;
+  std::vector<BYTE> raw;
 };
 
 using AliasPath =

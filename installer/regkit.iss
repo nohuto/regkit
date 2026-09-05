@@ -1,7 +1,7 @@
 ﻿#define AppId "4678f42c-c6a2-4df9-bc2a-dddbd2613045"
 #define AppName "RegKit"
 #define AppExeName "regkit.exe"
-#define AppVersion "0.0.0.7"
+#define AppVersion "0.0.0.8"
 #define AppPublisher "nohuto"
 #define AppCopyright "(C) 2026 nohuto"
 #define AppURL "https://github.com/nohuto/regkit"
@@ -48,10 +48,13 @@ OutputBaseFilename=RegKit-Setup-{#AppVersion}-{#Arch}
 Name: "startmenu"; Description: "Start Menu shortcut"; GroupDescription: "Shortcuts:"; Flags: checkedonce
 Name: "desktopicon"; Description: "Desktop shortcut"; GroupDescription: "Shortcuts:"
 Name: "replace_regedit"; Description: "Replace Regedit"; GroupDescription: "Integration:"; Check: IsAdminInstallMode
+Name: "defaults"; Description: "Install registry exports used by the Default menu (~200 MB)"; GroupDescription: "Optional data:"; Flags: unchecked
 
 [Files]
 Source: "{#BuildDir}\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#BuildDir}\assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#BuildDir}\offreg.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#BuildDir}\assets\*"; DestDir: "{app}\assets"; Excludes: "defaults\*"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#BuildDir}\assets\defaults\*"; DestDir: "{app}\assets\defaults"; Flags: ignoreversion recursesubdirs createallsubdirs; Tasks: defaults
 Source: "{#BuildDir}\records\23H2.txt"; DestDir: "{app}\records"; Flags: ignoreversion
 Source: "{#BuildDir}\records\24H2.txt"; DestDir: "{app}\records"; Flags: ignoreversion
 Source: "{#BuildDir}\records\25H2.txt"; DestDir: "{app}\records"; Flags: ignoreversion

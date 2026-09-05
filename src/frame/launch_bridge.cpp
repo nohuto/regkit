@@ -293,7 +293,7 @@ std::wstring MainWindow::Impl::ResolveSelectedHiveFilePath() {
 
 void MainWindow::Impl::OpenHiveFileDir() {
   if (registry_mode_ == RegistryMode::kRemote) {
-    ui::ShowError(hwnd_, L"Hive files are not available for remote registries.");
+    ui::ShowError(hwnd_, L"Hive files aren't available for remote registries.");
     return;
   }
   std::wstring hive_path = ResolveSelectedHiveFilePath();

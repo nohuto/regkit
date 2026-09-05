@@ -32,12 +32,19 @@ CommandArea ClassifyCommand(int command_id) noexcept {
       command_id <= cmd::kNewExpandString) {
     return CommandArea::kMutation;
   }
+  if (command_id >= cmd::kResetDefaultBase &&
+      command_id <= cmd::kResetDefaultMax) {
+    return CommandArea::kMutation;
+  }
   switch (command_id) {
   case cmd::kTraceEditRecent:
   case cmd::kDefaultEditRecent:
     return CommandArea::kTraceDefaults;
   case cmd::kEditModify:
+  case cmd::kNewSymbolicLink:
   case cmd::kEditModifyBinary:
+  case cmd::kEditChangeType:
+  case cmd::kEditResetDefault:
   case cmd::kEditModifyComment:
   case cmd::kEditRename:
   case cmd::kEditDelete:
@@ -67,7 +74,7 @@ CommandArea ClassifyCommand(int command_id) noexcept {
   if ((command_id >= cmd::kTraceLoad23H2 &&
        command_id <= cmd::kTraceEditActive) ||
       (command_id >= cmd::kDefaultLoadCustom &&
-       command_id <= cmd::kDefaultEditActive)) {
+       command_id <= cmd::kDefaultResetEnable)) {
     return CommandArea::kTraceDefaults;
   }
   if ((command_id >= cmd::kFavoritesAdd &&

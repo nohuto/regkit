@@ -63,9 +63,25 @@ if (REGKIT_IPO_SUPPORTED)
     set_property(TARGET RegKit PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
 endif()
 
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^([Aa][Rr][Mm]64|aarch64)$")
+    set(REGKIT_OFFREG_ARCH arm64)
+elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
+    set(REGKIT_OFFREG_ARCH x86)
+else()
+    set(REGKIT_OFFREG_ARCH x64)
+endif()
+set(REGKIT_OFFREG_DLL "${CMAKE_SOURCE_DIR}/redist/offreg/${REGKIT_OFFREG_ARCH}/offreg.dll")
+if (NOT EXISTS "${REGKIT_OFFREG_DLL}")
+    message(FATAL_ERROR "Missing ${REGKIT_OFFREG_DLL}. Offline Registry requires the Microsoft offreg.dll redistributable for this architecture.")
+endif()
+
 add_custom_command(TARGET RegKit POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${REGKIT_OFFREG_DLL}"
+        "$<TARGET_FILE_DIR:RegKit>/offreg.dll"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RegKit>/records"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RegKit>/assets/icons"
+    COMMAND ${CMAKE_COMMAND} -E rm -rf "$<TARGET_FILE_DIR:RegKit>/assets/defaults"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RegKit>/assets/defaults"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/records/23H2.txt"

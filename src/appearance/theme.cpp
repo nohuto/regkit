@@ -59,8 +59,6 @@ using AllowDarkModeForWindowFn = BOOL(WINAPI*)(HWND, BOOL);
 using RefreshImmersiveColorPolicyStateFn = void(WINAPI*)();
 using FlushMenuThemesFn = void(WINAPI*)();
 
-// The dark-mode ordinals below only exist on Windows 10 1809 and later; on
-// older systems those ordinals resolve to unrelated exports.
 bool DarkModeOrdinalsAvailable() {
   static const bool available = []() -> bool {
     HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");

@@ -6,8 +6,91 @@
 namespace regkit {
 using namespace command_detail;
 
+namespace {
+
+std::wstring NativeTargetPath(const std::wstring& path) {
+  const std::wstring normalized =
+      registry_path::Normalize(path, util::GetCurrentUserSidString());
+  if (normalized.empty()) {
+    return {};
+  }
+  const size_t split = normalized.find(L'\\');
+  const std::wstring root =
+      split == std::wstring::npos ? normalized : normalized.substr(0, split);
+  const std::wstring rest =
+      split == std::wstring::npos ? std::wstring() : normalized.substr(split);
+  std::wstring native;
+  if (_wcsicmp(root.c_str(), L"HKEY_LOCAL_MACHINE") == 0) {
+    native = L"\\REGISTRY\\MACHINE";
+  } else if (_wcsicmp(root.c_str(), L"HKEY_USERS") == 0) {
+    native = L"\\REGISTRY\\USER";
+  } else if (_wcsicmp(root.c_str(), L"HKEY_CURRENT_USER") == 0) {
+    const std::wstring sid = util::GetCurrentUserSidString();
+    if (sid.empty()) {
+      return {};
+    }
+    native = L"\\REGISTRY\\USER\\" + sid;
+  } else if (_wcsicmp(root.c_str(), L"HKEY_CLASSES_ROOT") == 0) {
+    native = L"\\REGISTRY\\MACHINE\\SOFTWARE\\Classes";
+  } else if (_wcsicmp(root.c_str(), L"HKEY_CURRENT_CONFIG") == 0) {
+    native =
+        L"\\REGISTRY\\MACHINE\\SYSTEM\\CurrentControlSet\\Hardware Profiles\\Current";
+  } else {
+    return {};
+  }
+  return native + rest;
+}
+
+} // namespace
+
 bool MainWindow::Impl::HandleMutationCommand(int command_id) {
+  if (command_id == cmd::kEditResetDefault ||
+      (command_id >= cmd::kResetDefaultBase &&
+       command_id <= cmd::kResetDefaultMax)) {
+    return HandleResetDefaultCommand(command_id);
+  }
   switch (command_id) {
+  case cmd::kNewSymbolicLink: {
+    if (!EnsureWritable() || !browse_.current_node()) {
+      return true;
+    }
+    if (registry_mode_ != RegistryMode::kLocal) {
+      ui::ShowWarning(hwnd_, L"Symbolic links can only be created in the local registry.");
+      return true;
+    }
+    editors::SymbolicLinkResult link;
+    if (!editors::PromptSymbolicLink(
+            hwnd_, MakeUniqueKeyName(*browse_.current_node(), L"New Link"),
+            [](HWND owner, std::wstring* selected) {
+              return ShowBrowseKeyDialog(owner, selected);
+            },
+            &link)) {
+      return true;
+    }
+    const std::wstring native = NativeTargetPath(link.target);
+    if (native.empty()) {
+      ui::ShowError(hwnd_, L"The target must be a full registry path under a standard root.");
+      return true;
+    }
+    DWORD error = ERROR_SUCCESS;
+    if (!registry_backend::live::CreateRegistryLink(*browse_.current_node(),
+                                                    link.name, native, &error)) {
+      std::wstring message = L"Failed to create the symbolic link.";
+      const std::wstring detail = util::FormatWin32Error(error);
+      if (!detail.empty()) {
+        message += L"\n";
+        message += detail;
+      }
+      ui::ShowError(hwnd_, message);
+      return true;
+    }
+    AppendHistoryEntry(L"Create symbolic link " + link.name, L"", native);
+    MarkOfflineDirty();
+    RefreshTreeSelection();
+    RefreshMatchingTreeNodes();
+    UpdateValueListForNode(browse_.current_node());
+    return true;
+  }
   case cmd::kCreateSimulatedKey:
   case cmd::kNewKey:
   case cmd::kNewString:
@@ -19,6 +102,7 @@ bool MainWindow::Impl::HandleMutationCommand(int command_id) {
     return HandleCreateCommand(command_id);
   case cmd::kEditModify:
   case cmd::kEditModifyBinary:
+  case cmd::kEditChangeType:
   case cmd::kEditModifyComment:
     return HandleModifyCommand(command_id);
   case cmd::kEditRename:
@@ -218,6 +302,54 @@ bool MainWindow::Impl::HandleCreateCommand(int command_id) {
 
 bool MainWindow::Impl::HandleModifyCommand(int command_id) {
   switch (command_id) {
+  case cmd::kEditChangeType: {
+    if (!EnsureWritable() || !browse_.current_node()) {
+      return true;
+    }
+    std::vector<ListRow> rows = SelectedListRows(browse_.values());
+    if (rows.size() != 1 || rows.front().kind != rowkind::kValue) {
+      return true;
+    }
+    ValueEntry entry;
+    if (!GetValueEntry(*browse_.current_node(), rows.front().extra, &entry)) {
+      ui::ShowError(hwnd_, L"Failed to read value.");
+      return true;
+    }
+    editors::CustomValueRequest request;
+    request.value_name = entry.name;
+    request.type = entry.type;
+    request.data = entry.data;
+    editors::CustomValueResult result;
+    if (!editors::EditCustomValue(hwnd_, request, &result)) {
+      return true;
+    }
+    if (result.type == entry.type && result.data == entry.data) {
+      return true;
+    }
+    if (!RegistryStore::SetValue(*browse_.current_node(), entry.name, result.type,
+                                 result.data)) {
+      ui::ShowError(hwnd_, L"Failed to update value.");
+      return true;
+    }
+    const std::wstring old_text = value_format::Data(
+        entry.type, entry.data.data(), static_cast<DWORD>(entry.data.size()));
+    const std::wstring new_text = value_format::Data(
+        result.type, result.data.data(), static_cast<DWORD>(result.data.size()));
+    AppendValueHistoryEntry(L"Change type " + entry.name, old_text, new_text,
+                            *browse_.current_node(), entry.name,
+                            HistoryEntry::RevertKind::kSetValue, &entry);
+    MarkOfflineDirty();
+    changes::UndoOperation op;
+    op.type = changes::UndoOperation::Type::kModifyValue;
+    op.node = *browse_.current_node();
+    op.old_value = entry;
+    op.new_value = entry;
+    op.new_value.type = result.type;
+    op.new_value.data = result.data;
+    PushUndo(std::move(op));
+    UpdateValueListForNode(browse_.current_node());
+    return true;
+  }
   case cmd::kEditModify:
   case cmd::kEditModifyBinary: {
     if (!EnsureWritable()) {
@@ -430,6 +562,93 @@ bool MainWindow::Impl::HandleRenameCommand(int command_id) {
   default:
     return false;
   }
+}
+
+bool MainWindow::Impl::HandleResetDefaultCommand(int command_id) {
+  if (!default_reset_enabled_ || !EnsureWritable() || !browse_.current_node()) {
+    return true;
+  }
+  std::vector<ListRow> rows = SelectedListRows(browse_.values());
+  if (rows.size() != 1 || rows.front().kind != rowkind::kValue) {
+    return true;
+  }
+  const std::wstring name = rows.front().extra;
+  const std::vector<DefaultValueChoice> choices = CollectDefaultChoices(name);
+  size_t index = 0;
+  if (command_id != cmd::kEditResetDefault) {
+    index = static_cast<size_t>(command_id - cmd::kResetDefaultBase);
+  }
+  if (index >= choices.size()) {
+    return true;
+  }
+  const DefaultValueChoice& choice = choices[index];
+  const std::wstring display_name = name.empty() ? L"(Default)" : name;
+  ValueEntry entry;
+  const bool exists = GetValueEntry(*browse_.current_node(), name, &entry);
+
+  if (!choice.present) {
+    if (!exists) {
+      return true;
+    }
+    if (!ui::ConfirmDelete(hwnd_, L"Delete Value", display_name)) {
+      return true;
+    }
+    if (!RegistryStore::DeleteValue(*browse_.current_node(), name)) {
+      ui::ShowError(hwnd_, L"Failed to delete value.");
+      return true;
+    }
+    AppendValueHistoryEntry(L"Reset value " + display_name, display_name, L"",
+                            *browse_.current_node(), name,
+                            HistoryEntry::RevertKind::kSetValue, &entry);
+    changes::UndoOperation op;
+    op.type = changes::UndoOperation::Type::kDeleteValue;
+    op.node = *browse_.current_node();
+    op.old_value = std::move(entry);
+    PushUndo(std::move(op));
+    MarkOfflineDirty();
+    UpdateValueListForNode(browse_.current_node());
+    return true;
+  }
+
+  if (exists && entry.type == choice.type && entry.data == choice.data) {
+    return true;
+  }
+  if (!RegistryStore::SetValue(*browse_.current_node(), name, choice.type,
+                               choice.data)) {
+    ui::ShowError(hwnd_, L"Failed to update value.");
+    return true;
+  }
+  const std::wstring old_text =
+      exists ? value_format::Data(entry.type, entry.data.data(),
+                                  static_cast<DWORD>(entry.data.size()))
+             : std::wstring();
+  const std::wstring new_text = value_format::Data(
+      choice.type, choice.data.data(), static_cast<DWORD>(choice.data.size()));
+  AppendValueHistoryEntry(
+      L"Reset value " + display_name, old_text, new_text,
+      *browse_.current_node(), name,
+      exists ? HistoryEntry::RevertKind::kSetValue
+             : HistoryEntry::RevertKind::kDeleteValue,
+      exists ? &entry : nullptr);
+  changes::UndoOperation op;
+  op.node = *browse_.current_node();
+  if (exists) {
+    op.type = changes::UndoOperation::Type::kModifyValue;
+    op.old_value = entry;
+    op.new_value = entry;
+    op.new_value.type = choice.type;
+    op.new_value.data = choice.data;
+  } else {
+    op.type = changes::UndoOperation::Type::kCreateValue;
+    op.name = name;
+    op.new_value.name = name;
+    op.new_value.type = choice.type;
+    op.new_value.data = choice.data;
+  }
+  PushUndo(std::move(op));
+  MarkOfflineDirty();
+  UpdateValueListForNode(browse_.current_node());
+  return true;
 }
 
 bool MainWindow::Impl::HandleDeleteCommand(int command_id) {

@@ -419,6 +419,100 @@ inline std::wstring FileNameOnly(const std::wstring& path) {
   return (pos == std::wstring::npos) ? path : path.substr(pos + 1);
 }
 
+inline std::vector<std::wstring> SplitLabelWords(const std::wstring& text) {
+  std::vector<std::wstring> words;
+  std::wstring word;
+  for (wchar_t character : text) {
+    if (character == L'-' || character == L'_' || character == L' ') {
+      if (!word.empty()) {
+        words.push_back(std::move(word));
+        word.clear();
+      }
+      continue;
+    }
+    word.push_back(character);
+  }
+  if (!word.empty()) {
+    words.push_back(std::move(word));
+  }
+  return words;
+}
+
+inline bool IsReleaseWord(const std::wstring& word) {
+  return word.size() == 4 && iswdigit(word[0]) && iswdigit(word[1]) &&
+         (word[2] == L'H' || word[2] == L'h') && iswdigit(word[3]);
+}
+
+inline bool IsVersionWord(const std::wstring& word) {
+  if (word.empty() || !iswdigit(word[0])) {
+    return false;
+  }
+  for (wchar_t character : word) {
+    if (!iswdigit(character) && character != L'.') {
+      return false;
+    }
+  }
+  return true;
+}
+
+inline std::wstring ShortWindowsName(const std::wstring& folder) {
+  const std::vector<std::wstring> words = SplitLabelWords(folder);
+  if (words.empty() || _wcsicmp(words[0].c_str(), L"Windows") != 0) {
+    return {};
+  }
+  if (words.size() < 2) {
+    return {};
+  }
+  std::wstring text =
+      IsVersionWord(words[1]) ? L"W" + words[1] : words[1];
+  if (words.size() > 2 && IsReleaseWord(words[2])) {
+    text.push_back(L' ');
+    text.append(words[2]);
+  }
+  return text;
+}
+
+inline std::wstring ShortDefaultLabel(const std::wstring& label,
+                               const std::wstring& source_path) {
+  const size_t leaf = source_path.find_last_of(L"\\/");
+  if (leaf != std::wstring::npos && leaf > 0) {
+    const size_t parent = source_path.find_last_of(L"\\/", leaf - 1);
+    const size_t start = parent == std::wstring::npos ? 0 : parent + 1;
+    std::wstring folder = ShortWindowsName(source_path.substr(start, leaf - start));
+    if (!folder.empty()) {
+      return folder;
+    }
+  }
+  static const wchar_t* const kHiveWords[] = {
+      L"HKLM",    L"HKCU",   L"HKU",       L"HKCR",    L"HKCC",
+      L"HKEY",    L"LOCAL",  L"MACHINE",   L"USER",    L"USERS",
+      L"CURRENT", L"SYSTEM", L"SOFTWARE",  L"DEFAULT", L"CLASSES"};
+  const std::vector<std::wstring> words = SplitLabelWords(label);
+  size_t first = 0;
+  while (first < words.size()) {
+    bool hive_word = false;
+    for (const wchar_t* hive : kHiveWords) {
+      if (_wcsicmp(words[first].c_str(), hive) == 0) {
+        hive_word = true;
+        break;
+      }
+    }
+    if (!hive_word) {
+      break;
+    }
+    ++first;
+  }
+  if (first >= words.size()) {
+    return label;
+  }
+  std::wstring text = words[first];
+  for (size_t i = first + 1; i < words.size(); ++i) {
+    text.push_back(L' ');
+    text.append(words[i]);
+  }
+  return text;
+}
+
 inline std::wstring FileBaseName(const std::wstring& path) {
   size_t pos = path.find_last_of(L"\\/");
   std::wstring name = (pos == std::wstring::npos) ? path : path.substr(pos + 1);

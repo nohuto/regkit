@@ -471,8 +471,22 @@ LRESULT CALLBACK MainWindow::Impl::TabProc(HWND hwnd, UINT message, WPARAM wpara
 
 LRESULT CALLBACK MainWindow::Impl::ListViewProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR, DWORD_PTR ref_data) {
   auto* self = reinterpret_cast<MainWindow::Impl*>(ref_data);
-  if (message == WM_PAINT) {
-    RefreshListViewTailOnScroll(hwnd);
+  if (message == WM_PAINT && ListViewScrolledHorizontally(hwnd)) {
+    InvalidateListViewTail(hwnd);
+  }
+
+  if (self && self->show_value_grid_ &&
+      (hwnd == self->browse_.values().hwnd() ||
+       hwnd == self->search_results_list_) &&
+      (message == WM_HSCROLL || message == WM_MOUSEWHEEL ||
+       message == WM_MOUSEHWHEEL || message == LVM_SCROLL ||
+       message == LVM_ENSUREVISIBLE || message == WM_KEYDOWN)) {
+    const int before = GetScrollPos(hwnd, SB_HORZ);
+    const LRESULT result = DefSubclassProc(hwnd, message, wparam, lparam);
+    if (GetScrollPos(hwnd, SB_HORZ) != before) {
+      InvalidateRect(hwnd, nullptr, TRUE);
+    }
+    return result;
   }
   if (message == WM_NCDESTROY) {
     RemovePropW(hwnd, kListScrollProp);
@@ -513,13 +527,17 @@ LRESULT CALLBACK MainWindow::Impl::ListViewProc(HWND hwnd, UINT message, WPARAM 
     }
   }
   if (message == WM_MOUSEMOVE && self && self->value_tooltip_ &&
-      hwnd == self->browse_.values().hwnd()) {
+      (hwnd == self->browse_.values().hwnd() ||
+       hwnd == self->search_results_list_)) {
     LVHITTESTINFO hit = {};
     hit.pt.x = GET_X_LPARAM(lparam);
     hit.pt.y = GET_Y_LPARAM(lparam);
     const int item = ListView_SubItemHitTest(hwnd, &hit);
-    if (item != self->value_tip_item_ || hit.iSubItem != self->value_tip_subitem_) {
-      const bool same_cell = item == self->value_tip_item_;
+    if (hwnd != self->value_tip_list_ || item != self->value_tip_item_ ||
+        hit.iSubItem != self->value_tip_subitem_) {
+      const bool same_cell =
+          hwnd == self->value_tip_list_ && item == self->value_tip_item_;
+      self->value_tip_list_ = hwnd;
       self->value_tip_item_ = item;
       self->value_tip_subitem_ = hit.iSubItem;
       if (!same_cell) {

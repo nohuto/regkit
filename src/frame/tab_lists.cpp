@@ -798,22 +798,7 @@ void MainWindow::Impl::DrawTabItem(HDC hdc, int index, const RECT& item_rect, in
     }
 
     COLORREF close_color = close_down ? theme.SelectionTextColor() : theme.TextColor();
-    if (icon_font_) {
-      HFONT old_font = reinterpret_cast<HFONT>(SelectObject(hdc, icon_font_));
-      SetTextColor(hdc, close_color);
-      SetBkMode(hdc, TRANSPARENT);
-      DrawTextW(hdc, L"\xE711", -1, &close_rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
-      SelectObject(hdc, old_font);
-    } else {
-      HPEN close_pen = appearance::CachedPen(close_color, 2);
-      HGDIOBJ old_close_pen = SelectObject(hdc, close_pen);
-      int pad = std::max<int>(2, static_cast<int>((close_rect.right - close_rect.left) / 4));
-      MoveToEx(hdc, close_rect.left + pad, close_rect.top + pad, nullptr);
-      LineTo(hdc, close_rect.right - pad, close_rect.bottom - pad);
-      MoveToEx(hdc, close_rect.right - pad, close_rect.top + pad, nullptr);
-      LineTo(hdc, close_rect.left + pad, close_rect.bottom - pad);
-      SelectObject(hdc, old_close_pen);
-    }
+    DrawCloseGlyph(hdc, close_rect, close_color, win32::DpiForWindow(tab_));
   }
 }
 

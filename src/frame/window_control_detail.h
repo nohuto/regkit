@@ -277,6 +277,7 @@ constexpr int kCellTooltipPadding = 8;
 constexpr size_t kCellTooltipMeasureLimit = 512;
 constexpr size_t kCellTextDrawLimit = 512;
 constexpr size_t kValuePreviewLimit = 4096;
+constexpr DWORD kValuePreviewBytes = 4096;
 
 inline const std::wstring& ValueRowFieldText(const ListRow& row, int subitem) {
   switch (subitem) {
@@ -429,13 +430,13 @@ inline void InvalidateListViewColumn(HWND list, int display_index) {
   RedrawWindow(list, &band, nullptr, RDW_INVALIDATE | RDW_ERASE);
 }
 
-inline void RefreshListViewTailOnScroll(HWND list) {
+inline bool ListViewScrolledHorizontally(HWND list) {
   const INT_PTR position = GetScrollPos(list, SB_HORZ) + 1;
   if (GetPropW(list, kListScrollProp) == reinterpret_cast<HANDLE>(position)) {
-    return;
+    return false;
   }
   SetPropW(list, kListScrollProp, reinterpret_cast<HANDLE>(position));
-  InvalidateListViewTail(list);
+  return true;
 }
 
 inline void UpdateListViewSort(HWND list, int column, bool ascending) {

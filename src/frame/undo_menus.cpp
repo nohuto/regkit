@@ -585,18 +585,8 @@ void MainWindow::Impl::DrawHeaderCloseButton(const DRAWITEMSTRUCT* info) {
   COLORREF bg_color = pressed ? theme.HoverColor() : theme.HeaderColor();
   FillRect(hdc, &rect, appearance::CachedBrush(bg_color));
 
-  const UINT dpi = win32::DpiForWindow(info->hwndItem);
-  const int radius = util::ScaleForDpi(3, dpi);
-  const int pen_width = std::max(1, util::ScaleForDpi(1, dpi));
-  const int center_x = (rect.left + rect.right) / 2;
-  const int center_y = (rect.top + rect.bottom) / 2;
-  HPEN pen = appearance::CachedPen(theme.MutedTextColor(), pen_width);
-  HGDIOBJ old_pen = SelectObject(hdc, pen);
-  MoveToEx(hdc, center_x - radius, center_y - radius, nullptr);
-  LineTo(hdc, center_x + radius + 1, center_y + radius + 1);
-  MoveToEx(hdc, center_x + radius, center_y - radius, nullptr);
-  LineTo(hdc, center_x - radius - 1, center_y + radius + 1);
-  SelectObject(hdc, old_pen);
+  DrawCloseGlyph(hdc, rect, theme.MutedTextColor(),
+                 win32::DpiForWindow(info->hwndItem));
 }
 
 bool MainWindow::Impl::SelectTreePath(const std::wstring& path) {

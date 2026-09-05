@@ -30,6 +30,7 @@ struct TextResult {
 struct CustomValueRequest {
   std::wstring value_name;
   DWORD type = REG_SZ;
+  std::vector<BYTE> data;
 };
 
 struct CustomValueResult {

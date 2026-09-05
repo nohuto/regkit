@@ -72,6 +72,24 @@ bool ParseQuoted(std::wstring_view text, std::wstring* output) {
   return false;
 }
 
+size_t FindAssignment(std::wstring_view text) {
+  if (text.empty() || text.front() != L'"') {
+    return text.find(L'=');
+  }
+  bool escaped = false;
+  for (size_t index = 1; index < text.size(); ++index) {
+    const wchar_t character = text[index];
+    if (escaped) {
+      escaped = false;
+    } else if (character == L'\\') {
+      escaped = true;
+    } else if (character == L'"') {
+      return text.find(L'=', index + 1);
+    }
+  }
+  return std::wstring_view::npos;
+}
+
 DWORD TypeFromCode(unsigned long code) {
   switch (code) {
   case 0x0:
@@ -323,7 +341,7 @@ bool Parse(std::wstring_view content, Document* output,
     if (!current_key) {
       continue;
     }
-    const size_t equals = line.find(L'=');
+    const size_t equals = FindAssignment(line);
     if (equals == std::wstring::npos) {
       continue;
     }
