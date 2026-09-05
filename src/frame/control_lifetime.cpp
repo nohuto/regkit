@@ -295,7 +295,6 @@ LRESULT MainWindow::Impl::HandleTabNotification(NMHDR* header, LPARAM lparam) {
     if (!suppress_tab_change_ && tab_) {
       int current = TabCtrl_GetCurSel(tab_);
       CaptureRegistryTabState(current);
-      last_tab_index_ = current;
     }
     return 0;
   }
@@ -733,16 +732,11 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam) 
           return 0;
         }
         value_activate_from_key_ = false;
-        if (last_value_click_delta_valid_) {
-          return 0;
-        }
         fast_activate = true;
       }
       if (header->code == NM_DBLCLK) {
         fast_activate = true;
       }
-      last_value_click_delta_valid_ = false;
-
       if (row && row->kind == rowkind::kKey) {
         if (fast_activate) {
           std::wstring path = registry_path::Build(*browse_.current_node());
@@ -1229,8 +1223,8 @@ bool MainWindow::Impl::OnCreate() {
     LoadThemePresets();
   }
   ApplySavedWindowPlacement();
-  if (theme_mode_ == ThemeMode::kCustom && ApplyThemePresetByName(active_theme_preset_, false)) {
-  } else {
+  if (theme_mode_ != ThemeMode::kCustom ||
+      !ApplyThemePresetByName(active_theme_preset_, false)) {
     Theme::SetMode(theme_mode_);
     ApplySystemTheme();
   }

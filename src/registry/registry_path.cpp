@@ -263,7 +263,9 @@ std::wstring Clean(std::wstring_view input) {
   while (!path.empty() && path.front() == L'\\') {
     path.erase(path.begin());
   }
-  if (StartsWith(path, L"Computer\\")) {
+  if (StartsWith(path, L"My Computer\\")) {
+    path.erase(0, 12);
+  } else if (StartsWith(path, L"Computer\\")) {
     path.erase(0, 9);
   }
   return path;

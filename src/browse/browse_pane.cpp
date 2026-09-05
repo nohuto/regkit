@@ -100,26 +100,6 @@ const std::vector<RegistryRootEntry>& Pane::roots() const noexcept {
 ColumnState& Pane::columns() noexcept { return columns_; }
 const ColumnState& Pane::columns() const noexcept { return columns_; }
 
-void Pane::AddAddressHistory(const std::wstring& path) {
-  if (path.empty()) {
-    return;
-  }
-  const auto existing =
-      std::find(address_history_.begin(), address_history_.end(), path);
-  if (existing != address_history_.end()) {
-    address_history_.erase(existing);
-  }
-  address_history_.insert(address_history_.begin(), path);
-  constexpr size_t kMaximumAddresses = 20;
-  if (address_history_.size() > kMaximumAddresses) {
-    address_history_.resize(kMaximumAddresses);
-  }
-}
-
-const std::vector<std::wstring>& Pane::address_history() const noexcept {
-  return address_history_;
-}
-
 bool Pane::RecordNavigation(const std::wstring& path) {
   if (path.empty()) {
     return false;
@@ -293,9 +273,17 @@ void Pane::TypeSelectTree(wchar_t ch, DWORD now) {
   };
   auto children = [&](HTREEITEM parent) {
     std::vector<HTREEITEM> items;
-    for (HTREEITEM item = TreeView_GetChild(tree_.hwnd(), parent); item;
-         item = TreeView_GetNextSibling(tree_.hwnd(), item)) {
+    HTREEITEM item = parent ? TreeView_GetChild(tree_.hwnd(), parent)
+                            : TreeView_GetRoot(tree_.hwnd());
+    for (; item; item = TreeView_GetNextSibling(tree_.hwnd(), item)) {
       items.push_back(item);
+      if (!tree_.IsGroupItem(item)) {
+        continue;
+      }
+      for (HTREEITEM sub = TreeView_GetChild(tree_.hwnd(), item); sub;
+           sub = TreeView_GetNextSibling(tree_.hwnd(), sub)) {
+        items.push_back(sub);
+      }
     }
     return items;
   };
@@ -342,8 +330,10 @@ void Pane::TypeSelectTree(wchar_t ch, DWORD now) {
     target = find(children(selected));
   }
   const HTREEITEM parent = TreeView_GetParent(tree_.hwnd(), selected);
-  if (!target && parent) {
-    load_children(parent);
+  if (!target) {
+    if (parent) {
+      load_children(parent);
+    }
     target = find(children(parent));
   }
   if (!target && !tree_type_select_descend_) {
@@ -362,7 +352,5 @@ void Pane::set_tree_type_select_descend(bool descend) noexcept {
   tree_type_select_descend_ = descend;
 }
 
-SourceKind Pane::source_kind() const noexcept { return source_kind_; }
-void Pane::set_source_kind(SourceKind kind) noexcept { source_kind_ = kind; }
 
 } // namespace regkit::browse

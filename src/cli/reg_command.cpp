@@ -34,7 +34,6 @@ void EnsureConsole() {
   const bool have_out = g_out && g_out != INVALID_HANDLE_VALUE;
   if (!have_out && !AttachConsole(ATTACH_PARENT_PROCESS)) {
     AllocConsole();
-  } else if (!have_out) {
   }
   if (!have_out) {
     g_out = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -1182,11 +1181,7 @@ bool Execute(const std::vector<std::wstring>& args, int* exit_code) {
       std::wstring error;
       bool ok = true;
       if (name.empty()) {
-        static const wchar_t* kAll[] = {L"HKEY_CLASSES_ROOT", L"HKEY_CURRENT_USER",
-                                        L"HKEY_LOCAL_MACHINE", L"HKEY_USERS",
-                                        L"HKEY_CURRENT_CONFIG"};
         PrintError(L"Exporting the whole registry is not supported, name a key.");
-        (void)kAll;
         ok = false;
       } else {
         KeyRef key;

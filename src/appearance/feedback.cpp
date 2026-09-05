@@ -999,9 +999,7 @@ void ShowRegFileMergeFailed(HWND owner, const std::wstring& path, const std::wst
   }
 }
 
-constexpr int kChoiceButtonWidthDlu = 50;
 constexpr int kKeyChoiceButtonWidthDlu = 45;
-constexpr int kKeyChoiceWideButtonWidthDlu = 70;
 
 bool ConfirmDelete(HWND owner, const std::wstring& title,
                    const std::vector<std::wstring>& names) {

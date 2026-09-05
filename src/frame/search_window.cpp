@@ -289,7 +289,6 @@ void MainWindow::Impl::SyncRegFileTabSelection() {
   }
   const TabEntry& entry = tabs_[static_cast<size_t>(index)];
   registry_mode_ = RegistryMode::kLocal;
-  browse_.set_source_kind(browse::SourceKind::kVirtual);
   std::vector<RegistryRootEntry> roots;
   roots.reserve(entry.reg_file_roots.size());
   for (const auto& root : entry.reg_file_roots) {
@@ -526,8 +525,6 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
   active_search_tab_index_ = tab_index;
   search_results_view_tab_index_ = -1;
   search_progress_searched_.store(0);
-  search_progress_total_.store(0);
-  search_progress_percent_ = 0;
   search_progress_posted_.store(false);
   search_posted_.store(false);
   {
@@ -745,7 +742,6 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options) {
           std::atomic<uint64_t> last_progress_tick{0};
           auto progress_cb = [&](uint64_t searched, uint64_t total) {
             search_progress_searched_.store(searched);
-            search_progress_total_.store(total);
             uint64_t now = GetTickCount64();
             uint64_t last = last_progress_tick.load();
             if (now - last < kSearchProgressUiMs && searched < total) {
@@ -1034,9 +1030,7 @@ void MainWindow::Impl::CancelSearch() {
   search_start_tick_ = 0;
   search_duration_ms_ = 0;
   search_duration_valid_ = false;
-  search_progress_percent_ = 0;
   search_progress_searched_.store(0);
-  search_progress_total_.store(0);
   search_progress_posted_.store(false);
   search_posted_.store(false);
   {

@@ -107,7 +107,7 @@ void MainWindow::Impl::SyncReplaceRegeditState() {
 
   std::wstring debugger;
   debugger.resize(size / sizeof(wchar_t));
-  result = RegQueryValueExW(base, L"Debugger", nullptr, &type, reinterpret_cast<LPBYTE>(MutableData(debugger)), &size);
+  result = RegQueryValueExW(base, L"Debugger", nullptr, &type, reinterpret_cast<LPBYTE>(debugger.data()), &size);
   RegCloseKey(base);
   if (result != ERROR_SUCCESS) {
     replace_regedit_ = false;
@@ -232,7 +232,7 @@ bool MainWindow::Impl::OpenDefaultRegedit() {
         size > 0) {
       debugger.resize(size / sizeof(wchar_t));
       if (RegQueryValueExW(hijack, L"Debugger", nullptr, &debugger_type,
-                           reinterpret_cast<LPBYTE>(MutableData(debugger)),
+                           reinterpret_cast<LPBYTE>(debugger.data()),
                            &size) == ERROR_SUCCESS) {
         while (!debugger.empty() && debugger.back() == L'\0') {
           debugger.pop_back();

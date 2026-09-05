@@ -292,8 +292,7 @@ void MainWindow::Impl::UpdateTabText(const std::wstring& text) {
     return;
   }
   int index = TabCtrl_GetCurSel(tab_);
-  if (!IsSearchTabIndex(index) && !IsRegFileTabIndex(index)) {
-  } else {
+  if (IsSearchTabIndex(index) || IsRegFileTabIndex(index)) {
     index = FindFirstRegistryTabIndex();
   }
   if (index < 0) {

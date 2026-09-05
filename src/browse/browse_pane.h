@@ -16,13 +16,6 @@
 
 namespace regkit::browse {
 
-enum class SourceKind {
-  kLocal,
-  kRemote,
-  kOffline,
-  kVirtual,
-};
-
 struct CreateRequest {
   HWND parent = nullptr;
   HINSTANCE instance = nullptr;
@@ -78,9 +71,6 @@ public:
   ColumnState& columns() noexcept;
   const ColumnState& columns() const noexcept;
 
-  void AddAddressHistory(const std::wstring& path);
-  const std::vector<std::wstring>& address_history() const noexcept;
-
   bool RecordNavigation(const std::wstring& path);
   std::optional<std::wstring> Back();
   std::optional<std::wstring> Forward();
@@ -92,9 +82,6 @@ public:
   void TypeSelectValues(wchar_t ch, DWORD now);
   void TypeSelectTree(wchar_t ch, DWORD now);
   void set_tree_type_select_descend(bool descend) noexcept;
-
-  SourceKind source_kind() const noexcept;
-  void set_source_kind(SourceKind kind) noexcept;
 
 private:
   static void UpdateTypeBuffer(wchar_t ch, DWORD now,
@@ -108,7 +95,6 @@ private:
   RegistryNode* current_node_ = nullptr;
   std::vector<RegistryRootEntry> roots_;
   ColumnState columns_;
-  std::vector<std::wstring> address_history_;
   std::vector<std::wstring> navigation_history_;
   int navigation_index_ = -1;
   bool programmatic_navigation_ = false;
@@ -117,7 +103,6 @@ private:
   DWORD tree_type_tick_ = 0;
   DWORD value_type_tick_ = 0;
   bool tree_type_select_descend_ = false;
-  SourceKind source_kind_ = SourceKind::kLocal;
 };
 
 } // namespace regkit::browse

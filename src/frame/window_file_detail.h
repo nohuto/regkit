@@ -112,7 +112,7 @@ inline std::wstring FindAssetsIconsRoot() {
   DWORD len = GetCurrentDirectoryW(0, nullptr);
   if (len > 0) {
     std::wstring cwd(len, L'\0');
-    DWORD written = GetCurrentDirectoryW(len, MutableData(cwd));
+    DWORD written = GetCurrentDirectoryW(len, cwd.data());
     if (written != 0) {
       if (written < cwd.size() && cwd[written] == L'\0') {
         cwd.resize(written);

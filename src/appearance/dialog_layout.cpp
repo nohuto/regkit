@@ -109,8 +109,4 @@ void DialogResizer::ClampMinSize(MINMAXINFO* info) const {
   info->ptMinTrackSize.y = std::max<LONG>(info->ptMinTrackSize.y, min_window_.cy);
 }
 
-bool DialogResizer::attached() const {
-  return !items_.empty();
-}
-
 } // namespace regkit::appearance

@@ -560,9 +560,6 @@ void MainWindow::Impl::UpdateAddressBar(RegistryNode* node) {
     }
   }
   SetWindowTextW(address, path.c_str());
-  if (!path.empty()) {
-    AddAddressHistory(path);
-  }
 }
 
 } // namespace regkit

@@ -192,7 +192,7 @@ void MainWindow::Impl::LoadTraceSettings() {
   }
   std::string buffer(static_cast<size_t>(size.QuadPart), '\0');
   DWORD read = 0;
-  bool ok = ReadFile(file, MutableData(buffer), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
+  bool ok = ReadFile(file, buffer.data(), static_cast<DWORD>(buffer.size()), &read, nullptr) != 0;
   CloseHandle(file);
   if (!ok || read == 0) {
     return;

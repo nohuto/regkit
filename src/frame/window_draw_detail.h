@@ -87,18 +87,9 @@ inline T ClampValue(T value, T low, T high) {
   return value < low ? low : (high < value ? high : value);
 }
 
-inline char* MutableData(std::string& text) {
-  return text.empty() ? nullptr : &text[0];
-}
-
-inline wchar_t* MutableData(std::wstring& text) {
-  return text.empty() ? nullptr : &text[0];
-}
-
 template <typename T>
 inline void ReleasePostedPayload(std::unique_ptr<T>& payload) {
-  T* posted_payload = payload.release();
-  (void)posted_payload;
+  (void)payload.release();
 }
 
 constexpr wchar_t kStandardGroupLabel[] = L"Standart Hives";
@@ -119,7 +110,7 @@ constexpr UINT_PTR kTreeViewSubclassId = 5;
 constexpr UINT_PTR kAutoCompletePopupSubclassId = 6;
 constexpr UINT_PTR kAutoCompleteListBoxSubclassId = 7;
 constexpr UINT_PTR kFilterSubclassId = 8;
-constexpr wchar_t kMainWindowClassName[] = L"RegKitMainWindow";
+constexpr wchar_t kMainWindowClassName[] = L"RegEdit_RegEdit";
 constexpr wchar_t kRegKitWindowProperty[] = L"RegKitMainWindow";
 using ui::ListViewItemSelected;
 using util::FormatWin32Error;
@@ -151,7 +142,6 @@ constexpr int kMinHistoryHeight = 80;
 constexpr int kHistoryMaxPadding = 140;
 constexpr int kHistoryGap = 2;
 constexpr int kMainVerticalGap = 6;
-constexpr int kBorderInflate = 1;
 constexpr int kValueColName = 0;
 constexpr int kValueColType = 1;
 constexpr int kValueColData = 2;
@@ -201,19 +191,6 @@ inline bool GetChildRectInParent(HWND parent, HWND child, RECT* rect) {
   }
   MapWindowPoints(nullptr, parent, reinterpret_cast<POINT*>(rect), 2);
   return true;
-}
-
-inline RECT InflateCopy(RECT rect, int dx, int dy) {
-  InflateRect(&rect, dx, dy);
-  return rect;
-}
-
-inline void DrawOutlineRect(HDC hdc, const RECT& rect, int inflate) {
-  if (!hdc) {
-    return;
-  }
-  RECT draw = InflateCopy(rect, inflate, inflate);
-  Rectangle(hdc, draw.left, draw.top, draw.right, draw.bottom);
 }
 
 inline RECT AdjustTabDrawRect(const RECT& item_rect, int header_bottom, bool selected) {
@@ -362,12 +339,12 @@ inline int FetchListViewItemText(HWND list, int index, int column, std::wstring*
   }
   LVITEMW item = {};
   item.iSubItem = column;
-  item.pszText = MutableData(*buffer);
+  item.pszText = buffer->data();
   item.cchTextMax = static_cast<int>(buffer->size());
   int length = static_cast<int>(SendMessageW(list, LVM_GETITEMTEXTW, static_cast<WPARAM>(index), reinterpret_cast<LPARAM>(&item)));
   if (length >= static_cast<int>(buffer->size() - 1)) {
     buffer->resize(static_cast<size_t>(length) + 2);
-    item.pszText = MutableData(*buffer);
+    item.pszText = buffer->data();
     item.cchTextMax = static_cast<int>(buffer->size());
     length = static_cast<int>(SendMessageW(list, LVM_GETITEMTEXTW, static_cast<WPARAM>(index), reinterpret_cast<LPARAM>(&item)));
   }

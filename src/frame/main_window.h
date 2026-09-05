@@ -27,8 +27,6 @@ public:
   void QueueExternalJump(const std::wstring& target);
 
 private:
-  friend class MainWindowBenchmarks;
-  friend class MainWindowCharacterization;
   friend class RegistryAddressEnum;
 
   class Impl;

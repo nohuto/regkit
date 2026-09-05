@@ -92,7 +92,10 @@ bool IsRegeditLaunchArg(const std::wstring& arg) {
     return false;
   }
   std::wstring name = BaseName(arg);
-  return (_wcsicmp(name.c_str(), L"regedit.exe") == 0 || _wcsicmp(name.c_str(), L"regedit") == 0);
+  return _wcsicmp(name.c_str(), L"regedit.exe") == 0 ||
+         _wcsicmp(name.c_str(), L"regedit") == 0 ||
+         _wcsicmp(name.c_str(), L"regedt32.exe") == 0 ||
+         _wcsicmp(name.c_str(), L"regedt32") == 0;
 }
 
 bool IsInterceptedRegeditLaunch(const std::vector<std::wstring>& args) {

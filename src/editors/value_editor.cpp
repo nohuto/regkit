@@ -522,57 +522,6 @@ void WriteUnsignedToBytesBigEndian(unsigned long long value, size_t bytes, std::
   }
 }
 
-std::wstring FormatByteCount(size_t bytes) {
-  wchar_t buffer[64] = {};
-  swprintf_s(buffer, L"%llu byte%s", static_cast<unsigned long long>(bytes), (bytes == 1) ? L"" : L"s");
-  return buffer;
-}
-
-void SetBytesLabel(HWND dlg, size_t bytes) {
-  std::wstring text = FormatByteCount(bytes);
-  SetDlgItemTextW(dlg, IDC_VALUE_BYTES, text.c_str());
-}
-
-void SetBytesInvalid(HWND dlg) {
-  SetDlgItemTextW(dlg, IDC_VALUE_BYTES, L"Invalid");
-}
-
-bool CountHexBytes(const std::wstring& text, size_t* out_bytes) {
-  if (!out_bytes) {
-    return false;
-  }
-  size_t count = 0;
-  int nibble = -1;
-  for (wchar_t ch : text) {
-    if (iswxdigit(ch)) {
-      if (nibble < 0) {
-        nibble = 0;
-      } else {
-        ++count;
-        nibble = -1;
-      }
-    }
-  }
-  if (nibble >= 0) {
-    return false;
-  }
-  *out_bytes = count;
-  return true;
-}
-
-void UpdateBytesFromHexControl(HWND dlg, int id) {
-  if (!dlg) {
-    return;
-  }
-  std::wstring text = ReadDialogText(dlg, id);
-  size_t bytes = 0;
-  if (!CountHexBytes(text, &bytes)) {
-    SetBytesInvalid(dlg);
-    return;
-  }
-  SetBytesLabel(dlg, bytes);
-}
-
 INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lparam) {
   auto* state = reinterpret_cast<TraceValueDialogState*>(GetWindowLongPtrW(dlg, DWLP_USER));
   if (msg != WM_INITDIALOG && msg != WM_DESTROY) {

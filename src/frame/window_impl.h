@@ -59,8 +59,6 @@ public:
   void QueueExternalJump(const std::wstring& target);
 
 private:
-  friend class MainWindowBenchmarks;
-  friend class MainWindowCharacterization;
   friend class RegistryAddressEnum;
   enum class RegistryMode {
     kLocal,
@@ -269,7 +267,6 @@ private:
   bool LoadOfflineRegistryFromPath(const std::wstring& path, bool open_new_tab);
   void ApplyRegistryRoots(const std::vector<RegistryRootEntry>& roots);
   std::vector<std::wstring> BuildVisibleTreePathParts(const std::wstring& path) const;
-  void RefreshVisibleRegistryTreeLayout(bool preserve_selection);
   std::wstring TreeRootLabel() const;
   void SelectDefaultTreeItem();
   void CaptureRegistryTabState(int index);
@@ -375,7 +372,6 @@ private:
   void SyncReplaceRegeditState();
   void OpenHiveFileDir();
   std::wstring ResolveSelectedHiveFilePath();
-  void AddAddressHistory(const std::wstring& path);
   void RecordNavigation(const std::wstring& path);
   void NavigateBack();
   void NavigateForward();
@@ -409,7 +405,6 @@ private:
   bool SaveTabs();
   void ClearTabsCache();
   bool EnsureSearchTabResultsLoaded(int search_index);
-  void LoadComments();
   void StartStartupCacheLoad(bool include_tree_state);
   void StopStartupCacheLoad();
   void ApplyStartupCachePayload(StartupCachePayload* payload);
@@ -702,11 +697,8 @@ private:
   bool search_preview_request_posted_ = false;
   bool value_preview_request_posted_ = false;
   std::atomic<uint64_t> search_progress_searched_{0};
-  std::atomic<uint64_t> search_progress_total_{0};
   std::atomic_bool search_progress_posted_{false};
-  int search_progress_percent_ = 0;
   uint64_t search_last_refresh_tick_ = 0;
-  uint64_t search_progress_last_tick_ = 0;
   uint64_t search_start_tick_ = 0;
   uint64_t search_duration_ms_ = 0;
   bool search_duration_valid_ = false;
@@ -719,12 +711,7 @@ private:
   int tab_hot_index_ = -1;
   int tab_close_hot_index_ = -1;
   int tab_close_down_index_ = -1;
-  int last_tab_index_ = -1;
   bool tab_mouse_tracking_ = false;
-  DWORD last_value_click_time_ = 0;
-  DWORD last_value_click_delta_ = 0;
-  int last_value_click_index_ = -1;
-  bool last_value_click_delta_valid_ = false;
   bool value_activate_from_key_ = false;
   ::IAutoComplete2* address_autocomplete_ = nullptr;
   ::IEnumString* address_autocomplete_source_ = nullptr;

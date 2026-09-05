@@ -511,25 +511,9 @@ LRESULT CALLBACK MainWindow::Impl::ListViewProc(HWND hwnd, UINT message, WPARAM 
       }
     }
   }
-  if (message == WM_LBUTTONDOWN && self && hwnd == self->browse_.values().hwnd()) {
-    POINT pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
-    LVHITTESTINFO hit = {};
-    hit.pt = pt;
-    int index = ListView_HitTest(hwnd, &hit);
-    DWORD now = GetTickCount();
-    if (index >= 0 && index == self->last_value_click_index_) {
-      self->last_value_click_delta_ = now - self->last_value_click_time_;
-      self->last_value_click_delta_valid_ = true;
-    } else {
-      self->last_value_click_delta_valid_ = false;
-    }
-    self->last_value_click_time_ = now;
-    self->last_value_click_index_ = index;
-  }
   if (message == WM_KEYDOWN && self && hwnd == self->browse_.values().hwnd()) {
     if (wparam == VK_RETURN) {
       self->value_activate_from_key_ = true;
-      self->last_value_click_delta_valid_ = false;
     }
   }
   if (message == WM_CHAR && self && hwnd == self->browse_.values().hwnd()) {

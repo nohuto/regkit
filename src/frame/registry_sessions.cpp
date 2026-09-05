@@ -78,20 +78,10 @@ std::vector<std::wstring> MainWindow::Impl::BuildVisibleTreePathParts(const std:
     return EqualsInsensitive(name, L"HKLM") || EqualsInsensitive(name, L"HKCU") || EqualsInsensitive(name, L"HKCR") || EqualsInsensitive(name, L"HKU") || EqualsInsensitive(name, L"HKCC");
   };
   if (!parts.empty() && EqualsInsensitive(parts.front(), L"Registry")) {
-    if (parts.size() > 1 && is_standard_root(parts[1])) {
-      if (false) {
-        parts.erase(parts.begin());
-      } else {
-        parts.front() = kStandardGroupLabel;
-      }
-    } else if (!false) {
-      parts.front() = kRealGroupLabel;
-    }
+    parts.front() = (parts.size() > 1 && is_standard_root(parts[1]))
+                        ? kStandardGroupLabel
+                        : kRealGroupLabel;
   } else if (!parts.empty() && EqualsInsensitive(parts.front(), L"Real Registry")) {
-    if (false) {
-      parts.clear();
-      return parts;
-    }
     parts.front() = kRealGroupLabel;
     if (parts.size() > 1 && EqualsInsensitive(parts[1], kRealGroupLabel)) {
       parts.erase(parts.begin() + 1);
@@ -119,17 +109,6 @@ std::vector<std::wstring> MainWindow::Impl::BuildVisibleTreePathParts(const std:
     }
   }
 
-  if (false) {
-    if (!parts.empty() && EqualsInsensitive(parts.front(), kStandardGroupLabel)) {
-      parts.erase(parts.begin());
-    }
-    if (!parts.empty() && EqualsInsensitive(parts.front(), kRealGroupLabel)) {
-      parts.clear();
-      return parts;
-    }
-    return parts;
-  }
-
   if (!parts.empty()) {
     if (!EqualsInsensitive(parts.front(), kStandardGroupLabel) && !EqualsInsensitive(parts.front(), kRealGroupLabel)) {
       if (EqualsInsensitive(parts.front(), L"REGISTRY")) {
@@ -142,47 +121,7 @@ std::vector<std::wstring> MainWindow::Impl::BuildVisibleTreePathParts(const std:
   return parts;
 }
 
-void MainWindow::Impl::RefreshVisibleRegistryTreeLayout(bool preserve_selection) {
-  if (!browse_.tree().hwnd() || browse_.roots().empty()) {
-    return;
-  }
-
-  std::wstring selected_path;
-  std::vector<std::wstring> expanded_paths;
-  if (preserve_selection) {
-    CaptureTreeState(&selected_path, &expanded_paths);
-  }
-
-  browse_.set_current_node(nullptr);
-  browse_.values().Clear();
-  browse_.tree().SetRegeditLayout(false);
-  browse_.tree().SetRootLabel(TreeRootLabel());
-  browse_.tree().PopulateRoots(browse_.roots());
-
-  if (!preserve_selection) {
-    SelectDefaultTreeItem();
-    return;
-  }
-
-  std::sort(expanded_paths.begin(), expanded_paths.end(), [](const std::wstring& left, const std::wstring& right) {
-    if (left.size() != right.size()) {
-      return left.size() < right.size();
-    }
-    return _wcsicmp(left.c_str(), right.c_str()) < 0;
-  });
-  for (const auto& path : expanded_paths) {
-    ExpandTreePath(path);
-  }
-  if (!selected_path.empty() && SelectTreePath(selected_path)) {
-    return;
-  }
-  SelectDefaultTreeItem();
-}
-
 std::wstring MainWindow::Impl::TreeRootLabel() const {
-  if (false) {
-    return L"Computer";
-  }
   if (registry_mode_ == RegistryMode::kRemote && !remote_machine_.empty()) {
     return StripMachinePrefix(remote_machine_);
   }
@@ -421,7 +360,6 @@ bool MainWindow::Impl::SwitchToLocalRegistry() {
   }
   ReleaseRemoteRegistry();
   registry_mode_ = RegistryMode::kLocal;
-  browse_.set_source_kind(browse::SourceKind::kLocal);
   UpdateRegistryTabEntry(RegistryMode::kLocal, L"", L"");
   std::vector<RegistryRootEntry> roots = RegistryStore::DefaultRoots(show_extra_hives_);
   AppendRealRegistryRoot(&roots);
@@ -473,7 +411,6 @@ bool MainWindow::Impl::SwitchToRemoteRegistry() {
 
   ReleaseRemoteRegistry();
   registry_mode_ = RegistryMode::kRemote;
-  browse_.set_source_kind(browse::SourceKind::kRemote);
   remote_machine_ = machine;
   remote_hklm_ = hklm;
   remote_hku_ = hku;
@@ -613,7 +550,6 @@ bool MainWindow::Impl::LoadOfflineRegistryFromPath(const std::wstring& path, boo
 
   ReleaseRemoteRegistry();
   registry_mode_ = RegistryMode::kOffline;
-  browse_.set_source_kind(browse::SourceKind::kOffline);
   offline_roots_ = std::move(handles);
   offline_root_labels_ = std::move(labels);
   offline_root_paths_ = std::move(paths);
@@ -720,14 +656,10 @@ void MainWindow::Impl::NavigateToAddress() {
   std::wstring jump_key_path;
   std::wstring jump_value_name;
   if (ResolveExternalJumpTarget(path, &jump_key_path, &jump_value_name) && !jump_value_name.empty()) {
-    if (NavigateToResolvedExternalJump(jump_key_path, jump_value_name)) {
-      AddAddressHistory(jump_key_path);
-    }
+    NavigateToResolvedExternalJump(jump_key_path, jump_value_name);
     return;
   }
-  if (SelectTreePath(path)) {
-    AddAddressHistory(path);
-  } else {
+  if (!SelectTreePath(path)) {
     std::wstring nearest;
     if (!FindNearestExistingPath(path, &nearest) || nearest.empty()) {
       ui::ShowWarning(hwnd_, L"Registry path not found.");
@@ -738,17 +670,13 @@ void MainWindow::Impl::NavigateToAddress() {
       message += L"\nRead only mode is enabled.";
       int result = ui::PromptKeyChoice(hwnd_, message, path, L"Registry path not found", L"Go to nearest key", L"", L"Cancel", 70);
       if (result == IDYES) {
-        if (SelectTreePath(nearest)) {
-          AddAddressHistory(nearest);
-        }
+        SelectTreePath(nearest);
       }
       return;
     }
     int result = ui::PromptKeyChoice(hwnd_, message, path, L"Registry path not found", L"Go to nearest key", L"Create key", L"Cancel", 70);
     if (result == IDYES) {
-      if (SelectTreePath(nearest)) {
-        AddAddressHistory(nearest);
-      }
+      SelectTreePath(nearest);
       return;
     }
     if (result == IDNO) {
@@ -757,9 +685,7 @@ void MainWindow::Impl::NavigateToAddress() {
         return;
       }
       RefreshTreePath(nearest);
-      if (SelectTreePath(path)) {
-        AddAddressHistory(path);
-      }
+      SelectTreePath(path);
     }
   }
 }
@@ -904,8 +830,6 @@ bool MainWindow::Impl::NavigateToResolvedExternalJump(const std::wstring& key_pa
   }
   ApplyTreeSelectionEffects(browse_.current_node());
   EndJumpUiBatch();
-
-  AddAddressHistory(key_path);
 
   pending_external_value_key_path_.clear();
   pending_external_value_name_.clear();

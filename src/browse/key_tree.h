@@ -31,6 +31,9 @@ public:
   RegistryNode* NodeFromItem(HTREEITEM item);
   void OnItemExpanding(const NMTREEVIEWW* info);
   RegistryNode* OnSelectionChanged(const NMTREEVIEWW* info);
+  bool IsGroupItem(HTREEITEM item) const noexcept {
+    return item && (item == standard_group_item_ || item == real_group_item_);
+  }
 
 private:
   RegistryNode* StoreNode(std::unique_ptr<RegistryNode> node);

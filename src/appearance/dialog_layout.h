@@ -33,7 +33,6 @@ public:
   void Attach(HWND dialog, std::initializer_list<AnchorRule> rules);
   void Apply(HWND dialog) const;
   void ClampMinSize(MINMAXINFO* info) const;
-  bool attached() const;
 
 private:
   struct Item {

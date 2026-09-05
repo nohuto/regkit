@@ -593,10 +593,6 @@ void MainWindow::Impl::DrawHeaderCloseButton(const DRAWITEMSTRUCT* info) {
   SelectObject(hdc, old_pen);
 }
 
-void MainWindow::Impl::AddAddressHistory(const std::wstring& path) {
-  browse_.AddAddressHistory(path);
-}
-
 bool MainWindow::Impl::SelectTreePath(const std::wstring& path) {
   if (!browse_.tree().hwnd()) {
     return false;
@@ -611,6 +607,10 @@ bool MainWindow::Impl::SelectTreePath(const std::wstring& path) {
   for (const auto& part : parts) {
     TreeView_Expand(browse_.tree().hwnd(), current, TVE_EXPAND);
     HTREEITEM child = FindChildByText(browse_.tree().hwnd(), current, part);
+    if (!child) {
+      RefreshTreeItem(current);
+      child = FindChildByText(browse_.tree().hwnd(), current, part);
+    }
     if (!child) {
       return false;
     }

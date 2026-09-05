@@ -495,10 +495,6 @@ std::wstring MainWindow::Impl::CommentsPath() const {
   return util::JoinPath(folder, L"comments.tsv");
 }
 
-void MainWindow::Impl::LoadComments() {
-  value_comments_.Load(CommentsPath());
-}
-
 void MainWindow::Impl::SaveComments() const {
   value_comments_.Save(CommentsPath());
 }

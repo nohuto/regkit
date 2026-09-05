@@ -112,9 +112,6 @@ struct Result {
 bool IsKeyRow(const Result& result) noexcept;
 std::wstring_view DisplayName(const Result& result) noexcept;
 std::wstring TypeText(const Result& result);
-std::wstring SizeText(const Result& result);
-std::wstring DateText(const Result& result);
-std::wstring_view KeyLeaf(const Result& result) noexcept;
 
 using ProgressCallback =
     std::function<void(uint64_t searched, uint64_t total)>;

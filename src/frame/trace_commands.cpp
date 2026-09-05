@@ -6,30 +6,6 @@
 namespace regkit {
 using namespace window_detail;
 
-namespace {
-
-bool ParseBundledTraceLabel(const std::wstring& path, std::wstring* label) {
-  if (label) {
-    label->clear();
-  }
-  if (path.size() < 4) {
-    return false;
-  }
-  if (!StartsWithInsensitive(path, L"res:")) {
-    return false;
-  }
-  std::wstring key = path.substr(4);
-  if (key.empty()) {
-    return false;
-  }
-  if (label) {
-    *label = key;
-  }
-  return true;
-}
-
-} // namespace
-
 void MainWindow::Impl::StartTraceDialogLoad(HWND hwnd, void* context) {
   auto* ctx = reinterpret_cast<TraceDialogStartContext*>(context);
   if (!ctx || !ctx->window || !ctx->session) {

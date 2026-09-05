@@ -106,26 +106,6 @@ Match Matcher::Find(std::wstring_view text) const {
   return location;
 }
 
-namespace {
-
-std::wstring FormatFileTime(const FILETIME& filetime) {
-  if (filetime.dwLowDateTime == 0 && filetime.dwHighDateTime == 0) {
-    return L"";
-  }
-  FILETIME local = {};
-  SYSTEMTIME st = {};
-  if (!FileTimeToLocalFileTime(&filetime, &local) ||
-      !FileTimeToSystemTime(&local, &st)) {
-    return L"";
-  }
-  wchar_t buffer[64] = {};
-  swprintf_s(buffer, L"%d/%d/%d %d:%02d", st.wMonth, st.wDay, st.wYear,
-             st.wHour, st.wMinute);
-  return buffer;
-}
-
-} // namespace
-
 bool IsKeyRow(const Result& result) noexcept {
   return result.kind == ResultKind::kKey || result.kind == ResultKind::kTraceKey;
 }
@@ -146,26 +126,6 @@ std::wstring TypeText(const Result& result) {
     return L"TRACE";
   }
   return value_format::TypeName(result.type);
-}
-
-std::wstring SizeText(const Result& result) {
-  if (IsKeyRow(result) || result.kind == ResultKind::kTraceValue) {
-    return std::wstring();
-  }
-  return std::to_wstring(result.data_size);
-}
-
-std::wstring DateText(const Result& result) {
-  return FormatFileTime(result.modified);
-}
-
-std::wstring_view KeyLeaf(const Result& result) noexcept {
-  const std::wstring& path = result.key_path;
-  const size_t slash = path.find_last_of(L'\\');
-  if (slash == std::wstring::npos) {
-    return std::wstring_view(path);
-  }
-  return std::wstring_view(path).substr(slash + 1);
 }
 
 namespace {
@@ -1060,8 +1020,8 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
     worker_count = 1;
   }
   worker_count = std::min(worker_count, WorkerPolicy(criteria));
-  worker_count = std::min<unsigned int>(
-      worker_count, std::max<size_t>(1, criteria.start_nodes.size() * 4));
+  worker_count = static_cast<unsigned int>(std::min<size_t>(
+      worker_count, std::max<size_t>(1, criteria.start_nodes.size() * 4)));
 
 
   std::vector<std::thread> workers;
