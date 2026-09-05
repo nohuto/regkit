@@ -485,9 +485,25 @@ LRESULT CALLBACK MainWindow::Impl::ListViewProc(HWND hwnd, UINT message, WPARAM 
         note->hwndFrom == ListView_GetHeader(hwnd)) {
       auto* draw = reinterpret_cast<NMCUSTOMDRAW*>(lparam);
       if (draw->dwDrawStage == CDDS_PREPAINT) {
-        FillRect(draw->hdc, &draw->rc,
-                 appearance::CachedBrush(ListView_GetBkColor(hwnd)));
-        return CDRF_NOTIFYITEMDRAW;
+        RECT header_rect = {};
+        if (GetClientRect(note->hwndFrom, &header_rect)) {
+          FillRect(draw->hdc, &header_rect,
+                   appearance::CachedBrush(ListView_GetBkColor(hwnd)));
+        }
+        return CDRF_NOTIFYITEMDRAW | CDRF_NOTIFYPOSTPAINT;
+      }
+      if (draw->dwDrawStage == CDDS_POSTPAINT) {
+        RECT header_rect = {};
+        RECT last = {};
+        const int count = Header_GetItemCount(note->hwndFrom);
+        if (GetClientRect(note->hwndFrom, &header_rect) && count > 0 &&
+            Header_GetItemRect(note->hwndFrom, count - 1, &last) &&
+            last.right < header_rect.right) {
+          header_rect.left = last.right;
+          FillRect(draw->hdc, &header_rect,
+                   appearance::CachedBrush(ListView_GetBkColor(hwnd)));
+        }
+        return CDRF_DODEFAULT;
       }
       if (draw->dwDrawStage == CDDS_ITEMPREPAINT &&
           self->PaintHeaderItem(note->hwndFrom, draw)) {

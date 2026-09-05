@@ -28,6 +28,7 @@ regkit_add_library(regkit_frame
     trace_loading.cpp
     tree_restore.cpp
     undo_menus.cpp
+    update_check.cpp
     value_loading.cpp
     window_appearance.cpp
     window_events.cpp
@@ -60,8 +61,8 @@ target_link_libraries(regkit_frame PRIVATE
     advapi32
     comctl32
     ole32
-    pathcch
     shell32
     shlwapi
     uxtheme
+    winhttp
 )

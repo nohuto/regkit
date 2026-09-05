@@ -73,6 +73,59 @@ struct ExtendedValueDialogState {
   appearance::DialogResizer resizer;
 };
 
+constexpr UINT_PTR kMultiLineNumbersSubclassId = 21;
+
+void SyncMultiLineNumbers(HWND dlg) {
+  HWND edit = GetDlgItem(dlg, IDC_EDIT);
+  HWND numbers = GetDlgItem(dlg, IDC_MULTI_LINE_NUMBERS);
+  if (!edit || !numbers) {
+    return;
+  }
+  const int count =
+      std::max(1, static_cast<int>(SendMessageW(edit, EM_GETLINECOUNT, 0, 0)));
+  std::wstring text;
+  text.reserve(static_cast<size_t>(count) * 4);
+  for (int line = 1; line <= count; ++line) {
+    if (line > 1) {
+      text += L"\r\n";
+    }
+    text += std::to_wstring(line);
+  }
+  wchar_t current[16] = {};
+  GetWindowTextW(numbers, current, static_cast<int>(_countof(current)));
+  if (text != current || count > 1) {
+    SetWindowTextW(numbers, text.c_str());
+  }
+  const int top =
+      static_cast<int>(SendMessageW(edit, EM_GETFIRSTVISIBLELINE, 0, 0));
+  const int shown =
+      static_cast<int>(SendMessageW(numbers, EM_GETFIRSTVISIBLELINE, 0, 0));
+  if (top != shown) {
+    SendMessageW(numbers, EM_LINESCROLL, 0, top - shown);
+  }
+}
+
+LRESULT CALLBACK MultiLineNumbersProc(HWND window, UINT message, WPARAM wparam,
+                                      LPARAM lparam, UINT_PTR, DWORD_PTR ref) {
+  if (message == WM_NCDESTROY) {
+    RemoveWindowSubclass(window, MultiLineNumbersProc,
+                         kMultiLineNumbersSubclassId);
+  }
+  const LRESULT result = DefSubclassProc(window, message, wparam, lparam);
+  switch (message) {
+  case WM_VSCROLL:
+  case WM_MOUSEWHEEL:
+  case WM_KEYDOWN:
+  case WM_LBUTTONDOWN:
+  case WM_SIZE:
+    SyncMultiLineNumbers(reinterpret_cast<HWND>(ref));
+    break;
+  default:
+    break;
+  }
+  return result;
+}
+
 std::wstring RegDataToString(const std::vector<BYTE>& data);
 bool ParseNumberValue(const std::wstring& text, int base, unsigned long long* value);
 
@@ -957,6 +1010,7 @@ INT_PTR CALLBACK TextDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lparam
           {IDC_VALUE_TYPE, kAnchorLeft | kAnchorTop | kAnchorRight},
           {IDC_LABEL, kAnchorLeft | kAnchorTop | kAnchorRight},
           {IDC_EDIT, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+          {IDC_MULTI_LINE_NUMBERS, kAnchorLeft | kAnchorTop | kAnchorBottom},
           {IDOK, kAnchorRight | kAnchorBottom},
           {IDCANCEL, kAnchorRight | kAnchorBottom},
       });
@@ -1033,9 +1087,16 @@ INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPAR
       return FALSE;
     }
     dialog_support::Initialize(
-        dlg, &state->ui_font, {IDC_VALUE_NAME, IDC_EDIT});
+        dlg, &state->ui_font,
+        {IDC_VALUE_NAME, IDC_EDIT});
     if (state->base_type == REG_MULTI_SZ) {
       dialog_support::AllowNewlines(dlg, IDC_EDIT);
+      if (HWND multi_edit = GetDlgItem(dlg, IDC_EDIT)) {
+        SetWindowSubclass(multi_edit, MultiLineNumbersProc,
+                          kMultiLineNumbersSubclassId,
+                          reinterpret_cast<DWORD_PTR>(dlg));
+      }
+      SyncMultiLineNumbers(dlg);
     }
     if (IsMultilineEdit(dlg, IDC_EDIT)) {
       using namespace appearance;
@@ -1061,6 +1122,12 @@ INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPAR
     }
     int id = LOWORD(wparam);
     int code = HIWORD(wparam);
+
+    if (id == IDC_EDIT && state->base_type == REG_MULTI_SZ &&
+        (code == EN_CHANGE || code == EN_VSCROLL)) {
+      SyncMultiLineNumbers(dlg);
+      return TRUE;
+    }
 
     if (code == BN_CLICKED) {
       switch (id) {

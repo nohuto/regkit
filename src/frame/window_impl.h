@@ -79,6 +79,13 @@ private:
   struct SearchTabLoadPayload;
   struct TraceParseSession;
   struct DefaultParseSession;
+  struct UpdateCheckPayload : work::MoveOnly {
+    bool silent = false;
+    bool failed = false;
+    std::wstring version;
+    std::wstring download_url;
+  };
+
   struct StartupCachePayload : work::MoveOnly {
     uint64_t generation = 0;
     std::vector<HistoryEntry> history_entries;
@@ -238,6 +245,7 @@ private:
   static void StartTraceDialogLoad(HWND hwnd, void* context);
   static void StartDefaultDialogLoad(HWND hwnd, void* context);
   void UpdateAddressBar(RegistryNode* node);
+  void UpdateGoButtonState();
   void EnableAddressAutoComplete();
   std::vector<std::wstring> BuildAddressSuggestions(const std::wstring& input) const;
   void ApplyAutoCompleteTheme();
@@ -246,6 +254,9 @@ private:
   void SortHistoryList(int column, bool toggle);
   void SortSearchResults(int column, bool toggle);
   void ClearHistoryItems(bool delete_cache);
+  void CheckForUpdates(bool silent);
+  void ApplyUpdateCheckResult(UpdateCheckPayload* payload);
+  void RemoveSelectedHistoryItems();
   void RebuildHistoryList();
   void ScheduleValueListRename(LPARAM kind, const std::wstring& name);
   void StartPendingValueListRename();
@@ -567,6 +578,8 @@ private:
   HIMAGELIST value_grid_image_list_ = nullptr;
   bool show_value_grid_ = false;
   COLORREF grid_line_color_ = CLR_INVALID;
+  bool auto_check_updates_ = false;
+  bool update_check_running_ = false;
   bool show_toolbar_ = true;
   bool show_address_bar_ = true;
   bool show_filter_bar_ = true;

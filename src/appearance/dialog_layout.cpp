@@ -3,9 +3,78 @@
 
 #include "appearance/dialog_layout.h"
 
+#include "appearance/theme.h"
+#include "appearance/gdi_cache.h"
+
 #include <algorithm>
+#include <commctrl.h>
+
+#ifndef DCX_USESTYLE
+#define DCX_USESTYLE 0x00010000
+#endif
+#ifndef DCX_NODELETERGN
+#define DCX_NODELETERGN 0x00040000
+#endif
+#ifndef HRGN_FULL
+#define HRGN_FULL reinterpret_cast<HRGN>(1)
+#endif
 
 namespace regkit::appearance {
+
+namespace {
+
+constexpr UINT_PTR kThemedBorderSubclassId = 31;
+
+LRESULT CALLBACK ThemedBorderProc(HWND hwnd, UINT message, WPARAM wparam,
+                                  LPARAM lparam, UINT_PTR id, DWORD_PTR) {
+  if (message == WM_NCDESTROY) {
+    RemoveWindowSubclass(hwnd, ThemedBorderProc, id);
+    return DefSubclassProc(hwnd, message, wparam, lparam);
+  }
+  if (message != WM_NCPAINT) {
+    return DefSubclassProc(hwnd, message, wparam, lparam);
+  }
+  const LRESULT result = DefSubclassProc(hwnd, message, wparam, lparam);
+  HRGN region = reinterpret_cast<HRGN>(wparam);
+  UINT flags = DCX_WINDOW | DCX_CACHE | DCX_USESTYLE;
+  if (region == HRGN_FULL) {
+    region = nullptr;
+  } else if (region) {
+    flags |= DCX_INTERSECTRGN | DCX_NODELETERGN;
+  }
+  HDC hdc = GetDCEx(hwnd, region, flags);
+  if (!hdc) {
+    return result;
+  }
+  RECT frame = {};
+  if (GetWindowRect(hwnd, &frame)) {
+    OffsetRect(&frame, -frame.left, -frame.top);
+    FrameRect(hdc, &frame, CachedBrush(Theme::Current().BorderColor()));
+  }
+  ReleaseDC(hwnd, hdc);
+  return result;
+}
+
+} // namespace
+
+void AttachThemedBorder(HWND control) {
+  if (!control ||
+      GetWindowSubclass(control, ThemedBorderProc, kThemedBorderSubclassId,
+                        nullptr)) {
+    return;
+  }
+  if (!SetWindowSubclass(control, ThemedBorderProc, kThemedBorderSubclassId,
+                         0)) {
+    return;
+  }
+  SetWindowLongPtrW(control, GWL_EXSTYLE,
+                    GetWindowLongPtrW(control, GWL_EXSTYLE) & ~WS_EX_CLIENTEDGE);
+  SetWindowLongPtrW(control, GWL_STYLE,
+                    GetWindowLongPtrW(control, GWL_STYLE) | WS_BORDER);
+  SetWindowPos(control, nullptr, 0, 0, 0, 0,
+               SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+}
+
 
 void SetControlFont(HWND control, HFONT font) {
   if (control && font) {

@@ -33,16 +33,43 @@ std::wstring GetModulePath() {
   }
 }
 
+namespace {
+
+using PathCchRemoveFileSpecFn = HRESULT(WINAPI*)(PWSTR, size_t);
+using PathCchCombineFn = HRESULT(WINAPI*)(PWSTR, size_t, PCWSTR, PCWSTR);
+
+template <typename Fn>
+Fn LoadPathFunction(const char* name) {
+  HMODULE module = GetModuleHandleW(L"kernelbase.dll");
+  if (!module) {
+    module = LoadLibraryExW(L"kernelbase.dll", nullptr,
+                            LOAD_LIBRARY_SEARCH_SYSTEM32);
+  }
+  return module ? reinterpret_cast<Fn>(GetProcAddress(module, name)) : nullptr;
+}
+
+} // namespace
+
 std::wstring GetModuleDirectory() {
   std::wstring path = GetModulePath();
   if (path.empty()) {
     return {};
   }
-  path.push_back(L'\0');
-  if (FAILED(PathCchRemoveFileSpec(path.data(), path.size()))) {
+  static const auto remove_file_spec =
+      LoadPathFunction<PathCchRemoveFileSpecFn>("PathCchRemoveFileSpec");
+  if (remove_file_spec) {
+    path.push_back(L'\0');
+    if (FAILED(remove_file_spec(path.data(), path.size()))) {
+      return {};
+    }
+    path.resize(wcsnlen_s(path.data(), path.size()));
+    return path;
+  }
+  const size_t separator = path.find_last_of(L"\\/");
+  if (separator == std::wstring::npos) {
     return {};
   }
-  path.resize(wcsnlen_s(path.data(), path.size()));
+  path.resize(separator);
   return path;
 }
 
@@ -54,10 +81,14 @@ std::wstring JoinPath(const std::wstring& left, const std::wstring& right) {
       std::min<size_t>(std::max<size_t>(MAX_PATH,
                                         left.size() + right.size() + 2),
                        32768);
-  std::wstring output(capacity, L'\0');
-  if (SUCCEEDED(PathCchCombine(output.data(), output.size(), left.c_str(),
-                               right.c_str()))) {
-    return output.c_str();
+  static const auto combine =
+      LoadPathFunction<PathCchCombineFn>("PathCchCombine");
+  if (combine) {
+    std::wstring output(capacity, L'\0');
+    if (SUCCEEDED(combine(output.data(), output.size(), left.c_str(),
+                          right.c_str()))) {
+      return output.c_str();
+    }
   }
   return left.back() == L'\\' ? left + right : left + L"\\" + right;
 }

@@ -16,7 +16,6 @@ target_include_directories(regkit_win32 PUBLIC
 target_link_libraries(regkit_win32 PRIVATE
     advapi32
     ole32
-    pathcch
     shell32
     userenv
     wtsapi32

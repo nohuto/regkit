@@ -469,7 +469,7 @@ LRESULT MainWindow::Impl::HandleHeaderNotification(NMHDR* header, LPARAM lparam)
 
 
       InvalidateListViewColumn(browse_.values().hwnd(), info->iItem);
-      InvalidateListViewTail(browse_.values().hwnd(), true);
+      InvalidateListViewTail(browse_.values().hwnd());
     }
   }
   if (header->hwndFrom == history_header && (header->code == HDN_ENDTRACKW || header->code == HDN_ENDTRACKA || header->code == HDN_ITEMCHANGEDW || header->code == HDN_ITEMCHANGEDA)) {
@@ -480,7 +480,7 @@ LRESULT MainWindow::Impl::HandleHeaderNotification(NMHDR* header, LPARAM lparam)
         history_column_widths_[static_cast<size_t>(subitem)] = info->pitem->cxy;
       }
       InvalidateListViewColumn(history_list_, info->iItem);
-      InvalidateListViewTail(history_list_, true);
+      InvalidateListViewTail(history_list_);
     }
   }
   if (header->hwndFrom == search_header && (header->code == HDN_ENDTRACKW || header->code == HDN_ENDTRACKA || header->code == HDN_ITEMCHANGEDW || header->code == HDN_ITEMCHANGEDA)) {
@@ -493,7 +493,7 @@ LRESULT MainWindow::Impl::HandleHeaderNotification(NMHDR* header, LPARAM lparam)
         widths[static_cast<size_t>(subitem)] = info->pitem->cxy;
       }
       InvalidateListViewColumn(search_results_list_, info->iItem);
-      InvalidateListViewTail(search_results_list_, true);
+      InvalidateListViewTail(search_results_list_);
     }
   }
   return 0;
@@ -1325,7 +1325,7 @@ bool MainWindow::Impl::OnCreate() {
   history_list_ = CreateWindowExW(0, WC_LISTVIEWW, L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kHistoryListId)), instance_, nullptr);
 
   DWORD ex_mask = LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_BORDERSELECT | LVS_EX_TRACKSELECT | LVS_EX_ONECLICKACTIVATE | LVS_EX_TWOCLICKACTIVATE | LVS_EX_UNDERLINEHOT;
-  DWORD ex_style = LVS_EX_FULLROWSELECT;
+  DWORD ex_style = LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER;
   ListView_SetExtendedListViewStyleEx(history_list_, ex_mask, ex_style);
   ListView_SetExtendedListViewStyleEx(search_results_list_, ex_mask, ex_style);
   SendMessageW(search_results_list_, WM_CHANGEUISTATE, MAKEWPARAM(UIS_SET, UISF_HIDEFOCUS), 0);
@@ -1341,6 +1341,7 @@ bool MainWindow::Impl::OnCreate() {
   AttachBorder(search_results_list_);
   AttachBorder(browse_.address());
   AttachBorder(browse_.go_button());
+  UpdateGoButtonState();
   AttachBorder(browse_.filter());
 
   ApplyUIFontToControls();
@@ -1413,6 +1414,9 @@ void MainWindow::Impl::RunDeferredStartup() {
 
   BuildMenus();
   UpdateStatus();
+  if (auto_check_updates_) {
+    CheckForUpdates(true);
+  }
 }
 
 void MainWindow::Impl::StartStartupCacheLoad(bool include_tree_state) {

@@ -426,8 +426,7 @@ inline void InvalidateListViewColumn(HWND list, int display_index) {
   MapWindowPoints(nullptr, list, reinterpret_cast<POINT*>(&header_rect), 2);
   RECT band = {header_rect.left + column.left, client.top,
                header_rect.left + column.right + 1, client.bottom};
-  RedrawWindow(list, &band, nullptr,
-               RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
+  RedrawWindow(list, &band, nullptr, RDW_INVALIDATE | RDW_ERASE);
 }
 
 inline void RefreshListViewTailOnScroll(HWND list) {

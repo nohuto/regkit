@@ -203,6 +203,34 @@ std::wstring SerializeHistoryEntry(const HistoryEntry& entry) {
   return line;
 }
 
+bool WriteHistoryFile(const std::wstring& path,
+                      const std::vector<HistoryEntry>& entries) {
+  if (path.empty()) {
+    return false;
+  }
+  std::string bytes;
+  for (const auto& entry : entries) {
+    bytes += util::WideToUtf8(SerializeHistoryEntry(entry));
+  }
+  if (bytes.empty()) {
+    return DeleteFileW(path.c_str()) != 0 ||
+           GetLastError() == ERROR_FILE_NOT_FOUND;
+  }
+  HANDLE file =
+      CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr,
+                  CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (file == INVALID_HANDLE_VALUE) {
+    return false;
+  }
+  DWORD written = 0;
+  const bool success =
+      WriteFile(file, bytes.data(), static_cast<DWORD>(bytes.size()), &written,
+                nullptr) != 0 &&
+      written == static_cast<DWORD>(bytes.size());
+  CloseHandle(file);
+  return success;
+}
+
 bool AppendHistoryFile(const std::wstring& path, const HistoryEntry& entry) {
   if (path.empty()) {
     return false;

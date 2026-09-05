@@ -118,9 +118,12 @@ constexpr int kOptionsIconSetMaterialSymbols = 2472;
 constexpr int kOptionsIconSetCustom = 2473;
 constexpr int kHistoryOpenTarget = 2475;
 constexpr int kHistoryRevert = 2476;
+constexpr int kHistoryRemove = 2477;
 
 constexpr int kHelpAbout = 2500;
 constexpr int kHelpContents = 2501;
+constexpr int kHelpCheckUpdates = 2502;
+constexpr int kHelpAutoCheckUpdates = 2503;
 
 constexpr int kTraceLoad23H2 = 2700;
 constexpr int kTraceLoad24H2 = 2701;

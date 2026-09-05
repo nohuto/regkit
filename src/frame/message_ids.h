@@ -31,5 +31,6 @@ constexpr UINT kSearchPreviewRequest = WM_APP + 39;
 constexpr UINT kSearchPreviewReady = WM_APP + 40;
 constexpr UINT kSearchSortReady = WM_APP + 41;
 constexpr UINT kSearchTabLoadReady = WM_APP + 42;
+constexpr UINT kUpdateCheckReady = WM_APP + 43;
 
 } // namespace regkit::frame::message_id

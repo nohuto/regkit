@@ -209,6 +209,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleWorkerMessage(UINT message,
   case frame::message_id::kDefaultLoadReady:
   case frame::message_id::kDeferredStartup:
   case frame::message_id::kStartupCacheReady:
+  case frame::message_id::kUpdateCheckReady:
     return HandleLoadWorkerMessage(message, wparam, lparam);
   case frame::message_id::kRegFileLoadReady:
     return HandleRegFileWorkerMessage(message, wparam, lparam);
@@ -502,6 +503,12 @@ std::optional<LRESULT> MainWindow::Impl::HandleLoadWorkerMessage(UINT message,
   case frame::message_id::kStartupCacheReady:
     ApplyStartupCachePayload(reinterpret_cast<StartupCachePayload*>(lparam));
     return 0;
+  case frame::message_id::kUpdateCheckReady: {
+    std::unique_ptr<UpdateCheckPayload> payload(
+        reinterpret_cast<UpdateCheckPayload*>(lparam));
+    ApplyUpdateCheckResult(payload.get());
+    return 0;
+  }
   default:
     return std::nullopt;
   }
@@ -1138,6 +1145,10 @@ std::optional<LRESULT> MainWindow::Impl::HandleBrowseMessage(UINT message,
     }
     if (HIWORD(wparam) == BN_CLICKED && LOWORD(wparam) == kAddressGoId) {
       NavigateToAddress();
+      return 0;
+    }
+    if (HIWORD(wparam) == EN_CHANGE && LOWORD(wparam) == kAddressEditId) {
+      UpdateGoButtonState();
       return 0;
     }
     if (HIWORD(wparam) == EN_CHANGE && LOWORD(wparam) == kFilterEditId) {

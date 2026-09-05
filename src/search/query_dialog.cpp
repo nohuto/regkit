@@ -64,6 +64,8 @@ enum ControlId {
   kResultReuse = 161,
   kResultNew = 162,
   kResultOpenNewTab = 163,
+  kResultLimitEnable = 164,
+  kResultLimitEdit = 165,
   kFindButton = IDOK,
   kCancelButton = IDCANCEL,
 };
@@ -99,6 +101,8 @@ struct SearchDialogState {
   HWND result_reuse = nullptr;
   HWND result_new = nullptr;
   HWND result_open_new_tab = nullptr;
+  HWND result_limit_enable = nullptr;
+  HWND result_limit_edit = nullptr;
   HWND find_button = nullptr;
   HWND cancel_button = nullptr;
   HWND owner = nullptr;
@@ -425,6 +429,9 @@ void UpdateDialogEnableState(SearchDialogState* state) {
 
   bool exclude_checked = state->exclude_enable && IsChecked(state->exclude_enable);
   EnableWindow(state->exclude_edit, exclude_checked);
+
+  bool limit_checked = state->result_limit_enable && IsChecked(state->result_limit_enable);
+  EnableWindow(state->result_limit_edit, limit_checked);
   EnableWindow(state->exclude_button, exclude_checked);
 
   if (state->options_trace) {
@@ -536,11 +543,13 @@ void LayoutDialog(HWND hwnd, SearchDialogState* state, HFONT font) {
   SetWindowPos(state->exclude_button, nullptr, x + group_w - 80, y + 40, 70, line_h, SWP_NOZORDER);
   y += exclude_h + 8;
 
-  int result_h = 92;
+  int result_h = 114;
   SetWindowPos(GetDlgItem(hwnd, kResultGroup), nullptr, x, y, group_w, result_h, SWP_NOZORDER);
   place_check(state->result_reuse, x + 12, y + 20, 220);
   place_check(state->result_new, x + 12, y + 42, 240);
   place_check(state->result_open_new_tab, x + 12, y + 64, 200);
+  place_check(state->result_limit_enable, x + 12, y + 88, 132);
+  SetWindowPos(state->result_limit_edit, nullptr, x + 150, y + 86, 70, line_h, SWP_NOZORDER);
 
   int btn_y = client.bottom - 30;
   SetWindowPos(state->find_button, nullptr, width - 180, btn_y, 80, 22, SWP_NOZORDER);
@@ -614,9 +623,17 @@ LRESULT CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
     state->result_reuse = CreateWindowExW(0, L"BUTTON", L"Reuse last Find Results window", WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kResultReuse), nullptr, nullptr);
     state->result_new = CreateWindowExW(0, L"BUTTON", L"Open new Find Results window", WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kResultNew), nullptr, nullptr);
     state->result_open_new_tab = CreateWindowExW(0, L"BUTTON", L"Open result in new tab", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | WS_GROUP, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kResultOpenNewTab), nullptr, nullptr);
+    state->result_limit_enable = CreateWindowExW(0, L"BUTTON", L"Limit results to", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kResultLimitEnable), nullptr, nullptr);
+    state->result_limit_edit = CreateWindowExW(0, L"EDIT", L"1000", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_NUMBER | WS_BORDER, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kResultLimitEdit), nullptr, nullptr);
 
     state->find_button = CreateWindowExW(0, L"BUTTON", L"Find", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kFindButton), nullptr, nullptr);
     state->cancel_button = CreateWindowExW(0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kCancelButton), nullptr, nullptr);
+
+    for (HWND bordered : {state->scope_edit, state->min_size_edit,
+                          state->max_size_edit, state->exclude_edit,
+                          state->result_limit_edit}) {
+      appearance::AttachThemedBorder(bordered);
+    }
 
     appearance::SetControlFont(hwnd, font);
     EnumChildWindows(
@@ -705,6 +722,12 @@ LRESULT CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
       SendMessageW(state->result_reuse, BM_SETCHECK, new_tab ? BST_UNCHECKED : BST_CHECKED, 0);
       SendMessageW(state->result_new, BM_SETCHECK, new_tab ? BST_CHECKED : BST_UNCHECKED, 0);
       SendMessageW(state->result_open_new_tab, BM_SETCHECK, initial->open_in_new_tab ? BST_CHECKED : BST_UNCHECKED, 0);
+      const bool limited = initial->criteria.max_results > 0;
+      SendMessageW(state->result_limit_enable, BM_SETCHECK, limited ? BST_CHECKED : BST_UNCHECKED, 0);
+      SetWindowTextW(state->result_limit_edit,
+                     std::to_wstring(limited ? initial->criteria.max_results : 1000).c_str());
+      SendMessageW(state->result_limit_edit, EM_SETSEL, 0, 0);
+      EnableWindow(state->result_limit_edit, limited);
     } else {
       SendMessageW(state->options_keys, BM_SETCHECK, BST_UNCHECKED, 0);
       SendMessageW(state->options_values, BM_SETCHECK, BST_CHECKED, 0);
@@ -714,6 +737,7 @@ LRESULT CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
       SendMessageW(state->options_trace, BM_SETCHECK, state->trace_available ? BST_CHECKED : BST_UNCHECKED, 0);
       SendMessageW(state->scope_top, BM_SETCHECK, BST_CHECKED, 0);
       SendMessageW(state->result_reuse, BM_SETCHECK, BST_CHECKED, 0);
+      SendMessageW(state->result_limit_enable, BM_SETCHECK, BST_CHECKED, 0);
     }
     SendMessageW(state->scope_recursive, BM_SETCHECK, state->recursive ? BST_CHECKED : BST_UNCHECKED, 0);
 
@@ -789,6 +813,7 @@ LRESULT CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
       case kOptRegistryRoot:
       case kOptTraceValues:
       case kExcludeEnable:
+      case kResultLimitEnable:
         UpdateDialogEnableState(state);
         break;
       default:
@@ -931,6 +956,14 @@ LRESULT CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
       result.criteria.recursive = scope_top ? true : state->recursive;
       result.result_mode = SendMessageW(state->result_new, BM_GETCHECK, 0, 0) == BST_CHECKED ? SearchResultMode::kNewTab : SearchResultMode::kReuseTab;
       result.open_in_new_tab = SendMessageW(state->result_open_new_tab, BM_GETCHECK, 0, 0) == BST_CHECKED;
+      if (SendMessageW(state->result_limit_enable, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+        wchar_t limit_text[32] = {};
+        GetWindowTextW(state->result_limit_edit, limit_text, static_cast<int>(_countof(limit_text)));
+        const unsigned long long limit = wcstoull(limit_text, nullptr, 10);
+        result.criteria.max_results = limit > 0 ? limit : 1000;
+      } else {
+        result.criteria.max_results = 0;
+      }
 
       if (SendMessageW(state->exclude_enable, BM_GETCHECK, 0, 0) == BST_CHECKED) {
         wchar_t buffer[512] = {};
@@ -999,7 +1032,7 @@ HWND CreateSearchDialogWindow(HINSTANCE instance, HWND owner, SearchDialogState*
   wc.lpszClassName = kDialogClass;
   RegisterClassW(&wc);
 
-  return CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_CONTROLPARENT, kDialogClass, L"Find", WS_POPUP | WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, 600, 612, owner, nullptr, instance, state);
+  return CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_CONTROLPARENT, kDialogClass, L"Find", WS_POPUP | WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, 600, 634, owner, nullptr, instance, state);
 }
 
 } // namespace

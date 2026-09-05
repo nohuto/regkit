@@ -548,7 +548,13 @@ void MainWindow::Impl::DrawAddressButton(const DRAWITEMSTRUCT* info) {
       int icon_size = util::ScaleForDpi(kToolbarGlyphSize, dpi);
       int icon_x = rect.left + (rect.right - rect.left - icon_size) / 2;
       int icon_y = rect.top + (rect.bottom - rect.top - icon_size) / 2;
-      DrawIconEx(hdc, icon_x, icon_y, address_go_icon_, icon_size, icon_size, 0, nullptr, DI_NORMAL);
+      if (info->itemState & ODS_DISABLED) {
+        DrawState(hdc, nullptr, nullptr,
+                  reinterpret_cast<LPARAM>(address_go_icon_), 0, icon_x, icon_y,
+                  icon_size, icon_size, DST_ICON | DSS_DISABLED);
+      } else {
+        DrawIconEx(hdc, icon_x, icon_y, address_go_icon_, icon_size, icon_size, 0, nullptr, DI_NORMAL);
+      }
     } else {
       POINT pts[3] = {
           {rect.left + 8, rect.top + 6},

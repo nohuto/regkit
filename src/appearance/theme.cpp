@@ -11,6 +11,7 @@
 #include <dwmapi.h>
 #include <richedit.h>
 #include <uxtheme.h>
+#include <winternl.h>
 #include <vsstyle.h>
 #include <vssym32.h>
 #include <winreg.h>
@@ -57,6 +58,35 @@ using SetPreferredAppModeFn = PreferredAppMode(WINAPI*)(PreferredAppMode);
 using AllowDarkModeForWindowFn = BOOL(WINAPI*)(HWND, BOOL);
 using RefreshImmersiveColorPolicyStateFn = void(WINAPI*)();
 using FlushMenuThemesFn = void(WINAPI*)();
+
+// The dark-mode ordinals below only exist on Windows 10 1809 and later; on
+// older systems those ordinals resolve to unrelated exports.
+bool DarkModeOrdinalsAvailable() {
+  static const bool available = []() -> bool {
+    HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+    if (!ntdll) {
+      return false;
+    }
+    using RtlGetVersionFn = NTSTATUS(WINAPI*)(PRTL_OSVERSIONINFOW);
+    const auto get_version =
+        reinterpret_cast<RtlGetVersionFn>(GetProcAddress(ntdll, "RtlGetVersion"));
+    if (!get_version) {
+      return false;
+    }
+    RTL_OSVERSIONINFOW version = {};
+    version.dwOSVersionInfoSize = sizeof(version);
+    if (get_version(&version) != 0) {
+      return false;
+    }
+    return version.dwMajorVersion > 10 ||
+           (version.dwMajorVersion == 10 && version.dwBuildNumber >= 17763);
+  }();
+  return available;
+}
+
+HMODULE DarkModeThemeModule() {
+  return DarkModeOrdinalsAvailable() ? GetModuleHandleW(L"uxtheme.dll") : nullptr;
+}
 
 struct ComboBoxThemeState {
   bool hot = false;
@@ -451,7 +481,7 @@ LRESULT CALLBACK EditShortcutSubclassProc(HWND hwnd, UINT msg, WPARAM wparam, LP
 
 SetPreferredAppModeFn GetSetPreferredAppMode() {
   static SetPreferredAppModeFn fn = []() -> SetPreferredAppModeFn {
-    HMODULE theme = GetModuleHandleW(L"uxtheme.dll");
+    HMODULE theme = DarkModeThemeModule();
     if (!theme) {
       return nullptr;
     }
@@ -462,7 +492,7 @@ SetPreferredAppModeFn GetSetPreferredAppMode() {
 
 AllowDarkModeForWindowFn GetAllowDarkModeForWindow() {
   static AllowDarkModeForWindowFn fn = []() -> AllowDarkModeForWindowFn {
-    HMODULE theme = GetModuleHandleW(L"uxtheme.dll");
+    HMODULE theme = DarkModeThemeModule();
     if (!theme) {
       return nullptr;
     }
@@ -473,7 +503,7 @@ AllowDarkModeForWindowFn GetAllowDarkModeForWindow() {
 
 RefreshImmersiveColorPolicyStateFn GetRefreshImmersiveColorPolicyState() {
   static RefreshImmersiveColorPolicyStateFn fn = []() -> RefreshImmersiveColorPolicyStateFn {
-    HMODULE theme = GetModuleHandleW(L"uxtheme.dll");
+    HMODULE theme = DarkModeThemeModule();
     if (!theme) {
       return nullptr;
     }
@@ -484,7 +514,7 @@ RefreshImmersiveColorPolicyStateFn GetRefreshImmersiveColorPolicyState() {
 
 FlushMenuThemesFn GetFlushMenuThemes() {
   static FlushMenuThemesFn fn = []() -> FlushMenuThemesFn {
-    HMODULE theme = GetModuleHandleW(L"uxtheme.dll");
+    HMODULE theme = DarkModeThemeModule();
     if (!theme) {
       return nullptr;
     }

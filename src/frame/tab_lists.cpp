@@ -269,6 +269,30 @@ void MainWindow::Impl::ClearHistoryItems(bool delete_cache) {
   }
 }
 
+void MainWindow::Impl::RemoveSelectedHistoryItems() {
+  if (!history_list_) {
+    return;
+  }
+  auto& entries = change_history_.entries();
+  std::vector<int> selected;
+  for (int index = ListView_GetNextItem(history_list_, -1, LVNI_SELECTED);
+       index >= 0;
+       index = ListView_GetNextItem(history_list_, index, LVNI_SELECTED)) {
+    if (static_cast<size_t>(index) < entries.size()) {
+      selected.push_back(index);
+    }
+  }
+  if (selected.empty()) {
+    return;
+  }
+  for (auto it = selected.rbegin(); it != selected.rend(); ++it) {
+    entries.erase(entries.begin() + *it);
+  }
+  ListView_SetItemState(history_list_, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+  RebuildHistoryList();
+  changes::WriteHistoryFile(HistoryCachePath(), entries);
+}
+
 void MainWindow::Impl::RebuildHistoryList() {
   if (!history_list_) {
     return;

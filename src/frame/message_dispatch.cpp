@@ -16,6 +16,7 @@ MessageArea ClassifyMessage(UINT message) noexcept {
   case message_id::kSearchPreviewReady:
   case message_id::kSearchSortReady:
   case message_id::kSearchTabLoadReady:
+  case message_id::kUpdateCheckReady:
   case message_id::kLoadTraces:
   case message_id::kTraceLoadReady:
   case message_id::kLoadDefaults:

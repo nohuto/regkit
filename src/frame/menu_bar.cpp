@@ -393,6 +393,9 @@ void MainWindow::Impl::BuildMenus() {
   HMENU help_menu = CreatePopupMenu();
   AppendMenuW(help_menu, MF_STRING, cmd::kHelpContents, L"Help");
   AppendMenuW(help_menu, MF_SEPARATOR, 0, nullptr);
+  AppendMenuW(help_menu, MF_STRING, cmd::kHelpCheckUpdates, L"Check for Updates");
+  AppendMenuW(help_menu, MF_STRING | (auto_check_updates_ ? MF_CHECKED : MF_UNCHECKED), cmd::kHelpAutoCheckUpdates, L"Check for Updates Automatically");
+  AppendMenuW(help_menu, MF_SEPARATOR, 0, nullptr);
   AppendMenuW(help_menu, MF_STRING, cmd::kHelpAbout, L"About RegKit");
 
   HMENU research_menu = CreatePopupMenu();

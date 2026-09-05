@@ -399,16 +399,9 @@ void MainWindow::Impl::ShowHistoryContextMenu(POINT screen_pt) {
                           LVIS_SELECTED | LVIS_FOCUSED);
   }
   const HistoryEntry* entry = nullptr;
-  if (index >= 0) {
-    LVITEMW item = {};
-    item.mask = LVIF_PARAM;
-    item.iItem = index;
-    if (ListView_GetItem(history_list_, &item)) {
-      size_t history_index = static_cast<size_t>(item.lParam);
-      if (history_index < change_history_.entries().size()) {
-        entry = &change_history_.entries()[history_index];
-      }
-    }
+  if (index >= 0 &&
+      static_cast<size_t>(index) < change_history_.entries().size()) {
+    entry = &change_history_.entries()[static_cast<size_t>(index)];
   }
 
   HMENU menu = CreatePopupMenu();
@@ -421,6 +414,9 @@ void MainWindow::Impl::ShowHistoryContextMenu(POINT screen_pt) {
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   AppendMenuW(menu, MF_STRING, cmd::kEditCopyKey, L"Copy");
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+  const int selected = ListView_GetSelectedCount(history_list_);
+  AppendMenuW(menu, MF_STRING | (selected > 0 ? 0 : MF_GRAYED),
+              cmd::kHistoryRemove, L"Remove from History");
   AppendMenuW(menu, MF_STRING, cmd::kEditDelete, L"Clear History");
 
   int command = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON, screen_pt.x, screen_pt.y, 0, hwnd_, nullptr);
@@ -437,6 +433,8 @@ void MainWindow::Impl::ShowHistoryContextMenu(POINT screen_pt) {
                                   L" | " + entry->old_data + L" | " +
                                   entry->new_data;
     ui::CopyTextToClipboard(hwnd_, combined);
+  } else if (command == cmd::kHistoryRemove) {
+    RemoveSelectedHistoryItems();
   } else if (command == cmd::kEditDelete) {
     ClearHistoryItems(true);
   }

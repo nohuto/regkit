@@ -744,14 +744,31 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag,
   };
 
 
+  const uint64_t max_results = criteria.max_results;
+  uint64_t emitted = 0;
+
   auto publish_batch = [&](ResultBatch& batch) -> bool {
     if (batch.empty()) {
       return true;
     }
     bool accepted = true;
+    bool reached_limit = false;
     {
       std::lock_guard<std::mutex> lock(publish_mutex);
-      accepted = !publish || publish(std::move(batch));
+      if (max_results > 0) {
+        const uint64_t room = emitted < max_results ? max_results - emitted : 0;
+        if (batch.size() > room) {
+          batch.resize(static_cast<size_t>(room));
+        }
+        emitted += batch.size();
+        reached_limit = emitted >= max_results;
+      }
+      if (!batch.empty()) {
+        accepted = !publish || publish(std::move(batch));
+      }
+    }
+    if (reached_limit) {
+      accepted = false;
     }
     batch.clear();
     batch.reserve(kResultBatchSize);

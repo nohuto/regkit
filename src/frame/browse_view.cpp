@@ -560,6 +560,20 @@ void MainWindow::Impl::UpdateAddressBar(RegistryNode* node) {
     }
   }
   SetWindowTextW(address, path.c_str());
+  UpdateGoButtonState();
+}
+
+void MainWindow::Impl::UpdateGoButtonState() {
+  HWND go = browse_.go_button();
+  if (!go) {
+    return;
+  }
+  const bool enabled = GetWindowTextLengthW(browse_.address()) > 0;
+  if ((IsWindowEnabled(go) != FALSE) == enabled) {
+    return;
+  }
+  EnableWindow(go, enabled);
+  InvalidateRect(go, nullptr, TRUE);
 }
 
 } // namespace regkit

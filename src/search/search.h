@@ -71,6 +71,7 @@ struct Criteria {
   std::vector<DWORD> allowed_types;
   std::vector<RegistryNode> start_nodes;
   std::vector<std::wstring> exclude_paths;
+  uint64_t max_results = 1000;
   Provider provider = Provider::kLocal;
 };
 

@@ -19,6 +19,7 @@
 #include "workspace/favorites.h"
 #include "appearance/font_picker.h"
 #include "appearance/gdi_cache.h"
+#include "win32/window_metrics.h"
 #include "regfile/registry_transfer.h"
 #include "appearance/theme.h"
 #include "appearance/default_font.h"
@@ -331,7 +332,7 @@ inline void UpdateEditBorderMetrics(HWND hwnd, EditBorderState* state, UINT dpi_
   if (!state) {
     return;
   }
-  UINT dpi = dpi_override ? dpi_override : (hwnd ? GetDpiForWindow(hwnd) : 96);
+  UINT dpi = dpi_override ? dpi_override : (hwnd ? win32::DpiForWindow(hwnd) : 96);
   state->dpi = dpi;
   state->x_edge = GetMetricForDpi(SM_CXEDGE, dpi);
   state->y_edge = GetMetricForDpi(SM_CYEDGE, dpi);

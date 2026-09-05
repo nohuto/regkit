@@ -75,9 +75,9 @@ CommandArea ClassifyCommand(int command_id) noexcept {
       (command_id >= cmd::kWindowNew &&
        command_id <= cmd::kWindowAlwaysOnTop) ||
       (command_id >= cmd::kOptionsThemeSystem &&
-       command_id <= cmd::kHistoryRevert) ||
+       command_id <= cmd::kHistoryRemove) ||
       (command_id >= cmd::kHelpAbout &&
-       command_id <= cmd::kHelpContents)) {
+       command_id <= cmd::kHelpAutoCheckUpdates)) {
     return CommandArea::kWorkspaceAppearance;
   }
   return CommandArea::kUnknown;

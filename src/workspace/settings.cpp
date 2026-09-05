@@ -92,6 +92,7 @@ Settings ParseSettings(const std::wstring& content, Settings settings) {
     else REGKIT_BOOL(L"always_on_top",                  always_on_top)
     else REGKIT_BOOL(L"single_instance",                single_instance)
     else REGKIT_BOOL(L"read_only",                      read_only)
+    else REGKIT_BOOL(L"auto_check_updates",             auto_check_updates)
 #undef REGKIT_BOOL
         else if (_wcsicmp(key.c_str(), L"window_x") == 0) {
       settings.window_x = _wtoi(value.c_str());
@@ -213,6 +214,7 @@ std::wstring SerializeSettings(const Settings& settings) {
   BooleanLine(&content, L"view_value_grid", settings.show_value_grid);
   BooleanLine(&content, L"save_tree_state", settings.save_tree_state);
   BooleanLine(&content, L"save_tabs", settings.save_tabs);
+  BooleanLine(&content, L"auto_check_updates", settings.auto_check_updates);
   BooleanLine(&content, L"always_run_as_admin",
               settings.always_run_as_admin);
   BooleanLine(&content, L"always_run_as_system",

@@ -42,6 +42,8 @@ bool MainWindow::Impl::HandleWorkspaceAppearanceCommand(int command_id) {
   case cmd::kOptionsHiveFileDir:
   case cmd::kHelpAbout:
   case cmd::kHelpContents:
+  case cmd::kHelpCheckUpdates:
+  case cmd::kHelpAutoCheckUpdates:
     return HandleLaunchHelpCommand(command_id);
   case cmd::kFavoritesAdd:
   case cmd::kFavoritesRemove:
@@ -198,6 +200,14 @@ bool MainWindow::Impl::HandleLaunchHelpCommand(int command_id) {
     return true;
   case cmd::kHelpContents:
     win32::ShellOpen(hwnd_, kHelpUrl);
+    return true;
+  case cmd::kHelpCheckUpdates:
+    CheckForUpdates(false);
+    return true;
+  case cmd::kHelpAutoCheckUpdates:
+    auto_check_updates_ = !auto_check_updates_;
+    SaveSettings();
+    BuildMenus();
     return true;
   default:
     return false;

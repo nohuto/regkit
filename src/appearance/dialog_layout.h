@@ -46,4 +46,6 @@ private:
   SIZE min_window_ = {};
 };
 
+void AttachThemedBorder(HWND control);
+
 } // namespace regkit::appearance

@@ -256,12 +256,20 @@ inline void DrawSearchMatchOverlay(HDC hdc, const RECT& cell,
   if (text.empty() || start < 0 || length <= 0) {
     return;
   }
-  const int total = static_cast<int>(text.size());
+  int total = static_cast<int>(text.size());
   if (start >= total) {
     return;
   }
   if (start + length > total) {
     length = total - start;
+  }
+  constexpr int kMaxOverlayChars = 512;
+  if (total > kMaxOverlayChars) {
+    if (start + length > kMaxOverlayChars) {
+      return;
+    }
+    text = text.substr(0, static_cast<size_t>(kMaxOverlayChars));
+    total = kMaxOverlayChars;
   }
   const int available = cell.right - cell.left;
   SIZE full = {};
