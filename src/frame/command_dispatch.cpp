@@ -72,9 +72,9 @@ CommandArea ClassifyCommand(int command_id) noexcept {
     return CommandArea::kView;
   }
   if ((command_id >= cmd::kTraceLoad23H2 &&
-       command_id <= cmd::kTraceEditActive) ||
+       command_id <= cmd::kTraceClearRecent) ||
       (command_id >= cmd::kDefaultLoadCustom &&
-       command_id <= cmd::kDefaultResetEnable)) {
+       command_id <= cmd::kDefaultClearRecent)) {
     return CommandArea::kTraceDefaults;
   }
   if ((command_id >= cmd::kFavoritesAdd &&

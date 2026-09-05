@@ -443,31 +443,16 @@ inline bool IsReleaseWord(const std::wstring& word) {
          (word[2] == L'H' || word[2] == L'h') && iswdigit(word[3]);
 }
 
-inline bool IsVersionWord(const std::wstring& word) {
-  if (word.empty() || !iswdigit(word[0])) {
-    return false;
-  }
-  for (wchar_t character : word) {
-    if (!iswdigit(character) && character != L'.') {
-      return false;
-    }
-  }
-  return true;
-}
-
 inline std::wstring ShortWindowsName(const std::wstring& folder) {
   const std::vector<std::wstring> words = SplitLabelWords(folder);
-  if (words.empty() || _wcsicmp(words[0].c_str(), L"Windows") != 0) {
+  if (words.empty() || words[0].size() < 2 ||
+      (words[0][0] != L'W' && words[0][0] != L'w')) {
     return {};
   }
-  if (words.size() < 2) {
-    return {};
-  }
-  std::wstring text =
-      IsVersionWord(words[1]) ? L"W" + words[1] : words[1];
-  if (words.size() > 2 && IsReleaseWord(words[2])) {
+  std::wstring text = words[0];
+  if (words.size() > 1 && IsReleaseWord(words[1])) {
     text.push_back(L' ');
-    text.append(words[2]);
+    text.append(words[1]);
   }
   return text;
 }
@@ -484,9 +469,9 @@ inline std::wstring ShortDefaultLabel(const std::wstring& label,
     }
   }
   static const wchar_t* const kHiveWords[] = {
-      L"HKLM",    L"HKCU",   L"HKU",       L"HKCR",    L"HKCC",
-      L"HKEY",    L"LOCAL",  L"MACHINE",   L"USER",    L"USERS",
-      L"CURRENT", L"SYSTEM", L"SOFTWARE",  L"DEFAULT", L"CLASSES"};
+      L"HKLM", L"HKCU", L"HKU", L"HKCR", L"HKCC",
+      L"HKEY", L"LOCAL", L"MACHINE", L"USER", L"USERS",
+      L"CURRENT", L"SYSTEM", L"SOFTWARE", L"DEFAULT", L"CLASSES"};
   const std::vector<std::wstring> words = SplitLabelWords(label);
   size_t first = 0;
   while (first < words.size()) {

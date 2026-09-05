@@ -79,19 +79,19 @@ add_custom_command(TARGET RegKit POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${REGKIT_OFFREG_DLL}"
         "$<TARGET_FILE_DIR:RegKit>/offreg.dll"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RegKit>/records"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RegKit>/assets/records"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RegKit>/assets/icons"
     COMMAND ${CMAKE_COMMAND} -E rm -rf "$<TARGET_FILE_DIR:RegKit>/assets/defaults"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RegKit>/assets/defaults"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/records/23H2.txt"
-        "$<TARGET_FILE_DIR:RegKit>/records/23H2.txt"
+        "${CMAKE_SOURCE_DIR}/assets/records/23H2.txt"
+        "$<TARGET_FILE_DIR:RegKit>/assets/records/23H2.txt"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/records/24H2.txt"
-        "$<TARGET_FILE_DIR:RegKit>/records/24H2.txt"
+        "${CMAKE_SOURCE_DIR}/assets/records/24H2.txt"
+        "$<TARGET_FILE_DIR:RegKit>/assets/records/24H2.txt"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/records/25H2.txt"
-        "$<TARGET_FILE_DIR:RegKit>/records/25H2.txt"
+        "${CMAKE_SOURCE_DIR}/assets/records/25H2.txt"
+        "$<TARGET_FILE_DIR:RegKit>/assets/records/25H2.txt"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/assets/icons"
         "$<TARGET_FILE_DIR:RegKit>/assets/icons"

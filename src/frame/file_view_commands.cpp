@@ -526,11 +526,21 @@ bool MainWindow::Impl::HandleTraceDefaultCommand(int command_id) {
   case cmd::kTraceClear:
     ClearTrace();
     return true;
+  case cmd::kTraceClearRecent:
+    recent_trace_paths_.Replace({});
+    SaveSettings();
+    BuildMenus();
+    return true;
   case cmd::kDefaultLoadCustom:
     LoadDefaultFromPrompt();
     return true;
   case cmd::kDefaultClear:
     ClearDefaults();
+    return true;
+  case cmd::kDefaultClearRecent:
+    recent_default_paths_.Replace({});
+    SaveSettings();
+    BuildMenus();
     return true;
   case cmd::kDefaultResetEnable:
     default_reset_enabled_ = !default_reset_enabled_;

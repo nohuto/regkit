@@ -108,8 +108,8 @@ std::wstring MainWindow::Impl::ResolveBundledTracePath(const std::wstring& label
   if (module_dir.empty()) {
     return L"";
   }
-  std::wstring records = util::JoinPath(module_dir, L"records");
-  return util::JoinPath(records, file);
+  std::wstring assets = util::JoinPath(module_dir, L"assets");
+  return util::JoinPath(util::JoinPath(assets, L"records"), file);
 }
 
 bool MainWindow::Impl::LoadBundledTrace(

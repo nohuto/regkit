@@ -352,6 +352,7 @@ void MainWindow::Impl::BuildMenus() {
   append_menu(trace_menu, MF_STRING, cmd::kTraceEditActive, L"Edit Active Traces...");
   UINT clear_trace_flags = MF_STRING | (!active_traces_.empty() ? 0 : MF_GRAYED);
   append_menu(trace_menu, clear_trace_flags, cmd::kTraceClear, L"Clear Trace");
+  append_menu(trace_menu, edit_recent_flags, cmd::kTraceClearRecent, L"Clear Recents");
 
   HMENU default_menu = CreatePopupMenu();
   auto has_default_path = [&](const std::wstring& path) -> bool {
@@ -409,11 +410,10 @@ void MainWindow::Impl::BuildMenus() {
   append_menu(default_menu, edit_default_recent_flags, cmd::kDefaultEditRecent, L"Edit Recent Defaults...");
   append_menu(default_menu, MF_STRING, cmd::kDefaultEditActive, L"Edit Active Defaults...");
   UINT clear_default_flags = MF_STRING | (!active_defaults_.empty() ? 0 : MF_GRAYED);
+  append_menu(default_menu, edit_default_recent_flags, cmd::kDefaultClearRecent, L"Clear Recents");
   append_menu(default_menu, clear_default_flags, cmd::kDefaultClear, L"Clear Defaults");
   AppendMenuW(default_menu, MF_SEPARATOR, 0, nullptr);
-  append_menu(default_menu,
-              MF_STRING | (default_reset_enabled_ ? MF_CHECKED : MF_UNCHECKED),
-              cmd::kDefaultResetEnable, L"Enable Context Menu (risky)");
+  append_menu(default_menu, MF_STRING | (default_reset_enabled_ ? MF_CHECKED : MF_UNCHECKED), cmd::kDefaultResetEnable, L"Enable Context Menu (risky)");
 
   HMENU help_menu = CreatePopupMenu();
   AppendMenuW(help_menu, MF_STRING, cmd::kHelpContents, L"Help");

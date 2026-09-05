@@ -46,7 +46,7 @@ Save the content using `.csv`, afterwards you can remove specific parts of the f
 `"Reg\w*"` - Removes the operations  
 `"process.exe"` - Replace `process`  
 
-The result should look similar to: [TLOU2.txt](https://github.com/nohuto/regkit/blob/main/records/TLOU2.txt)/[StartAllBack.txt](https://github.com/nohuto/regkit/blob/main/records/StartAllBack.txt)/[Lighshot](https://github.com/nohuto/regkit/blob/main/records/Lighshot.txt). This can be used to trace specific program/path registry activity, there's obviously much more you can do with procmon.
+The result should look similar to: [TLOU2.txt](https://github.com/nohuto/regkit/blob/main/assets/records/TLOU2.txt)/[StartAllBack.txt](https://github.com/nohuto/regkit/blob/main/assets/records/StartAllBack.txt)/[Lighshot](https://github.com/nohuto/regkit/blob/main/assets/records/Lighshot.txt). This can be used to trace specific program/path registry activity, there's obviously much more you can do with procmon.
 
 Operations which can be used:
 ```

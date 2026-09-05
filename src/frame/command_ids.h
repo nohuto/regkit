@@ -136,6 +136,7 @@ constexpr int kTraceClear = 2704;
 constexpr int kTraceGuide = 2705;
 constexpr int kTraceEditRecent = 2706;
 constexpr int kTraceEditActive = 2707;
+constexpr int kTraceClearRecent = 2708;
 constexpr int kTraceRecentBase = 2710;
 constexpr int kTraceRecentMax = 2719;
 
@@ -144,6 +145,7 @@ constexpr int kDefaultClear = 2721;
 constexpr int kDefaultEditRecent = 2722;
 constexpr int kDefaultEditActive = 2723;
 constexpr int kDefaultResetEnable = 2724;
+constexpr int kDefaultClearRecent = 2725;
 constexpr int kDefaultRecentBase = 2730;
 constexpr int kDefaultRecentMax = 2739;
 constexpr int kDefaultBundledBase = 2740;
