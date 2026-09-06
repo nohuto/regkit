@@ -182,20 +182,20 @@ Default presets are `.reg` exports that fill the value list's `Default` column w
 
 These are the exact builds for each file:
 
-| Windows release | Edition | Architecture | Exact build | Preset source |
+| Release | Edition | Architecture | Build |
 | --- | --- | --- | --- | --- |
-| Windows XP SP1 | Professional x64 Edition | x64 | `5.2.3790.1830` | `AMD64\SETUPREG.HIV` |
-| Windows Vista RTM | Business | x64 | `6.0.6000.16386` | WIM index 1 |
-| Windows 7 RTM | Professional | x64 | `6.1.7600.16385` | WIM index 3 |
-| Windows 8 | Pro | x64 | `6.2.9200.16384` | WIM index 1 |
-| Windows 8.1 | Pro | x64 | `6.3.9600.16384` | WIM index 1 |
-| Windows 10 21H2 | Home | x64 | `10.0.19044.3086` | WIM index 1 |
-| Windows 10 22H2 | Home | x64 | `10.0.19045.6456` | WIM index 1 |
-| Windows 11 21H2 | Home | x64 | `10.0.22000.978` | WIM index 1 |
-| Windows 11 22H2 | Home | x64 | `10.0.22621.963` | WIM index 1 |
-| Windows 11 23H2 | Home | x64 | `10.0.22631.6060` | WIM index 1 |
-| Windows 11 24H2 | Home | x64 | `10.0.26100.9168` | WIM index 1 |
-| Windows 11 25H2 | Home | x64 | `10.0.26200.8037` | WIM index 1 and first-sign-in capture |
+| Windows XP SP1 | Professional x64 Edition | x64 | `5.2.3790.1830` |
+| Windows Vista RTM | Business | x64 | `6.0.6000.16386` |
+| Windows 7 RTM | Professional | x64 | `6.1.7600.16385` |
+| Windows 8 | Pro | x64 | `6.2.9200.16384` |
+| Windows 8.1 | Pro | x64 | `6.3.9600.16384` |
+| Windows 10 21H2 | Home | x64 | `10.0.19044.3086` |
+| Windows 10 22H2 | Home | x64 | `10.0.19045.6456` |
+| Windows 11 21H2 | Home | x64 | `10.0.22000.978` |
+| Windows 11 22H2 | Home | x64 | `10.0.22621.963` |
+| Windows 11 23H2 | Home | x64 | `10.0.22631.6060` |
+| Windows 11 24H2 | Home | x64 | `10.0.26100.9168` |
+| Windows 11 25H2 | Home | x64 | `10.0.26200.8037` |
 
 ## Rights and Elevation
 
