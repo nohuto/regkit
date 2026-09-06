@@ -183,7 +183,7 @@ Default presets are `.reg` exports that fill the value list's `Default` column w
 These are the exact builds for each file:
 
 | Release | Edition | Architecture | Build |
-| --- | --- | --- | --- | --- |
+| --- | --- | --- | --- |
 | [Windows XP SP1]() | Pro x64 Edition | x64 | `5.2.3790.1830` |
 | [Windows Vista RTM](https://github.com/nohuto/regkit/tree/main/assets/defaults/WVista%20Business%20x64%20-%206.0.6000.16386) | Business | x64 | `6.0.6000.16386` |
 | [Windows 7 RTM](https://github.com/nohuto/regkit/tree/main/assets/defaults/W7%20Professional%20x64%20-%206.1.7600.16385) | Pro | x64 | `6.1.7600.16385` |
