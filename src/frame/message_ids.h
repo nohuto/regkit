@@ -32,5 +32,9 @@ constexpr UINT kSearchPreviewReady = WM_APP + 40;
 constexpr UINT kSearchSortReady = WM_APP + 41;
 constexpr UINT kSearchTabLoadReady = WM_APP + 42;
 constexpr UINT kUpdateCheckReady = WM_APP + 43;
+constexpr ULONG_PTR kExternalJumpCopyDataId = 0x52474A54;
+constexpr ULONG_PTR kEditRegFileCopyDataId = 0x5247464F;
+constexpr DWORD kExternalMessageMaxBytes = 64u * 1024u;
+constexpr wchar_t kRegKitWindowProperty[] = L"RegKitMainWindow";
 
 } // namespace regkit::frame::message_id

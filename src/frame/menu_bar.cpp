@@ -73,6 +73,7 @@ bool MainWindow::Impl::EnsureWritable() {
 void MainWindow::Impl::BuildMenus() {
   if (deferred_startup_complete_) {
     SyncReplaceRegeditState();
+    SyncEditContextMenuState();
   }
   if (deferred_startup_complete_ && !favorites_loaded_) {
     RefreshFavoritesCache();
@@ -245,6 +246,8 @@ void MainWindow::Impl::BuildMenus() {
   AppendMenuW(options_menu, MF_SEPARATOR, 0, nullptr);
   UINT replace_flags = MF_STRING | ((is_elevated || is_system || is_ti) ? 0 : MF_GRAYED);
   AppendMenuW(options_menu, replace_flags | (replace_regedit_ ? MF_CHECKED : MF_UNCHECKED), cmd::kOptionsReplaceRegedit, L"Replace Regedit");
+  UINT edit_context_flags = MF_STRING | (is_high ? MF_GRAYED : 0);
+  AppendMenuW(options_menu, edit_context_flags | (edit_context_menu_ ? MF_CHECKED : MF_UNCHECKED), cmd::kOptionsEditContextMenu, L"Add \"Edit\" Context Menu");
   AppendMenuW(options_menu, MF_STRING | (single_instance_ ? MF_CHECKED : MF_UNCHECKED), cmd::kOptionsSingleInstance, L"Single Instance");
   HMENU save_tabs_menu = CreatePopupMenu();
   auto kind_flags = [&](int kind) -> UINT {

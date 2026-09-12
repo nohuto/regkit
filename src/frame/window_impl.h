@@ -393,6 +393,8 @@ private:
   void ShowPermissionsDialog(const RegistryNode& node);
   void ReplaceRegedit(bool enable);
   void SyncReplaceRegeditState();
+  void SetEditContextMenu(bool enable);
+  void SyncEditContextMenuState();
   void OpenHiveFileDir();
   std::wstring ResolveSelectedHiveFilePath();
   void RecordNavigation(const std::wstring& path);
@@ -651,6 +653,7 @@ private:
   bool always_run_as_system_ = false;
   bool always_run_as_trustedinstaller_ = false;
   bool replace_regedit_ = false;
+  bool edit_context_menu_ = false;
   bool single_instance_ = true;
   bool read_only_ = false;
   ThemeMode theme_mode_ = ThemeMode::kSystem;

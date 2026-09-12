@@ -196,12 +196,16 @@ bool MainWindow::Impl::HandleFileCommand(
       }
       std::wstring error;
       std::wstring path = registry_path::Build(*browse_.current_node());
-      if (ExportRegFile(hwnd_, path, &error)) {
+      std::wstring open_after_path;
+      if (ExportRegFile(hwnd_, path, &error, &open_after_path)) {
         HistoryEntry entry;
         entry.action = L"Export registry key";
         entry.key_path = path;
         entry.new_data = path;
         AppendHistoryEntry(std::move(entry));
+        if (!open_after_path.empty()) {
+          OpenRegFileTab(open_after_path, true);
+        }
       } else if (!error.empty()) {
         ui::ShowError(hwnd_, error);
       }

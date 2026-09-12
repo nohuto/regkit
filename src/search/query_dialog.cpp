@@ -652,7 +652,7 @@ LRESULT CALLBACK SearchDialogProc(
       state->options_data_types = CreateWindowExW(0, L"BUTTON", L"Data Types...", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kOptDataTypes), nullptr, nullptr);
       state->match_case = CreateWindowExW(0, L"BUTTON", L"Match case", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kOptMatchCase), nullptr, nullptr);
       state->match_whole = CreateWindowExW(0, L"BUTTON", L"Match whole string", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kOptMatchWhole), nullptr, nullptr);
-      state->use_regex = CreateWindowExW(0, L"BUTTON", L"Use regular expressions", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kOptUseRegex), nullptr, nullptr);
+      state->use_regex = CreateWindowExW(0, L"BUTTON", L"Regular expressions", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kOptUseRegex), nullptr, nullptr);
       state->skip_links = CreateWindowExW(0, L"BUTTON", L"Skip symbolic links", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kOptSkipLinks), nullptr, nullptr);
       state->min_size = CreateWindowExW(0, L"BUTTON", L"Min data size (bytes):", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kOptMinSize), nullptr, nullptr);
       state->min_size_edit = CreateWindowExW(0, L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_AUTOHSCROLL | ES_MULTILINE | WS_BORDER, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kOptMinSizeEdit), nullptr, nullptr);

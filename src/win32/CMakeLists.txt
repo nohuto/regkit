@@ -5,6 +5,7 @@ regkit_add_library(regkit_win32
     process_rights.cpp
     registry_native.cpp
     restart.cpp
+    shell_integration.cpp
     shell_paths.cpp
     system_error.cpp
     text_transform.cpp

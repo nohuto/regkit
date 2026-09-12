@@ -43,6 +43,7 @@ bool MainWindow::Impl::HandleWorkspaceAppearanceCommand(
   case cmd::kOptionsRestartTrustedInstaller:
   case cmd::kOptionsAlwaysRunTrustedInstaller:
   case cmd::kOptionsReplaceRegedit:
+  case cmd::kOptionsEditContextMenu:
   case cmd::kOptionsSingleInstance:
   case cmd::kOptionsHiveFileDir:
   case cmd::kHelpAbout:
@@ -195,6 +196,9 @@ bool MainWindow::Impl::HandleLaunchHelpCommand(
     return true;
   case cmd::kOptionsReplaceRegedit:
     ReplaceRegedit(!replace_regedit_);
+    return true;
+  case cmd::kOptionsEditContextMenu:
+    SetEditContextMenu(!edit_context_menu_);
     return true;
   case cmd::kOptionsSingleInstance:
     single_instance_ = !single_instance_;

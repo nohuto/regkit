@@ -1,7 +1,7 @@
 ﻿#define AppId "4678f42c-c6a2-4df9-bc2a-dddbd2613045"
 #define AppName "RegKit"
 #define AppExeName "regkit.exe"
-#define AppVersion "0.0.0.9"
+#define AppVersion "0.0.1.0"
 #define AppPublisher "nohuto"
 #define AppCopyright "(C) 2026 nohuto"
 #define AppURL "https://github.com/nohuto/regkit"
@@ -34,6 +34,7 @@ SetupIconFile=..\assets\icons\regkit.ico
 UninstallDisplayIcon={app}\{#AppExeName}
 Compression=lzma2
 SolidCompression=yes
+ChangesAssociations=yes
 #if Arch == "x64"
 ArchitecturesAllowed=x64os
 ArchitecturesInstallIn64BitMode=x64os
@@ -48,6 +49,7 @@ OutputBaseFilename=RegKit-Setup-{#AppVersion}-{#Arch}
 Name: "startmenu"; Description: "Start Menu shortcut"; GroupDescription: "Shortcuts:"; Flags: checkedonce
 Name: "desktopicon"; Description: "Desktop shortcut"; GroupDescription: "Shortcuts:"
 Name: "replace_regedit"; Description: "Replace Regedit"; GroupDescription: "Integration:"; Check: IsAdminInstallMode
+Name: "edit_context_menu"; Description: "Add ""Edit"" Context Menu"; GroupDescription: "Integration:"; Flags: checkedonce
 Name: "defaults"; Description: "Install registry exports used by the Default menu (~200 MB)"; GroupDescription: "Optional data:"
 
 [Files]
@@ -64,6 +66,10 @@ Name: "{autoprograms}\RegKit\RegKit"; Filename: "{app}\{#AppExeName}"; WorkingDi
 Name: "{autodesktop}\RegKit"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Registry]
+Root: HKA; Subkey: "Software\Classes\Applications\{#AppExeName}"; ValueType: string; ValueName: "FriendlyAppName"; ValueData: "{#AppName}"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\Applications\{#AppExeName}\DefaultIcon"; ValueType: string; ValueData: """{app}\{#AppExeName}"",0"
+Root: HKA; Subkey: "Software\Classes\Applications\{#AppExeName}\SupportedTypes"; ValueType: string; ValueName: ".reg"; ValueData: ""
+Root: HKA; Subkey: "Software\Classes\Applications\{#AppExeName}\shell\open\command"; ValueType: string; ValueData: """{app}\{#AppExeName}"" ""%1"""
 Root: HKLM; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\regedit.exe"; ValueType: string; ValueName: "Debugger"; ValueData: """{app}\{#AppExeName}"""; Flags: uninsdeletevalue uninsdeletekeyifempty; Tasks: replace_regedit
 
 [Code]
@@ -84,8 +90,9 @@ end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
-  if CurUninstallStep = usUninstall then
+  if CurUninstallStep = usUninstall then begin
     RemoveRegeditReplacement;
+  end;
 end;
 
 function GetDefaultDir(Param: string): string;
@@ -98,7 +105,11 @@ begin
 end;
 
 [Run]
+Filename: "{app}\{#AppExeName}"; Parameters: "--install-edit-context-menu"; Flags: runhidden runasoriginaluser; Tasks: edit_context_menu
 Filename: "{app}\{#AppExeName}"; Description: "Launch RegKit"; Flags: nowait postinstall skipifsilent
+
+[UninstallRun]
+Filename: "{app}\{#AppExeName}"; Parameters: "--uninstall-edit-context-menu"; RunOnceId: "RemoveEditContextMenu"; Flags: runhidden
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{localappdata}\Noverse\RegKit"

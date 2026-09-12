@@ -65,6 +65,8 @@ CommandArea ClassifyCommand(
   case cmd::kOptionsReadOnly:
   case cmd::kOptionsCompareRegistries:
     return CommandArea::kView;
+  case cmd::kOptionsEditContextMenu:
+    return CommandArea::kWorkspaceAppearance;
   default:
     break;
   }

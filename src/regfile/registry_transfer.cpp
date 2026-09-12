@@ -10,7 +10,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include <shellapi.h>
 #include <shlobj.h>
 
 #include "win32/system_error.h"
@@ -616,8 +615,12 @@ bool ImportRegFileFromPath(
 bool ExportRegFile(
     HWND owner,
     const std::wstring& key_path,
-    std::wstring* error
+    std::wstring* error,
+    std::wstring* open_after_path
 ) {
+  if (open_after_path) {
+    open_after_path->clear();
+  }
   editors::ExportRequest request;
   request.path = ExportDefaultNameFromKeyPath(key_path);
   editors::ExportResult options;
@@ -658,8 +661,8 @@ bool ExportRegFile(
     DeleteFileW(temp_path.c_str());
   }
 
-  if (options.open_after) {
-    win32::ShellOpen(owner, options.path.c_str());
+  if (options.open_after && open_after_path) {
+    *open_after_path = options.path;
   }
   return true;
 }

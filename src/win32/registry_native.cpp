@@ -94,4 +94,62 @@ bool DeleteNativeRegistryKey(
          NT_SUCCESS(delete_key(reinterpret_cast<HANDLE>(key)));
 }
 
+bool ReadRegistryString(
+    HKEY root,
+    const wchar_t* subkey,
+    const wchar_t* value_name,
+    std::wstring* value
+) {
+  if (!value) {
+    return false;
+  }
+  value->clear();
+  constexpr DWORD kMaximumBytes = 16u * 1024u * 1024u;
+  for (int attempt = 0; attempt < 3; ++attempt) {
+    DWORD size = 0;
+    LONG result = RegGetValueW(root, subkey, value_name, RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ, nullptr, nullptr, &size);
+    if (result != ERROR_SUCCESS || size < sizeof(wchar_t) ||
+        size > kMaximumBytes || size % sizeof(wchar_t) != 0) {
+      return false;
+    }
+    value->resize(size / sizeof(wchar_t));
+    result = RegGetValueW(root, subkey, value_name, RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ, nullptr, value->data(), &size);
+    if (result == ERROR_MORE_DATA) {
+      continue;
+    }
+    if (result != ERROR_SUCCESS) {
+      value->clear();
+      return false;
+    }
+    while (!value->empty() && value->back() == L'\0') {
+      value->pop_back();
+    }
+    return true;
+  }
+  value->clear();
+  return false;
+}
+
+LONG WriteRegistryString(
+    HKEY key,
+    const wchar_t* value_name,
+    const std::wstring& value
+) {
+  if (!key) {
+    return ERROR_INVALID_HANDLE;
+  }
+  if (value.size() >=
+      (std::numeric_limits<DWORD>::max)() / sizeof(wchar_t)) {
+    return ERROR_INVALID_DATA;
+  }
+  return RegSetValueExW(
+      key,
+      value_name,
+      0,
+      REG_SZ,
+      reinterpret_cast<const BYTE*>(value.c_str()),
+      static_cast<DWORD>((value.size() + 1) * sizeof(wchar_t))
+  );
+}
+
 } // namespace util

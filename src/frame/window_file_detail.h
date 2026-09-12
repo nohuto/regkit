@@ -342,7 +342,7 @@ inline bool ParseRegFileToVirtualRoots(
       }
       return false;
     }
-    const std::wstring normalized = NormalizeTraceKeyPathBasic(source_path);
+    const std::wstring normalized = registry_path::Normalize(source_path);
     const std::wstring key_path = normalized.empty() ? source_path : normalized;
     const size_t slash = key_path.find(L'\\');
     const std::wstring root_name = key_path.substr(0, slash);

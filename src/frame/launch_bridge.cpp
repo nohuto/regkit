@@ -3,6 +3,8 @@
 
 #include "frame/window_detail.h"
 
+#include "win32/shell_integration.h"
+
 namespace regkit {
 using namespace window_detail;
 
@@ -125,51 +127,23 @@ bool MainWindow::Impl::RestartAsTrustedInstaller() {
 void MainWindow::Impl::SyncReplaceRegeditState() {
   std::wstring exe_path = util::GetModulePath();
   if (exe_path.empty()) {
-    return;
-  }
-
-  HKEY base = nullptr;
-  LONG result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, kRegeditImageOptionsKey, 0, KEY_QUERY_VALUE, &base);
-  if (result != ERROR_SUCCESS) {
-    replace_regedit_ = false;
-    return;
-  }
-
-  DWORD type = 0;
-  DWORD size = 0;
-  result = RegQueryValueExW(base, L"Debugger", nullptr, &type, nullptr, &size);
-  if (result != ERROR_SUCCESS || (type != REG_SZ && type != REG_EXPAND_SZ) || size == 0) {
-    RegCloseKey(base);
     replace_regedit_ = false;
     return;
   }
 
   std::wstring debugger;
-  debugger.resize(size / sizeof(wchar_t));
-  result = RegQueryValueExW(base, L"Debugger", nullptr, &type, reinterpret_cast<LPBYTE>(debugger.data()), &size);
-  RegCloseKey(base);
-  if (result != ERROR_SUCCESS) {
+  if (!util::ReadRegistryString(
+          HKEY_LOCAL_MACHINE,
+          kRegeditImageOptionsKey,
+          L"Debugger",
+          &debugger
+      ) ||
+      debugger.empty()) {
     replace_regedit_ = false;
     return;
   }
 
-  while (!debugger.empty() && debugger.back() == L'\0') {
-    debugger.pop_back();
-  }
-  if (debugger.empty()) {
-    replace_regedit_ = false;
-    return;
-  }
-
-  std::wstring expanded = debugger;
-  if (type == REG_EXPAND_SZ) {
-    std::wstring resolved = util::ExpandEnvironmentStringsDynamic(debugger);
-    if (!resolved.empty()) {
-      expanded = std::move(resolved);
-    }
-  }
-
-  const wchar_t* start = expanded.c_str();
+  const wchar_t* start = debugger.c_str();
   while (*start && iswspace(*start)) {
     ++start;
   }
@@ -268,6 +242,32 @@ void MainWindow::Impl::ReplaceRegedit(
     replace_regedit_ = false;
   }
 
+  BuildMenus();
+}
+
+void MainWindow::Impl::SyncEditContextMenuState() {
+  const std::wstring exe_path = util::GetModulePath();
+  edit_context_menu_ =
+      win32::IsRegFileEditMenuRegistered(exe_path);
+}
+
+void MainWindow::Impl::SetEditContextMenu(
+    bool enable
+) {
+  LONG cleanup_result = ERROR_SUCCESS;
+  const LONG result = win32::SetRegFileEditMenu(
+      util::GetModulePath(),
+      enable,
+      &cleanup_result
+  );
+  if (result != ERROR_SUCCESS) {
+    std::wstring message = FormatWin32Error(result);
+    if (cleanup_result != ERROR_SUCCESS) {
+      message += L"\nThe incomplete context menu entry couldn't be removed:\n";
+      message += FormatWin32Error(cleanup_result);
+    }
+    ui::ShowError(hwnd_, message);
+  }
   BuildMenus();
 }
 

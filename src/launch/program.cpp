@@ -17,6 +17,7 @@
 
 #include "cli/reg_command.h"
 #include "frame/main_window.h"
+#include "frame/message_ids.h"
 #include "regfile/registry_transfer.h"
 #include "registry/registry_path.h"
 #include "registry/registry_store.h"
@@ -29,16 +30,23 @@
 #include "win32/file_text.h"
 #include "win32/process_rights.h"
 #include "win32/restart.h"
+#include "win32/shell_integration.h"
 #include "win32/shell_paths.h"
 
 namespace {
 
+using regkit::frame::message_id::kEditRegFileCopyDataId;
+using regkit::frame::message_id::kExternalJumpCopyDataId;
+using regkit::frame::message_id::kRegKitWindowProperty;
 using regkit::win32::kRestartAdminArg;
 using regkit::win32::kRestartSystemArg;
 using regkit::win32::kRestartTiArg;
 using regkit::win32::kRestartUserArg;
-constexpr ULONG_PTR kExternalJumpCopyDataId = 0x52474A54;
-constexpr wchar_t kRegKitWindowProperty[] = L"RegKitMainWindow";
+constexpr wchar_t kEditRegFileArg[] = L"--edit-reg";
+constexpr wchar_t kInstallEditContextMenuArg[] =
+    L"--install-edit-context-menu";
+constexpr wchar_t kUninstallEditContextMenuArg[] =
+    L"--uninstall-edit-context-menu";
 
 using util::FormatWin32Error;
 using util::TrimWhitespace;
@@ -350,6 +358,32 @@ HWND FindRunningRegKitWindow() {
   return found;
 }
 
+bool SendTextToRegKit(
+    HWND window,
+    HWND sender,
+    ULONG_PTR message_id,
+    const std::wstring& text
+) {
+  if (!window || !sender || text.empty()) {
+    return false;
+  }
+  COPYDATASTRUCT data = {};
+  data.dwData = message_id;
+  data.cbData = static_cast<DWORD>((text.size() + 1) * sizeof(wchar_t));
+  data.lpData = const_cast<wchar_t*>(text.c_str());
+  DWORD_PTR accepted = 0;
+  return SendMessageTimeoutW(
+             window,
+             WM_COPYDATA,
+             reinterpret_cast<WPARAM>(sender),
+             reinterpret_cast<LPARAM>(&data),
+             SMTO_ABORTIFHUNG,
+             1500,
+             &accepted
+         ) != 0 &&
+         accepted != 0;
+}
+
 struct StartupSettings {
   bool single_instance = true;
   bool always_run_as_admin = false;
@@ -624,6 +658,20 @@ int WINAPI wWinMain(
     PWSTR,
     int cmd_show
 ) {
+  const auto args = GetCommandLineArgs();
+  if (HasCommandLineArg(args, kInstallEditContextMenuArg) ||
+      HasCommandLineArg(args, kUninstallEditContextMenuArg)) {
+    const std::wstring exe_path = util::GetModulePath();
+    if (exe_path.empty()) {
+      return 1;
+    }
+    const LONG result =
+        HasCommandLineArg(args, kInstallEditContextMenuArg)
+            ? regkit::win32::SetRegFileEditMenu(exe_path, true)
+            : regkit::win32::RemoveRegFileEditMenuIfOwned(exe_path);
+    return result == ERROR_SUCCESS ? 0 : 1;
+  }
+
   regkit::Theme::InitializeDarkModeSupport();
   util::ComInit com;
   if (!com.ok()) {
@@ -637,7 +685,6 @@ int WINAPI wWinMain(
   InitCommonControlsEx(&icc);
   BufferedPaintInit();
 
-  const auto args = GetCommandLineArgs();
   ApplyDataDirOverride(args);
   const bool regedit_compat_requested = IsInterceptedRegeditLaunch(args);
   int cli_exit = 0;
@@ -651,7 +698,8 @@ int WINAPI wWinMain(
   ApplyStartupTheme(startup_settings);
   std::wstring startup_jump_target;
   const bool external_jump_requested = ResolveExternalJumpTarget(args, &startup_jump_target);
-  const std::vector<std::wstring> regedit_merge_files = regedit_compat_requested ? RegFilesFromArgs(args) : std::vector<std::wstring>();
+  const bool edit_reg_file_requested = HasCommandLineArg(args, kEditRegFileArg);
+  const std::vector<std::wstring> reg_files = RegFilesFromArgs(args);
   const bool restart_system = HasCommandLineArg(args, kRestartSystemArg);
   const bool stay_as_user = HasCommandLineArg(args, kRestartUserArg);
   const bool restart_ti = HasCommandLineArg(args, kRestartTiArg);
@@ -730,8 +778,8 @@ int WINAPI wWinMain(
     regkit::ui::ShowError(nullptr, L"Administrator restart was cancelled.");
   }
 
-  if (regedit_compat_requested && !regedit_merge_files.empty()) {
-    for (const auto& path : regedit_merge_files) {
+  if (!edit_reg_file_requested && !reg_files.empty()) {
+    for (const auto& path : reg_files) {
       if (!regkit::ui::ConfirmRegFileMerge(nullptr, path)) {
         return 0;
       }
@@ -754,19 +802,29 @@ int WINAPI wWinMain(
       HWND existing = FindRunningRegKitWindow();
       if (existing) {
         bool handed_off = true;
-        if (external_jump_requested && !startup_jump_target.empty()) {
-          COPYDATASTRUCT data = {};
-          data.dwData = kExternalJumpCopyDataId;
-          data.cbData = static_cast<DWORD>((startup_jump_target.size() + 1) * sizeof(wchar_t));
-          data.lpData = const_cast<wchar_t*>(startup_jump_target.c_str());
-          HWND sender = CreateWindowExW(0, L"STATIC", L"", 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, instance, nullptr);
-          DWORD_PTR accepted = 0;
-          handed_off =
-              SendMessageTimeoutW(existing, WM_COPYDATA, reinterpret_cast<WPARAM>(sender), reinterpret_cast<LPARAM>(&data), SMTO_ABORTIFHUNG, 1500, &accepted) != 0 &&
-              accepted != 0;
-          if (sender) {
-            DestroyWindow(sender);
+        const bool has_handoff_data =
+            (external_jump_requested && !startup_jump_target.empty()) ||
+            (edit_reg_file_requested && !reg_files.empty());
+        HWND sender = nullptr;
+        if (has_handoff_data) {
+          sender = CreateWindowExW(0, L"STATIC", L"", 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, instance, nullptr);
+          if (!sender) {
+            handed_off = false;
           }
+        }
+        if (sender && external_jump_requested && !startup_jump_target.empty() &&
+            !SendTextToRegKit(existing, sender, kExternalJumpCopyDataId, startup_jump_target)) {
+          handed_off = false;
+        }
+        if (sender && edit_reg_file_requested) {
+          for (const auto& path : reg_files) {
+            if (!SendTextToRegKit(existing, sender, kEditRegFileCopyDataId, path)) {
+              handed_off = false;
+            }
+          }
+        }
+        if (sender) {
+          DestroyWindow(sender);
         }
         if (handed_off) {
           ShowWindow(existing, SW_RESTORE);
@@ -790,6 +848,11 @@ int WINAPI wWinMain(
   }
   if (external_jump_requested && !startup_jump_target.empty()) {
     window.QueueExternalJump(startup_jump_target);
+  }
+  if (edit_reg_file_requested) {
+    for (const auto& path : reg_files) {
+      window.OpenRegFileTab(path);
+    }
   }
   window.Show(cmd_show);
 

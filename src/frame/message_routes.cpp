@@ -1034,9 +1034,11 @@ std::optional<LRESULT> MainWindow::Impl::HandleExternalMessage(
       if (!data) {
         return 0;
       }
-      if (data->dwData != kExternalJumpCopyDataId || !data->lpData ||
+      if ((data->dwData != kExternalJumpCopyDataId &&
+           data->dwData != kEditRegFileCopyDataId) ||
+          !data->lpData ||
           data->cbData < sizeof(wchar_t) ||
-          data->cbData > kExternalJumpMaxBytes) {
+          data->cbData > kExternalMessageMaxBytes) {
         return 0;
       }
       if (!IsSiblingRegKitWindow(reinterpret_cast<HWND>(wparam))) {
@@ -1050,6 +1052,14 @@ std::optional<LRESULT> MainWindow::Impl::HandleExternalMessage(
       }
       if (target.empty()) {
         return 0;
+      }
+      if (data->dwData == kEditRegFileCopyDataId) {
+        if (!HasRegExtension(target) || !OpenRegFileTab(target)) {
+          return 0;
+        }
+        ShowWindow(hwnd_, SW_RESTORE);
+        SetForegroundWindow(hwnd_);
+        return TRUE;
       }
       if (deferred_startup_complete_) {
         NavigateToExternalJump(target);

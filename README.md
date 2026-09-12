@@ -17,7 +17,7 @@ RegKit adds functionality that standard regedit doesn't support:
 - [Trace presets](https://noverse.dev/docs/regkit/overview/#trace-menu) (23H2/24H2/25H2 - see below), used for "Read on boot" column
 - Default presets, this shows default data from new installations
 - Extra root keys toggle, exposes additional predefined keys that RegEdit typically doesn't show, such as `HKEY_PERFORMANCE_DATA` (live performance counter data produced on demand, not stored in a hive file) and related keys like `HKEY_PERFORMANCE_TEXT`/`HKEY_PERFORMANCE_NLSTEXT` for e.g. counter name strings (read more [here](https://learn.microsoft.com/en-us/windows/win32/perfctrs/using-the-registry-functions-to-consume-counter-data))
-- Run with [SYSTEM/TI rights](https://noverse.dev/docs/regkit/overview/#rights-and-elevation)
+- Switch between with [User/Admin/SYSTEM/TI rights](https://noverse.dev/docs/regkit/overview/#rights-and-elevation)
 - Favorites import/export
 - Comment column for values with import/export support
 - Loading/unloading hives
@@ -33,7 +33,7 @@ RegKit adds functionality that standard regedit doesn't support:
 - History view
 - Option to save/forget previous key tree state
 - Simulated keys toggle (from traces)
-- Compare Registries (compare two registry sources or `.reg` files and see differences)
+- Compare Registries
 - `.reg` / hive file/folder drag and drop support
 - Read only mode
 - Miscellaneous common functionalities
@@ -161,6 +161,9 @@ Using `reg` here is optional, means both `regkit reg query` & `regkit query` wor
 | --- | --- |
 | `regkit <key>` | Open the window at that key |
 | `regkit --goto <key>` | The same, in explicit form |
+| `regkit --edit-reg file.reg` | Open a `.reg` file in a tab |
+| `regkit --install-edit-context-menu` | Add the `Edit with RegKit` context menu entry |
+| `regkit --uninstall-edit-context-menu` | Remove `Edit with RegKit` context menu entry |
 | `regkit --restart-system` | Relaunch under the SYSTEM account |
 | `regkit --restart-ti` | Relaunch under TrustedInstaller |
 | `regkit --help` | Print usage text |

@@ -178,12 +178,12 @@ void LayoutDialog(
   const int col_w = (group_w - group_inset * 2 - label_gap) / 2;
   const int col2_x = ox + col_w + label_gap;
   appearance::Place(state->recursive, ox, oy, col_w, check_h);
-  appearance::Place(state->match_case, col2_x, oy, col_w, check_h);
   appearance::Place(state->match_whole, ox, oy + row_pitch, col_w, check_h);
-  appearance::Place(state->use_regex, col2_x, oy + row_pitch, col_w, check_h);
-  appearance::Place(state->search_keys, ox, oy + row_pitch * 2, col_w, check_h);
-  appearance::Place(state->search_values, col2_x, oy + row_pitch * 2, col_w, check_h);
-  appearance::Place(state->search_data, ox, oy + row_pitch * 3, col_w, check_h);
+  appearance::Place(state->match_case, ox, oy + row_pitch * 2, col_w, check_h);
+  appearance::Place(state->use_regex, ox, oy + row_pitch * 3, col_w, check_h);
+  appearance::Place(state->search_keys, col2_x, oy, col_w, check_h);
+  appearance::Place(state->search_values, col2_x, oy + row_pitch, col_w, check_h);
+  appearance::Place(state->search_data, col2_x, oy + row_pitch * 2, col_w, check_h);
   const int nested_y = oy + row_pitch * 4;
   appearance::Place(GetDlgItem(hwnd, kValueDataGroup), ox, nested_y, nested_w, nested_h);
   const int ny = nested_y + group_top;
@@ -248,7 +248,7 @@ LRESULT CALLBACK ReplaceDialogProc(
       state->recursive = CreateWindowExW(0, L"BUTTON", L"Recursive", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kRecursive), nullptr, nullptr);
       state->match_case = CreateWindowExW(0, L"BUTTON", L"Match case", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kMatchCase), nullptr, nullptr);
       state->match_whole = CreateWindowExW(0, L"BUTTON", L"Match whole string", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kMatchWhole), nullptr, nullptr);
-      state->use_regex = CreateWindowExW(0, L"BUTTON", L"Use regular expressions", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kUseRegex), nullptr, nullptr);
+      state->use_regex = CreateWindowExW(0, L"BUTTON", L"Regular expressions", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kUseRegex), nullptr, nullptr);
       state->search_keys = CreateWindowExW(0, L"BUTTON", L"Replace in key names", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kSearchKeys), nullptr, nullptr);
       state->search_values = CreateWindowExW(0, L"BUTTON", L"Replace in value names", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kSearchValues), nullptr, nullptr);
       state->search_data = CreateWindowExW(0, L"BUTTON", L"Replace in value data", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(kSearchData), nullptr, nullptr);
