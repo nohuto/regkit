@@ -319,7 +319,7 @@ bool MainWindow::Impl::HandleModifyCommand(
   switch (command_id) {
   case cmd::kEditChangeType:
     {
-      if (!EnsureWritable() || !browse_.current_node()) {
+      if (!browse_.current_node()) {
         return true;
       }
       std::vector<ListRow> rows = SelectedListRows(browse_.values());
@@ -335,8 +335,12 @@ bool MainWindow::Impl::HandleModifyCommand(
       request.value_name = entry.name;
       request.type = entry.type;
       request.data = entry.data;
+      request.read_only = read_only_;
       editors::CustomValueResult result;
       if (!editors::EditCustomValue(hwnd_, request, &result)) {
+        return true;
+      }
+      if (read_only_) {
         return true;
       }
       if (result.type == entry.type && result.data == entry.data) {
@@ -372,9 +376,6 @@ bool MainWindow::Impl::HandleModifyCommand(
   case cmd::kEditModify:
   case cmd::kEditModifyBinary:
     {
-      if (!EnsureWritable()) {
-        return true;
-      }
       if (!browse_.current_node()) {
         return true;
       }
@@ -385,6 +386,9 @@ bool MainWindow::Impl::HandleModifyCommand(
       const ListRow* row = &selected_rows.front();
       ValueEntry entry;
       if (!GetValueEntry(*browse_.current_node(), row->extra, &entry)) {
+        if (read_only_) {
+          return true;
+        }
         if (HasActiveTraces() && (row->type.empty() || EqualsInsensitive(row->type, L"TRACE"))) {
           bool needs_create = browse_.current_node()->simulated;
           DWORD type = REG_SZ;
@@ -438,6 +442,7 @@ bool MainWindow::Impl::HandleModifyCommand(
         editors::BinaryRequest request;
         request.value_name = entry.name;
         request.data = entry.data;
+        request.read_only = read_only_;
         editors::BinaryResult result;
         if (!editors::EditBinary(hwnd_, request, &result)) {
           return true;
@@ -448,6 +453,7 @@ bool MainWindow::Impl::HandleModifyCommand(
         request.value_name = entry.name;
         request.base_type = base_type;
         request.data = entry.data;
+        request.read_only = read_only_;
         editors::FlaggedValueResult result;
         if (!editors::EditFlaggedValue(hwnd_, request, &result)) {
           return true;
@@ -457,11 +463,15 @@ bool MainWindow::Impl::HandleModifyCommand(
         editors::BinaryRequest request;
         request.value_name = entry.name;
         request.data = entry.data;
+        request.read_only = read_only_;
         editors::BinaryResult result;
         if (!editors::EditBinary(hwnd_, request, &result)) {
           return true;
         }
         new_data = std::move(result.data);
+      }
+      if (read_only_) {
+        return true;
       }
       if (new_data == entry.data) {
         return true;

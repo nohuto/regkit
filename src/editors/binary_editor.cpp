@@ -11,6 +11,7 @@
 
 #include "resource.h"
 
+#include <initializer_list>
 #include <utility>
 
 namespace regkit::editors {
@@ -101,6 +102,12 @@ INT_PTR CALLBACK DialogProc(
     ConfigureIdentity(dialog, *state->request);
     SelectGroup(dialog, IDC_FORMAT_BYTE);
     SelectTextMode(dialog, IDC_TEXT_ANSI);
+    if (state->request->read_only) {
+      SendDlgItemMessageW(dialog, IDC_EDIT, EM_SETREADONLY, TRUE, 0);
+      for (const int id : {IDC_FORMAT_BYTE, IDC_FORMAT_WORD, IDC_FORMAT_DWORD, IDC_FORMAT_QWORD, IDC_TEXT_ANSI, IDC_TEXT_UNICODE}) {
+        EnableWindow(GetDlgItem(dialog, id), FALSE);
+      }
+    }
     dialog_support::Initialize(
         dialog,
         &state->ui_font,

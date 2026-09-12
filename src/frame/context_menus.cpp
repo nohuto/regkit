@@ -334,13 +334,14 @@ void MainWindow::Impl::ShowValueContextMenu(
     bool can_comment = all_values;
     bool can_export = !row->simulated && browse_.current_node() && !browse_.current_node()->simulated;
     UINT modify_flags = MF_STRING | (can_modify ? 0 : MF_GRAYED);
+    UINT inspect_flags = MF_STRING | (single_value ? 0 : MF_GRAYED);
     UINT delete_flags = MF_STRING | (can_delete ? 0 : MF_GRAYED);
     UINT single_flags = MF_STRING | (single_value ? 0 : MF_GRAYED);
     UINT export_flags = MF_STRING | (can_export ? 0 : MF_GRAYED);
     UINT comment_flags = MF_STRING | (can_comment ? 0 : MF_GRAYED);
-    AppendMenuW(menu, modify_flags, cmd::kEditModify, L"Modify...");
-    AppendMenuW(menu, modify_flags, cmd::kEditModifyBinary, L"Modify Binary Data...");
-    AppendMenuW(menu, modify_flags, cmd::kEditChangeType, L"Change Data Type...");
+    AppendMenuW(menu, inspect_flags, cmd::kEditModify, L"Modify...");
+    AppendMenuW(menu, inspect_flags, cmd::kEditModifyBinary, L"Modify Binary Data...");
+    AppendMenuW(menu, inspect_flags, cmd::kEditChangeType, L"Change Data Type...");
     AppendResetDefaultMenu(menu);
     AppendMenuW(menu, comment_flags, cmd::kEditModifyComment, L"Modify Comment...");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
@@ -599,9 +600,8 @@ void MainWindow::Impl::ShowSearchResultContextMenu(
   }
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   if (!is_key_row) {
-    UINT modify_flags = MF_STRING | (can_modify ? 0 : MF_GRAYED);
-    AppendMenuW(menu, modify_flags, kSearchModify, L"Modify...");
-    AppendMenuW(menu, modify_flags, kSearchModifyBinary, L"Modify Binary Data...");
+    AppendMenuW(menu, MF_STRING, kSearchModify, L"Modify...");
+    AppendMenuW(menu, MF_STRING, kSearchModifyBinary, L"Modify Binary Data...");
     AppendMenuW(menu, MF_STRING, kSearchModifyComment, L"Modify Comment...");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   }

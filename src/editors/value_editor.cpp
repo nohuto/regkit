@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <cwchar>
 #include <cwctype>
+#include <initializer_list>
 #include <limits>
 
 #include "appearance/feedback.h"
@@ -35,6 +36,7 @@ struct TextDialogState {
   const wchar_t* title = nullptr;
   const wchar_t* label = nullptr;
   std::wstring text;
+  BrowseText browse = nullptr;
   HFONT ui_font = nullptr;
   appearance::DialogResizer resizer;
 };
@@ -50,6 +52,7 @@ struct TraceValueDialogState {
   DWORD type = REG_SZ;
   std::vector<BYTE> data;
   bool accepted = false;
+  bool read_only = false;
   int dword_base = 16;
   int qword_base = 16;
   BinaryGroupState binary;
@@ -66,6 +69,7 @@ struct ExtendedValueDialogState {
   std::vector<BYTE> initial_data;
   std::vector<BYTE> data;
   bool accepted = false;
+  bool read_only = false;
   int number_base = 16;
   int initial_number_base = 16;
   HFONT ui_font = nullptr;
@@ -90,6 +94,19 @@ void ConfigureReadOnlyNameField(
   if (style & WS_TABSTOP) {
     style &= ~WS_TABSTOP;
     SetWindowLongPtrW(name_value, GWL_STYLE, style);
+  }
+}
+
+void ConfigureReadOnlyControls(
+    HWND dialog,
+    std::initializer_list<int> edit_ids,
+    std::initializer_list<int> control_ids
+) {
+  for (const int id : edit_ids) {
+    SendDlgItemMessageW(dialog, id, EM_SETREADONLY, TRUE, 0);
+  }
+  for (const int id : control_ids) {
+    EnableWindow(GetDlgItem(dialog, id), FALSE);
   }
 }
 
@@ -835,6 +852,13 @@ INT_PTR CALLBACK CustomValueDialogProc(
       if (!state) {
         return FALSE;
       }
+      if (state->read_only) {
+        ConfigureReadOnlyControls(
+            dlg,
+            {IDC_REG_SZ_EDIT, IDC_REG_EXPAND_EDIT, IDC_REG_MULTI_EDIT, IDC_REG_DWORD_EDIT, IDC_REG_QWORD_EDIT, IDC_REG_BINARY_EDIT, IDC_REG_NONE_EDIT},
+            {IDC_TYPE_COMBO, IDC_REG_DWORD_HEX, IDC_REG_DWORD_DEC, IDC_REG_DWORD_BIN, IDC_REG_QWORD_HEX, IDC_REG_QWORD_DEC, IDC_REG_QWORD_BIN, IDC_REG_BINARY_FORMAT_BYTE, IDC_REG_BINARY_FORMAT_WORD, IDC_REG_BINARY_FORMAT_DWORD, IDC_REG_BINARY_FORMAT_QWORD, IDC_REG_BINARY_TEXT_ANSI, IDC_REG_BINARY_TEXT_UNICODE, IDC_REG_NONE_FORMAT_BYTE, IDC_REG_NONE_FORMAT_WORD, IDC_REG_NONE_FORMAT_DWORD, IDC_REG_NONE_FORMAT_QWORD, IDC_REG_NONE_TEXT_ANSI, IDC_REG_NONE_TEXT_UNICODE}
+        );
+      }
       dialog_support::Initialize(
           dlg,
           &state->ui_font,
@@ -1172,6 +1196,7 @@ INT_PTR CALLBACK TextDialogProc(
       }
       SetDlgItemTextW(dlg, IDC_EDIT, state->text.c_str());
       SendDlgItemMessageW(dlg, IDC_EDIT, EM_SETSEL, 0, -1);
+      ShowWindow(GetDlgItem(dlg, IDC_TEXT_BROWSE), state->browse ? SW_SHOW : SW_HIDE);
       dialog_support::Initialize(dlg, &state->ui_font, {IDC_EDIT});
       if (IsMultilineEdit(dlg, IDC_EDIT)) {
         dialog_support::AllowNewlines(dlg, IDC_EDIT);
@@ -1179,6 +1204,7 @@ INT_PTR CALLBACK TextDialogProc(
         state->resizer.Attach(dlg, {
                                        {IDC_LABEL, kAnchorLeft | kAnchorTop | kAnchorRight},
                                        {IDC_EDIT, kAnchorLeft | kAnchorTop | kAnchorRight | kAnchorBottom},
+                                       {IDC_TEXT_BROWSE, kAnchorLeft | kAnchorBottom},
                                        {IDOK, kAnchorRight | kAnchorBottom},
                                        {IDCANCEL, kAnchorRight | kAnchorBottom},
                                    });
@@ -1193,6 +1219,25 @@ INT_PTR CALLBACK TextDialogProc(
   case WM_COMMAND:
     {
       switch (LOWORD(wparam)) {
+      case IDC_TEXT_BROWSE:
+        {
+          if (!state || !state->browse) {
+            return TRUE;
+          }
+          std::wstring selected;
+          if (!state->browse(dlg, &selected) || selected.empty()) {
+            return TRUE;
+          }
+          std::wstring text = dialog_support::ReadText(dlg, IDC_EDIT);
+          if (!text.empty() && text.back() != L'\n' && text.back() != L'\r') {
+            text.append(L"\r\n");
+          }
+          text.append(selected);
+          SetDlgItemTextW(dlg, IDC_EDIT, text.c_str());
+          SendDlgItemMessageW(dlg, IDC_EDIT, EM_SETSEL, text.size(), text.size());
+          SetFocus(GetDlgItem(dlg, IDC_EDIT));
+          return TRUE;
+        }
       case IDOK:
         {
           if (state) {
@@ -1262,6 +1307,13 @@ INT_PTR CALLBACK ExtendedValueDialogProc(
       }
       if (!state) {
         return FALSE;
+      }
+      if (state->read_only) {
+        ConfigureReadOnlyControls(
+            dlg,
+            {IDC_EDIT},
+            {IDC_HEX, IDC_DEC, IDC_BIN}
+        );
       }
       dialog_support::Initialize(
           dlg,
@@ -1427,6 +1479,7 @@ bool EditText(
   state.title = request.title.c_str();
   state.label = request.label.c_str();
   state.text = request.text;
+  state.browse = request.browse;
   const int dialog_id = request.multiline ? IDD_MULTI_TEXT : IDD_INPUT;
   const INT_PTR dialog_result = DialogBoxParamW(
       GetModuleHandleW(nullptr),
@@ -1454,6 +1507,7 @@ bool EditCustomValue(
   state.value_name = request.value_name;
   state.type = request.type;
   state.data = request.data;
+  state.read_only = request.read_only;
   const INT_PTR dialog_result = DialogBoxParamW(
       GetModuleHandleW(nullptr),
       MAKEINTRESOURCEW(IDD_CUSTOM_VALUE),
@@ -1482,6 +1536,7 @@ bool EditFlaggedValue(
   state.value_name =
       request.value_name.empty() ? L"(Default)" : request.value_name;
   state.initial_data.assign(request.data.begin(), request.data.end());
+  state.read_only = request.read_only;
   state.number_base = 16;
   state.initial_number_base = state.number_base;
 

@@ -13,11 +13,14 @@
 
 namespace regkit::editors {
 
+using BrowseText = bool (*)(HWND owner, std::wstring* text);
+
 struct TextRequest {
   std::wstring title;
   std::wstring label;
   std::wstring text;
   bool multiline = false;
+  BrowseText browse = nullptr;
 };
 
 struct TextResult {
@@ -28,6 +31,7 @@ struct CustomValueRequest {
   std::wstring value_name;
   DWORD type = REG_SZ;
   std::vector<BYTE> data;
+  bool read_only = false;
 };
 
 struct CustomValueResult {
@@ -39,6 +43,7 @@ struct FlaggedValueRequest {
   std::wstring value_name;
   DWORD base_type = REG_SZ;
   std::span<const BYTE> data;
+  bool read_only = false;
 };
 
 struct FlaggedValueResult {

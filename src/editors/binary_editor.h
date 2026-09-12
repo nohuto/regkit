@@ -16,6 +16,7 @@ namespace regkit::editors {
 struct BinaryRequest {
   std::wstring value_name;
   std::span<const BYTE> data;
+  bool read_only = false;
 };
 
 struct BinaryResult {

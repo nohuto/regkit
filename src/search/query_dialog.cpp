@@ -937,6 +937,7 @@ LRESULT CALLBACK SearchDialogProc(
           request.label = L"Each line should include one key.";
           request.text = multiline;
           request.multiline = true;
+          request.browse = ShowBrowseKeyDialog;
           editors::TextResult result;
           if (editors::EditText(hwnd, request, &result)) {
             multiline = std::move(result.text);

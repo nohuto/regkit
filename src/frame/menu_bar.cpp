@@ -138,9 +138,9 @@ void MainWindow::Impl::BuildMenus() {
 
   HMENU edit_menu = CreatePopupMenu();
   UINT modify_flags = MF_STRING | (can_modify ? 0 : MF_GRAYED);
-  append_menu(edit_menu, modify_flags, cmd::kEditModify, L"Modify...");
-  append_menu(edit_menu, modify_flags, cmd::kEditModifyBinary, L"Modify Binary Data...");
-  append_menu(edit_menu, modify_flags, cmd::kEditChangeType, L"Change Data Type...");
+  append_menu(edit_menu, MF_STRING, cmd::kEditModify, L"Modify...");
+  append_menu(edit_menu, MF_STRING, cmd::kEditModifyBinary, L"Modify Binary Data...");
+  append_menu(edit_menu, MF_STRING, cmd::kEditChangeType, L"Change Data Type...");
   AppendResetDefaultMenu(edit_menu);
   AppendMenuW(edit_menu, MF_SEPARATOR, 0, nullptr);
   append_menu(edit_menu, modify_flags, cmd::kEditUndo, L"Undo");

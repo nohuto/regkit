@@ -1152,13 +1152,13 @@ std::optional<LRESULT> MainWindow::Impl::HandleAppearanceMessage(
       const int selected_count = browse_.values().hwnd() ? ListView_GetSelectedCount(browse_.values().hwnd()) : 0;
       const int selected_index = selected_count == 1 ? ListView_GetNextItem(browse_.values().hwnd(), -1, LVNI_SELECTED) : -1;
       const ListRow* selected_row = selected_index >= 0 ? browse_.values().RowAt(selected_index) : nullptr;
-      const bool can_modify_value = !read_only_ && selected_row &&
-                                    selected_row->kind == rowkind::kValue &&
-                                    !selected_row->simulated;
-      const UINT modify_state = can_modify_value ? MF_ENABLED : MF_GRAYED;
-      EnableMenuItem(menu, cmd::kEditModify, MF_BYCOMMAND | modify_state);
-      EnableMenuItem(menu, cmd::kEditModifyBinary, MF_BYCOMMAND | modify_state);
-      EnableMenuItem(menu, cmd::kEditChangeType, MF_BYCOMMAND | modify_state);
+      const bool can_open_value = selected_row &&
+                                  selected_row->kind == rowkind::kValue &&
+                                  !selected_row->simulated;
+      const UINT open_state = can_open_value ? MF_ENABLED : MF_GRAYED;
+      EnableMenuItem(menu, cmd::kEditModify, MF_BYCOMMAND | open_state);
+      EnableMenuItem(menu, cmd::kEditModifyBinary, MF_BYCOMMAND | open_state);
+      EnableMenuItem(menu, cmd::kEditChangeType, MF_BYCOMMAND | open_state);
       RefreshResetDefaultMenu(menu);
       const bool hives_allowed = !read_only_ && registry_mode_ != RegistryMode::kRemote;
       const RegistryNode* hive_node = browse_.current_node();

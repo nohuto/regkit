@@ -8,7 +8,7 @@ Note that native RegEdit can't run alongside RegKit, as RegKit uses `RegEdit_Reg
 
 RegKit adds functionality that standard regedit doesn't support:
 
-- A real REGISTRY root view in addition to the root keys
+- A real REGISTRY root view in addition to the standard root keys
 - [Theme modes](https://noverse.dev/docs/regkit/overview/#theme-presets) (System/Light/Dark) and custom theme presets (edit colors, import/export `.rktheme`)
 - Custom font support
 - Custom [icon support](https://noverse.dev/docs/regkit/overview/#icon-sets) (has 4 sets installed by default)
@@ -274,7 +274,6 @@ These are the exact builds for each file:
 
 | Release | Edition | Architecture | Build |
 | --- | --- | --- | --- |
-| [Windows XP SP1]() | Pro x64 Edition | x64 | `5.2.3790.1830` |
 | [Windows Vista RTM](https://github.com/nohuto/regkit/tree/main/assets/defaults/WVista%20Business%20x64%20-%206.0.6000.16386) | Business | x64 | `6.0.6000.16386` |
 | [Windows 7 RTM](https://github.com/nohuto/regkit/tree/main/assets/defaults/W7%20Professional%20x64%20-%206.1.7600.16385) | Pro | x64 | `6.1.7600.16385` |
 | [Windows 8](https://github.com/nohuto/regkit/tree/main/assets/defaults/W8%20Pro%20x64%20-%206.2.9200.16384) | Pro | x64 | `6.2.9200.16384` |
