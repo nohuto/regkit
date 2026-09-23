@@ -28,6 +28,7 @@ std::wstring DialogText(HWND dialog, int control_id);
 bool ParseUnsignedNumber(std::wstring_view text, int base, unsigned long long* value);
 std::wstring ToLower(std::wstring_view text);
 std::wstring TrimWhitespace(std::wstring_view text);
+std::wstring FormatLocalTime(const SYSTEMTIME& time, bool with_seconds = false);
 bool IsBlank(std::wstring_view text);
 std::wstring ExpandEnvironmentStringsDynamic(const std::wstring& text);
 std::wstring ToHex(std::span<const BYTE> data, wchar_t separator = L' ', bool uppercase = false, size_t max_bytes = 0);

@@ -9,6 +9,18 @@
 namespace util
 {
 
+std::wstring FormatLocalTime(const SYSTEMTIME& time, bool with_seconds)
+{
+    wchar_t date[80] = {};
+    wchar_t clock[80] = {};
+    if (!GetDateFormatEx(LOCALE_NAME_USER_DEFAULT, DATE_SHORTDATE, &time, nullptr, date, static_cast<int>(std::size(date)), nullptr) ||
+        !GetTimeFormatEx(LOCALE_NAME_USER_DEFAULT, with_seconds ? 0 : TIME_NOSECONDS, &time, nullptr, clock, static_cast<int>(std::size(clock))))
+    {
+        return L"";
+    }
+    return std::wstring(date) + L' ' + clock;
+}
+
 std::wstring WindowText(HWND window)
 {
     const int length = window ? GetWindowTextLengthW(window) : 0;

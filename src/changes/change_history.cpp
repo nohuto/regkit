@@ -67,15 +67,13 @@ void Stamp(HistoryEntry* entry)
     }
     SYSTEMTIME local = {};
     GetLocalTime(&local);
-    wchar_t text[64] = {};
-    swprintf_s(text, L"%d/%d/%d %d:%02d:%02d", local.wMonth, local.wDay, local.wYear, local.wHour, local.wMinute, local.wSecond);
     FILETIME now = {};
     GetSystemTimeAsFileTime(&now);
     ULARGE_INTEGER value = {};
     value.LowPart = now.dwLowDateTime;
     value.HighPart = now.dwHighDateTime;
     entry->timestamp = value.QuadPart;
-    entry->time_text = text;
+    entry->time_text = util::FormatLocalTime(local, true);
 }
 
 void DecodeRevert(const std::vector<std::wstring>& fields, HistoryEntry* entry)

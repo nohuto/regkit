@@ -96,6 +96,13 @@
       "text": "https://noverse.dev/docs/win-config/power/power-values/#powerthrottlingoff"
     },
     {
+      "name": "AlwaysComputeQosHints",
+      "type": "REG_DWORD",
+      "size": 4,
+      "key": "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Power",
+      "text": "https://noverse.dev/docs/win-config/power/power-values/#alwayscomputeqoshints"
+    },
+    {
       "name": "StorageD3InModernStandby",
       "type": "REG_DWORD",
       "size": 4,

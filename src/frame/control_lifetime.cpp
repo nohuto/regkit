@@ -32,18 +32,7 @@ void ReportNameTaken(HWND owner, const wchar_t* message, const wchar_t* title, c
 
 void FormatCellFileTime(const FILETIME& filetime, wchar_t* buffer, int capacity)
 {
-    buffer[0] = L'\0';
-    if (filetime.dwLowDateTime == 0 && filetime.dwHighDateTime == 0)
-    {
-        return;
-    }
-    FILETIME local = {};
-    SYSTEMTIME st = {};
-    if (!FileTimeToLocalFileTime(&filetime, &local) || !FileTimeToSystemTime(&local, &st))
-    {
-        return;
-    }
-    swprintf_s(buffer, static_cast<size_t>(capacity), L"%d/%d/%d %d:%02d", st.wMonth, st.wDay, st.wYear, st.wHour, st.wMinute);
+    lstrcpynW(buffer, FormatFileTime(filetime).c_str(), capacity);
 }
 
 } // namespace

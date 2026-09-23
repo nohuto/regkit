@@ -212,9 +212,7 @@ inline std::wstring FormatFileTime(const FILETIME& filetime)
     {
         return L"";
     }
-    wchar_t buffer[64] = {};
-    swprintf_s(buffer, L"%d/%d/%d %d:%02d", st.wMonth, st.wDay, st.wYear, st.wHour, st.wMinute);
-    return buffer;
+    return util::FormatLocalTime(st);
 }
 
 inline std::wstring FormatCommentDisplay(const std::wstring& text)
