@@ -9,6 +9,7 @@
 #include "win32/text_transform.h"
 
 #include <algorithm>
+#include <unordered_set>
 #include <cstdio>
 #include <cstring>
 
@@ -19,7 +20,7 @@ namespace
 {
 
 constexpr wchar_t kFormat[] = L"regkit-bitfield";
-constexpr wchar_t kExtension[] = L".regkit-bitfield.json";
+constexpr wchar_t kExtension[] = L".regkit-bitfield.jsonc";
 constexpr int kMaxDepth = 8;
 
 enum Member : unsigned
@@ -261,27 +262,32 @@ std::vector<DefinitionFile> LoadBundledFiles()
     {
         return files;
     }
-    WIN32_FIND_DATAW found = {};
-    const HANDLE search = FindFirstFileW(util::JoinPath(directory, L"*.regkit-bitfield.json").c_str(), &found);
-    if (search == INVALID_HANDLE_VALUE)
+    std::unordered_set<std::wstring> seen;
+    for (const wchar_t* pattern : {L"*.regkit-bitfield.jsonc", L"*.regkit-bitfield.json"})
     {
-        return files;
-    }
-    do
-    {
-        if (found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        WIN32_FIND_DATAW found = {};
+        const HANDLE search = FindFirstFileW(util::JoinPath(directory, pattern).c_str(), &found);
+        if (search == INVALID_HANDLE_VALUE)
         {
             continue;
         }
-        DefinitionFile file;
-        std::wstring error;
-        // ignore invalid files without hiding remaining definitions
-        if (Load(util::JoinPath(directory, found.cFileName), &file, &error))
+        do
         {
-            files.push_back(std::move(file));
-        }
-    } while (FindNextFileW(search, &found));
-    FindClose(search);
+            // the same file can match both patterns through its short name
+            if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || !seen.insert(util::ToLower(found.cFileName)).second)
+            {
+                continue;
+            }
+            DefinitionFile file;
+            std::wstring error;
+            // ignore invalid files without hiding remaining definitions
+            if (Load(util::JoinPath(directory, found.cFileName), &file, &error))
+            {
+                files.push_back(std::move(file));
+            }
+        } while (FindNextFileW(search, &found));
+        FindClose(search);
+    }
     std::stable_sort(files.begin(), files.end(), [](const DefinitionFile& left, const DefinitionFile& right) {
         return util::CompareInsensitive(left.name, right.name) < 0;
     });
@@ -790,8 +796,8 @@ std::wstring SuggestedFileName(const std::wstring& value_name)
 
 const wchar_t* FileFilter()
 {
-    return L"RegKit bitfield definitions (*.regkit-bitfield.json)\0*.regkit-bitfield.json\0JSON files "
-           L"(*.json)\0*.json\0";
+    return L"RegKit bitfield definitions (*.regkit-bitfield.jsonc)\0*.regkit-bitfield.jsonc;*.regkit-bitfield.json\0JSON files "
+           L"(*.jsonc;*.json)\0*.jsonc;*.json\0";
 }
 
 } // namespace regkit::editors::bitfield

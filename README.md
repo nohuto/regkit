@@ -17,7 +17,7 @@ RegKit adds functionality that native RegEdit doesn't support:
 - An extra root keys toggle for [predefined keys](https://noverse.dev/docs/regkit/registry-internals/registry-fundamentals/#predefined-keys) that RegEdit doesn't show
 - Switching between [User, Admin, SYSTEM, and TrustedInstaller rights](https://noverse.dev/docs/regkit/overview/#rights-and-elevation)
 - Favorites import/export
-- Comment column for values/keys (including [default comments](https://github.com/nohuto/regkit/blob/main/assets/comments/default-comments.json))
+- Comment column for values/keys (including [default comments](https://github.com/nohuto/regkit/blob/main/assets/comments/default-comments.jsonc))
 - Decoding values (B64, hex...), interpeting values as `FILETIME`, `SYSTEMTIME`, GUID, SID, security descriptor, IPv4/IPv6...
 - [Edit Bits](https://noverse.dev/docs/regkit/overview/#bit-definitions), a bit editor for DWORD, big endian DWORD, QWORD and REG_BINARY values, with reusable JSON definitions that name each bit
 - [Key hanldes](https://noverse.dev/docs/regkit/registry-internals/registry-fundamentals/#key-handles)
@@ -81,40 +81,40 @@ See [win-icons](https://github.com/nohuto/win-icons) for a collection of icons, 
 
 | Icon | Classic | Phosphor |
 | --- | --- | --- |
-| `local-registry` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/local-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/local-registry.ico?raw=true" width="16" height="16"> |
-| `remote-registry` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/remote-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/remote-registry.ico?raw=true" width="16" height="16"> |
-| `offline-registry` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/offline-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/offline-registry.ico?raw=true" width="16" height="16"> |
-| `search` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/search.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/search.ico?raw=true" width="16" height="16"> |
-| `replace` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/replace.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/replace.ico?raw=true" width="16" height="16"> |
-| `undo` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/undo.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/undo.ico?raw=true" width="16" height="16"> |
-| `redo` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/redo.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/redo.ico?raw=true" width="16" height="16"> |
-| `copy` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/copy.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/copy.ico?raw=true" width="16" height="16"> |
-| `paste` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/paste.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/paste.ico?raw=true" width="16" height="16"> |
-| `delete` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/delete.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/delete.ico?raw=true" width="16" height="16"> |
-| `refresh` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/refresh.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/refresh.ico?raw=true" width="16" height="16"> |
-| `back` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/back.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/back.ico?raw=true" width="16" height="16"> |
-| `forward` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/forward.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/forward.ico?raw=true" width="16" height="16"> |
-| `up` | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/up.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/phosphor/light/up.ico?raw=true" width="16" height="16"> |
+| `local-registry` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/local-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/local-registry.ico?raw=true" width="16" height="16"> |
+| `remote-registry` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/remote-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/remote-registry.ico?raw=true" width="16" height="16"> |
+| `offline-registry` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/offline-registry.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/offline-registry.ico?raw=true" width="16" height="16"> |
+| `search` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/search.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/search.ico?raw=true" width="16" height="16"> |
+| `replace` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/replace.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/replace.ico?raw=true" width="16" height="16"> |
+| `undo` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/undo.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/undo.ico?raw=true" width="16" height="16"> |
+| `redo` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/redo.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/redo.ico?raw=true" width="16" height="16"> |
+| `copy` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/copy.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/copy.ico?raw=true" width="16" height="16"> |
+| `paste` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/paste.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/paste.ico?raw=true" width="16" height="16"> |
+| `delete` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/delete.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/delete.ico?raw=true" width="16" height="16"> |
+| `refresh` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/refresh.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/refresh.ico?raw=true" width="16" height="16"> |
+| `back` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/back.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/back.ico?raw=true" width="16" height="16"> |
+| `forward` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/forward.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/forward.ico?raw=true" width="16" height="16"> |
+| `up` | <img src="https://github.com/nohuto/regkit/blob/main/assets/icons/classic/up.ico?raw=true" width="16" height="16"> | <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/phosphor/light/up.ico?raw=true" width="16" height="16"> |
 
 ## Icon Meanings
 
-### Symlink Icon <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/symlink.ico?raw=true" width="16" height="16">
+### Symlink Icon <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/symlink.ico?raw=true" width="16" height="16">
 
 See [registry-fundamentals#symbolic-links](https://noverse.dev/docs/regkit/registry-internals/registry-fundamentals/#symbolic-links).
 
-### Database Icon <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/database.ico?raw=true" width="16" height="16">
+### Database Icon <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/database.ico?raw=true" width="16" height="16">
 
 The '*Open Hive File*' command opens the backing file.
 
 See [registry-fundamentals#loaded-hives](https://noverse.dev/docs/regkit/registry-internals/registry-fundamentals/#loaded-hives).
 
-### Simulated Key Icon <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/classic/folder-sim.ico?raw=true" width="16" height="16">
+### Simulated Key Icon <img src="https://github.com/nohuto/regkit/blob/main/resources/icons/folder-sim.ico?raw=true" width="16" height="16">
 
 Keys displayed as simulated are virtual entries created from trace files when a key exists in a trace but not in the actual hive view. They're displayed with the *folder-sim* icon so you can differ them from real keys. Creating or modifying a value in a simulated key will create the key path on demand.
 
 ## Bit Definitions
 
-RegKit has currently three files for [ShellState](https://github.com/nohuto/regkit/blob/main/assets/bitfields/ShellState.regkit-bitfield.json) ([explorer-options/#shellstate](https://noverse.dev/docs/win-config/visibility/explorer-options/#shellstate)), [UserPreferencesMask](https://github.com/nohuto/regkit/blob/main/assets/bitfields/UserPreferencesMask.regkit-bitfield.json) ([minimal-visual-effects/#userpreferencesmask](https://noverse.dev/docs/win-config/visibility/minimal-visual-effects/#userpreferencesmask)) & [NVIDIA RM values](https://github.com/nohuto/regkit/blob/main/assets/bitfields/NVIDIA.regkit-bitfield.json) (previously [bitmask-calc](https://github.com/nohuto/bitmask-calc) which is now archived), see [`nvvalues.txt`](https://github.com/nohuto/bitmask-calc/blob/main/nvvalues.txt) for a list of all values.
+RegKit has currently three files for [ShellState](https://github.com/nohuto/regkit/blob/main/assets/bitfields/ShellState.regkit-bitfield.jsonc) ([explorer-options/#shellstate](https://noverse.dev/docs/win-config/visibility/explorer-options/#shellstate)), [UserPreferencesMask](https://github.com/nohuto/regkit/blob/main/assets/bitfields/UserPreferencesMask.regkit-bitfield.jsonc) ([minimal-visual-effects/#userpreferencesmask](https://noverse.dev/docs/win-config/visibility/minimal-visual-effects/#userpreferencesmask)) & [NVIDIA RM values](https://github.com/nohuto/regkit/blob/main/assets/bitfields/NVIDIA.regkit-bitfield.jsonc) (previously [bitmask-calc](https://github.com/nohuto/bitmask-calc) which is now archived), see [`nvvalues.txt`](https://github.com/nohuto/bitmask-calc/blob/main/nvvalues.txt) for a list of all values.
 
 ### JSON Format
 

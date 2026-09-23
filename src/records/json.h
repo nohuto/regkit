@@ -34,7 +34,7 @@ class Reader
                 {
                     return false;
                 }
-            } while (Comma());
+            } while (Comma() && !Empty(L'}'));
         }
         return Close(L'}');
     }
@@ -54,7 +54,7 @@ class Reader
                 {
                     return false;
                 }
-            } while (Comma());
+            } while (Comma() && !Empty(L']'));
         }
         return Close(L']');
     }

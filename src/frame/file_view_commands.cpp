@@ -275,7 +275,7 @@ bool MainWindow::Impl::HandleFileCommand(int command_id)
     case cmd::kFileImportComments:
         {
             std::wstring path;
-            if (!ui::PromptOpenFile(hwnd_, L"RegKit Comment Files (*.json)\0*.json\0All Files (*.*)\0*.*\0\0", &path))
+            if (!ui::PromptOpenFile(hwnd_, L"RegKit Comment Files (*.jsonc)\0*.jsonc;*.json\0All Files (*.*)\0*.*\0\0", &path))
             {
                 return true;
             }
@@ -292,7 +292,7 @@ bool MainWindow::Impl::HandleFileCommand(int command_id)
     case cmd::kFileExportComments:
         {
             std::wstring path;
-            if (!ui::PromptSaveFile(hwnd_, L"RegKit Comment Files (*.json)\0*.json\0All Files (*.*)\0*.*\0\0", &path))
+            if (!ui::PromptSaveFile(hwnd_, L"RegKit Comment Files (*.jsonc)\0*.jsonc\0All Files (*.*)\0*.*\0\0", &path))
             {
                 return true;
             }

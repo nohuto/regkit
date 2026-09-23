@@ -862,7 +862,10 @@ std::wstring MainWindow::Impl::CommentsPath() const
     {
         return L"";
     }
-    return util::JoinPath(folder, L"comments.json");
+    const std::wstring path = util::JoinPath(folder, L"comments.jsonc");
+    // keep using the previous file until the next save renames it
+    const std::wstring legacy = util::JoinPath(folder, L"comments.json");
+    return IsFilePath(path) || !IsFilePath(legacy) ? path : legacy;
 }
 
 std::wstring MainWindow::Impl::CommentKeyPath(const RegistryNode& node) const

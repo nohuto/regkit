@@ -68,9 +68,36 @@ bool Reader::Fail(const wchar_t* message)
 
 void Reader::SkipSpace()
 {
-    while (ptr_ < end_ && (*ptr_ == L' ' || *ptr_ == L'\t' || *ptr_ == L'\r' || *ptr_ == L'\n'))
+    while (ptr_ < end_)
     {
-        ++ptr_;
+        if (*ptr_ == L' ' || *ptr_ == L'\t' || *ptr_ == L'\r' || *ptr_ == L'\n')
+        {
+            ++ptr_;
+            continue;
+        }
+        if (*ptr_ != L'/' || ptr_ + 1 >= end_)
+        {
+            return;
+        }
+        if (ptr_[1] == L'/')
+        {
+            ptr_ += 2;
+            while (ptr_ < end_ && *ptr_ != L'\n')
+            {
+                ++ptr_;
+            }
+            continue;
+        }
+        if (ptr_[1] != L'*')
+        {
+            return;
+        }
+        ptr_ += 2;
+        while (ptr_ + 1 < end_ && (*ptr_ != L'*' || ptr_[1] != L'/'))
+        {
+            ++ptr_;
+        }
+        ptr_ = ptr_ + 1 < end_ ? ptr_ + 2 : end_;
     }
 }
 

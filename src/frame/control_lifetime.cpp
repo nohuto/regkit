@@ -1760,7 +1760,7 @@ void MainWindow::Impl::StartStartupCacheLoad(bool include_tree_state)
 
         std::wstring comments_content;
         const std::wstring defaults_path =
-            util::JoinPath(util::GetModuleDirectory(), L"assets\\comments\\default-comments.json");
+            util::JoinPath(util::GetModuleDirectory(), L"assets\\comments\\default-comments.jsonc");
         if (util::ReadTextFile(defaults_path, &comments_content, nullptr, util::kMaxCommentFileBytes) &&
             (!changes::ParseComments(comments_content, &payload->default_comments) ||
              !changes::ValidateCatalog(payload->default_comments)))
