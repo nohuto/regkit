@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "frame/command_detail.h"
+#include "frame/window_impl.h"
 #include "frame/research_links.h"
 
 namespace regkit
@@ -218,7 +219,7 @@ bool MainWindow::Impl::HandleLaunchHelpCommand(int command_id)
         win32::ShellOpen(hwnd_, kHelpUrl);
         return true;
     case cmd::kHelpCheckUpdates:
-        CheckForUpdates(false);
+        updates_.Check(false);
         return true;
     case cmd::kHelpAutoCheckUpdates:
         auto_check_updates_ = !auto_check_updates_;

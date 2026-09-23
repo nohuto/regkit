@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "frame/window_detail.h"
+#include "frame/window_impl.h"
 
 #include "appearance/dialog_layout.h"
 #include "appearance/list_header.h"
@@ -1435,6 +1436,7 @@ bool MainWindow::Impl::OnCreate()
     {
         ChangeWindowMessageFilterEx(hwnd_, WM_COPYDATA, MSGFLT_ALLOW, nullptr);
     }
+    updates_.Attach(hwnd_, [this](const std::wstring& text) { SetStatusMessage(text); });
     ui_font_ = CreateUIFont();
     icon_font_ = CreateIconFont(10);
     custom_font_ = DefaultLogFont();
@@ -1740,7 +1742,7 @@ void MainWindow::Impl::RunDeferredStartup()
     UpdateStatus();
     if (auto_check_updates_)
     {
-        CheckForUpdates(true);
+        updates_.Check(true);
     }
 }
 
@@ -1939,8 +1941,7 @@ void MainWindow::Impl::OnDestroy()
         StopTreeStateWorker();
     }
     CancelSearch();
-    update_session_.CancelAndJoin();
-    update_check_running_ = false;
+    updates_.Cancel();
     DiscardWorkerMessages();
     for (auto& entry : tabs_)
     {
@@ -2066,7 +2067,7 @@ void MainWindow::Impl::DiscardWorkerMessages()
                 delete reinterpret_cast<SearchTabLoadPayload*>(message.lParam);
                 break;
             case frame::message_id::kUpdateCheckReady:
-                delete reinterpret_cast<UpdateCheckPayload*>(message.lParam);
+                delete reinterpret_cast<frame::UpdateCheckPayload*>(message.lParam);
                 break;
             case frame::message_id::kExternalHandoff:
                 delete reinterpret_cast<std::wstring*>(message.lParam);

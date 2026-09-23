@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "frame/window_detail.h"
+#include "frame/window_impl.h"
 
 #include "regfile/registry_transfer.h"
 #include "win32/text_transform.h"
@@ -672,8 +673,8 @@ std::optional<LRESULT> MainWindow::Impl::HandleLoadWorkerMessage(UINT message, W
         return 0;
     case frame::message_id::kUpdateCheckReady:
         {
-            std::unique_ptr<UpdateCheckPayload> payload(reinterpret_cast<UpdateCheckPayload*>(lparam));
-            ApplyUpdateCheckResult(payload.get());
+            std::unique_ptr<frame::UpdateCheckPayload> payload(reinterpret_cast<frame::UpdateCheckPayload*>(lparam));
+            updates_.Apply(payload.get());
             return 0;
         }
     default:

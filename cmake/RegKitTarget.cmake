@@ -4,6 +4,9 @@ function(regkit_add_library target)
     target_include_directories(${target} PRIVATE
         "${PROJECT_SOURCE_DIR}/src"
     )
+    target_precompile_headers(${target} PRIVATE
+        "${PROJECT_SOURCE_DIR}/src/pch.h"
+    )
 endfunction()
 
 function(regkit_configure_executable target)

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "frame/main_window.h"
+#include "frame/update_checker.h"
 #include "win32/windows_config.h"
 
 #include <windows.h>
@@ -96,17 +97,6 @@ class MainWindow::Impl
     struct SearchTabLoadPayload;
     struct TraceParseSession;
     struct DefaultParseSession;
-    struct UpdateCheckPayload : work::MoveOnly
-    {
-        bool silent = false;
-        bool failed = false;
-        std::wstring version;
-        std::wstring download_url;
-        std::string sha256;
-        std::wstring setup_path;
-        std::wstring error;
-    };
-
     struct StartupCachePayload : work::MoveOnly
     {
         uint64_t generation = 0;
@@ -256,9 +246,6 @@ class MainWindow::Impl
     void SortHistoryList(int column, bool toggle);
     void SortSearchResults(int column, bool toggle);
     void ClearHistoryItems(bool delete_cache);
-    void CheckForUpdates(bool silent);
-    void ApplyUpdateCheckResult(UpdateCheckPayload* payload);
-    void DownloadUpdate(const UpdateCheckPayload& release);
     void RemoveSelectedHistoryItems();
     void RebuildHistoryList();
     void ScheduleValueListRename(LPARAM kind, const std::wstring& name);
@@ -654,7 +641,6 @@ class MainWindow::Impl
     bool auto_check_updates_ = false;
     bool default_reset_enabled_ = false;
     HMENU reset_default_menu_ = nullptr;
-    bool update_check_running_ = false;
     bool show_toolbar_ = true;
     bool show_address_bar_ = true;
     bool show_filter_bar_ = true;
@@ -1008,7 +994,7 @@ class MainWindow::Impl
     std::vector<ActiveDefault> active_defaults_;
     workspace::RecentItems recent_default_paths_{10};
     work::LatestTask<ValueListTask> value_loader_;
-    work::Session update_session_;
+    frame::UpdateChecker updates_;
     work::Session trace_load_session_;
     std::unordered_map<std::wstring, std::unique_ptr<TraceParseSession>> trace_parse_sessions_;
     work::Session default_load_session_;

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "frame/window_detail.h"
+#include "frame/window_impl.h"
 #include "win32/text_transform.h"
 
 namespace regkit

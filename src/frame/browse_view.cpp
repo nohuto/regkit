@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "frame/window_detail.h"
+#include "frame/window_impl.h"
 
 namespace regkit
 {

@@ -1,11 +1,16 @@
 // Copyright (C) 2026 nohuto
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-#define _CRT_RAND_S
-#include <cstdlib>
+#include "frame/update_checker.h"
 
-#include "frame/window_detail.h"
+#include "frame/message_ids.h"
 #include "records/json.h"
+#include "win32/file_dialog.h"
+#include "win32/file_text.h"
+#include "win32/handle_owner.h"
+#include "win32/system_error.h"
+#include "appearance/feedback.h"
+#include "resource.h"
 
 #include <bcrypt.h>
 #include <winhttp.h>
@@ -14,9 +19,8 @@
 #include <array>
 #include <stdlib.h>
 
-namespace regkit
+namespace regkit::frame
 {
-using namespace window_detail;
 
 namespace
 {
@@ -184,19 +188,8 @@ std::string Sha256(const std::string& data)
 
 std::wstring RandomName(const wchar_t* prefix)
 {
-    std::wstring name = prefix;
-    for (int part = 0; part < 4; ++part)
-    {
-        unsigned int value = 0;
-        if (rand_s(&value) != 0)
-        {
-            value = GetTickCount();
-        }
-        wchar_t text[16] = {};
-        swprintf_s(text, L"%08x", value);
-        name += text;
-    }
-    return name;
+    // RandomFileSuffix returns a dotted suffix, which a name doesn't want
+    return prefix + util::RandomFileSuffix(L"").substr(1);
 }
 
 std::wstring PrivateTempDirectory(std::wstring* directory)
@@ -289,15 +282,35 @@ util::UniqueHandle OpenVerifiedSetup(const std::wstring& path, const std::string
 
 } // namespace
 
-void MainWindow::Impl::CheckForUpdates(bool silent)
+void UpdateChecker::Attach(HWND owner, StatusCallback status)
 {
-    if (update_check_running_)
+    owner_ = owner;
+    status_ = std::move(status);
+}
+
+void UpdateChecker::SetStatus(const std::wstring& text) const
+{
+    if (status_)
+    {
+        status_(text);
+    }
+}
+
+void UpdateChecker::Cancel()
+{
+    session_.CancelAndJoin();
+    running_ = false;
+}
+
+void UpdateChecker::Check(bool silent)
+{
+    if (running_)
     {
         return;
     }
-    update_check_running_ = true;
-    HWND owner = hwnd_;
-    update_session_.Start([owner, silent](uint64_t, std::atomic_bool& cancel) {
+    running_ = true;
+    HWND owner = owner_;
+    session_.Start([owner, silent](uint64_t, std::atomic_bool& cancel) {
         auto payload = std::make_unique<UpdateCheckPayload>();
         payload->silent = silent;
         std::string json;
@@ -320,21 +333,21 @@ void MainWindow::Impl::CheckForUpdates(bool silent)
         }
         if (PostMessageW(owner, frame::message_id::kUpdateCheckReady, 0, reinterpret_cast<LPARAM>(payload.get())))
         {
-            ReleasePostedPayload(payload);
+            (void)payload.release();
         }
     });
 }
 
-void MainWindow::Impl::DownloadUpdate(const UpdateCheckPayload& release)
+void UpdateChecker::Download(const UpdateCheckPayload& release)
 {
-    if (update_check_running_)
+    if (running_)
     {
         return;
     }
-    update_check_running_ = true;
-    SetStatusMessage(L"Downloading RegKit " + release.version + L"...");
-    HWND owner = hwnd_;
-    update_session_.Start(
+    running_ = true;
+    SetStatus(L"Downloading RegKit " + release.version + L"...");
+    HWND owner = owner_;
+    session_.Start(
         [owner, url = release.download_url, sha256 = release.sha256](uint64_t, std::atomic_bool& cancel) {
             auto payload = std::make_unique<UpdateCheckPayload>();
             payload->sha256 = sha256;
@@ -351,16 +364,16 @@ void MainWindow::Impl::DownloadUpdate(const UpdateCheckPayload& release)
             }
             if (PostMessageW(owner, frame::message_id::kUpdateCheckReady, 0, reinterpret_cast<LPARAM>(payload.get())))
             {
-                ReleasePostedPayload(payload);
+                (void)payload.release();
             }
         }
     );
 }
 
-void MainWindow::Impl::ApplyUpdateCheckResult(UpdateCheckPayload* payload)
+void UpdateChecker::Apply(UpdateCheckPayload* payload)
 {
-    update_check_running_ = false;
-    SetStatusMessage(std::wstring());
+    running_ = false;
+    SetStatus(std::wstring());
     if (!payload)
     {
         return;
@@ -369,7 +382,7 @@ void MainWindow::Impl::ApplyUpdateCheckResult(UpdateCheckPayload* payload)
     {
         if (!payload->silent)
         {
-            ui::ShowError(hwnd_, payload->error);
+            ui::ShowError(owner_, payload->error);
         }
         return;
     }
@@ -378,17 +391,17 @@ void MainWindow::Impl::ApplyUpdateCheckResult(UpdateCheckPayload* payload)
         const util::UniqueHandle verified = OpenVerifiedSetup(payload->setup_path, payload->sha256);
         if (!verified)
         {
-            ui::ShowError(hwnd_, L"The downloaded setup changed after RegKit verified it and wasn't started.");
+            ui::ShowError(owner_, L"The downloaded setup changed after RegKit verified it and wasn't started.");
             return;
         }
-        const HRESULT hr = win32::ShellOpen(hwnd_, payload->setup_path.c_str());
+        const HRESULT hr = win32::ShellOpen(owner_, payload->setup_path.c_str());
         if (SUCCEEDED(hr))
         {
-            PostMessageW(hwnd_, WM_CLOSE, 0, 0);
+            PostMessageW(owner_, WM_CLOSE, 0, 0);
         }
         else if (!win32::DialogCancelled(hr))
         {
-            ui::ShowError(hwnd_, L"The setup couldn't be started.\n" + win32::FormatDialogError(hr));
+            ui::ShowError(owner_, L"The setup couldn't be started.\n" + win32::FormatDialogError(hr));
         }
         return;
     }
@@ -396,7 +409,7 @@ void MainWindow::Impl::ApplyUpdateCheckResult(UpdateCheckPayload* payload)
     {
         if (!payload->silent)
         {
-            ui::ShowInfo(hwnd_, L"RegKit is up to date.");
+            ui::ShowInfo(owner_, L"RegKit is up to date.");
         }
         return;
     }
@@ -404,18 +417,18 @@ void MainWindow::Impl::ApplyUpdateCheckResult(UpdateCheckPayload* payload)
         L"RegKit " + payload->version + L" is available. You are running " REGKIT_VERSION_STR_W L".\n\n" +
         (payload->download_url.empty() ? L"No setup was found for this build. Open the releases page?"
                                        : L"Download and install it now? RegKit closes when the setup starts.");
-    if (ui::PromptChoice(hwnd_, message, L"Update available", payload->download_url.empty() ? L"Open" : L"Install", L"", L"Close", {70, 70, 70}) != IDYES)
+    if (ui::PromptChoice(owner_, message, L"Update available", payload->download_url.empty() ? L"Open" : L"Install", L"", L"Close", {70, 70, 70}) != IDYES)
     {
         return;
     }
     if (payload->download_url.empty())
     {
-        win32::ShellOpen(hwnd_, kReleasesPage);
+        win32::ShellOpen(owner_, kReleasesPage);
     }
     else
     {
-        DownloadUpdate(*payload);
+        Download(*payload);
     }
 }
 
-} // namespace regkit
+} // namespace regkit::frame

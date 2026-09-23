@@ -4,6 +4,7 @@ regkit_add_library(regkit_frame
     clipboard_commands.cpp
     command_dispatch.cpp
     compare_command.cpp
+    compare_dialog.cpp
     control_lifetime.cpp
     context_menus.cpp
     default_commands.cpp
@@ -30,13 +31,20 @@ regkit_add_library(regkit_frame
     trace_loading.cpp
     tree_restore.cpp
     undo_menus.cpp
-    update_check.cpp
+    update_checker.cpp
     value_loading.cpp
     window_appearance.cpp
+    window_draw_detail.cpp
+    window_control_detail.cpp
+    window_file_detail.cpp
+    window_registry_detail.cpp
     window_events.cpp
     window_layout.cpp
     window_paint.cpp
     workspace_commands.cpp
+)
+target_precompile_headers(regkit_frame PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/window_detail.h"
 )
 target_include_directories(regkit_frame PRIVATE
     "${PROJECT_SOURCE_DIR}/resources"

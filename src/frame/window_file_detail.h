@@ -3,9 +3,11 @@
 
 #pragma once
 
-#include "frame/window_draw_detail.h"
+#include "win32/windows_config.h"
 
-#include "frame/window_impl.h"
+#include <windows.h>
+
+#include "frame/window_draw_detail.h"
 
 #include <algorithm>
 #include <chrono>
@@ -58,149 +60,38 @@
 
 namespace regkit::window_detail
 {
-inline std::wstring TrimTrailingSeparators(const std::wstring& path)
-{
-    std::wstring result = path;
-    while (!result.empty() && (result.back() == L'\\' || result.back() == L'/'))
-    {
-        result.pop_back();
-    }
-    return result;
-}
 
-inline bool IsDirectoryPath(const std::wstring& path)
-{
-    DWORD attrs = GetFileAttributesW(path.c_str());
-    return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
-}
+std::wstring TrimTrailingSeparators(const std::wstring& path);
+
+bool IsDirectoryPath(const std::wstring& path);
 
 constexpr wchar_t kIconSetPhosphor[] = L"phosphor";
 constexpr wchar_t kIconSetClassic[] = L"classic";
 constexpr wchar_t kIconSetCustom[] = L"custom";
 
-inline bool IsIconSetName(const std::wstring& value, const wchar_t* name)
-{
-    return util::EqualsInsensitive(value, name);
-}
+bool IsIconSetName(const std::wstring& value, const wchar_t* name);
 
-inline bool IsKnownIconSetName(const std::wstring& value)
-{
-    return IsIconSetName(value, kIconSetClassic) || IsIconSetName(value, kIconSetPhosphor) ||
-           IsIconSetName(value, kIconSetCustom);
-}
+bool IsKnownIconSetName(const std::wstring& value);
 
-inline std::wstring FindAssetsIconsRoot()
-{
-    std::wstring base = util::GetModuleDirectory();
-    for (int i = 0; i < 6; ++i)
-    {
-        if (base.empty())
-        {
-            break;
-        }
-        std::wstring candidate = util::JoinPath(base, L"assets\\icons");
-        if (IsDirectoryPath(candidate))
-        {
-            return candidate;
-        }
-        base = registry_path::Parent(base);
-    }
-    DWORD len = GetCurrentDirectoryW(0, nullptr);
-    if (len > 0)
-    {
-        std::wstring cwd(len, L'\0');
-        DWORD written = GetCurrentDirectoryW(len, cwd.data());
-        if (written != 0)
-        {
-            if (written < cwd.size() && cwd[written] == L'\0')
-            {
-                cwd.resize(written);
-            }
-            base = cwd;
-            for (int i = 0; i < 3; ++i)
-            {
-                if (base.empty())
-                {
-                    break;
-                }
-                std::wstring candidate = util::JoinPath(base, L"assets\\icons");
-                if (IsDirectoryPath(candidate))
-                {
-                    return candidate;
-                }
-                base = registry_path::Parent(base);
-            }
-        }
-    }
-    return L"";
-}
+std::wstring FindAssetsIconsRoot();
 
-inline std::wstring AssetsIconsRoot()
-{
-    static std::wstring cached;
-    static bool cached_set = false;
-    if (!cached_set)
-    {
-        cached = FindAssetsIconsRoot();
-        cached_set = true;
-    }
-    return cached;
-}
+std::wstring AssetsIconsRoot();
 
 constexpr wchar_t kOfflineHiveFilter[] =
     L"Registry Hive Files\0*.dat;*.hiv;*.hive;*.sav;SYSTEM;SOFTWARE;SAM;SECURITY;DEFAULT;NTUSER.DAT;USRCLASS.DAT\0All "
     L"Files (*.*)\0*.*\0";
 
-inline std::wstring NormalizeMachineName(const std::wstring& text)
-{
-    std::wstring trimmed = TrimWhitespace(text);
-    while (!trimmed.empty() && (trimmed.back() == L'\\' || trimmed.back() == L'/'))
-    {
-        trimmed.pop_back();
-    }
-    if (trimmed.empty())
-    {
-        return trimmed;
-    }
-    if (trimmed.rfind(L"\\\\", 0) == 0)
-    {
-        return trimmed;
-    }
-    return L"\\\\" + trimmed;
-}
+std::wstring NormalizeMachineName(const std::wstring& text);
 
-inline std::wstring StripMachinePrefix(const std::wstring& machine)
-{
-    if (machine.rfind(L"\\\\", 0) == 0)
-    {
-        return machine.substr(2);
-    }
-    return machine;
-}
+std::wstring StripMachinePrefix(const std::wstring& machine);
 
-inline bool FileExists(const std::wstring& path)
-{
-    DWORD attrs = GetFileAttributesW(path.c_str());
-    return attrs != INVALID_FILE_ATTRIBUTES && !(attrs & FILE_ATTRIBUTE_DIRECTORY);
-}
+bool FileExists(const std::wstring& path);
 
 using util::EqualsInsensitive;
 
 using util::StartsWithInsensitive;
 
-inline bool WindowClassEquals(HWND hwnd, const wchar_t* class_name)
-{
-    if (!hwnd || !class_name)
-    {
-        return false;
-    }
-    wchar_t buffer[64] = {};
-    if (!GetClassNameW(hwnd, buffer, static_cast<int>(_countof(buffer))))
-    {
-        return false;
-    }
-    return util::EqualsInsensitive(buffer, class_name);
-}
+bool WindowClassEquals(HWND hwnd, const wchar_t* class_name);
 
 struct ParsedRegFileRoot
 {
@@ -218,107 +109,8 @@ struct RegFileParsePayload : work::MoveOnly
     bool cancelled = false;
 };
 
-inline VirtualRegistryKey* EnsureVirtualKey(VirtualRegistryKey* root, const std::wstring& subkey)
-{
-    if (!root)
-    {
-        return nullptr;
-    }
-    if (subkey.empty())
-    {
-        return root;
-    }
-    auto parts = registry_path::Split(subkey);
-    VirtualRegistryKey* current = root;
-    for (const auto& part : parts)
-    {
-        std::wstring lower = ToLower(part);
-        auto it = current->children.find(lower);
-        if (it == current->children.end())
-        {
-            auto child = std::make_unique<VirtualRegistryKey>();
-            child->name = part;
-            it = current->children.emplace(lower, std::move(child)).first;
-        }
-        current = it->second.get();
-    }
-    return current;
-}
+VirtualRegistryKey* EnsureVirtualKey(VirtualRegistryKey* root, const std::wstring& subkey);
 
-inline bool ParseRegFileToVirtualRoots(const std::wstring& path, std::vector<ParsedRegFileRoot>* roots, std::wstring* error, const std::atomic_bool* cancel, bool* cancelled)
-{
-    if (!roots)
-    {
-        return false;
-    }
-    roots->clear();
+bool ParseRegFileToVirtualRoots(const std::wstring& path, std::vector<ParsedRegFileRoot>* roots, std::wstring* error, const std::atomic_bool* cancel, bool* cancelled);
 
-    regfile::Document document;
-    if (!regfile::Load(path, &document, error, cancel, cancelled))
-    {
-        return false;
-    }
-
-    std::unordered_map<std::wstring, size_t> root_lookup;
-    auto ensure_root = [&](const std::wstring& root_name) {
-        const std::wstring lower = ToLower(root_name);
-        auto existing = root_lookup.find(lower);
-        if (existing != root_lookup.end())
-        {
-            return roots->at(existing->second).data.get();
-        }
-        ParsedRegFileRoot root;
-        root.name = root_name;
-        root.data = std::make_shared<VirtualRegistryData>();
-        root.data->root_name = root_name;
-        root.data->root = std::make_unique<VirtualRegistryKey>();
-        root.data->root->name = root_name;
-        roots->push_back(std::move(root));
-        root_lookup.emplace(lower, roots->size() - 1);
-        return roots->back().data.get();
-    };
-
-    for (const auto& source_path : document.key_order)
-    {
-        if (cancel && cancel->load())
-        {
-            if (cancelled)
-            {
-                *cancelled = true;
-            }
-            return false;
-        }
-        const std::wstring normalized = registry_path::Normalize(source_path);
-        const std::wstring key_path = normalized.empty() ? source_path : normalized;
-        const size_t slash = key_path.find(L'\\');
-        const std::wstring root_name = key_path.substr(0, slash);
-        const std::wstring subkey = slash == std::wstring::npos ? L"" : key_path.substr(slash + 1);
-        if (root_name.empty())
-        {
-            continue;
-        }
-        auto source = document.keys.find(ToLower(source_path));
-        if (source == document.keys.end())
-        {
-            continue;
-        }
-        VirtualRegistryData* root = ensure_root(root_name);
-        VirtualRegistryKey* target = root ? EnsureVirtualKey(root->root.get(), subkey) : nullptr;
-        if (!target)
-        {
-            continue;
-        }
-        target->values.reserve(source->second.values.size());
-        for (const auto& entry : source->second.values)
-        {
-            VirtualRegistryValue value;
-            value.name = entry.second.name;
-            value.type = entry.second.type;
-            value.data = entry.second.data;
-            target->values.emplace(entry.first, std::move(value));
-        }
-    }
-    return true;
-}
-
-} // namespace regkit::window_detail
+} // namespace
