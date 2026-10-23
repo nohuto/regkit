@@ -16,7 +16,7 @@ function invokeTool([string]$tool, [string[]]$arguments) {
 }
 
 function addText($texts, [string]$text, [string]$reference) {
-    if (!$texts.Contains($text)) { $texts[$text] = [Collections.Generic.List[string]]::new() }
+    if (!$texts.Contains($text)) { $texts[$text] = [Activator]::CreateInstance([System.Collections.Generic.List[string]]) }
     $texts[$text].Add($reference)
 }
 
@@ -33,7 +33,7 @@ function addRcTexts($texts) {
         $lines = [IO.File]::ReadAllLines($file.FullName)
         for ($i = 0; $i -lt $lines.Count; $i++) {
             if ($lines[$i] -match '^\s*(CAPTION|LTEXT|RTEXT|CTEXT|PUSHBUTTON|DEFPUSHBUTTON|CHECKBOX|AUTOCHECKBOX|RADIOBUTTON|AUTORADIOBUTTON|GROUPBOX|CONTROL)\s+"((?:[^"]|"")*[A-Za-z](?:[^"]|"")*)"') {
-                addText $texts ($Matches[2] -replace '""', '\"') "../resources/$($file.Name):$($i + 1)"
+                addText $texts ($Matches[2] -replace '""', '\"') "resources/$($file.Name):$($i + 1)"
             }
         }
     }
@@ -44,7 +44,7 @@ function addFilterTexts($texts, $files) {
     foreach ($file in $files) {
         $content = [IO.File]::ReadAllText($file)
         if (!$content.Contains('\0')) { continue }
-        $groups = [Collections.Generic.List[object]]::new()
+        $groups = [Activator]::CreateInstance([System.Collections.Generic.List[object]])
         $end = -1
         foreach ($match in [regex]::Matches($content, 'L"((?:[^"\\\r\n]|\\.)*)"')) {
             if ($groups.Count -and [string]::IsNullOrWhiteSpace($content.Substring($end, $match.Index - $end))) { $groups[$groups.Count - 1].text += $match.Groups[1].Value }
