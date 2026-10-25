@@ -991,12 +991,12 @@ bool MainWindow::Impl::SaveComments() const
     return merged.Save(path);
 }
 
-bool MainWindow::Impl::ImportCommentsFromFile(const std::wstring& path, size_t* imported)
+bool MainWindow::Impl::ImportCommentsFromFile(const std::wstring& path, size_t* imported, std::wstring* error)
 {
     std::wstring content;
     std::vector<changes::CommentRule> rules;
     if (!util::ReadTextFile(path, &content, nullptr, util::kMaxCommentFileBytes) ||
-        !changes::ParseComments(content, &rules))
+        !changes::ParseComments(content, &rules, error))
     {
         return false;
     }

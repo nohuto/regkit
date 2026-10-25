@@ -505,7 +505,7 @@ class MainWindow::Impl
     void StopStartupCacheLoad();
     void ApplyStartupCachePayload(std::unique_ptr<StartupCachePayload> owned);
     bool SaveComments() const;
-    bool ImportCommentsFromFile(const std::wstring& path, size_t* imported);
+    bool ImportCommentsFromFile(const std::wstring& path, size_t* imported, std::wstring* error);
     void ShowFavoritesImported(size_t imported);
     bool ExportCommentsToFile(const std::wstring& path) const;
     void RefreshValueListComments();

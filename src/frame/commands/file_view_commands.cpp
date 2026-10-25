@@ -351,14 +351,15 @@ bool MainWindow::Impl::HandleFileCommand(int command_id)
                 return true;
             }
             size_t imported = 0;
-            if (ImportCommentsFromFile(path, &imported))
+            std::wstring error;
+            if (ImportCommentsFromFile(path, &imported, &error))
             {
                 AppendHistoryEntry(L"Import comments " + util::FileName(path), L"", path);
                 ui::ShowInfo(hwnd_, util::TrLabel(L"Comments imported", std::to_wstring(imported)));
             }
             else
             {
-                ui::ShowError(hwnd_, util::Tr(L"Failed to import comments."));
+                ui::ShowError(hwnd_, error.empty() ? util::Tr(L"Failed to import comments.") : util::TrDetail(L"Failed to import comments.", error));
             }
             return true;
         }
