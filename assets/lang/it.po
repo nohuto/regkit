@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegKit\n"
 "Report-Msgid-Bugs-To: https://github.com/nohuto/regkit/issues\n"
-"POT-Creation-Date: 2026-10-27 11:28+0100\n"
+"POT-Creation-Date: 2026-11-02 18:21+0100\n"
 "PO-Revision-Date: 2026-10-09 20:51+0200\n"
 "Last-Translator: nohuto contact@noverse.dev\n"
 "Language-Team: none\n"
@@ -281,7 +281,6 @@ msgid "Mask"
 msgstr "Maschera"
 
 #: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
-#: frame/window/appearance.cpp
 msgid "Field"
 msgstr "Campo"
 
@@ -330,8 +329,8 @@ msgstr "Ignora modifiche"
 #: frame/commands/mutation_commands.cpp frame/commands/workspace_commands.cpp
 #: frame/tools/key_handles_window.cpp frame/tools/launch_bridge.cpp
 #: frame/views/history_workspace.cpp frame/views/registry_sessions.cpp
-#: frame/views/tab_lists.cpp frame/window/appearance.cpp
-#: frame/window/lifetime.cpp frame/window/message_routes.cpp ui/feedback.cpp
+#: frame/views/tab_lists.cpp frame/window/lifetime.cpp
+#: frame/window/message_routes.cpp ui/feedback.cpp
 msgid "Cancel"
 msgstr "Annulla"
 
@@ -483,6 +482,10 @@ msgstr "Inserisci un nome per il collegamento e una chiave di destinazione."
 msgid "The link name can't contain a backslash."
 msgstr "Il nome del collegamento non può contenere una barra rovesciata."
 
+#: dialogs/query_dialog.cpp frame/views/history_workspace.cpp
+msgid "RegKit couldn't read this file and didn't use it."
+msgstr ""
+
 #: dialogs/query_dialog.cpp
 msgid "No top level keys"
 msgstr "Nessuna chiave radice"
@@ -556,6 +559,10 @@ msgstr "Ogni riga deve contenere una chiave."
 #: dialogs/query_prompts.cpp
 msgid "Select at least one data type."
 msgstr "Seleziona almeno un tipo di dati."
+
+#: dialogs/query_prompts.cpp
+msgid "Data Types"
+msgstr "Tipi di dati"
 
 #: dialogs/query_prompts.cpp
 msgid "Select a key."
@@ -887,32 +894,6 @@ msgstr "A&utorizzazioni..."
 msgid "&Key Information..."
 msgstr "Informazioni sulla c&hiave..."
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-msgid "&Undo"
-msgstr "Annulla &operazione"
-
-#: frame/commands/context_menus.cpp
-msgid "Cu&t"
-msgstr "&Taglia"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-#: ui/list_view_support.cpp
-msgid "&Copy"
-msgstr "Copia(&K)"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-msgid "&Paste"
-msgstr "Inco&lla"
-
-#: frame/commands/context_menus.cpp
-msgid "Paste and &Go"
-msgstr "&Incolla e vai"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-#: ui/list_view_support.cpp
-msgid "Select &All"
-msgstr "Sele&ziona tutto"
-
 #: frame/commands/context_menus.cpp
 msgid "Co&llapse Key"
 msgstr "Co&mprimi chiave"
@@ -964,6 +945,10 @@ msgstr "&Apri voce"
 #: frame/commands/context_menus.cpp
 msgid "R&evert"
 msgstr "&Ripristina"
+
+#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
+msgid "&Copy"
+msgstr "Copia(&K)"
 
 #: frame/commands/context_menus.cpp
 msgid "Remove &from History"
@@ -1182,6 +1167,11 @@ msgid "Later"
 msgstr "Più tardi"
 
 #: frame/commands/workspace_commands.cpp
+#, fuzzy
+msgid "A new RegKit window couldn't be opened."
+msgstr "Non è possibile riavviare RegKit."
+
+#: frame/commands/workspace_commands.cpp
 msgid "Backup/restore mode needs the backup and restore privileges. Run RegKit elevated."
 msgstr "La modalità backup/ripristino richiede i privilegi di backup e ripristino. Esegui RegKit con privilegi elevati."
 
@@ -1205,10 +1195,6 @@ msgstr "Percorso del Registro di sistema non valido."
 #: frame/window/message_routes.cpp launch/program.cpp
 msgid "Registry path not found."
 msgstr "Percorso del Registro di sistema non trovato."
-
-#: frame/search/compare_command.cpp
-msgid "Compare Registries..."
-msgstr "Confronta registri..."
 
 #: frame/search/compare_command.cpp frame/search/compare_dialog.cpp
 #: frame/sources/regfile_commands.cpp regfile/registry_transfer.cpp
@@ -1234,6 +1220,10 @@ msgstr "Ignorati"
 #: frame/search/compare_command.cpp search/compare.cpp
 msgid "Couldn't read the registry key."
 msgstr "Non è possibile leggere la chiave del Registro di sistema."
+
+#: frame/search/compare_command.cpp
+msgid "Compare Registries..."
+msgstr "Confronta registri..."
 
 #: frame/search/compare_command.cpp
 msgid "Registry Comparison"
@@ -1491,6 +1481,7 @@ msgid "Close Handles"
 msgstr "Chiudi handle"
 
 #: frame/tools/key_handles_window.cpp frame/tools/update_checker.cpp
+#: frame/window/lifetime.cpp
 msgid "Close"
 msgstr "Chiudi"
 
@@ -1596,8 +1587,16 @@ msgid "Protected process"
 msgstr "Processo protetto"
 
 #: frame/tools/launch_bridge.cpp
-msgid "Key Information"
-msgstr "Informazioni sulla chiave"
+msgid "Don't virtualize"
+msgstr "Non virtualizzare"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Don't silent fail"
+msgstr "Non fallire senza segnalare l'errore"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Recurse"
+msgstr "Ricorsivo"
 
 #: frame/tools/launch_bridge.cpp frame/views/value_loading.cpp ui/feedback.cpp
 msgid "Yes"
@@ -1700,18 +1699,6 @@ msgid "32-bit view"
 msgstr "Vista a 32 bit"
 
 #: frame/tools/launch_bridge.cpp
-msgid "Don't virtualize"
-msgstr "Non virtualizzare"
-
-#: frame/tools/launch_bridge.cpp
-msgid "Don't silent fail"
-msgstr "Non fallire senza segnalare l'errore"
-
-#: frame/tools/launch_bridge.cpp
-msgid "Recurse"
-msgstr "Ricorsivo"
-
-#: frame/tools/launch_bridge.cpp
 msgid "Virtualization flags"
 msgstr "Flag di virtualizzazione"
 
@@ -1772,6 +1759,14 @@ msgid "Integrity level"
 msgstr "Livello di integrità"
 
 #: frame/tools/launch_bridge.cpp
+msgid "Key Information"
+msgstr "Informazioni sulla chiave"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Permissions..."
+msgstr "Autorizzazioni..."
+
+#: frame/tools/launch_bridge.cpp
 msgid "Flag"
 msgstr "Flag"
 
@@ -1793,16 +1788,12 @@ msgid "The key's permissions couldn't be read."
 msgstr "Non è possibile leggere le informazioni sulla chiave."
 
 #: frame/tools/launch_bridge.cpp
-msgid "Permissions..."
-msgstr "Autorizzazioni..."
+msgid "The resource data is malformed."
+msgstr "I dati delle risorse non sono nel formato corretto."
 
 #: frame/tools/launch_bridge.cpp
 msgid "Edit Value"
 msgstr "Modifica valore"
-
-#: frame/tools/launch_bridge.cpp
-msgid "The resource data is malformed."
-msgstr "I dati delle risorse non sono nel formato corretto."
 
 #: frame/tools/launch_bridge.cpp
 msgid "Edit Binary..."
@@ -1836,7 +1827,7 @@ msgstr "Non è possibile trovare il file delle impostazioni."
 msgid "The settings file couldn't be reset."
 msgstr "Non è possibile reimpostare il file delle impostazioni."
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with administrator rights."
 msgstr "Non è possibile riavviare con privilegi di amministratore."
 
@@ -1844,29 +1835,29 @@ msgstr "Non è possibile riavviare con privilegi di amministratore."
 msgid "Failed to restart as the signed-in user."
 msgstr "Non è possibile riavviare come utente connesso."
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Restart as SYSTEM"
 msgstr "Riavvia come SYSTEM"
 
-#: frame/tools/launch_bridge.cpp
-msgid "Failed to request SYSTEM restart."
-msgstr "Non è possibile richiedere il riavvio come SYSTEM."
-
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with SYSTEM rights."
 msgstr "Non è possibile riavviare con privilegi SYSTEM."
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
+msgid "Failed to request SYSTEM restart."
+msgstr "Non è possibile richiedere il riavvio come SYSTEM."
+
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Restart as TrustedInstaller"
 msgstr "Riavvia come TrustedInstaller"
 
-#: frame/tools/launch_bridge.cpp
-msgid "Failed to request TrustedInstaller restart."
-msgstr "Non è possibile richiedere il riavvio come TrustedInstaller."
-
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with TrustedInstaller rights."
 msgstr "Non è possibile riavviare con privilegi TrustedInstaller."
+
+#: frame/tools/launch_bridge.cpp launch/program.cpp
+msgid "Failed to request TrustedInstaller restart."
+msgstr "Non è possibile richiedere il riavvio come TrustedInstaller."
 
 #: frame/tools/launch_bridge.cpp
 msgid ""
@@ -2102,10 +2093,6 @@ msgstr "Lunghezze diverse"
 msgid "The comment couldn't be saved."
 msgstr "Non è possibile salvare il commento."
 
-#: frame/views/history_workspace.cpp
-msgid "RegKit couldn't read this file and didn't use it."
-msgstr ""
-
 #: frame/views/registry_sessions.cpp search/search.cpp
 msgid "Local Registry (32-bit)"
 msgstr "Registro di sistema locale (32 bit)"
@@ -2214,8 +2201,8 @@ msgstr "La chiave è stata aperta, ma non contiene questo valore:"
 msgid "Value Not Found"
 msgstr "Valore non trovato"
 
-#: frame/views/registry_sessions.cpp frame/window/appearance.cpp
-#: frame/window/notifications.cpp ui/feedback.cpp
+#: frame/views/registry_sessions.cpp frame/window/notifications.cpp
+#: ui/feedback.cpp
 msgid "OK"
 msgstr "OK"
 
@@ -2284,126 +2271,6 @@ msgid "(value not set)"
 msgstr "(valore non impostato)"
 
 #: frame/window/appearance.cpp
-msgid "Theme Presets"
-msgstr "Set di tema"
-
-#: frame/window/appearance.cpp
-msgid "Presets"
-msgstr "Set"
-
-#: frame/window/appearance.cpp
-msgid "Colors"
-msgstr "Colori"
-
-#: frame/window/appearance.cpp
-msgid "Templates"
-msgstr "Modelli"
-
-#: frame/window/appearance.cpp
-msgid "Color"
-msgstr "Colore"
-
-#: frame/window/appearance.cpp
-msgid "Hex"
-msgstr ""
-
-#: frame/window/appearance.cpp
-msgid "Treat as dark theme"
-msgstr "Considera come tema scuro"
-
-#: frame/window/appearance.cpp
-msgid "New..."
-msgstr "Nuovo..."
-
-#: frame/window/appearance.cpp
-msgid "Duplicate"
-msgstr "Duplica"
-
-#: frame/window/appearance.cpp
-msgid "Rename..."
-msgstr "Rinomina..."
-
-#: frame/window/appearance.cpp frame/window/menu_bar.cpp ui/feedback.cpp
-msgid "Delete"
-msgstr "Elimina"
-
-#: frame/window/appearance.cpp
-msgid "Import..."
-msgstr "Importa..."
-
-#: frame/window/appearance.cpp
-msgid "Export..."
-msgstr "Esporta..."
-
-#: frame/window/appearance.cpp
-msgid "Edit Color..."
-msgstr "Modifica colore..."
-
-#: frame/window/appearance.cpp
-msgid "Apply Template"
-msgstr "Applica modello"
-
-#: frame/window/appearance.cpp
-msgid "Apply"
-msgstr "Applica"
-
-#: frame/window/appearance.cpp
-msgid "New Preset"
-msgstr "Nuovo set"
-
-#: frame/window/appearance.cpp
-msgid "Rename Preset"
-msgstr "Rinomina set"
-
-#: frame/window/appearance.cpp
-msgid "Background"
-msgstr "Sfondo"
-
-#: frame/window/appearance.cpp
-msgid "Panel"
-msgstr "Riquadro"
-
-#: frame/window/appearance.cpp
-msgid "Surface"
-msgstr "Superficie"
-
-#: frame/window/appearance.cpp
-msgid "Header"
-msgstr "Intestazione"
-
-#: frame/window/appearance.cpp
-msgid "Border"
-msgstr "Bordo"
-
-#: frame/window/appearance.cpp registry/value_decoder.cpp
-msgid "Text"
-msgstr "Testo"
-
-#: frame/window/appearance.cpp
-msgid "Muted Text"
-msgstr "Testo attenuato"
-
-#: frame/window/appearance.cpp
-msgid "Accent"
-msgstr "Colore principale"
-
-#: frame/window/appearance.cpp
-msgid "Selection"
-msgstr "Selezione"
-
-#: frame/window/appearance.cpp
-msgid "Selection Text"
-msgstr "Testo selezionato"
-
-#: frame/window/appearance.cpp
-msgid "Hover"
-msgstr "Passaggio del mouse"
-
-#: frame/window/appearance.cpp
-msgid "Focus"
-msgstr "Focus"
-
-#: frame/window/appearance.cpp
 msgid "Preset name:"
 msgstr "Nome del set:"
 
@@ -2427,6 +2294,10 @@ msgstr "Non è possibile esportare i set di tema."
 msgid "Administrator"
 msgstr "Amministratore"
 
+#: frame/window/events.cpp
+msgid "Paste and &Go"
+msgstr "&Incolla e vai"
+
 #: frame/window/lifetime.cpp
 msgid "SYSTEM has no Desktop folder, so Windows reports \"Location is not available\" in file dialogs. Create this folder to prevent the error?"
 msgstr "SYSTEM non ha una cartella Desktop, quindi Windows segnala \"Posizione non disponibile\" nelle finestre di dialogo dei file. Vuoi creare questa cartella per evitare l'errore?"
@@ -2444,16 +2315,17 @@ msgid "Go"
 msgstr "Vai"
 
 #: frame/window/lifetime.cpp
-msgid "Close Tab"
-msgstr "Chiudi scheda"
-
-#: frame/window/lifetime.cpp
 msgid "Tabs"
 msgstr "Schede"
 
 #: frame/window/lifetime.cpp
 msgid "Key Tree"
 msgstr "Albero delle chiavi"
+
+#: frame/window/lifetime.cpp
+#, fuzzy
+msgid "Clear Filter"
+msgstr "&Cancella cronologia"
 
 #: frame/window/lifetime.cpp
 msgid "History"
@@ -2487,13 +2359,17 @@ msgstr "Annulla operazione"
 msgid "Redo"
 msgstr "Ripeti"
 
-#: frame/window/menu_bar.cpp ui/feedback.cpp ui/list_view_support.cpp
+#: frame/window/menu_bar.cpp ui/feedback.cpp
 msgid "Copy"
 msgstr "Copia"
 
 #: frame/window/menu_bar.cpp
 msgid "Paste"
 msgstr "Incolla"
+
+#: frame/window/menu_bar.cpp ui/feedback.cpp
+msgid "Delete"
+msgstr "Elimina"
 
 #: frame/window/menu_bar.cpp
 msgid "Refresh"
@@ -2568,6 +2444,10 @@ msgid "&File"
 msgstr "&File"
 
 #: frame/window/menu_bar.cpp
+msgid "&Undo"
+msgstr "Annulla &operazione"
+
+#: frame/window/menu_bar.cpp
 msgid "&Redo"
 msgstr "&Ripeti"
 
@@ -2594,6 +2474,14 @@ msgstr "&Dati valore"
 #: frame/window/menu_bar.cpp
 msgid "Copy &Other"
 msgstr "&Copia altro"
+
+#: frame/window/menu_bar.cpp
+msgid "&Paste"
+msgstr "Inco&lla"
+
+#: frame/window/menu_bar.cpp
+msgid "Select &All"
+msgstr "Sele&ziona tutto"
 
 #: frame/window/menu_bar.cpp
 msgid "Inv&ert Selection"
@@ -3133,63 +3021,6 @@ msgstr "Il riavvio come amministratore è stato annullato."
 msgid "Failed to create the main window."
 msgstr "Non è possibile creare la finestra principale."
 
-#: records/json.cpp
-msgid "The file isn't valid JSON."
-msgstr "Il file non è in formato JSON valido."
-
-#: records/json.cpp
-msgid "The file is nested too deeply."
-msgstr "Il file contiene troppi livelli di annidamento."
-
-#: records/json.cpp
-msgid "A text member is longer than the format allows."
-msgstr "Una proprietà di testo supera la lunghezza consentita dal formato."
-
-#: records/json.cpp
-msgid "The file ends inside a string."
-msgstr "Il file termina all'interno di una stringa."
-
-#: records/json.cpp
-msgid "A string contains an unescaped control character."
-msgstr "Una stringa contiene un carattere di controllo senza escape."
-
-#: records/json.cpp
-msgid "A string contains a malformed escape."
-msgstr "Una stringa contiene una sequenza di escape non valida."
-
-#: records/json.cpp
-msgid "A string contains an unsupported escape."
-msgstr "Una stringa contiene una sequenza di escape non supportata."
-
-#: records/json.cpp
-msgid "An unsigned number was expected."
-msgstr "Era previsto un numero senza segno."
-
-#: records/json.cpp
-msgid "A number has a leading zero."
-msgstr "Un numero ha uno zero iniziale."
-
-#: records/json.cpp
-msgid "A number is out of range."
-msgstr "Un numero è fuori intervallo."
-
-#: records/json.cpp
-msgid "Only unsigned integers are supported."
-msgstr "Sono supportati solo numeri interi senza segno."
-
-#: records/json.cpp
-msgid "The file contains trailing content."
-msgstr "Il file contiene contenuto aggiuntivo alla fine."
-
-#: records/json.cpp regfile/batch_script.cpp regfile/powershell_script.cpp
-#: win32/file_text.cpp
-msgid "Line"
-msgstr "Riga"
-
-#: records/json.cpp
-msgid "Column"
-msgstr ""
-
 #: regfile/batch_script.cpp
 msgid "Unsupported reg command"
 msgstr "Comando reg non supportato"
@@ -3221,6 +3052,10 @@ msgstr "Non è possibile risolvere gli argomenti batch."
 #: regfile/batch_script.cpp regfile/powershell_script.cpp
 msgid "Variable can't be resolved"
 msgstr "Non è possibile risolvere la variabile"
+
+#: regfile/batch_script.cpp regfile/powershell_script.cpp win32/file_text.cpp
+msgid "Line"
+msgstr "Riga"
 
 #: regfile/batch_script.cpp regfile/powershell_script.cpp
 msgid "Unsupported command"
@@ -3739,60 +3574,12 @@ msgid "This value type has no text form."
 msgstr "Questo tipo di valore non ha una forma testuale."
 
 #: registry/value_decoder.cpp
-msgid "Invalid Base64 character."
-msgstr "Carattere Base64 non valido."
-
-#: registry/value_decoder.cpp
-msgid "Invalid Base64 padding bits."
-msgstr "Bit di riempimento Base64 non validi."
-
-#: registry/value_decoder.cpp
-msgid "Input is too large to decode."
-msgstr "L'input è troppo grande per essere decodificato."
-
-#: registry/value_decoder.cpp
-msgid "The text couldn't be decoded."
-msgstr "Non è possibile decodificare il testo."
-
-#: registry/value_decoder.cpp
-msgid "Base64 length isn't a multiple of four."
-msgstr "La lunghezza Base64 non è un multiplo di quattro."
-
-#: registry/value_decoder.cpp
-msgid "Invalid Base64URL character."
-msgstr "Carattere Base64URL non valido."
-
-#: registry/value_decoder.cpp
-msgid "Base64URL padding isn't at the end."
-msgstr "Il riempimento Base64URL non è alla fine."
-
-#: registry/value_decoder.cpp
-msgid "Base64URL length isn't valid."
-msgstr "La lunghezza Base64URL non è valida."
-
-#: registry/value_decoder.cpp
-msgid "Base64URL padding is incomplete."
-msgstr "Il riempimento Base64URL è incompleto."
-
-#: registry/value_decoder.cpp
-msgid "Invalid hex character."
-msgstr "Carattere esadecimale non valido."
-
-#: registry/value_decoder.cpp
 msgid "Incomplete hex byte."
 msgstr "Byte esadecimale incompleto."
 
 #: registry/value_decoder.cpp
-msgid "Incomplete percent escape."
-msgstr "Sequenza di escape percentuale incompleta."
-
-#: registry/value_decoder.cpp
-msgid "Invalid percent escape."
-msgstr "Sequenza di escape percentuale non valida."
-
-#: registry/value_decoder.cpp
-msgid "Percent encoded text must be ASCII."
-msgstr "Il testo con codifica percentuale deve essere ASCII."
+msgid "Invalid hex character."
+msgstr "Carattere esadecimale non valido."
 
 #: registry/value_decoder.cpp
 msgid "Invalid FILETIME."
@@ -3801,6 +3588,14 @@ msgstr "FILETIME non valido."
 #: registry/value_decoder.cpp
 msgid "Local"
 msgstr "Locale"
+
+#: registry/value_decoder.cpp
+msgid "Input is too large to decode."
+msgstr "L'input è troppo grande per essere decodificato."
+
+#: registry/value_decoder.cpp
+msgid "Text"
+msgstr "Testo"
 
 #: registry/value_decoder.cpp
 msgid "Bytes"
@@ -4103,6 +3898,11 @@ msgid "Trace file contains no usable entries."
 msgstr "Il file Trace non contiene voci utilizzabili."
 
 #: ui/feedback.cpp
+#, fuzzy
+msgid "The background task couldn't be started."
+msgstr "Non è possibile avviare il programma di installazione."
+
+#: ui/feedback.cpp
 msgid "Warning"
 msgstr "Avviso"
 
@@ -4207,26 +4007,6 @@ msgstr ""
 msgid "Restart Anyway"
 msgstr "Riavvia comunque"
 
-#: ui/list_view_support.cpp
-msgid "Size column to fit"
-msgstr "Adatta colonna al contenuto"
-
-#: ui/list_view_support.cpp
-msgid "Size all columns to fit"
-msgstr "Adatta tutte le colonne al contenuto"
-
-#: ui/list_view_support.cpp
-msgid "Reset columns"
-msgstr "Reimposta colonne"
-
-#: ui/list_view_support.cpp
-msgid "Select All"
-msgstr "Seleziona tutto"
-
-#: ui/list_view_support.cpp
-msgid "Grid Lines"
-msgstr "Griglia"
-
 #: ui/presets.cpp
 msgid "The theme preset file contains an entry RegKit can't parse."
 msgstr "Il file dei set di tema contiene una voce che RegKit non può analizzare."
@@ -4261,21 +4041,308 @@ msgstr "Il file contiene troppi livelli di annidamento."
 msgid "The file isn't valid text."
 msgstr "Il file non è in formato JSON valido."
 
-#: win32/system_error.cpp
+#: win32ui/dialog/check_list.cpp
+msgid "Select All"
+msgstr "Seleziona tutto"
+
+#: win32ui/dialog/check_list.cpp
+msgid "Clear All"
+msgstr "Cancella tutto"
+
+#: win32ui/dialog/edit.cpp
+msgid "Cu&t"
+msgstr "&Taglia"
+
+#: win32ui/dialog/text_prompt.cpp
+msgid "Browse..."
+msgstr "Sfoglia..."
+
+#: win32ui/json/reader.cpp
+#, fuzzy, c-format
+msgid "Expected '%c'."
+msgstr "Era previsto '}'."
+
+#: win32ui/json/reader.cpp
+msgid "The file is nested too deeply."
+msgstr "Il file contiene troppi livelli di annidamento."
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "An unterminated block comment is not allowed."
+msgstr "Commento di blocco non terminato."
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "Unexpected token."
+msgstr "Token imprevisto"
+
+#: win32ui/json/reader.cpp
+msgid "A text member is longer than the format allows."
+msgstr "Una proprietà di testo supera la lunghezza consentita dal formato."
+
+#: win32ui/json/reader.cpp
+msgid "The file ends inside a string."
+msgstr "Il file termina all'interno di una stringa."
+
+#: win32ui/json/reader.cpp
+msgid "A string contains an unescaped control character."
+msgstr "Una stringa contiene un carattere di controllo senza escape."
+
+#: win32ui/json/reader.cpp
+msgid "A string contains a malformed escape."
+msgstr "Una stringa contiene una sequenza di escape non valida."
+
+#: win32ui/json/reader.cpp
+msgid "A string contains an unsupported escape."
+msgstr "Una stringa contiene una sequenza di escape non supportata."
+
+#: win32ui/json/reader.cpp
+msgid "An unsigned number was expected."
+msgstr "Era previsto un numero senza segno."
+
+#: win32ui/json/reader.cpp
+msgid "A number has a leading zero."
+msgstr "Un numero ha uno zero iniziale."
+
+#: win32ui/json/reader.cpp
+msgid "A number is out of range."
+msgstr "Un numero è fuori intervallo."
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "Only integers are supported."
+msgstr "Sono supportati solo numeri interi senza segno."
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A boolean was expected."
+msgstr "Era previsto un numero senza segno."
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A number has an empty fraction."
+msgstr "Un numero ha uno zero iniziale."
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A number has an empty exponent."
+msgstr "Un commento ha una chiave vuota."
+
+#: win32ui/json/reader.cpp
+msgid "The file contains trailing content."
+msgstr "Il file contiene contenuto aggiuntivo alla fine."
+
+#: win32ui/json/reader.cpp
+msgid "The file isn't valid JSON."
+msgstr "Il file non è in formato JSON valido."
+
+#: win32ui/json/reader.cpp
+msgid "Column"
+msgstr ""
+
+#: win32ui/list_view/list_view.cpp
+msgid "Size column to fit"
+msgstr "Adatta colonna al contenuto"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Size all columns to fit"
+msgstr "Adatta tutte le colonne al contenuto"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Reset columns"
+msgstr "Reimposta colonne"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Grid Lines"
+msgstr "Griglia"
+
+#: win32ui/system/error_text.cpp
 msgid "Unknown error."
 msgstr "Errore sconosciuto."
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64 character."
+msgstr "Carattere Base64 non valido."
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64 padding bits."
+msgstr "Bit di riempimento Base64 non validi."
+
+#: win32ui/system/strings.cpp
+msgid "The text couldn't be decoded."
+msgstr "Non è possibile decodificare il testo."
+
+#: win32ui/system/strings.cpp
+msgid "Base64 length isn't a multiple of four."
+msgstr "La lunghezza Base64 non è un multiplo di quattro."
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64URL character."
+msgstr "Carattere Base64URL non valido."
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL padding isn't at the end."
+msgstr "Il riempimento Base64URL non è alla fine."
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL length isn't valid."
+msgstr "La lunghezza Base64URL non è valida."
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL padding is incomplete."
+msgstr "Il riempimento Base64URL è incompleto."
+
+#: win32ui/system/strings.cpp
+msgid "Incomplete percent escape."
+msgstr "Sequenza di escape percentuale incompleta."
+
+#: win32ui/system/strings.cpp
+msgid "Invalid percent escape."
+msgstr "Sequenza di escape percentuale non valida."
+
+#: win32ui/system/strings.cpp
+msgid "Percent encoded text must be ASCII."
+msgstr "Il testo con codifica percentuale deve essere ASCII."
+
+#: win32ui/tab_strip/tab_strip.cpp
+msgid "Close Tab"
+msgstr "Chiudi scheda"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Theme Presets"
+msgstr "Set di tema"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Presets"
+msgstr "Set"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Colors"
+msgstr "Colori"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Templates"
+msgstr "Modelli"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "New..."
+msgstr "Nuovo..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Duplicate"
+msgstr "Duplica"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Rename..."
+msgstr "Rinomina..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Import..."
+msgstr "Importa..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Export..."
+msgstr "Esporta..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Edit Color..."
+msgstr "Modifica colore..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Treat as dark theme"
+msgstr "Considera come tema scuro"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Apply Template"
+msgstr "Applica modello"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Apply"
+msgstr "Applica"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Color"
+msgstr "Colore"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Hex"
+msgstr ""
+
+#: win32ui/theme/preset_editor.cpp
+msgid "New Preset"
+msgstr "Nuovo set"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Rename Preset"
+msgstr "Rinomina set"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "The file could not be read."
+msgstr "Non è possibile leggere il file di definizione."
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "A preset has no name."
+msgstr "Nome del set:"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "A line is not a valid entry."
+msgstr "Il file non è in formato JSON valido."
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "The file could not be written."
+msgstr "Non è possibile scrivere il file di output."
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Background"
+msgstr "Sfondo"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Panel"
+msgstr "Riquadro"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Surface"
+msgstr "Superficie"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Header"
+msgstr "Intestazione"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Border"
+msgstr "Bordo"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Muted Text"
+msgstr "Testo attenuato"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Accent"
+msgstr "Colore principale"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Selection"
+msgstr "Selezione"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Selection Text"
+msgstr "Testo selezionato"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Hover"
+msgstr "Passaggio del mouse"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Focus"
+msgstr "Focus"
 
 #: ../resources/app.rc
 msgid "Key Handles"
 msgstr "Handle di chiavi"
-
-#: ../resources/editor_dialogs.rc
-msgid "Value data:"
-msgstr "Dati valore:"
-
-#: ../resources/editor_dialogs.rc ../resources/search_dialogs.rc
-msgid "Browse..."
-msgstr "Sfoglia..."
 
 #: ../resources/editor_dialogs.rc
 msgid "Edit Comment"
@@ -4368,6 +4435,10 @@ msgstr ""
 #: ../resources/editor_dialogs.rc
 msgid "Bits..."
 msgstr "Bit..."
+
+#: ../resources/editor_dialogs.rc
+msgid "Value data:"
+msgstr "Dati valore:"
 
 #: ../resources/editor_dialogs.rc
 msgid "Strings (one per line):"
@@ -4817,14 +4888,6 @@ msgstr "Apri risultato in nuova scheda"
 #: ../resources/search_dialogs.rc
 msgid "Limit results to"
 msgstr "Limita risultati a"
-
-#: ../resources/search_dialogs.rc
-msgid "Data Types"
-msgstr "Tipi di dati"
-
-#: ../resources/search_dialogs.rc
-msgid "Clear All"
-msgstr "Cancella tutto"
 
 #: ../resources/search_dialogs.rc
 msgid "Browse Key"

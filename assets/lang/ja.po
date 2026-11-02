@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegKit\n"
 "Report-Msgid-Bugs-To: https://github.com/nohuto/regkit/issues\n"
-"POT-Creation-Date: 2026-10-27 11:28+0100\n"
+"POT-Creation-Date: 2026-11-02 18:21+0100\n"
 "PO-Revision-Date: 2026-10-09 20:51+0200\n"
 "Last-Translator: nohuto contact@noverse.dev\n"
 "Language-Team: none\n"
@@ -282,7 +282,6 @@ msgid "Mask"
 msgstr "マスク"
 
 #: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
-#: frame/window/appearance.cpp
 msgid "Field"
 msgstr "フィールド"
 
@@ -331,8 +330,8 @@ msgstr "変更の破棄"
 #: frame/commands/mutation_commands.cpp frame/commands/workspace_commands.cpp
 #: frame/tools/key_handles_window.cpp frame/tools/launch_bridge.cpp
 #: frame/views/history_workspace.cpp frame/views/registry_sessions.cpp
-#: frame/views/tab_lists.cpp frame/window/appearance.cpp
-#: frame/window/lifetime.cpp frame/window/message_routes.cpp ui/feedback.cpp
+#: frame/views/tab_lists.cpp frame/window/lifetime.cpp
+#: frame/window/message_routes.cpp ui/feedback.cpp
 msgid "Cancel"
 msgstr "キャンセル"
 
@@ -484,6 +483,10 @@ msgstr "リンク名とリンク先のキーを入力してください。"
 msgid "The link name can't contain a backslash."
 msgstr "リンク名にバックスラッシュは使用できません。"
 
+#: dialogs/query_dialog.cpp frame/views/history_workspace.cpp
+msgid "RegKit couldn't read this file and didn't use it."
+msgstr ""
+
 #: dialogs/query_dialog.cpp
 msgid "No top level keys"
 msgstr "最上位キーなし"
@@ -557,6 +560,10 @@ msgstr "1 行につき 1 つのキーを指定してください。"
 #: dialogs/query_prompts.cpp
 msgid "Select at least one data type."
 msgstr "データの種類を少なくとも 1 つ選択してください。"
+
+#: dialogs/query_prompts.cpp
+msgid "Data Types"
+msgstr "データの種類"
 
 #: dialogs/query_prompts.cpp
 msgid "Select a key."
@@ -888,32 +895,6 @@ msgstr "アクセス許可(&I)..."
 msgid "&Key Information..."
 msgstr "キーの情報(&K)..."
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-msgid "&Undo"
-msgstr "元に戻す(&U)"
-
-#: frame/commands/context_menus.cpp
-msgid "Cu&t"
-msgstr "切り取り(&T)"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-#: ui/list_view_support.cpp
-msgid "&Copy"
-msgstr "コピー(&C)"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-msgid "&Paste"
-msgstr "貼り付け(&P)"
-
-#: frame/commands/context_menus.cpp
-msgid "Paste and &Go"
-msgstr "貼り付けて移動(&G)"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-#: ui/list_view_support.cpp
-msgid "Select &All"
-msgstr "すべて選択(&A)"
-
 #: frame/commands/context_menus.cpp
 msgid "Co&llapse Key"
 msgstr "キーを折りたたむ(&L)"
@@ -965,6 +946,10 @@ msgstr "項目を開く(&O)"
 #: frame/commands/context_menus.cpp
 msgid "R&evert"
 msgstr "元に戻す(&E)"
+
+#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
+msgid "&Copy"
+msgstr "コピー(&C)"
 
 #: frame/commands/context_menus.cpp
 msgid "Remove &from History"
@@ -1183,6 +1168,11 @@ msgid "Later"
 msgstr "後で"
 
 #: frame/commands/workspace_commands.cpp
+#, fuzzy
+msgid "A new RegKit window couldn't be opened."
+msgstr "RegKit を再起動できませんでした。"
+
+#: frame/commands/workspace_commands.cpp
 msgid "Backup/restore mode needs the backup and restore privileges. Run RegKit elevated."
 msgstr "バックアップ/復元モードにはバックアップと復元の特権が必要です。RegKit を昇格して実行してください。"
 
@@ -1206,10 +1196,6 @@ msgstr "レジストリ パスが無効です。"
 #: frame/window/message_routes.cpp launch/program.cpp
 msgid "Registry path not found."
 msgstr "レジストリ パスが見つかりません。"
-
-#: frame/search/compare_command.cpp
-msgid "Compare Registries..."
-msgstr "レジストリの比較..."
 
 #: frame/search/compare_command.cpp frame/search/compare_dialog.cpp
 #: frame/sources/regfile_commands.cpp regfile/registry_transfer.cpp
@@ -1235,6 +1221,10 @@ msgstr "スキップ"
 #: frame/search/compare_command.cpp search/compare.cpp
 msgid "Couldn't read the registry key."
 msgstr "レジストリ キーを読み取れませんでした。"
+
+#: frame/search/compare_command.cpp
+msgid "Compare Registries..."
+msgstr "レジストリの比較..."
 
 #: frame/search/compare_command.cpp
 msgid "Registry Comparison"
@@ -1492,6 +1482,7 @@ msgid "Close Handles"
 msgstr "複数のハンドルを閉じる"
 
 #: frame/tools/key_handles_window.cpp frame/tools/update_checker.cpp
+#: frame/window/lifetime.cpp
 msgid "Close"
 msgstr "閉じる"
 
@@ -1597,8 +1588,16 @@ msgid "Protected process"
 msgstr "保護されたプロセス"
 
 #: frame/tools/launch_bridge.cpp
-msgid "Key Information"
-msgstr "キーの情報"
+msgid "Don't virtualize"
+msgstr "仮想化しない"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Don't silent fail"
+msgstr "エラーを通知せずに失敗しない"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Recurse"
+msgstr "再帰"
 
 #: frame/tools/launch_bridge.cpp frame/views/value_loading.cpp ui/feedback.cpp
 msgid "Yes"
@@ -1701,18 +1700,6 @@ msgid "32-bit view"
 msgstr "32 ビット ビュー"
 
 #: frame/tools/launch_bridge.cpp
-msgid "Don't virtualize"
-msgstr "仮想化しない"
-
-#: frame/tools/launch_bridge.cpp
-msgid "Don't silent fail"
-msgstr "エラーを通知せずに失敗しない"
-
-#: frame/tools/launch_bridge.cpp
-msgid "Recurse"
-msgstr "再帰"
-
-#: frame/tools/launch_bridge.cpp
 msgid "Virtualization flags"
 msgstr "仮想化フラグ"
 
@@ -1773,6 +1760,14 @@ msgid "Integrity level"
 msgstr "整合性レベル"
 
 #: frame/tools/launch_bridge.cpp
+msgid "Key Information"
+msgstr "キーの情報"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Permissions..."
+msgstr "アクセス許可..."
+
+#: frame/tools/launch_bridge.cpp
 msgid "Flag"
 msgstr "フラグ"
 
@@ -1794,16 +1789,12 @@ msgid "The key's permissions couldn't be read."
 msgstr "キーの情報を読み取れませんでした。"
 
 #: frame/tools/launch_bridge.cpp
-msgid "Permissions..."
-msgstr "アクセス許可..."
+msgid "The resource data is malformed."
+msgstr "リソース データの形式が正しくありません。"
 
 #: frame/tools/launch_bridge.cpp
 msgid "Edit Value"
 msgstr "値の編集"
-
-#: frame/tools/launch_bridge.cpp
-msgid "The resource data is malformed."
-msgstr "リソース データの形式が正しくありません。"
 
 #: frame/tools/launch_bridge.cpp
 msgid "Edit Binary..."
@@ -1837,7 +1828,7 @@ msgstr "設定ファイルが見つかりませんでした。"
 msgid "The settings file couldn't be reset."
 msgstr "設定ファイルをリセットできませんでした。"
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with administrator rights."
 msgstr "管理者権限で再起動できませんでした。"
 
@@ -1845,29 +1836,29 @@ msgstr "管理者権限で再起動できませんでした。"
 msgid "Failed to restart as the signed-in user."
 msgstr "サインイン中のユーザーとして再起動できませんでした。"
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Restart as SYSTEM"
 msgstr "SYSTEM として再起動"
 
-#: frame/tools/launch_bridge.cpp
-msgid "Failed to request SYSTEM restart."
-msgstr "SYSTEM としての再起動を要求できませんでした。"
-
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with SYSTEM rights."
 msgstr "SYSTEM の権限で再起動できませんでした。"
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
+msgid "Failed to request SYSTEM restart."
+msgstr "SYSTEM としての再起動を要求できませんでした。"
+
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Restart as TrustedInstaller"
 msgstr "TrustedInstaller として再起動"
 
-#: frame/tools/launch_bridge.cpp
-msgid "Failed to request TrustedInstaller restart."
-msgstr "TrustedInstaller としての再起動を要求できませんでした。"
-
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with TrustedInstaller rights."
 msgstr "TrustedInstaller の権限で再起動できませんでした。"
+
+#: frame/tools/launch_bridge.cpp launch/program.cpp
+msgid "Failed to request TrustedInstaller restart."
+msgstr "TrustedInstaller としての再起動を要求できませんでした。"
 
 #: frame/tools/launch_bridge.cpp
 msgid ""
@@ -2103,10 +2094,6 @@ msgstr "長さが異なります"
 msgid "The comment couldn't be saved."
 msgstr "コメントを保存できませんでした。"
 
-#: frame/views/history_workspace.cpp
-msgid "RegKit couldn't read this file and didn't use it."
-msgstr ""
-
 #: frame/views/registry_sessions.cpp search/search.cpp
 msgid "Local Registry (32-bit)"
 msgstr "ローカル レジストリ (32 ビット)"
@@ -2215,8 +2202,8 @@ msgstr "キーを開きましたが、次の値は含まれていません:"
 msgid "Value Not Found"
 msgstr "値が見つかりません"
 
-#: frame/views/registry_sessions.cpp frame/window/appearance.cpp
-#: frame/window/notifications.cpp ui/feedback.cpp
+#: frame/views/registry_sessions.cpp frame/window/notifications.cpp
+#: ui/feedback.cpp
 msgid "OK"
 msgstr "OK"
 
@@ -2285,126 +2272,6 @@ msgid "(value not set)"
 msgstr "(値の設定なし)"
 
 #: frame/window/appearance.cpp
-msgid "Theme Presets"
-msgstr "テーマ プリセット"
-
-#: frame/window/appearance.cpp
-msgid "Presets"
-msgstr "プリセット"
-
-#: frame/window/appearance.cpp
-msgid "Colors"
-msgstr "色"
-
-#: frame/window/appearance.cpp
-msgid "Templates"
-msgstr "テンプレート"
-
-#: frame/window/appearance.cpp
-msgid "Color"
-msgstr "色"
-
-#: frame/window/appearance.cpp
-msgid "Hex"
-msgstr ""
-
-#: frame/window/appearance.cpp
-msgid "Treat as dark theme"
-msgstr "ダーク テーマとして扱う"
-
-#: frame/window/appearance.cpp
-msgid "New..."
-msgstr "新規..."
-
-#: frame/window/appearance.cpp
-msgid "Duplicate"
-msgstr "複製"
-
-#: frame/window/appearance.cpp
-msgid "Rename..."
-msgstr "名前の変更..."
-
-#: frame/window/appearance.cpp frame/window/menu_bar.cpp ui/feedback.cpp
-msgid "Delete"
-msgstr "削除"
-
-#: frame/window/appearance.cpp
-msgid "Import..."
-msgstr "インポート..."
-
-#: frame/window/appearance.cpp
-msgid "Export..."
-msgstr "エクスポート..."
-
-#: frame/window/appearance.cpp
-msgid "Edit Color..."
-msgstr "色の編集..."
-
-#: frame/window/appearance.cpp
-msgid "Apply Template"
-msgstr "テンプレートの適用"
-
-#: frame/window/appearance.cpp
-msgid "Apply"
-msgstr "適用"
-
-#: frame/window/appearance.cpp
-msgid "New Preset"
-msgstr "新しいプリセット"
-
-#: frame/window/appearance.cpp
-msgid "Rename Preset"
-msgstr "プリセット名の変更"
-
-#: frame/window/appearance.cpp
-msgid "Background"
-msgstr "背景"
-
-#: frame/window/appearance.cpp
-msgid "Panel"
-msgstr "パネル"
-
-#: frame/window/appearance.cpp
-msgid "Surface"
-msgstr "サーフェス"
-
-#: frame/window/appearance.cpp
-msgid "Header"
-msgstr "ヘッダー"
-
-#: frame/window/appearance.cpp
-msgid "Border"
-msgstr "境界線"
-
-#: frame/window/appearance.cpp registry/value_decoder.cpp
-msgid "Text"
-msgstr "テキスト"
-
-#: frame/window/appearance.cpp
-msgid "Muted Text"
-msgstr "控えめなテキスト"
-
-#: frame/window/appearance.cpp
-msgid "Accent"
-msgstr "アクセント"
-
-#: frame/window/appearance.cpp
-msgid "Selection"
-msgstr "選択範囲"
-
-#: frame/window/appearance.cpp
-msgid "Selection Text"
-msgstr "選択範囲のテキスト"
-
-#: frame/window/appearance.cpp
-msgid "Hover"
-msgstr "ホバー"
-
-#: frame/window/appearance.cpp
-msgid "Focus"
-msgstr "フォーカス"
-
-#: frame/window/appearance.cpp
 msgid "Preset name:"
 msgstr "プリセット名:"
 
@@ -2428,6 +2295,10 @@ msgstr "テーマ プリセットをエクスポートできませんでした�
 msgid "Administrator"
 msgstr "管理者"
 
+#: frame/window/events.cpp
+msgid "Paste and &Go"
+msgstr "貼り付けて移動(&G)"
+
 #: frame/window/lifetime.cpp
 msgid "SYSTEM has no Desktop folder, so Windows reports \"Location is not available\" in file dialogs. Create this folder to prevent the error?"
 msgstr "SYSTEM には Desktop フォルダーがないため、Windows のファイル ダイアログに \"場所が利用できません\" と表示されます。このフォルダーを作成してエラーを防ぎますか?"
@@ -2445,16 +2316,17 @@ msgid "Go"
 msgstr "移動"
 
 #: frame/window/lifetime.cpp
-msgid "Close Tab"
-msgstr "タブを閉じる"
-
-#: frame/window/lifetime.cpp
 msgid "Tabs"
 msgstr "タブ"
 
 #: frame/window/lifetime.cpp
 msgid "Key Tree"
 msgstr "キー ツリー"
+
+#: frame/window/lifetime.cpp
+#, fuzzy
+msgid "Clear Filter"
+msgstr "履歴のクリア(&H)"
 
 #: frame/window/lifetime.cpp
 msgid "History"
@@ -2488,13 +2360,17 @@ msgstr "元に戻す"
 msgid "Redo"
 msgstr "やり直し"
 
-#: frame/window/menu_bar.cpp ui/feedback.cpp ui/list_view_support.cpp
+#: frame/window/menu_bar.cpp ui/feedback.cpp
 msgid "Copy"
 msgstr "コピー"
 
 #: frame/window/menu_bar.cpp
 msgid "Paste"
 msgstr "貼り付け"
+
+#: frame/window/menu_bar.cpp ui/feedback.cpp
+msgid "Delete"
+msgstr "削除"
 
 #: frame/window/menu_bar.cpp
 msgid "Refresh"
@@ -2569,6 +2445,10 @@ msgid "&File"
 msgstr "ファイル(&F)"
 
 #: frame/window/menu_bar.cpp
+msgid "&Undo"
+msgstr "元に戻す(&U)"
+
+#: frame/window/menu_bar.cpp
 msgid "&Redo"
 msgstr "やり直し(&R)"
 
@@ -2595,6 +2475,14 @@ msgstr "値のデータ(&D)"
 #: frame/window/menu_bar.cpp
 msgid "Copy &Other"
 msgstr "その他のコピー(&O)"
+
+#: frame/window/menu_bar.cpp
+msgid "&Paste"
+msgstr "貼り付け(&P)"
+
+#: frame/window/menu_bar.cpp
+msgid "Select &All"
+msgstr "すべて選択(&A)"
 
 #: frame/window/menu_bar.cpp
 msgid "Inv&ert Selection"
@@ -3134,63 +3022,6 @@ msgstr "管理者としての再起動がキャンセルされました。"
 msgid "Failed to create the main window."
 msgstr "メイン ウィンドウを作成できませんでした。"
 
-#: records/json.cpp
-msgid "The file isn't valid JSON."
-msgstr "ファイルが有効な JSON ではありません。"
-
-#: records/json.cpp
-msgid "The file is nested too deeply."
-msgstr "ファイルの入れ子が深すぎます。"
-
-#: records/json.cpp
-msgid "A text member is longer than the format allows."
-msgstr "テキスト プロパティがこの形式の長さの上限を超えています。"
-
-#: records/json.cpp
-msgid "The file ends inside a string."
-msgstr "ファイルが文字列の途中で終わっています。"
-
-#: records/json.cpp
-msgid "A string contains an unescaped control character."
-msgstr "文字列にエスケープされていない制御文字があります。"
-
-#: records/json.cpp
-msgid "A string contains a malformed escape."
-msgstr "文字列に不正なエスケープがあります。"
-
-#: records/json.cpp
-msgid "A string contains an unsupported escape."
-msgstr "文字列にサポートされていないエスケープがあります。"
-
-#: records/json.cpp
-msgid "An unsigned number was expected."
-msgstr "符号なしの数値が必要です。"
-
-#: records/json.cpp
-msgid "A number has a leading zero."
-msgstr "数値に先行ゼロがあります。"
-
-#: records/json.cpp
-msgid "A number is out of range."
-msgstr "数値が範囲外です。"
-
-#: records/json.cpp
-msgid "Only unsigned integers are supported."
-msgstr "符号なし整数のみサポートしています。"
-
-#: records/json.cpp
-msgid "The file contains trailing content."
-msgstr "ファイルの末尾に余分な内容があります。"
-
-#: records/json.cpp regfile/batch_script.cpp regfile/powershell_script.cpp
-#: win32/file_text.cpp
-msgid "Line"
-msgstr "行"
-
-#: records/json.cpp
-msgid "Column"
-msgstr ""
-
 #: regfile/batch_script.cpp
 msgid "Unsupported reg command"
 msgstr "サポートされていない reg コマンド"
@@ -3222,6 +3053,10 @@ msgstr "バッチ引数を解決できません。"
 #: regfile/batch_script.cpp regfile/powershell_script.cpp
 msgid "Variable can't be resolved"
 msgstr "変数を解決できません"
+
+#: regfile/batch_script.cpp regfile/powershell_script.cpp win32/file_text.cpp
+msgid "Line"
+msgstr "行"
 
 #: regfile/batch_script.cpp regfile/powershell_script.cpp
 msgid "Unsupported command"
@@ -3740,60 +3575,12 @@ msgid "This value type has no text form."
 msgstr "この値の種類にはテキスト形式がありません。"
 
 #: registry/value_decoder.cpp
-msgid "Invalid Base64 character."
-msgstr "無効な Base64 文字です。"
-
-#: registry/value_decoder.cpp
-msgid "Invalid Base64 padding bits."
-msgstr "Base64 のパディング ビットが無効です。"
-
-#: registry/value_decoder.cpp
-msgid "Input is too large to decode."
-msgstr "入力が大きすぎてデコードできません。"
-
-#: registry/value_decoder.cpp
-msgid "The text couldn't be decoded."
-msgstr "テキストをデコードできませんでした。"
-
-#: registry/value_decoder.cpp
-msgid "Base64 length isn't a multiple of four."
-msgstr "Base64 の長さは 4 の倍数ではありません。"
-
-#: registry/value_decoder.cpp
-msgid "Invalid Base64URL character."
-msgstr "無効な Base64URL 文字です。"
-
-#: registry/value_decoder.cpp
-msgid "Base64URL padding isn't at the end."
-msgstr "Base64URL のパディングが末尾にありません。"
-
-#: registry/value_decoder.cpp
-msgid "Base64URL length isn't valid."
-msgstr "Base64URL の長さが無効です。"
-
-#: registry/value_decoder.cpp
-msgid "Base64URL padding is incomplete."
-msgstr "Base64URL のパディングが不完全です。"
-
-#: registry/value_decoder.cpp
-msgid "Invalid hex character."
-msgstr "無効な 16 進文字です。"
-
-#: registry/value_decoder.cpp
 msgid "Incomplete hex byte."
 msgstr "16 進バイトが不完全です。"
 
 #: registry/value_decoder.cpp
-msgid "Incomplete percent escape."
-msgstr "パーセント エスケープが不完全です。"
-
-#: registry/value_decoder.cpp
-msgid "Invalid percent escape."
-msgstr "パーセント エスケープが無効です。"
-
-#: registry/value_decoder.cpp
-msgid "Percent encoded text must be ASCII."
-msgstr "パーセント エンコードされたテキストは ASCII である必要があります。"
+msgid "Invalid hex character."
+msgstr "無効な 16 進文字です。"
 
 #: registry/value_decoder.cpp
 msgid "Invalid FILETIME."
@@ -3802,6 +3589,14 @@ msgstr "無効な FILETIME です。"
 #: registry/value_decoder.cpp
 msgid "Local"
 msgstr "ローカル"
+
+#: registry/value_decoder.cpp
+msgid "Input is too large to decode."
+msgstr "入力が大きすぎてデコードできません。"
+
+#: registry/value_decoder.cpp
+msgid "Text"
+msgstr "テキスト"
 
 #: registry/value_decoder.cpp
 msgid "Bytes"
@@ -4104,6 +3899,11 @@ msgid "Trace file contains no usable entries."
 msgstr "Trace ファイルに使用できる項目がありません。"
 
 #: ui/feedback.cpp
+#, fuzzy
+msgid "The background task couldn't be started."
+msgstr "セットアップを起動できませんでした。"
+
+#: ui/feedback.cpp
 msgid "Warning"
 msgstr "警告"
 
@@ -4208,26 +4008,6 @@ msgstr ""
 msgid "Restart Anyway"
 msgstr "それでも再起動する"
 
-#: ui/list_view_support.cpp
-msgid "Size column to fit"
-msgstr "列の幅を内容に合わせる"
-
-#: ui/list_view_support.cpp
-msgid "Size all columns to fit"
-msgstr "すべての列の幅を内容に合わせる"
-
-#: ui/list_view_support.cpp
-msgid "Reset columns"
-msgstr "列をリセット"
-
-#: ui/list_view_support.cpp
-msgid "Select All"
-msgstr "すべて選択"
-
-#: ui/list_view_support.cpp
-msgid "Grid Lines"
-msgstr "グリッド線"
-
 #: ui/presets.cpp
 msgid "The theme preset file contains an entry RegKit can't parse."
 msgstr "テーマ プリセット ファイルに RegKit で解析できない項目があります。"
@@ -4262,21 +4042,308 @@ msgstr "ファイルの入れ子が深すぎます。"
 msgid "The file isn't valid text."
 msgstr "ファイルが有効な JSON ではありません。"
 
-#: win32/system_error.cpp
+#: win32ui/dialog/check_list.cpp
+msgid "Select All"
+msgstr "すべて選択"
+
+#: win32ui/dialog/check_list.cpp
+msgid "Clear All"
+msgstr "すべてクリア"
+
+#: win32ui/dialog/edit.cpp
+msgid "Cu&t"
+msgstr "切り取り(&T)"
+
+#: win32ui/dialog/text_prompt.cpp
+msgid "Browse..."
+msgstr "参照..."
+
+#: win32ui/json/reader.cpp
+#, fuzzy, c-format
+msgid "Expected '%c'."
+msgstr "'}' が必要です。"
+
+#: win32ui/json/reader.cpp
+msgid "The file is nested too deeply."
+msgstr "ファイルの入れ子が深すぎます。"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "An unterminated block comment is not allowed."
+msgstr "ブロック コメントが閉じられていません。"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "Unexpected token."
+msgstr "予期しないトークン"
+
+#: win32ui/json/reader.cpp
+msgid "A text member is longer than the format allows."
+msgstr "テキスト プロパティがこの形式の長さの上限を超えています。"
+
+#: win32ui/json/reader.cpp
+msgid "The file ends inside a string."
+msgstr "ファイルが文字列の途中で終わっています。"
+
+#: win32ui/json/reader.cpp
+msgid "A string contains an unescaped control character."
+msgstr "文字列にエスケープされていない制御文字があります。"
+
+#: win32ui/json/reader.cpp
+msgid "A string contains a malformed escape."
+msgstr "文字列に不正なエスケープがあります。"
+
+#: win32ui/json/reader.cpp
+msgid "A string contains an unsupported escape."
+msgstr "文字列にサポートされていないエスケープがあります。"
+
+#: win32ui/json/reader.cpp
+msgid "An unsigned number was expected."
+msgstr "符号なしの数値が必要です。"
+
+#: win32ui/json/reader.cpp
+msgid "A number has a leading zero."
+msgstr "数値に先行ゼロがあります。"
+
+#: win32ui/json/reader.cpp
+msgid "A number is out of range."
+msgstr "数値が範囲外です。"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "Only integers are supported."
+msgstr "符号なし整数のみサポートしています。"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A boolean was expected."
+msgstr "符号なしの数値が必要です。"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A number has an empty fraction."
+msgstr "数値に先行ゼロがあります。"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A number has an empty exponent."
+msgstr "コメントのキーが空です。"
+
+#: win32ui/json/reader.cpp
+msgid "The file contains trailing content."
+msgstr "ファイルの末尾に余分な内容があります。"
+
+#: win32ui/json/reader.cpp
+msgid "The file isn't valid JSON."
+msgstr "ファイルが有効な JSON ではありません。"
+
+#: win32ui/json/reader.cpp
+msgid "Column"
+msgstr ""
+
+#: win32ui/list_view/list_view.cpp
+msgid "Size column to fit"
+msgstr "列の幅を内容に合わせる"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Size all columns to fit"
+msgstr "すべての列の幅を内容に合わせる"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Reset columns"
+msgstr "列をリセット"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Grid Lines"
+msgstr "グリッド線"
+
+#: win32ui/system/error_text.cpp
 msgid "Unknown error."
 msgstr "不明なエラーです。"
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64 character."
+msgstr "無効な Base64 文字です。"
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64 padding bits."
+msgstr "Base64 のパディング ビットが無効です。"
+
+#: win32ui/system/strings.cpp
+msgid "The text couldn't be decoded."
+msgstr "テキストをデコードできませんでした。"
+
+#: win32ui/system/strings.cpp
+msgid "Base64 length isn't a multiple of four."
+msgstr "Base64 の長さは 4 の倍数ではありません。"
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64URL character."
+msgstr "無効な Base64URL 文字です。"
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL padding isn't at the end."
+msgstr "Base64URL のパディングが末尾にありません。"
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL length isn't valid."
+msgstr "Base64URL の長さが無効です。"
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL padding is incomplete."
+msgstr "Base64URL のパディングが不完全です。"
+
+#: win32ui/system/strings.cpp
+msgid "Incomplete percent escape."
+msgstr "パーセント エスケープが不完全です。"
+
+#: win32ui/system/strings.cpp
+msgid "Invalid percent escape."
+msgstr "パーセント エスケープが無効です。"
+
+#: win32ui/system/strings.cpp
+msgid "Percent encoded text must be ASCII."
+msgstr "パーセント エンコードされたテキストは ASCII である必要があります。"
+
+#: win32ui/tab_strip/tab_strip.cpp
+msgid "Close Tab"
+msgstr "タブを閉じる"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Theme Presets"
+msgstr "テーマ プリセット"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Presets"
+msgstr "プリセット"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Colors"
+msgstr "色"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Templates"
+msgstr "テンプレート"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "New..."
+msgstr "新規..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Duplicate"
+msgstr "複製"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Rename..."
+msgstr "名前の変更..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Import..."
+msgstr "インポート..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Export..."
+msgstr "エクスポート..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Edit Color..."
+msgstr "色の編集..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Treat as dark theme"
+msgstr "ダーク テーマとして扱う"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Apply Template"
+msgstr "テンプレートの適用"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Apply"
+msgstr "適用"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Color"
+msgstr "色"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Hex"
+msgstr ""
+
+#: win32ui/theme/preset_editor.cpp
+msgid "New Preset"
+msgstr "新しいプリセット"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Rename Preset"
+msgstr "プリセット名の変更"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "The file could not be read."
+msgstr "定義ファイルを読み取れませんでした。"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "A preset has no name."
+msgstr "プリセット名:"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "A line is not a valid entry."
+msgstr "ファイルが有効な JSON ではありません。"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "The file could not be written."
+msgstr "出力ファイルを書き込めませんでした。"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Background"
+msgstr "背景"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Panel"
+msgstr "パネル"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Surface"
+msgstr "サーフェス"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Header"
+msgstr "ヘッダー"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Border"
+msgstr "境界線"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Muted Text"
+msgstr "控えめなテキスト"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Accent"
+msgstr "アクセント"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Selection"
+msgstr "選択範囲"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Selection Text"
+msgstr "選択範囲のテキスト"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Hover"
+msgstr "ホバー"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Focus"
+msgstr "フォーカス"
 
 #: ../resources/app.rc
 msgid "Key Handles"
 msgstr "キー ハンドル"
-
-#: ../resources/editor_dialogs.rc
-msgid "Value data:"
-msgstr "値のデータ:"
-
-#: ../resources/editor_dialogs.rc ../resources/search_dialogs.rc
-msgid "Browse..."
-msgstr "参照..."
 
 #: ../resources/editor_dialogs.rc
 msgid "Edit Comment"
@@ -4369,6 +4436,10 @@ msgstr ""
 #: ../resources/editor_dialogs.rc
 msgid "Bits..."
 msgstr "ビット..."
+
+#: ../resources/editor_dialogs.rc
+msgid "Value data:"
+msgstr "値のデータ:"
 
 #: ../resources/editor_dialogs.rc
 msgid "Strings (one per line):"
@@ -4818,14 +4889,6 @@ msgstr "結果を新しいタブで開く"
 #: ../resources/search_dialogs.rc
 msgid "Limit results to"
 msgstr "結果数の上限"
-
-#: ../resources/search_dialogs.rc
-msgid "Data Types"
-msgstr "データの種類"
-
-#: ../resources/search_dialogs.rc
-msgid "Clear All"
-msgstr "すべてクリア"
 
 #: ../resources/search_dialogs.rc
 msgid "Browse Key"

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegKit\n"
 "Report-Msgid-Bugs-To: https://github.com/nohuto/regkit/issues\n"
-"POT-Creation-Date: 2026-10-27 11:28+0100\n"
+"POT-Creation-Date: 2026-11-02 18:21+0100\n"
 "PO-Revision-Date: 2026-10-09 20:51+0200\n"
 "Last-Translator: nohuto contact@noverse.dev\n"
 "Language-Team: none\n"
@@ -282,7 +282,6 @@ msgid "Mask"
 msgstr "掩码"
 
 #: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
-#: frame/window/appearance.cpp
 msgid "Field"
 msgstr "字段"
 
@@ -331,8 +330,8 @@ msgstr "放弃"
 #: frame/commands/mutation_commands.cpp frame/commands/workspace_commands.cpp
 #: frame/tools/key_handles_window.cpp frame/tools/launch_bridge.cpp
 #: frame/views/history_workspace.cpp frame/views/registry_sessions.cpp
-#: frame/views/tab_lists.cpp frame/window/appearance.cpp
-#: frame/window/lifetime.cpp frame/window/message_routes.cpp ui/feedback.cpp
+#: frame/views/tab_lists.cpp frame/window/lifetime.cpp
+#: frame/window/message_routes.cpp ui/feedback.cpp
 msgid "Cancel"
 msgstr "取消"
 
@@ -484,6 +483,10 @@ msgstr "输入链接名称和目标项。"
 msgid "The link name can't contain a backslash."
 msgstr "链接名称不能包含反斜杠。"
 
+#: dialogs/query_dialog.cpp frame/views/history_workspace.cpp
+msgid "RegKit couldn't read this file and didn't use it."
+msgstr ""
+
 #: dialogs/query_dialog.cpp
 msgid "No top level keys"
 msgstr "不选顶层项"
@@ -557,6 +560,10 @@ msgstr "每行应包含一个项。"
 #: dialogs/query_prompts.cpp
 msgid "Select at least one data type."
 msgstr "选择至少一种数据类型。"
+
+#: dialogs/query_prompts.cpp
+msgid "Data Types"
+msgstr "数据类型"
 
 #: dialogs/query_prompts.cpp
 msgid "Select a key."
@@ -888,32 +895,6 @@ msgstr "权限(&I)..."
 msgid "&Key Information..."
 msgstr "项信息(&K)..."
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-msgid "&Undo"
-msgstr "撤消(&U)"
-
-#: frame/commands/context_menus.cpp
-msgid "Cu&t"
-msgstr "剪切(&T)"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-#: ui/list_view_support.cpp
-msgid "&Copy"
-msgstr "复制(&C)"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-msgid "&Paste"
-msgstr "粘贴(&P)"
-
-#: frame/commands/context_menus.cpp
-msgid "Paste and &Go"
-msgstr "粘贴并转到(&G)"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-#: ui/list_view_support.cpp
-msgid "Select &All"
-msgstr "全选(&A)"
-
 #: frame/commands/context_menus.cpp
 msgid "Co&llapse Key"
 msgstr "折叠项(&L)"
@@ -965,6 +946,10 @@ msgstr "打开条目(&O)"
 #: frame/commands/context_menus.cpp
 msgid "R&evert"
 msgstr "撤消更改(&E)"
+
+#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
+msgid "&Copy"
+msgstr "复制(&C)"
 
 #: frame/commands/context_menus.cpp
 msgid "Remove &from History"
@@ -1183,6 +1168,11 @@ msgid "Later"
 msgstr "稍后"
 
 #: frame/commands/workspace_commands.cpp
+#, fuzzy
+msgid "A new RegKit window couldn't be opened."
+msgstr "无法重启 RegKit。"
+
+#: frame/commands/workspace_commands.cpp
 msgid "Backup/restore mode needs the backup and restore privileges. Run RegKit elevated."
 msgstr "备份/还原模式需要备份和还原特权。请以提升的权限运行 RegKit。"
 
@@ -1206,10 +1196,6 @@ msgstr "注册表路径无效。"
 #: frame/window/message_routes.cpp launch/program.cpp
 msgid "Registry path not found."
 msgstr "找不到注册表路径。"
-
-#: frame/search/compare_command.cpp
-msgid "Compare Registries..."
-msgstr "比较注册表..."
 
 #: frame/search/compare_command.cpp frame/search/compare_dialog.cpp
 #: frame/sources/regfile_commands.cpp regfile/registry_transfer.cpp
@@ -1235,6 +1221,10 @@ msgstr "已跳过"
 #: frame/search/compare_command.cpp search/compare.cpp
 msgid "Couldn't read the registry key."
 msgstr "无法读取注册表项。"
+
+#: frame/search/compare_command.cpp
+msgid "Compare Registries..."
+msgstr "比较注册表..."
 
 #: frame/search/compare_command.cpp
 msgid "Registry Comparison"
@@ -1492,6 +1482,7 @@ msgid "Close Handles"
 msgstr "关闭多个句柄"
 
 #: frame/tools/key_handles_window.cpp frame/tools/update_checker.cpp
+#: frame/window/lifetime.cpp
 msgid "Close"
 msgstr "关闭"
 
@@ -1597,8 +1588,16 @@ msgid "Protected process"
 msgstr "受保护的进程"
 
 #: frame/tools/launch_bridge.cpp
-msgid "Key Information"
-msgstr "项信息"
+msgid "Don't virtualize"
+msgstr "不虚拟化"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Don't silent fail"
+msgstr "不静默失败"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Recurse"
+msgstr "递归"
 
 #: frame/tools/launch_bridge.cpp frame/views/value_loading.cpp ui/feedback.cpp
 msgid "Yes"
@@ -1701,18 +1700,6 @@ msgid "32-bit view"
 msgstr "32 位视图"
 
 #: frame/tools/launch_bridge.cpp
-msgid "Don't virtualize"
-msgstr "不虚拟化"
-
-#: frame/tools/launch_bridge.cpp
-msgid "Don't silent fail"
-msgstr "不静默失败"
-
-#: frame/tools/launch_bridge.cpp
-msgid "Recurse"
-msgstr "递归"
-
-#: frame/tools/launch_bridge.cpp
 msgid "Virtualization flags"
 msgstr "虚拟化标志"
 
@@ -1773,6 +1760,14 @@ msgid "Integrity level"
 msgstr "完整性级别"
 
 #: frame/tools/launch_bridge.cpp
+msgid "Key Information"
+msgstr "项信息"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Permissions..."
+msgstr "权限..."
+
+#: frame/tools/launch_bridge.cpp
 msgid "Flag"
 msgstr "标志"
 
@@ -1794,16 +1789,12 @@ msgid "The key's permissions couldn't be read."
 msgstr "无法读取项信息。"
 
 #: frame/tools/launch_bridge.cpp
-msgid "Permissions..."
-msgstr "权限..."
+msgid "The resource data is malformed."
+msgstr "资源数据格式错误。"
 
 #: frame/tools/launch_bridge.cpp
 msgid "Edit Value"
 msgstr "编辑值"
-
-#: frame/tools/launch_bridge.cpp
-msgid "The resource data is malformed."
-msgstr "资源数据格式错误。"
 
 #: frame/tools/launch_bridge.cpp
 msgid "Edit Binary..."
@@ -1837,7 +1828,7 @@ msgstr "找不到设置文件。"
 msgid "The settings file couldn't be reset."
 msgstr "无法重置设置文件。"
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with administrator rights."
 msgstr "无法以管理员权限重启。"
 
@@ -1845,29 +1836,29 @@ msgstr "无法以管理员权限重启。"
 msgid "Failed to restart as the signed-in user."
 msgstr "无法以已登录用户身份重启。"
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Restart as SYSTEM"
 msgstr "以 SYSTEM 身份重启"
 
-#: frame/tools/launch_bridge.cpp
-msgid "Failed to request SYSTEM restart."
-msgstr "无法请求以 SYSTEM 身份重启。"
-
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with SYSTEM rights."
 msgstr "无法以 SYSTEM 权限重启。"
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
+msgid "Failed to request SYSTEM restart."
+msgstr "无法请求以 SYSTEM 身份重启。"
+
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Restart as TrustedInstaller"
 msgstr "以 TrustedInstaller 身份重启"
 
-#: frame/tools/launch_bridge.cpp
-msgid "Failed to request TrustedInstaller restart."
-msgstr "无法请求以 TrustedInstaller 身份重启。"
-
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with TrustedInstaller rights."
 msgstr "无法以 TrustedInstaller 权限重启。"
+
+#: frame/tools/launch_bridge.cpp launch/program.cpp
+msgid "Failed to request TrustedInstaller restart."
+msgstr "无法请求以 TrustedInstaller 身份重启。"
 
 #: frame/tools/launch_bridge.cpp
 msgid ""
@@ -2103,10 +2094,6 @@ msgstr "长度不同"
 msgid "The comment couldn't be saved."
 msgstr "无法保存注释。"
 
-#: frame/views/history_workspace.cpp
-msgid "RegKit couldn't read this file and didn't use it."
-msgstr ""
-
 #: frame/views/registry_sessions.cpp search/search.cpp
 msgid "Local Registry (32-bit)"
 msgstr "本地注册表 (32 位)"
@@ -2215,8 +2202,8 @@ msgstr "项已打开，但其中没有此值:"
 msgid "Value Not Found"
 msgstr "找不到值"
 
-#: frame/views/registry_sessions.cpp frame/window/appearance.cpp
-#: frame/window/notifications.cpp ui/feedback.cpp
+#: frame/views/registry_sessions.cpp frame/window/notifications.cpp
+#: ui/feedback.cpp
 msgid "OK"
 msgstr "确定"
 
@@ -2285,126 +2272,6 @@ msgid "(value not set)"
 msgstr "(数值未设置)"
 
 #: frame/window/appearance.cpp
-msgid "Theme Presets"
-msgstr "主题预设"
-
-#: frame/window/appearance.cpp
-msgid "Presets"
-msgstr "预设"
-
-#: frame/window/appearance.cpp
-msgid "Colors"
-msgstr "颜色设置"
-
-#: frame/window/appearance.cpp
-msgid "Templates"
-msgstr "模板"
-
-#: frame/window/appearance.cpp
-msgid "Color"
-msgstr "颜色"
-
-#: frame/window/appearance.cpp
-msgid "Hex"
-msgstr ""
-
-#: frame/window/appearance.cpp
-msgid "Treat as dark theme"
-msgstr "视为深色主题"
-
-#: frame/window/appearance.cpp
-msgid "New..."
-msgstr "新建..."
-
-#: frame/window/appearance.cpp
-msgid "Duplicate"
-msgstr "创建副本"
-
-#: frame/window/appearance.cpp
-msgid "Rename..."
-msgstr "重命名..."
-
-#: frame/window/appearance.cpp frame/window/menu_bar.cpp ui/feedback.cpp
-msgid "Delete"
-msgstr "删除"
-
-#: frame/window/appearance.cpp
-msgid "Import..."
-msgstr "导入..."
-
-#: frame/window/appearance.cpp
-msgid "Export..."
-msgstr "导出..."
-
-#: frame/window/appearance.cpp
-msgid "Edit Color..."
-msgstr "编辑颜色..."
-
-#: frame/window/appearance.cpp
-msgid "Apply Template"
-msgstr "应用模板"
-
-#: frame/window/appearance.cpp
-msgid "Apply"
-msgstr "应用"
-
-#: frame/window/appearance.cpp
-msgid "New Preset"
-msgstr "新建预设"
-
-#: frame/window/appearance.cpp
-msgid "Rename Preset"
-msgstr "重命名预设"
-
-#: frame/window/appearance.cpp
-msgid "Background"
-msgstr "背景"
-
-#: frame/window/appearance.cpp
-msgid "Panel"
-msgstr "面板"
-
-#: frame/window/appearance.cpp
-msgid "Surface"
-msgstr "表面"
-
-#: frame/window/appearance.cpp
-msgid "Header"
-msgstr "标题"
-
-#: frame/window/appearance.cpp
-msgid "Border"
-msgstr "边框"
-
-#: frame/window/appearance.cpp registry/value_decoder.cpp
-msgid "Text"
-msgstr "文本"
-
-#: frame/window/appearance.cpp
-msgid "Muted Text"
-msgstr "弱化文本"
-
-#: frame/window/appearance.cpp
-msgid "Accent"
-msgstr "强调色"
-
-#: frame/window/appearance.cpp
-msgid "Selection"
-msgstr "选中背景"
-
-#: frame/window/appearance.cpp
-msgid "Selection Text"
-msgstr "选中文本"
-
-#: frame/window/appearance.cpp
-msgid "Hover"
-msgstr "悬停"
-
-#: frame/window/appearance.cpp
-msgid "Focus"
-msgstr "焦点"
-
-#: frame/window/appearance.cpp
 msgid "Preset name:"
 msgstr "预设名称:"
 
@@ -2428,6 +2295,10 @@ msgstr "无法导出主题预设。"
 msgid "Administrator"
 msgstr "管理员"
 
+#: frame/window/events.cpp
+msgid "Paste and &Go"
+msgstr "粘贴并转到(&G)"
+
 #: frame/window/lifetime.cpp
 msgid "SYSTEM has no Desktop folder, so Windows reports \"Location is not available\" in file dialogs. Create this folder to prevent the error?"
 msgstr "SYSTEM 没有 Desktop 文件夹，因此 Windows 会在文件对话框中报告\"位置不可用\"。要创建此文件夹以避免此错误吗?"
@@ -2445,16 +2316,17 @@ msgid "Go"
 msgstr "转到"
 
 #: frame/window/lifetime.cpp
-msgid "Close Tab"
-msgstr "关闭选项卡"
-
-#: frame/window/lifetime.cpp
 msgid "Tabs"
 msgstr "选项卡"
 
 #: frame/window/lifetime.cpp
 msgid "Key Tree"
 msgstr "项树"
+
+#: frame/window/lifetime.cpp
+#, fuzzy
+msgid "Clear Filter"
+msgstr "清除历史记录(&H)"
 
 #: frame/window/lifetime.cpp
 msgid "History"
@@ -2488,13 +2360,17 @@ msgstr "撤消"
 msgid "Redo"
 msgstr "重做"
 
-#: frame/window/menu_bar.cpp ui/feedback.cpp ui/list_view_support.cpp
+#: frame/window/menu_bar.cpp ui/feedback.cpp
 msgid "Copy"
 msgstr "复制"
 
 #: frame/window/menu_bar.cpp
 msgid "Paste"
 msgstr "粘贴"
+
+#: frame/window/menu_bar.cpp ui/feedback.cpp
+msgid "Delete"
+msgstr "删除"
 
 #: frame/window/menu_bar.cpp
 msgid "Refresh"
@@ -2569,6 +2445,10 @@ msgid "&File"
 msgstr "文件(&F)"
 
 #: frame/window/menu_bar.cpp
+msgid "&Undo"
+msgstr "撤消(&U)"
+
+#: frame/window/menu_bar.cpp
 msgid "&Redo"
 msgstr "重做(&R)"
 
@@ -2595,6 +2475,14 @@ msgstr "值数据(&D)"
 #: frame/window/menu_bar.cpp
 msgid "Copy &Other"
 msgstr "复制其他内容(&O)"
+
+#: frame/window/menu_bar.cpp
+msgid "&Paste"
+msgstr "粘贴(&P)"
+
+#: frame/window/menu_bar.cpp
+msgid "Select &All"
+msgstr "全选(&A)"
 
 #: frame/window/menu_bar.cpp
 msgid "Inv&ert Selection"
@@ -3134,63 +3022,6 @@ msgstr "以管理员身份重启已取消。"
 msgid "Failed to create the main window."
 msgstr "无法创建主窗口。"
 
-#: records/json.cpp
-msgid "The file isn't valid JSON."
-msgstr "此文件不是有效的 JSON。"
-
-#: records/json.cpp
-msgid "The file is nested too deeply."
-msgstr "文件嵌套过深。"
-
-#: records/json.cpp
-msgid "A text member is longer than the format allows."
-msgstr "文本成员的长度超出格式允许的范围。"
-
-#: records/json.cpp
-msgid "The file ends inside a string."
-msgstr "文件在字符串中途结束。"
-
-#: records/json.cpp
-msgid "A string contains an unescaped control character."
-msgstr "字符串中有未转义的控制字符。"
-
-#: records/json.cpp
-msgid "A string contains a malformed escape."
-msgstr "字符串中有格式错误的转义序列。"
-
-#: records/json.cpp
-msgid "A string contains an unsupported escape."
-msgstr "字符串中有不支持的转义序列。"
-
-#: records/json.cpp
-msgid "An unsigned number was expected."
-msgstr "应为无符号数字。"
-
-#: records/json.cpp
-msgid "A number has a leading zero."
-msgstr "数字有前导零。"
-
-#: records/json.cpp
-msgid "A number is out of range."
-msgstr "数字超出范围。"
-
-#: records/json.cpp
-msgid "Only unsigned integers are supported."
-msgstr "仅支持无符号整数。"
-
-#: records/json.cpp
-msgid "The file contains trailing content."
-msgstr "文件中有多余的尾随内容。"
-
-#: records/json.cpp regfile/batch_script.cpp regfile/powershell_script.cpp
-#: win32/file_text.cpp
-msgid "Line"
-msgstr "行"
-
-#: records/json.cpp
-msgid "Column"
-msgstr ""
-
 #: regfile/batch_script.cpp
 msgid "Unsupported reg command"
 msgstr "不支持的 reg 命令"
@@ -3222,6 +3053,10 @@ msgstr "无法解析批处理参数。"
 #: regfile/batch_script.cpp regfile/powershell_script.cpp
 msgid "Variable can't be resolved"
 msgstr "无法解析变量"
+
+#: regfile/batch_script.cpp regfile/powershell_script.cpp win32/file_text.cpp
+msgid "Line"
+msgstr "行"
 
 #: regfile/batch_script.cpp regfile/powershell_script.cpp
 msgid "Unsupported command"
@@ -3740,60 +3575,12 @@ msgid "This value type has no text form."
 msgstr "此值类型没有文本形式。"
 
 #: registry/value_decoder.cpp
-msgid "Invalid Base64 character."
-msgstr "Base64 字符无效。"
-
-#: registry/value_decoder.cpp
-msgid "Invalid Base64 padding bits."
-msgstr "Base64 填充位无效。"
-
-#: registry/value_decoder.cpp
-msgid "Input is too large to decode."
-msgstr "输入过大，无法解码。"
-
-#: registry/value_decoder.cpp
-msgid "The text couldn't be decoded."
-msgstr "无法解码文本。"
-
-#: registry/value_decoder.cpp
-msgid "Base64 length isn't a multiple of four."
-msgstr "Base64 长度不是四的倍数。"
-
-#: registry/value_decoder.cpp
-msgid "Invalid Base64URL character."
-msgstr "Base64URL 字符无效。"
-
-#: registry/value_decoder.cpp
-msgid "Base64URL padding isn't at the end."
-msgstr "Base64URL 填充不在末尾。"
-
-#: registry/value_decoder.cpp
-msgid "Base64URL length isn't valid."
-msgstr "Base64URL 长度无效。"
-
-#: registry/value_decoder.cpp
-msgid "Base64URL padding is incomplete."
-msgstr "Base64URL 填充不完整。"
-
-#: registry/value_decoder.cpp
-msgid "Invalid hex character."
-msgstr "十六进制字符无效。"
-
-#: registry/value_decoder.cpp
 msgid "Incomplete hex byte."
 msgstr "十六进制字节不完整。"
 
 #: registry/value_decoder.cpp
-msgid "Incomplete percent escape."
-msgstr "百分号转义不完整。"
-
-#: registry/value_decoder.cpp
-msgid "Invalid percent escape."
-msgstr "百分号转义无效。"
-
-#: registry/value_decoder.cpp
-msgid "Percent encoded text must be ASCII."
-msgstr "百分号编码文本必须是 ASCII。"
+msgid "Invalid hex character."
+msgstr "十六进制字符无效。"
 
 #: registry/value_decoder.cpp
 msgid "Invalid FILETIME."
@@ -3802,6 +3589,14 @@ msgstr "FILETIME 无效。"
 #: registry/value_decoder.cpp
 msgid "Local"
 msgstr "本地"
+
+#: registry/value_decoder.cpp
+msgid "Input is too large to decode."
+msgstr "输入过大，无法解码。"
+
+#: registry/value_decoder.cpp
+msgid "Text"
+msgstr "文本"
 
 #: registry/value_decoder.cpp
 msgid "Bytes"
@@ -4104,6 +3899,11 @@ msgid "Trace file contains no usable entries."
 msgstr "Trace 文件中没有可用的条目。"
 
 #: ui/feedback.cpp
+#, fuzzy
+msgid "The background task couldn't be started."
+msgstr "无法启动安装程序。"
+
+#: ui/feedback.cpp
 msgid "Warning"
 msgstr "警告"
 
@@ -4208,26 +4008,6 @@ msgstr ""
 msgid "Restart Anyway"
 msgstr "仍然重启"
 
-#: ui/list_view_support.cpp
-msgid "Size column to fit"
-msgstr "调整列宽以适应内容"
-
-#: ui/list_view_support.cpp
-msgid "Size all columns to fit"
-msgstr "调整所有列宽以适应内容"
-
-#: ui/list_view_support.cpp
-msgid "Reset columns"
-msgstr "重置列"
-
-#: ui/list_view_support.cpp
-msgid "Select All"
-msgstr "全选"
-
-#: ui/list_view_support.cpp
-msgid "Grid Lines"
-msgstr "网格线"
-
 #: ui/presets.cpp
 msgid "The theme preset file contains an entry RegKit can't parse."
 msgstr "主题预设文件中有 RegKit 无法解析的条目。"
@@ -4262,21 +4042,308 @@ msgstr "文件嵌套过深。"
 msgid "The file isn't valid text."
 msgstr "此文件不是有效的 JSON。"
 
-#: win32/system_error.cpp
+#: win32ui/dialog/check_list.cpp
+msgid "Select All"
+msgstr "全选"
+
+#: win32ui/dialog/check_list.cpp
+msgid "Clear All"
+msgstr "全部清除"
+
+#: win32ui/dialog/edit.cpp
+msgid "Cu&t"
+msgstr "剪切(&T)"
+
+#: win32ui/dialog/text_prompt.cpp
+msgid "Browse..."
+msgstr "浏览..."
+
+#: win32ui/json/reader.cpp
+#, fuzzy, c-format
+msgid "Expected '%c'."
+msgstr "应为 '}'。"
+
+#: win32ui/json/reader.cpp
+msgid "The file is nested too deeply."
+msgstr "文件嵌套过深。"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "An unterminated block comment is not allowed."
+msgstr "块注释未终止。"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "Unexpected token."
+msgstr "意外的标记"
+
+#: win32ui/json/reader.cpp
+msgid "A text member is longer than the format allows."
+msgstr "文本成员的长度超出格式允许的范围。"
+
+#: win32ui/json/reader.cpp
+msgid "The file ends inside a string."
+msgstr "文件在字符串中途结束。"
+
+#: win32ui/json/reader.cpp
+msgid "A string contains an unescaped control character."
+msgstr "字符串中有未转义的控制字符。"
+
+#: win32ui/json/reader.cpp
+msgid "A string contains a malformed escape."
+msgstr "字符串中有格式错误的转义序列。"
+
+#: win32ui/json/reader.cpp
+msgid "A string contains an unsupported escape."
+msgstr "字符串中有不支持的转义序列。"
+
+#: win32ui/json/reader.cpp
+msgid "An unsigned number was expected."
+msgstr "应为无符号数字。"
+
+#: win32ui/json/reader.cpp
+msgid "A number has a leading zero."
+msgstr "数字有前导零。"
+
+#: win32ui/json/reader.cpp
+msgid "A number is out of range."
+msgstr "数字超出范围。"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "Only integers are supported."
+msgstr "仅支持无符号整数。"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A boolean was expected."
+msgstr "应为无符号数字。"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A number has an empty fraction."
+msgstr "数字有前导零。"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A number has an empty exponent."
+msgstr "注释的项路径为空。"
+
+#: win32ui/json/reader.cpp
+msgid "The file contains trailing content."
+msgstr "文件中有多余的尾随内容。"
+
+#: win32ui/json/reader.cpp
+msgid "The file isn't valid JSON."
+msgstr "此文件不是有效的 JSON。"
+
+#: win32ui/json/reader.cpp
+msgid "Column"
+msgstr ""
+
+#: win32ui/list_view/list_view.cpp
+msgid "Size column to fit"
+msgstr "调整列宽以适应内容"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Size all columns to fit"
+msgstr "调整所有列宽以适应内容"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Reset columns"
+msgstr "重置列"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Grid Lines"
+msgstr "网格线"
+
+#: win32ui/system/error_text.cpp
 msgid "Unknown error."
 msgstr "未知错误。"
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64 character."
+msgstr "Base64 字符无效。"
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64 padding bits."
+msgstr "Base64 填充位无效。"
+
+#: win32ui/system/strings.cpp
+msgid "The text couldn't be decoded."
+msgstr "无法解码文本。"
+
+#: win32ui/system/strings.cpp
+msgid "Base64 length isn't a multiple of four."
+msgstr "Base64 长度不是四的倍数。"
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64URL character."
+msgstr "Base64URL 字符无效。"
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL padding isn't at the end."
+msgstr "Base64URL 填充不在末尾。"
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL length isn't valid."
+msgstr "Base64URL 长度无效。"
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL padding is incomplete."
+msgstr "Base64URL 填充不完整。"
+
+#: win32ui/system/strings.cpp
+msgid "Incomplete percent escape."
+msgstr "百分号转义不完整。"
+
+#: win32ui/system/strings.cpp
+msgid "Invalid percent escape."
+msgstr "百分号转义无效。"
+
+#: win32ui/system/strings.cpp
+msgid "Percent encoded text must be ASCII."
+msgstr "百分号编码文本必须是 ASCII。"
+
+#: win32ui/tab_strip/tab_strip.cpp
+msgid "Close Tab"
+msgstr "关闭选项卡"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Theme Presets"
+msgstr "主题预设"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Presets"
+msgstr "预设"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Colors"
+msgstr "颜色设置"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Templates"
+msgstr "模板"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "New..."
+msgstr "新建..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Duplicate"
+msgstr "创建副本"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Rename..."
+msgstr "重命名..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Import..."
+msgstr "导入..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Export..."
+msgstr "导出..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Edit Color..."
+msgstr "编辑颜色..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Treat as dark theme"
+msgstr "视为深色主题"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Apply Template"
+msgstr "应用模板"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Apply"
+msgstr "应用"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Color"
+msgstr "颜色"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Hex"
+msgstr ""
+
+#: win32ui/theme/preset_editor.cpp
+msgid "New Preset"
+msgstr "新建预设"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Rename Preset"
+msgstr "重命名预设"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "The file could not be read."
+msgstr "无法读取定义文件。"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "A preset has no name."
+msgstr "预设名称:"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "A line is not a valid entry."
+msgstr "此文件不是有效的 JSON。"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "The file could not be written."
+msgstr "无法写入输出文件。"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Background"
+msgstr "背景"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Panel"
+msgstr "面板"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Surface"
+msgstr "表面"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Header"
+msgstr "标题"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Border"
+msgstr "边框"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Muted Text"
+msgstr "弱化文本"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Accent"
+msgstr "强调色"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Selection"
+msgstr "选中背景"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Selection Text"
+msgstr "选中文本"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Hover"
+msgstr "悬停"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Focus"
+msgstr "焦点"
 
 #: ../resources/app.rc
 msgid "Key Handles"
 msgstr "项句柄"
-
-#: ../resources/editor_dialogs.rc
-msgid "Value data:"
-msgstr "值数据:"
-
-#: ../resources/editor_dialogs.rc ../resources/search_dialogs.rc
-msgid "Browse..."
-msgstr "浏览..."
 
 #: ../resources/editor_dialogs.rc
 msgid "Edit Comment"
@@ -4369,6 +4436,10 @@ msgstr ""
 #: ../resources/editor_dialogs.rc
 msgid "Bits..."
 msgstr "位..."
+
+#: ../resources/editor_dialogs.rc
+msgid "Value data:"
+msgstr "值数据:"
 
 #: ../resources/editor_dialogs.rc
 msgid "Strings (one per line):"
@@ -4818,14 +4889,6 @@ msgstr "在新选项卡中打开结果"
 #: ../resources/search_dialogs.rc
 msgid "Limit results to"
 msgstr "结果数量上限"
-
-#: ../resources/search_dialogs.rc
-msgid "Data Types"
-msgstr "数据类型"
-
-#: ../resources/search_dialogs.rc
-msgid "Clear All"
-msgstr "全部清除"
 
 #: ../resources/search_dialogs.rc
 msgid "Browse Key"

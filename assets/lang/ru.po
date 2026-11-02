@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegKit\n"
 "Report-Msgid-Bugs-To: https://github.com/nohuto/regkit/issues\n"
-"POT-Creation-Date: 2026-10-27 11:28+0100\n"
+"POT-Creation-Date: 2026-11-02 18:21+0100\n"
 "PO-Revision-Date: 2026-10-11 22:09+0300\n"
 "Last-Translator: Restorer, restorer@mail2k.ru\n"
 "Language-Team: Russian\n"
@@ -285,7 +285,6 @@ msgid "Mask"
 msgstr "Маска"
 
 #: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
-#: frame/window/appearance.cpp
 msgid "Field"
 msgstr "Поле"
 
@@ -334,8 +333,8 @@ msgstr "Не сохранять"
 #: frame/commands/mutation_commands.cpp frame/commands/workspace_commands.cpp
 #: frame/tools/key_handles_window.cpp frame/tools/launch_bridge.cpp
 #: frame/views/history_workspace.cpp frame/views/registry_sessions.cpp
-#: frame/views/tab_lists.cpp frame/window/appearance.cpp
-#: frame/window/lifetime.cpp frame/window/message_routes.cpp ui/feedback.cpp
+#: frame/views/tab_lists.cpp frame/window/lifetime.cpp
+#: frame/window/message_routes.cpp ui/feedback.cpp
 msgid "Cancel"
 msgstr "Отмена"
 
@@ -487,6 +486,10 @@ msgstr "Введите наименование ссылки и целевой �
 msgid "The link name can't contain a backslash."
 msgstr "В наименовании ссылки не допускается обратная наклонная черта"
 
+#: dialogs/query_dialog.cpp frame/views/history_workspace.cpp
+msgid "RegKit couldn't read this file and didn't use it."
+msgstr ""
+
 #: dialogs/query_dialog.cpp
 msgid "No top level keys"
 msgstr "Нет разделов верхнего уровня"
@@ -560,6 +563,10 @@ msgstr "В каждой строке указывается по одному р
 #: dialogs/query_prompts.cpp
 msgid "Select at least one data type."
 msgstr "Требуется указать как минимум один тип данных"
+
+#: dialogs/query_prompts.cpp
+msgid "Data Types"
+msgstr "Типы данных"
 
 #: dialogs/query_prompts.cpp
 msgid "Select a key."
@@ -891,32 +898,6 @@ msgstr "Разре&шения..."
 msgid "&Key Information..."
 msgstr "Сво&йства раздела..."
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-msgid "&Undo"
-msgstr "От&менить"
-
-#: frame/commands/context_menus.cpp
-msgid "Cu&t"
-msgstr "&Вырезать"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-#: ui/list_view_support.cpp
-msgid "&Copy"
-msgstr "Копиров&ать"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-msgid "&Paste"
-msgstr "Вс&тавить"
-
-#: frame/commands/context_menus.cpp
-msgid "Paste and &Go"
-msgstr "Вставить &и перейти"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-#: ui/list_view_support.cpp
-msgid "Select &All"
-msgstr "Выде&лить все"
-
 #: frame/commands/context_menus.cpp
 msgid "Co&llapse Key"
 msgstr "С&вернуть раздел"
@@ -968,6 +949,10 @@ msgstr "Открыть &запись"
 #: frame/commands/context_menus.cpp
 msgid "R&evert"
 msgstr "&Восстановить"
+
+#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
+msgid "&Copy"
+msgstr "Копиров&ать"
 
 #: frame/commands/context_menus.cpp
 msgid "Remove &from History"
@@ -1186,6 +1171,11 @@ msgstr "Перезапустить"
 msgid "Later"
 msgstr "Позже"
 
+#: frame/commands/workspace_commands.cpp
+#, fuzzy
+msgid "A new RegKit window couldn't be opened."
+msgstr "Не удалось перезапустить программу RegKit"
+
 # Restorer: Check
 #: frame/commands/workspace_commands.cpp
 msgid "Backup/restore mode needs the backup and restore privileges. Run RegKit elevated."
@@ -1212,10 +1202,6 @@ msgstr "Недопустимый маршрут реестра"
 msgid "Registry path not found."
 msgstr "Не удалось найти указанный раздел реестра"
 
-#: frame/search/compare_command.cpp
-msgid "Compare Registries..."
-msgstr "Сравнение реестров..."
-
 #: frame/search/compare_command.cpp frame/search/compare_dialog.cpp
 #: frame/sources/regfile_commands.cpp regfile/registry_transfer.cpp
 msgid "Failed to read registry file."
@@ -1240,6 +1226,10 @@ msgstr "Пропущено"
 #: frame/search/compare_command.cpp search/compare.cpp
 msgid "Couldn't read the registry key."
 msgstr "Не удалось получить данные раздела реестра"
+
+#: frame/search/compare_command.cpp
+msgid "Compare Registries..."
+msgstr "Сравнение реестров..."
 
 #: frame/search/compare_command.cpp
 msgid "Registry Comparison"
@@ -1497,6 +1487,7 @@ msgid "Close Handles"
 msgstr "Закрытие дескрипторов"
 
 #: frame/tools/key_handles_window.cpp frame/tools/update_checker.cpp
+#: frame/window/lifetime.cpp
 msgid "Close"
 msgstr "Закрыть"
 
@@ -1602,8 +1593,16 @@ msgid "Protected process"
 msgstr "Защищённый процесс"
 
 #: frame/tools/launch_bridge.cpp
-msgid "Key Information"
-msgstr "Свойства раздела"
+msgid "Don't virtualize"
+msgstr "Невиртуализируемый"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Don't silent fail"
+msgstr "Без тихой ошибки"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Recurse"
+msgstr "Рекурсивно"
 
 #: frame/tools/launch_bridge.cpp frame/views/value_loading.cpp ui/feedback.cpp
 msgid "Yes"
@@ -1706,18 +1705,6 @@ msgid "32-bit view"
 msgstr "32-разрядное представление"
 
 #: frame/tools/launch_bridge.cpp
-msgid "Don't virtualize"
-msgstr "Невиртуализируемый"
-
-#: frame/tools/launch_bridge.cpp
-msgid "Don't silent fail"
-msgstr "Без тихой ошибки"
-
-#: frame/tools/launch_bridge.cpp
-msgid "Recurse"
-msgstr "Рекурсивно"
-
-#: frame/tools/launch_bridge.cpp
 msgid "Virtualization flags"
 msgstr "Флаги виртуализации"
 
@@ -1778,6 +1765,14 @@ msgid "Integrity level"
 msgstr "Уровень целостности"
 
 #: frame/tools/launch_bridge.cpp
+msgid "Key Information"
+msgstr "Свойства раздела"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Permissions..."
+msgstr "Разрешения..."
+
+#: frame/tools/launch_bridge.cpp
 msgid "Flag"
 msgstr "Флаг"
 
@@ -1799,16 +1794,12 @@ msgid "The key's permissions couldn't be read."
 msgstr "Не удалось получить свойства раздела"
 
 #: frame/tools/launch_bridge.cpp
-msgid "Permissions..."
-msgstr "Разрешения..."
+msgid "The resource data is malformed."
+msgstr "Данные ресурса повреждены"
 
 #: frame/tools/launch_bridge.cpp
 msgid "Edit Value"
 msgstr "Редактирование параметра"
-
-#: frame/tools/launch_bridge.cpp
-msgid "The resource data is malformed."
-msgstr "Данные ресурса повреждены"
 
 #: frame/tools/launch_bridge.cpp
 msgid "Edit Binary..."
@@ -1842,7 +1833,7 @@ msgstr "Не удалось найти файл настроек"
 msgid "The settings file couldn't be reset."
 msgstr "Не удалось очистить файл настроек"
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with administrator rights."
 msgstr "Не удалось перезапустить с правами администратора"
 
@@ -1850,29 +1841,29 @@ msgstr "Не удалось перезапустить с правами адм�
 msgid "Failed to restart as the signed-in user."
 msgstr "Не удалось перезапустить от имени вошедшего пользователя"
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Restart as SYSTEM"
 msgstr "Пользователя SYSTEM"
 
-#: frame/tools/launch_bridge.cpp
-msgid "Failed to request SYSTEM restart."
-msgstr "Не удалось запросить перезапуск от имени пользователя SYSTEM"
-
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with SYSTEM rights."
 msgstr "Не удалось перезапустить с правами SYSTEM"
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
+msgid "Failed to request SYSTEM restart."
+msgstr "Не удалось запросить перезапуск от имени пользователя SYSTEM"
+
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Restart as TrustedInstaller"
 msgstr "Пользователя TrustedInstaller"
 
-#: frame/tools/launch_bridge.cpp
-msgid "Failed to request TrustedInstaller restart."
-msgstr "Не удалось запросить перезапуск от имени пользователя TrustedInstaller"
-
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with TrustedInstaller rights."
 msgstr "Не удалось перезапустить с правами TrustedInstaller"
+
+#: frame/tools/launch_bridge.cpp launch/program.cpp
+msgid "Failed to request TrustedInstaller restart."
+msgstr "Не удалось запросить перезапуск от имени пользователя TrustedInstaller"
 
 #: frame/tools/launch_bridge.cpp
 msgid ""
@@ -2108,10 +2099,6 @@ msgstr "Различающиеся размеры"
 msgid "The comment couldn't be saved."
 msgstr "Не удалось сохранить комментарий"
 
-#: frame/views/history_workspace.cpp
-msgid "RegKit couldn't read this file and didn't use it."
-msgstr ""
-
 #: frame/views/registry_sessions.cpp search/search.cpp
 msgid "Local Registry (32-bit)"
 msgstr "Локальный реестр (32-bit)"
@@ -2220,8 +2207,8 @@ msgstr "Раздел открыт, но в нем нет этого параме
 msgid "Value Not Found"
 msgstr "Параметр не найден"
 
-#: frame/views/registry_sessions.cpp frame/window/appearance.cpp
-#: frame/window/notifications.cpp ui/feedback.cpp
+#: frame/views/registry_sessions.cpp frame/window/notifications.cpp
+#: ui/feedback.cpp
 msgid "OK"
 msgstr "ОК"
 
@@ -2290,126 +2277,6 @@ msgid "(value not set)"
 msgstr "(значение не задано)"
 
 #: frame/window/appearance.cpp
-msgid "Theme Presets"
-msgstr "Установленные темы"
-
-#: frame/window/appearance.cpp
-msgid "Presets"
-msgstr "Установленные темы"
-
-#: frame/window/appearance.cpp
-msgid "Colors"
-msgstr "Цвета"
-
-#: frame/window/appearance.cpp
-msgid "Templates"
-msgstr "Шаблоны"
-
-#: frame/window/appearance.cpp
-msgid "Color"
-msgstr "Цвет"
-
-#: frame/window/appearance.cpp
-msgid "Hex"
-msgstr ""
-
-#: frame/window/appearance.cpp
-msgid "Treat as dark theme"
-msgstr "Тёмная тема"
-
-#: frame/window/appearance.cpp
-msgid "New..."
-msgstr "Создать..."
-
-#: frame/window/appearance.cpp
-msgid "Duplicate"
-msgstr "Скопировать"
-
-#: frame/window/appearance.cpp
-msgid "Rename..."
-msgstr "Переименовать..."
-
-#: frame/window/appearance.cpp frame/window/menu_bar.cpp ui/feedback.cpp
-msgid "Delete"
-msgstr "Удалить"
-
-#: frame/window/appearance.cpp
-msgid "Import..."
-msgstr "Импорт..."
-
-#: frame/window/appearance.cpp
-msgid "Export..."
-msgstr "Экспорт..."
-
-#: frame/window/appearance.cpp
-msgid "Edit Color..."
-msgstr "Изменить цвет..."
-
-#: frame/window/appearance.cpp
-msgid "Apply Template"
-msgstr "Применить шаблон"
-
-#: frame/window/appearance.cpp
-msgid "Apply"
-msgstr "Применить"
-
-#: frame/window/appearance.cpp
-msgid "New Preset"
-msgstr "Новая настройка темы"
-
-#: frame/window/appearance.cpp
-msgid "Rename Preset"
-msgstr "Переименование настройки темы"
-
-#: frame/window/appearance.cpp
-msgid "Background"
-msgstr "Фона"
-
-#: frame/window/appearance.cpp
-msgid "Panel"
-msgstr "Панели"
-
-#: frame/window/appearance.cpp
-msgid "Surface"
-msgstr "Переднего плана"
-
-#: frame/window/appearance.cpp
-msgid "Header"
-msgstr "Заголовка"
-
-#: frame/window/appearance.cpp
-msgid "Border"
-msgstr "Границы"
-
-#: frame/window/appearance.cpp registry/value_decoder.cpp
-msgid "Text"
-msgstr "Текст"
-
-#: frame/window/appearance.cpp
-msgid "Muted Text"
-msgstr "Неактивного текста"
-
-#: frame/window/appearance.cpp
-msgid "Accent"
-msgstr "Акцента"
-
-#: frame/window/appearance.cpp
-msgid "Selection"
-msgstr "Выделения"
-
-#: frame/window/appearance.cpp
-msgid "Selection Text"
-msgstr "Выделенного текста"
-
-#: frame/window/appearance.cpp
-msgid "Hover"
-msgstr "Элемнта под курсором"
-
-#: frame/window/appearance.cpp
-msgid "Focus"
-msgstr "Выбранного элемента"
-
-#: frame/window/appearance.cpp
 msgid "Preset name:"
 msgstr "Название настройки темы:"
 
@@ -2433,6 +2300,10 @@ msgstr "Не удалось экспортировать настройки те
 msgid "Administrator"
 msgstr "Администратор"
 
+#: frame/window/events.cpp
+msgid "Paste and &Go"
+msgstr "Вставить &и перейти"
+
 #: frame/window/lifetime.cpp
 msgid "SYSTEM has no Desktop folder, so Windows reports \"Location is not available\" in file dialogs. Create this folder to prevent the error?"
 msgstr "У SYSTEM нет папки Desktop, поэтому Windows сообщает \"Расположение недоступно\" в диалогах работы с файлами. Создать эту папку, чтобы предотвратить ошибку?"
@@ -2450,16 +2321,17 @@ msgid "Go"
 msgstr "Перейти"
 
 #: frame/window/lifetime.cpp
-msgid "Close Tab"
-msgstr "Закрыть вкладку"
-
-#: frame/window/lifetime.cpp
 msgid "Tabs"
 msgstr "Вкладки"
 
 #: frame/window/lifetime.cpp
 msgid "Key Tree"
 msgstr "Дерево разделов"
+
+#: frame/window/lifetime.cpp
+#, fuzzy
+msgid "Clear Filter"
+msgstr "&Очистить журнал"
 
 #: frame/window/lifetime.cpp
 msgid "History"
@@ -2493,13 +2365,17 @@ msgstr "Отменить"
 msgid "Redo"
 msgstr "Вернуть"
 
-#: frame/window/menu_bar.cpp ui/feedback.cpp ui/list_view_support.cpp
+#: frame/window/menu_bar.cpp ui/feedback.cpp
 msgid "Copy"
 msgstr "Копировать"
 
 #: frame/window/menu_bar.cpp
 msgid "Paste"
 msgstr "Вставить"
+
+#: frame/window/menu_bar.cpp ui/feedback.cpp
+msgid "Delete"
+msgstr "Удалить"
 
 #: frame/window/menu_bar.cpp
 msgid "Refresh"
@@ -2574,6 +2450,10 @@ msgid "&File"
 msgstr "&Файл"
 
 #: frame/window/menu_bar.cpp
+msgid "&Undo"
+msgstr "От&менить"
+
+#: frame/window/menu_bar.cpp
 msgid "&Redo"
 msgstr "&Вернуть"
 
@@ -2600,6 +2480,14 @@ msgstr "&Значение параметра"
 #: frame/window/menu_bar.cpp
 msgid "Copy &Other"
 msgstr "Про&чее копирование"
+
+#: frame/window/menu_bar.cpp
+msgid "&Paste"
+msgstr "Вс&тавить"
+
+#: frame/window/menu_bar.cpp
+msgid "Select &All"
+msgstr "Выде&лить все"
 
 #: frame/window/menu_bar.cpp
 msgid "Inv&ert Selection"
@@ -3140,63 +3028,6 @@ msgstr "Не удалось запустить с правами админис�
 msgid "Failed to create the main window."
 msgstr "Произошёл сбой при создании основного окно программы"
 
-#: records/json.cpp
-msgid "The file isn't valid JSON."
-msgstr "Файл содержит недопустимые данные JSON"
-
-#: records/json.cpp
-msgid "The file is nested too deeply."
-msgstr "Слишком большая вложенности объектов"
-
-#: records/json.cpp
-msgid "A text member is longer than the format allows."
-msgstr "Длина текстового свойства превышает допустимый предел"
-
-#: records/json.cpp
-msgid "The file ends inside a string."
-msgstr "Файл заканчивается внутри строки"
-
-#: records/json.cpp
-msgid "A string contains an unescaped control character."
-msgstr "Строка содержит неэкранированный управляющий символ"
-
-#: records/json.cpp
-msgid "A string contains a malformed escape."
-msgstr "Строка содержит недопустимую escape-последовательность"
-
-#: records/json.cpp
-msgid "A string contains an unsupported escape."
-msgstr "Строка содержит неподдерживаемую escape-последовательность"
-
-#: records/json.cpp
-msgid "An unsigned number was expected."
-msgstr "Ожидалось число без знака."
-
-#: records/json.cpp
-msgid "A number has a leading zero."
-msgstr "Число содержит ведущий ноль"
-
-#: records/json.cpp
-msgid "A number is out of range."
-msgstr "Число вне допустимого диапазона"
-
-#: records/json.cpp
-msgid "Only unsigned integers are supported."
-msgstr "Поддерживаются только целые числа без знака"
-
-#: records/json.cpp
-msgid "The file contains trailing content."
-msgstr "В конце файла обнаружены посторонние данные"
-
-#: records/json.cpp regfile/batch_script.cpp regfile/powershell_script.cpp
-#: win32/file_text.cpp
-msgid "Line"
-msgstr "Строка"
-
-#: records/json.cpp
-msgid "Column"
-msgstr ""
-
 #: regfile/batch_script.cpp
 msgid "Unsupported reg command"
 msgstr "Неподдерживаемая команда программы reg.exe"
@@ -3228,6 +3059,10 @@ msgstr "Не удалось определить аргументы пакетн
 #: regfile/batch_script.cpp regfile/powershell_script.cpp
 msgid "Variable can't be resolved"
 msgstr "Не удалось определить переменную"
+
+#: regfile/batch_script.cpp regfile/powershell_script.cpp win32/file_text.cpp
+msgid "Line"
+msgstr "Строка"
 
 #: regfile/batch_script.cpp regfile/powershell_script.cpp
 msgid "Unsupported command"
@@ -3746,60 +3581,12 @@ msgid "This value type has no text form."
 msgstr "Этот тип данных не имеет текстового представления"
 
 #: registry/value_decoder.cpp
-msgid "Invalid Base64 character."
-msgstr "Недопустимый символ строки Base64"
-
-#: registry/value_decoder.cpp
-msgid "Invalid Base64 padding bits."
-msgstr "Недопустимые биты дополнения строки Base64"
-
-#: registry/value_decoder.cpp
-msgid "Input is too large to decode."
-msgstr "Слишком большой объём входных данных не позволяет выполнить декодирование"
-
-#: registry/value_decoder.cpp
-msgid "The text couldn't be decoded."
-msgstr "Не удалось декодировать текст"
-
-#: registry/value_decoder.cpp
-msgid "Base64 length isn't a multiple of four."
-msgstr "Длина строки Base64 должна быть кратна четырём"
-
-#: registry/value_decoder.cpp
-msgid "Invalid Base64URL character."
-msgstr "Недопустимый символ строки Base64URL"
-
-#: registry/value_decoder.cpp
-msgid "Base64URL padding isn't at the end."
-msgstr "Дополнение строки Base64URL находится не в конце"
-
-#: registry/value_decoder.cpp
-msgid "Base64URL length isn't valid."
-msgstr "Недопустимая длина строки Base64URL"
-
-#: registry/value_decoder.cpp
-msgid "Base64URL padding is incomplete."
-msgstr "Неполное дополнение строки Base64URL"
-
-#: registry/value_decoder.cpp
-msgid "Invalid hex character."
-msgstr "Недопустимый шестнадцатеричный символ"
-
-#: registry/value_decoder.cpp
 msgid "Incomplete hex byte."
 msgstr "Неполный шестнадцатеричный байт"
 
 #: registry/value_decoder.cpp
-msgid "Incomplete percent escape."
-msgstr "Неполная последовательность процентного кодирования URI"
-
-#: registry/value_decoder.cpp
-msgid "Invalid percent escape."
-msgstr "Недопустимая последовательность процентного кодирования URI"
-
-#: registry/value_decoder.cpp
-msgid "Percent encoded text must be ASCII."
-msgstr "Текст с процентным кодированием URI должен быть в кодировке ASCII"
+msgid "Invalid hex character."
+msgstr "Недопустимый шестнадцатеричный символ"
 
 #: registry/value_decoder.cpp
 msgid "Invalid FILETIME."
@@ -3808,6 +3595,14 @@ msgstr "Недопустимые данные FILETIME"
 #: registry/value_decoder.cpp
 msgid "Local"
 msgstr "Местное время"
+
+#: registry/value_decoder.cpp
+msgid "Input is too large to decode."
+msgstr "Слишком большой объём входных данных не позволяет выполнить декодирование"
+
+#: registry/value_decoder.cpp
+msgid "Text"
+msgstr "Текст"
 
 #: registry/value_decoder.cpp
 msgid "Bytes"
@@ -4110,6 +3905,11 @@ msgid "Trace file contains no usable entries."
 msgstr "В файле трассировки нет соответствующих записей"
 
 #: ui/feedback.cpp
+#, fuzzy
+msgid "The background task couldn't be started."
+msgstr "Не удалось запустить установщик"
+
+#: ui/feedback.cpp
 msgid "Warning"
 msgstr "Предупреждение"
 
@@ -4214,26 +4014,6 @@ msgstr ""
 msgid "Restart Anyway"
 msgstr "Всё равно перезапустить"
 
-#: ui/list_view_support.cpp
-msgid "Size column to fit"
-msgstr "Подобрать ширину столбца"
-
-#: ui/list_view_support.cpp
-msgid "Size all columns to fit"
-msgstr "Подобрать ширину всех столбцов"
-
-#: ui/list_view_support.cpp
-msgid "Reset columns"
-msgstr "Сбросить столбцы"
-
-#: ui/list_view_support.cpp
-msgid "Select All"
-msgstr "Выделить все"
-
-#: ui/list_view_support.cpp
-msgid "Grid Lines"
-msgstr "Сетка"
-
 #: ui/presets.cpp
 msgid "The theme preset file contains an entry RegKit can't parse."
 msgstr "Файл насторек темы содержит запись, которую програма RegKit не может разобрать"
@@ -4268,21 +4048,308 @@ msgstr "Слишком большая вложенности объектов"
 msgid "The file isn't valid text."
 msgstr "Файл содержит недопустимые данные JSON"
 
-#: win32/system_error.cpp
+#: win32ui/dialog/check_list.cpp
+msgid "Select All"
+msgstr "Выделить все"
+
+#: win32ui/dialog/check_list.cpp
+msgid "Clear All"
+msgstr "Очистить все"
+
+#: win32ui/dialog/edit.cpp
+msgid "Cu&t"
+msgstr "&Вырезать"
+
+#: win32ui/dialog/text_prompt.cpp
+msgid "Browse..."
+msgstr "Обзор..."
+
+#: win32ui/json/reader.cpp
+#, fuzzy, c-format
+msgid "Expected '%c'."
+msgstr "Ожидалось '}'"
+
+#: win32ui/json/reader.cpp
+msgid "The file is nested too deeply."
+msgstr "Слишком большая вложенности объектов"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "An unterminated block comment is not allowed."
+msgstr "Незавершённый блочный комментарий"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "Unexpected token."
+msgstr "Неожиданный токен"
+
+#: win32ui/json/reader.cpp
+msgid "A text member is longer than the format allows."
+msgstr "Длина текстового свойства превышает допустимый предел"
+
+#: win32ui/json/reader.cpp
+msgid "The file ends inside a string."
+msgstr "Файл заканчивается внутри строки"
+
+#: win32ui/json/reader.cpp
+msgid "A string contains an unescaped control character."
+msgstr "Строка содержит неэкранированный управляющий символ"
+
+#: win32ui/json/reader.cpp
+msgid "A string contains a malformed escape."
+msgstr "Строка содержит недопустимую escape-последовательность"
+
+#: win32ui/json/reader.cpp
+msgid "A string contains an unsupported escape."
+msgstr "Строка содержит неподдерживаемую escape-последовательность"
+
+#: win32ui/json/reader.cpp
+msgid "An unsigned number was expected."
+msgstr "Ожидалось число без знака."
+
+#: win32ui/json/reader.cpp
+msgid "A number has a leading zero."
+msgstr "Число содержит ведущий ноль"
+
+#: win32ui/json/reader.cpp
+msgid "A number is out of range."
+msgstr "Число вне допустимого диапазона"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "Only integers are supported."
+msgstr "Поддерживаются только целые числа без знака"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A boolean was expected."
+msgstr "Ожидалось число без знака."
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A number has an empty fraction."
+msgstr "Число содержит ведущий ноль"
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A number has an empty exponent."
+msgstr "В файле комментария указан пустой раздел"
+
+#: win32ui/json/reader.cpp
+msgid "The file contains trailing content."
+msgstr "В конце файла обнаружены посторонние данные"
+
+#: win32ui/json/reader.cpp
+msgid "The file isn't valid JSON."
+msgstr "Файл содержит недопустимые данные JSON"
+
+#: win32ui/json/reader.cpp
+msgid "Column"
+msgstr ""
+
+#: win32ui/list_view/list_view.cpp
+msgid "Size column to fit"
+msgstr "Подобрать ширину столбца"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Size all columns to fit"
+msgstr "Подобрать ширину всех столбцов"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Reset columns"
+msgstr "Сбросить столбцы"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Grid Lines"
+msgstr "Сетка"
+
+#: win32ui/system/error_text.cpp
 msgid "Unknown error."
 msgstr "Нераспознанная ошибка"
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64 character."
+msgstr "Недопустимый символ строки Base64"
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64 padding bits."
+msgstr "Недопустимые биты дополнения строки Base64"
+
+#: win32ui/system/strings.cpp
+msgid "The text couldn't be decoded."
+msgstr "Не удалось декодировать текст"
+
+#: win32ui/system/strings.cpp
+msgid "Base64 length isn't a multiple of four."
+msgstr "Длина строки Base64 должна быть кратна четырём"
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64URL character."
+msgstr "Недопустимый символ строки Base64URL"
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL padding isn't at the end."
+msgstr "Дополнение строки Base64URL находится не в конце"
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL length isn't valid."
+msgstr "Недопустимая длина строки Base64URL"
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL padding is incomplete."
+msgstr "Неполное дополнение строки Base64URL"
+
+#: win32ui/system/strings.cpp
+msgid "Incomplete percent escape."
+msgstr "Неполная последовательность процентного кодирования URI"
+
+#: win32ui/system/strings.cpp
+msgid "Invalid percent escape."
+msgstr "Недопустимая последовательность процентного кодирования URI"
+
+#: win32ui/system/strings.cpp
+msgid "Percent encoded text must be ASCII."
+msgstr "Текст с процентным кодированием URI должен быть в кодировке ASCII"
+
+#: win32ui/tab_strip/tab_strip.cpp
+msgid "Close Tab"
+msgstr "Закрыть вкладку"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Theme Presets"
+msgstr "Установленные темы"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Presets"
+msgstr "Установленные темы"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Colors"
+msgstr "Цвета"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Templates"
+msgstr "Шаблоны"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "New..."
+msgstr "Создать..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Duplicate"
+msgstr "Скопировать"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Rename..."
+msgstr "Переименовать..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Import..."
+msgstr "Импорт..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Export..."
+msgstr "Экспорт..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Edit Color..."
+msgstr "Изменить цвет..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Treat as dark theme"
+msgstr "Тёмная тема"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Apply Template"
+msgstr "Применить шаблон"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Apply"
+msgstr "Применить"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Color"
+msgstr "Цвет"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Hex"
+msgstr ""
+
+#: win32ui/theme/preset_editor.cpp
+msgid "New Preset"
+msgstr "Новая настройка темы"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Rename Preset"
+msgstr "Переименование настройки темы"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "The file could not be read."
+msgstr "Не удалось прочитать файл описания битовых полей"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "A preset has no name."
+msgstr "Название настройки темы:"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "A line is not a valid entry."
+msgstr "Файл содержит недопустимые данные JSON"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "The file could not be written."
+msgstr "Не удалось записать выходной файл"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Background"
+msgstr "Фона"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Panel"
+msgstr "Панели"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Surface"
+msgstr "Переднего плана"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Header"
+msgstr "Заголовка"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Border"
+msgstr "Границы"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Muted Text"
+msgstr "Неактивного текста"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Accent"
+msgstr "Акцента"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Selection"
+msgstr "Выделения"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Selection Text"
+msgstr "Выделенного текста"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Hover"
+msgstr "Элемнта под курсором"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Focus"
+msgstr "Выбранного элемента"
 
 #: ../resources/app.rc
 msgid "Key Handles"
 msgstr "Дескрипторы раздела"
-
-#: ../resources/editor_dialogs.rc
-msgid "Value data:"
-msgstr "Значение параметра:"
-
-#: ../resources/editor_dialogs.rc ../resources/search_dialogs.rc
-msgid "Browse..."
-msgstr "Обзор..."
 
 #: ../resources/editor_dialogs.rc
 msgid "Edit Comment"
@@ -4375,6 +4442,10 @@ msgstr ""
 #: ../resources/editor_dialogs.rc
 msgid "Bits..."
 msgstr "Биты..."
+
+#: ../resources/editor_dialogs.rc
+msgid "Value data:"
+msgstr "Значение параметра:"
 
 #: ../resources/editor_dialogs.rc
 msgid "Strings (one per line):"
@@ -4824,14 +4895,6 @@ msgstr "Открывать разделы в новых вкладках"
 #: ../resources/search_dialogs.rc
 msgid "Limit results to"
 msgstr "Ограничить результат до:"
-
-#: ../resources/search_dialogs.rc
-msgid "Data Types"
-msgstr "Типы данных"
-
-#: ../resources/search_dialogs.rc
-msgid "Clear All"
-msgstr "Очистить все"
 
 #: ../resources/search_dialogs.rc
 msgid "Browse Key"

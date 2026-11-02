@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegKit\n"
 "Report-Msgid-Bugs-To: https://github.com/nohuto/regkit/issues\n"
-"POT-Creation-Date: 2026-10-27 11:28+0100\n"
+"POT-Creation-Date: 2026-11-02 18:21+0100\n"
 "PO-Revision-Date: 2026-10-09 20:51+0200\n"
 "Last-Translator: nohuto contact@noverse.dev\n"
 "Language-Team: none\n"
@@ -282,7 +282,6 @@ msgid "Mask"
 msgstr "마스크"
 
 #: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
-#: frame/window/appearance.cpp
 msgid "Field"
 msgstr "필드"
 
@@ -331,8 +330,8 @@ msgstr "버리기"
 #: frame/commands/mutation_commands.cpp frame/commands/workspace_commands.cpp
 #: frame/tools/key_handles_window.cpp frame/tools/launch_bridge.cpp
 #: frame/views/history_workspace.cpp frame/views/registry_sessions.cpp
-#: frame/views/tab_lists.cpp frame/window/appearance.cpp
-#: frame/window/lifetime.cpp frame/window/message_routes.cpp ui/feedback.cpp
+#: frame/views/tab_lists.cpp frame/window/lifetime.cpp
+#: frame/window/message_routes.cpp ui/feedback.cpp
 msgid "Cancel"
 msgstr "취소"
 
@@ -484,6 +483,10 @@ msgstr "링크 이름과 대상 키를 입력하세요."
 msgid "The link name can't contain a backslash."
 msgstr "링크 이름에는 백슬래시를 사용할 수 없습니다."
 
+#: dialogs/query_dialog.cpp frame/views/history_workspace.cpp
+msgid "RegKit couldn't read this file and didn't use it."
+msgstr ""
+
 #: dialogs/query_dialog.cpp
 msgid "No top level keys"
 msgstr "최상위 키 없음"
@@ -557,6 +560,10 @@ msgstr "각 줄에 키를 하나씩 입력하세요."
 #: dialogs/query_prompts.cpp
 msgid "Select at least one data type."
 msgstr "데이터 형식을 하나 이상 선택하세요."
+
+#: dialogs/query_prompts.cpp
+msgid "Data Types"
+msgstr "데이터 형식"
 
 #: dialogs/query_prompts.cpp
 msgid "Select a key."
@@ -888,32 +895,6 @@ msgstr "사용 권한(&I)..."
 msgid "&Key Information..."
 msgstr "키 정보(&K)..."
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-msgid "&Undo"
-msgstr "실행 취소(&U)"
-
-#: frame/commands/context_menus.cpp
-msgid "Cu&t"
-msgstr "잘라내기(&T)"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-#: ui/list_view_support.cpp
-msgid "&Copy"
-msgstr "복사(&C)"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-msgid "&Paste"
-msgstr "붙여넣기(&P)"
-
-#: frame/commands/context_menus.cpp
-msgid "Paste and &Go"
-msgstr "붙여넣고 바로 이동(&G)"
-
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
-#: ui/list_view_support.cpp
-msgid "Select &All"
-msgstr "모두 선택(&A)"
-
 #: frame/commands/context_menus.cpp
 msgid "Co&llapse Key"
 msgstr "키 축소(&L)"
@@ -965,6 +946,10 @@ msgstr "항목 열기(&O)"
 #: frame/commands/context_menus.cpp
 msgid "R&evert"
 msgstr "변경 내용 되돌리기(&E)"
+
+#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
+msgid "&Copy"
+msgstr "복사(&C)"
 
 #: frame/commands/context_menus.cpp
 msgid "Remove &from History"
@@ -1183,6 +1168,11 @@ msgid "Later"
 msgstr "나중에"
 
 #: frame/commands/workspace_commands.cpp
+#, fuzzy
+msgid "A new RegKit window couldn't be opened."
+msgstr "RegKit을 다시 시작하지 못했습니다."
+
+#: frame/commands/workspace_commands.cpp
 msgid "Backup/restore mode needs the backup and restore privileges. Run RegKit elevated."
 msgstr "백업/복원 모드에는 백업 및 복원 권한이 필요합니다. RegKit을 관리자 권한으로 실행하세요."
 
@@ -1206,10 +1196,6 @@ msgstr "레지스트리 경로가 잘못되었습니다."
 #: frame/window/message_routes.cpp launch/program.cpp
 msgid "Registry path not found."
 msgstr "레지스트리 경로를 찾지 못했습니다."
-
-#: frame/search/compare_command.cpp
-msgid "Compare Registries..."
-msgstr "레지스트리 비교..."
 
 #: frame/search/compare_command.cpp frame/search/compare_dialog.cpp
 #: frame/sources/regfile_commands.cpp regfile/registry_transfer.cpp
@@ -1235,6 +1221,10 @@ msgstr "건너뜀"
 #: frame/search/compare_command.cpp search/compare.cpp
 msgid "Couldn't read the registry key."
 msgstr "레지스트리 키를 읽지 못했습니다."
+
+#: frame/search/compare_command.cpp
+msgid "Compare Registries..."
+msgstr "레지스트리 비교..."
 
 #: frame/search/compare_command.cpp
 msgid "Registry Comparison"
@@ -1492,6 +1482,7 @@ msgid "Close Handles"
 msgstr "핸들 닫기"
 
 #: frame/tools/key_handles_window.cpp frame/tools/update_checker.cpp
+#: frame/window/lifetime.cpp
 msgid "Close"
 msgstr "닫기"
 
@@ -1597,8 +1588,16 @@ msgid "Protected process"
 msgstr "보호된 프로세스"
 
 #: frame/tools/launch_bridge.cpp
-msgid "Key Information"
-msgstr "키 정보"
+msgid "Don't virtualize"
+msgstr "가상화 안 함"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Don't silent fail"
+msgstr "실패 숨기지 않음"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Recurse"
+msgstr "재귀 적용"
 
 #: frame/tools/launch_bridge.cpp frame/views/value_loading.cpp ui/feedback.cpp
 msgid "Yes"
@@ -1701,18 +1700,6 @@ msgid "32-bit view"
 msgstr "32비트 보기"
 
 #: frame/tools/launch_bridge.cpp
-msgid "Don't virtualize"
-msgstr "가상화 안 함"
-
-#: frame/tools/launch_bridge.cpp
-msgid "Don't silent fail"
-msgstr "실패 숨기지 않음"
-
-#: frame/tools/launch_bridge.cpp
-msgid "Recurse"
-msgstr "재귀 적용"
-
-#: frame/tools/launch_bridge.cpp
 msgid "Virtualization flags"
 msgstr "가상화 플래그"
 
@@ -1773,6 +1760,14 @@ msgid "Integrity level"
 msgstr "무결성 수준"
 
 #: frame/tools/launch_bridge.cpp
+msgid "Key Information"
+msgstr "키 정보"
+
+#: frame/tools/launch_bridge.cpp
+msgid "Permissions..."
+msgstr "사용 권한..."
+
+#: frame/tools/launch_bridge.cpp
 msgid "Flag"
 msgstr "플래그"
 
@@ -1794,16 +1789,12 @@ msgid "The key's permissions couldn't be read."
 msgstr "키 정보를 읽지 못했습니다."
 
 #: frame/tools/launch_bridge.cpp
-msgid "Permissions..."
-msgstr "사용 권한..."
+msgid "The resource data is malformed."
+msgstr "리소스 데이터 형식이 잘못되었습니다."
 
 #: frame/tools/launch_bridge.cpp
 msgid "Edit Value"
 msgstr "값 편집"
-
-#: frame/tools/launch_bridge.cpp
-msgid "The resource data is malformed."
-msgstr "리소스 데이터 형식이 잘못되었습니다."
 
 #: frame/tools/launch_bridge.cpp
 msgid "Edit Binary..."
@@ -1837,7 +1828,7 @@ msgstr "설정 파일을 찾지 못했습니다."
 msgid "The settings file couldn't be reset."
 msgstr "설정 파일을 초기화하지 못했습니다."
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with administrator rights."
 msgstr "관리자 권한으로 다시 시작하지 못했습니다."
 
@@ -1845,29 +1836,29 @@ msgstr "관리자 권한으로 다시 시작하지 못했습니다."
 msgid "Failed to restart as the signed-in user."
 msgstr "로그인한 사용자로 다시 시작하지 못했습니다."
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Restart as SYSTEM"
 msgstr "SYSTEM으로 다시 시작"
 
-#: frame/tools/launch_bridge.cpp
-msgid "Failed to request SYSTEM restart."
-msgstr "SYSTEM 다시 시작을 요청하지 못했습니다."
-
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with SYSTEM rights."
 msgstr "SYSTEM 권한으로 다시 시작하지 못했습니다."
 
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
+msgid "Failed to request SYSTEM restart."
+msgstr "SYSTEM 다시 시작을 요청하지 못했습니다."
+
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Restart as TrustedInstaller"
 msgstr "TrustedInstaller로 다시 시작"
 
-#: frame/tools/launch_bridge.cpp
-msgid "Failed to request TrustedInstaller restart."
-msgstr "TrustedInstaller 다시 시작을 요청하지 못했습니다."
-
-#: frame/tools/launch_bridge.cpp
+#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with TrustedInstaller rights."
 msgstr "TrustedInstaller 권한으로 다시 시작하지 못했습니다."
+
+#: frame/tools/launch_bridge.cpp launch/program.cpp
+msgid "Failed to request TrustedInstaller restart."
+msgstr "TrustedInstaller 다시 시작을 요청하지 못했습니다."
 
 #: frame/tools/launch_bridge.cpp
 msgid ""
@@ -2103,10 +2094,6 @@ msgstr "다른 길이"
 msgid "The comment couldn't be saved."
 msgstr "메모를 저장하지 못했습니다."
 
-#: frame/views/history_workspace.cpp
-msgid "RegKit couldn't read this file and didn't use it."
-msgstr ""
-
 #: frame/views/registry_sessions.cpp search/search.cpp
 msgid "Local Registry (32-bit)"
 msgstr "로컬 레지스트리 (32비트)"
@@ -2215,8 +2202,8 @@ msgstr "키를 열었지만 이 값이 없습니다:"
 msgid "Value Not Found"
 msgstr "값을 찾을 수 없음"
 
-#: frame/views/registry_sessions.cpp frame/window/appearance.cpp
-#: frame/window/notifications.cpp ui/feedback.cpp
+#: frame/views/registry_sessions.cpp frame/window/notifications.cpp
+#: ui/feedback.cpp
 msgid "OK"
 msgstr "확인"
 
@@ -2285,126 +2272,6 @@ msgid "(value not set)"
 msgstr "(값 설정 안 됨)"
 
 #: frame/window/appearance.cpp
-msgid "Theme Presets"
-msgstr "테마 프리셋"
-
-#: frame/window/appearance.cpp
-msgid "Presets"
-msgstr "프리셋"
-
-#: frame/window/appearance.cpp
-msgid "Colors"
-msgstr "색"
-
-#: frame/window/appearance.cpp
-msgid "Templates"
-msgstr "템플릿"
-
-#: frame/window/appearance.cpp
-msgid "Color"
-msgstr "색"
-
-#: frame/window/appearance.cpp
-msgid "Hex"
-msgstr ""
-
-#: frame/window/appearance.cpp
-msgid "Treat as dark theme"
-msgstr "어두운 테마로 취급"
-
-#: frame/window/appearance.cpp
-msgid "New..."
-msgstr "새로 만들기..."
-
-#: frame/window/appearance.cpp
-msgid "Duplicate"
-msgstr "복제"
-
-#: frame/window/appearance.cpp
-msgid "Rename..."
-msgstr "이름 바꾸기..."
-
-#: frame/window/appearance.cpp frame/window/menu_bar.cpp ui/feedback.cpp
-msgid "Delete"
-msgstr "삭제"
-
-#: frame/window/appearance.cpp
-msgid "Import..."
-msgstr "가져오기..."
-
-#: frame/window/appearance.cpp
-msgid "Export..."
-msgstr "내보내기..."
-
-#: frame/window/appearance.cpp
-msgid "Edit Color..."
-msgstr "색 편집..."
-
-#: frame/window/appearance.cpp
-msgid "Apply Template"
-msgstr "템플릿 적용"
-
-#: frame/window/appearance.cpp
-msgid "Apply"
-msgstr "적용"
-
-#: frame/window/appearance.cpp
-msgid "New Preset"
-msgstr "새 프리셋"
-
-#: frame/window/appearance.cpp
-msgid "Rename Preset"
-msgstr "프리셋 이름 바꾸기"
-
-#: frame/window/appearance.cpp
-msgid "Background"
-msgstr "배경"
-
-#: frame/window/appearance.cpp
-msgid "Panel"
-msgstr "패널"
-
-#: frame/window/appearance.cpp
-msgid "Surface"
-msgstr "표면"
-
-#: frame/window/appearance.cpp
-msgid "Header"
-msgstr "머리글"
-
-#: frame/window/appearance.cpp
-msgid "Border"
-msgstr "테두리"
-
-#: frame/window/appearance.cpp registry/value_decoder.cpp
-msgid "Text"
-msgstr "텍스트"
-
-#: frame/window/appearance.cpp
-msgid "Muted Text"
-msgstr "흐린 텍스트"
-
-#: frame/window/appearance.cpp
-msgid "Accent"
-msgstr "강조"
-
-#: frame/window/appearance.cpp
-msgid "Selection"
-msgstr "선택 영역"
-
-#: frame/window/appearance.cpp
-msgid "Selection Text"
-msgstr "선택 영역 텍스트"
-
-#: frame/window/appearance.cpp
-msgid "Hover"
-msgstr "커서 올리기"
-
-#: frame/window/appearance.cpp
-msgid "Focus"
-msgstr "포커스"
-
-#: frame/window/appearance.cpp
 msgid "Preset name:"
 msgstr "프리셋 이름:"
 
@@ -2428,6 +2295,10 @@ msgstr "테마 프리셋을 내보내지 못했습니다."
 msgid "Administrator"
 msgstr "관리자"
 
+#: frame/window/events.cpp
+msgid "Paste and &Go"
+msgstr "붙여넣고 바로 이동(&G)"
+
 #: frame/window/lifetime.cpp
 msgid "SYSTEM has no Desktop folder, so Windows reports \"Location is not available\" in file dialogs. Create this folder to prevent the error?"
 msgstr "SYSTEM에 바탕 화면 폴더가 없어 Windows가 파일 대화 상자에 \"위치를 사용할 수 없습니다\"라고 표시합니다. 오류를 방지하기 위해 이 폴더를 만드시겠습니까?"
@@ -2445,16 +2316,17 @@ msgid "Go"
 msgstr "이동"
 
 #: frame/window/lifetime.cpp
-msgid "Close Tab"
-msgstr "탭 닫기"
-
-#: frame/window/lifetime.cpp
 msgid "Tabs"
 msgstr "탭"
 
 #: frame/window/lifetime.cpp
 msgid "Key Tree"
 msgstr "키 트리"
+
+#: frame/window/lifetime.cpp
+#, fuzzy
+msgid "Clear Filter"
+msgstr "기록 지우기(&H)"
 
 #: frame/window/lifetime.cpp
 msgid "History"
@@ -2488,13 +2360,17 @@ msgstr "실행 취소"
 msgid "Redo"
 msgstr "다시 실행"
 
-#: frame/window/menu_bar.cpp ui/feedback.cpp ui/list_view_support.cpp
+#: frame/window/menu_bar.cpp ui/feedback.cpp
 msgid "Copy"
 msgstr "복사"
 
 #: frame/window/menu_bar.cpp
 msgid "Paste"
 msgstr "붙여넣기"
+
+#: frame/window/menu_bar.cpp ui/feedback.cpp
+msgid "Delete"
+msgstr "삭제"
 
 #: frame/window/menu_bar.cpp
 msgid "Refresh"
@@ -2569,6 +2445,10 @@ msgid "&File"
 msgstr "파일(&F)"
 
 #: frame/window/menu_bar.cpp
+msgid "&Undo"
+msgstr "실행 취소(&U)"
+
+#: frame/window/menu_bar.cpp
 msgid "&Redo"
 msgstr "다시 실행(&R)"
 
@@ -2595,6 +2475,14 @@ msgstr "값 데이터(&D)"
 #: frame/window/menu_bar.cpp
 msgid "Copy &Other"
 msgstr "기타 복사(&O)"
+
+#: frame/window/menu_bar.cpp
+msgid "&Paste"
+msgstr "붙여넣기(&P)"
+
+#: frame/window/menu_bar.cpp
+msgid "Select &All"
+msgstr "모두 선택(&A)"
 
 #: frame/window/menu_bar.cpp
 msgid "Inv&ert Selection"
@@ -3134,63 +3022,6 @@ msgstr "관리자 권한으로 다시 시작하는 작업이 취소되었습니�
 msgid "Failed to create the main window."
 msgstr "주 창을 만들지 못했습니다."
 
-#: records/json.cpp
-msgid "The file isn't valid JSON."
-msgstr "파일이 올바른 JSON이 아닙니다."
-
-#: records/json.cpp
-msgid "The file is nested too deeply."
-msgstr "파일의 중첩 수준이 너무 깊습니다."
-
-#: records/json.cpp
-msgid "A text member is longer than the format allows."
-msgstr "텍스트 멤버가 형식에서 허용하는 길이를 초과합니다."
-
-#: records/json.cpp
-msgid "The file ends inside a string."
-msgstr "파일이 문자열 중간에서 끝납니다."
-
-#: records/json.cpp
-msgid "A string contains an unescaped control character."
-msgstr "문자열에 이스케이프되지 않은 제어 문자가 있습니다."
-
-#: records/json.cpp
-msgid "A string contains a malformed escape."
-msgstr "문자열에 잘못된 이스케이프가 있습니다."
-
-#: records/json.cpp
-msgid "A string contains an unsupported escape."
-msgstr "문자열에 지원되지 않는 이스케이프가 있습니다."
-
-#: records/json.cpp
-msgid "An unsigned number was expected."
-msgstr "부호 없는 숫자가 필요합니다."
-
-#: records/json.cpp
-msgid "A number has a leading zero."
-msgstr "숫자 앞에 0이 있습니다."
-
-#: records/json.cpp
-msgid "A number is out of range."
-msgstr "숫자가 범위를 벗어났습니다."
-
-#: records/json.cpp
-msgid "Only unsigned integers are supported."
-msgstr "부호 없는 정수만 지원됩니다."
-
-#: records/json.cpp
-msgid "The file contains trailing content."
-msgstr "파일 끝에 불필요한 내용이 있습니다."
-
-#: records/json.cpp regfile/batch_script.cpp regfile/powershell_script.cpp
-#: win32/file_text.cpp
-msgid "Line"
-msgstr "줄"
-
-#: records/json.cpp
-msgid "Column"
-msgstr ""
-
 #: regfile/batch_script.cpp
 msgid "Unsupported reg command"
 msgstr "지원되지 않는 reg 명령"
@@ -3222,6 +3053,10 @@ msgstr "배치 인수를 해석할 수 없습니다."
 #: regfile/batch_script.cpp regfile/powershell_script.cpp
 msgid "Variable can't be resolved"
 msgstr "변수를 해석할 수 없음"
+
+#: regfile/batch_script.cpp regfile/powershell_script.cpp win32/file_text.cpp
+msgid "Line"
+msgstr "줄"
 
 #: regfile/batch_script.cpp regfile/powershell_script.cpp
 msgid "Unsupported command"
@@ -3740,60 +3575,12 @@ msgid "This value type has no text form."
 msgstr "이 값 형식에는 텍스트 형태가 없습니다."
 
 #: registry/value_decoder.cpp
-msgid "Invalid Base64 character."
-msgstr "Base64 문자가 잘못되었습니다."
-
-#: registry/value_decoder.cpp
-msgid "Invalid Base64 padding bits."
-msgstr "Base64 패딩 비트가 잘못되었습니다."
-
-#: registry/value_decoder.cpp
-msgid "Input is too large to decode."
-msgstr "입력이 너무 커서 디코딩할 수 없습니다."
-
-#: registry/value_decoder.cpp
-msgid "The text couldn't be decoded."
-msgstr "텍스트를 디코딩하지 못했습니다."
-
-#: registry/value_decoder.cpp
-msgid "Base64 length isn't a multiple of four."
-msgstr "Base64 길이가 4의 배수가 아닙니다."
-
-#: registry/value_decoder.cpp
-msgid "Invalid Base64URL character."
-msgstr "Base64URL 문자가 잘못되었습니다."
-
-#: registry/value_decoder.cpp
-msgid "Base64URL padding isn't at the end."
-msgstr "Base64URL 패딩이 끝에 있지 않습니다."
-
-#: registry/value_decoder.cpp
-msgid "Base64URL length isn't valid."
-msgstr "Base64URL 길이가 올바르지 않습니다."
-
-#: registry/value_decoder.cpp
-msgid "Base64URL padding is incomplete."
-msgstr "Base64URL 패딩이 불완전합니다."
-
-#: registry/value_decoder.cpp
-msgid "Invalid hex character."
-msgstr "16진수 문자가 잘못되었습니다."
-
-#: registry/value_decoder.cpp
 msgid "Incomplete hex byte."
 msgstr "16진수 바이트가 불완전합니다."
 
 #: registry/value_decoder.cpp
-msgid "Incomplete percent escape."
-msgstr "퍼센트 이스케이프가 불완전합니다."
-
-#: registry/value_decoder.cpp
-msgid "Invalid percent escape."
-msgstr "퍼센트 이스케이프가 잘못되었습니다."
-
-#: registry/value_decoder.cpp
-msgid "Percent encoded text must be ASCII."
-msgstr "퍼센트로 인코딩된 텍스트는 ASCII여야 합니다."
+msgid "Invalid hex character."
+msgstr "16진수 문자가 잘못되었습니다."
 
 #: registry/value_decoder.cpp
 msgid "Invalid FILETIME."
@@ -3802,6 +3589,14 @@ msgstr "FILETIME이 잘못되었습니다."
 #: registry/value_decoder.cpp
 msgid "Local"
 msgstr "로컬"
+
+#: registry/value_decoder.cpp
+msgid "Input is too large to decode."
+msgstr "입력이 너무 커서 디코딩할 수 없습니다."
+
+#: registry/value_decoder.cpp
+msgid "Text"
+msgstr "텍스트"
 
 #: registry/value_decoder.cpp
 msgid "Bytes"
@@ -4104,6 +3899,11 @@ msgid "Trace file contains no usable entries."
 msgstr "Trace 파일에 사용할 수 있는 항목이 없습니다."
 
 #: ui/feedback.cpp
+#, fuzzy
+msgid "The background task couldn't be started."
+msgstr "설치 프로그램을 시작하지 못했습니다."
+
+#: ui/feedback.cpp
 msgid "Warning"
 msgstr "경고"
 
@@ -4208,26 +4008,6 @@ msgstr ""
 msgid "Restart Anyway"
 msgstr "그래도 다시 시작"
 
-#: ui/list_view_support.cpp
-msgid "Size column to fit"
-msgstr "내용에 맞게 열 너비 조정"
-
-#: ui/list_view_support.cpp
-msgid "Size all columns to fit"
-msgstr "내용에 맞게 모든 열 너비 조정"
-
-#: ui/list_view_support.cpp
-msgid "Reset columns"
-msgstr "열 초기화"
-
-#: ui/list_view_support.cpp
-msgid "Select All"
-msgstr "모두 선택"
-
-#: ui/list_view_support.cpp
-msgid "Grid Lines"
-msgstr "눈금선"
-
 #: ui/presets.cpp
 msgid "The theme preset file contains an entry RegKit can't parse."
 msgstr "테마 프리셋 파일에 RegKit이 구문 분석할 수 없는 항목이 있습니다."
@@ -4262,21 +4042,308 @@ msgstr "파일의 중첩 수준이 너무 깊습니다."
 msgid "The file isn't valid text."
 msgstr "파일이 올바른 JSON이 아닙니다."
 
-#: win32/system_error.cpp
+#: win32ui/dialog/check_list.cpp
+msgid "Select All"
+msgstr "모두 선택"
+
+#: win32ui/dialog/check_list.cpp
+msgid "Clear All"
+msgstr "모두 지우기"
+
+#: win32ui/dialog/edit.cpp
+msgid "Cu&t"
+msgstr "잘라내기(&T)"
+
+#: win32ui/dialog/text_prompt.cpp
+msgid "Browse..."
+msgstr "찾아보기..."
+
+#: win32ui/json/reader.cpp
+#, fuzzy, c-format
+msgid "Expected '%c'."
+msgstr "'}'가 필요합니다."
+
+#: win32ui/json/reader.cpp
+msgid "The file is nested too deeply."
+msgstr "파일의 중첩 수준이 너무 깊습니다."
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "An unterminated block comment is not allowed."
+msgstr "블록 주석이 끝나지 않았습니다."
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "Unexpected token."
+msgstr "예기치 않은 토큰"
+
+#: win32ui/json/reader.cpp
+msgid "A text member is longer than the format allows."
+msgstr "텍스트 멤버가 형식에서 허용하는 길이를 초과합니다."
+
+#: win32ui/json/reader.cpp
+msgid "The file ends inside a string."
+msgstr "파일이 문자열 중간에서 끝납니다."
+
+#: win32ui/json/reader.cpp
+msgid "A string contains an unescaped control character."
+msgstr "문자열에 이스케이프되지 않은 제어 문자가 있습니다."
+
+#: win32ui/json/reader.cpp
+msgid "A string contains a malformed escape."
+msgstr "문자열에 잘못된 이스케이프가 있습니다."
+
+#: win32ui/json/reader.cpp
+msgid "A string contains an unsupported escape."
+msgstr "문자열에 지원되지 않는 이스케이프가 있습니다."
+
+#: win32ui/json/reader.cpp
+msgid "An unsigned number was expected."
+msgstr "부호 없는 숫자가 필요합니다."
+
+#: win32ui/json/reader.cpp
+msgid "A number has a leading zero."
+msgstr "숫자 앞에 0이 있습니다."
+
+#: win32ui/json/reader.cpp
+msgid "A number is out of range."
+msgstr "숫자가 범위를 벗어났습니다."
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "Only integers are supported."
+msgstr "부호 없는 정수만 지원됩니다."
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A boolean was expected."
+msgstr "부호 없는 숫자가 필요합니다."
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A number has an empty fraction."
+msgstr "숫자 앞에 0이 있습니다."
+
+#: win32ui/json/reader.cpp
+#, fuzzy
+msgid "A number has an empty exponent."
+msgstr "메모의 키가 비어 있습니다."
+
+#: win32ui/json/reader.cpp
+msgid "The file contains trailing content."
+msgstr "파일 끝에 불필요한 내용이 있습니다."
+
+#: win32ui/json/reader.cpp
+msgid "The file isn't valid JSON."
+msgstr "파일이 올바른 JSON이 아닙니다."
+
+#: win32ui/json/reader.cpp
+msgid "Column"
+msgstr ""
+
+#: win32ui/list_view/list_view.cpp
+msgid "Size column to fit"
+msgstr "내용에 맞게 열 너비 조정"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Size all columns to fit"
+msgstr "내용에 맞게 모든 열 너비 조정"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Reset columns"
+msgstr "열 초기화"
+
+#: win32ui/list_view/list_view.cpp
+msgid "Grid Lines"
+msgstr "눈금선"
+
+#: win32ui/system/error_text.cpp
 msgid "Unknown error."
 msgstr "알 수 없는 오류입니다."
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64 character."
+msgstr "Base64 문자가 잘못되었습니다."
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64 padding bits."
+msgstr "Base64 패딩 비트가 잘못되었습니다."
+
+#: win32ui/system/strings.cpp
+msgid "The text couldn't be decoded."
+msgstr "텍스트를 디코딩하지 못했습니다."
+
+#: win32ui/system/strings.cpp
+msgid "Base64 length isn't a multiple of four."
+msgstr "Base64 길이가 4의 배수가 아닙니다."
+
+#: win32ui/system/strings.cpp
+msgid "Invalid Base64URL character."
+msgstr "Base64URL 문자가 잘못되었습니다."
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL padding isn't at the end."
+msgstr "Base64URL 패딩이 끝에 있지 않습니다."
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL length isn't valid."
+msgstr "Base64URL 길이가 올바르지 않습니다."
+
+#: win32ui/system/strings.cpp
+msgid "Base64URL padding is incomplete."
+msgstr "Base64URL 패딩이 불완전합니다."
+
+#: win32ui/system/strings.cpp
+msgid "Incomplete percent escape."
+msgstr "퍼센트 이스케이프가 불완전합니다."
+
+#: win32ui/system/strings.cpp
+msgid "Invalid percent escape."
+msgstr "퍼센트 이스케이프가 잘못되었습니다."
+
+#: win32ui/system/strings.cpp
+msgid "Percent encoded text must be ASCII."
+msgstr "퍼센트로 인코딩된 텍스트는 ASCII여야 합니다."
+
+#: win32ui/tab_strip/tab_strip.cpp
+msgid "Close Tab"
+msgstr "탭 닫기"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Theme Presets"
+msgstr "테마 프리셋"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Presets"
+msgstr "프리셋"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Colors"
+msgstr "색"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Templates"
+msgstr "템플릿"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "New..."
+msgstr "새로 만들기..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Duplicate"
+msgstr "복제"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Rename..."
+msgstr "이름 바꾸기..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Import..."
+msgstr "가져오기..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Export..."
+msgstr "내보내기..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Edit Color..."
+msgstr "색 편집..."
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Treat as dark theme"
+msgstr "어두운 테마로 취급"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Apply Template"
+msgstr "템플릿 적용"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Apply"
+msgstr "적용"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Color"
+msgstr "색"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Hex"
+msgstr ""
+
+#: win32ui/theme/preset_editor.cpp
+msgid "New Preset"
+msgstr "새 프리셋"
+
+#: win32ui/theme/preset_editor.cpp
+msgid "Rename Preset"
+msgstr "프리셋 이름 바꾸기"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "The file could not be read."
+msgstr "정의 파일을 읽지 못했습니다."
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "A preset has no name."
+msgstr "프리셋 이름:"
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "A line is not a valid entry."
+msgstr "파일이 올바른 JSON이 아닙니다."
+
+#: win32ui/theme/theme_presets.cpp
+#, fuzzy
+msgid "The file could not be written."
+msgstr "출력 파일을 쓰지 못했습니다."
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Background"
+msgstr "배경"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Panel"
+msgstr "패널"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Surface"
+msgstr "표면"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Header"
+msgstr "머리글"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Border"
+msgstr "테두리"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Muted Text"
+msgstr "흐린 텍스트"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Accent"
+msgstr "강조"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Selection"
+msgstr "선택 영역"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Selection Text"
+msgstr "선택 영역 텍스트"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Hover"
+msgstr "커서 올리기"
+
+#: win32ui/theme/theme_presets_internal.h
+msgid "Focus"
+msgstr "포커스"
 
 #: ../resources/app.rc
 msgid "Key Handles"
 msgstr "키 핸들"
-
-#: ../resources/editor_dialogs.rc
-msgid "Value data:"
-msgstr "값 데이터:"
-
-#: ../resources/editor_dialogs.rc ../resources/search_dialogs.rc
-msgid "Browse..."
-msgstr "찾아보기..."
 
 #: ../resources/editor_dialogs.rc
 msgid "Edit Comment"
@@ -4369,6 +4436,10 @@ msgstr ""
 #: ../resources/editor_dialogs.rc
 msgid "Bits..."
 msgstr "비트..."
+
+#: ../resources/editor_dialogs.rc
+msgid "Value data:"
+msgstr "값 데이터:"
 
 #: ../resources/editor_dialogs.rc
 msgid "Strings (one per line):"
@@ -4818,14 +4889,6 @@ msgstr "새 탭에서 결과 열기"
 #: ../resources/search_dialogs.rc
 msgid "Limit results to"
 msgstr "결과 수 제한"
-
-#: ../resources/search_dialogs.rc
-msgid "Data Types"
-msgstr "데이터 형식"
-
-#: ../resources/search_dialogs.rc
-msgid "Clear All"
-msgstr "모두 지우기"
 
 #: ../resources/search_dialogs.rc
 msgid "Browse Key"
