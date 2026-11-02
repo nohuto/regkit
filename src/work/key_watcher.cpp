@@ -5,9 +5,9 @@
 
 #include "win32/registry_native.h"
 #include "win32/registry_view.h"
-#include "work/session.h"
 
 #include <win32ui/handle_owner.h>
+#include <win32ui/system/worker.h>
 
 namespace regkit::work
 {
@@ -45,8 +45,16 @@ void KeyWatcher::Watch(HWND window, UINT message, HKEY root, const std::wstring&
         {
             return;
         }
-        thread_ = std::thread([this] { Run(); });
-        NameThread(thread_, L"KeyWatcherThread");
+        // without a thread the next Watch tries again
+        try
+        {
+            thread_ = std::thread([this] { Run(); });
+        }
+        catch (const std::exception&)
+        {
+            return;
+        }
+        win32ui::NameThread(thread_.native_handle(), L"KeyWatcherThread");
         return;
     }
     SetEvent(retarget_.get());
@@ -127,4 +135,4 @@ void KeyWatcher::Run()
     }
 }
 
-} // namespace regkit::work
+}

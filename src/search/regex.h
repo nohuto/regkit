@@ -78,4 +78,4 @@ class Session
 std::wstring StatusText(Status status);
 std::wstring ErrorText(const Error& error);
 
-} // namespace regkit::search::regex
+}

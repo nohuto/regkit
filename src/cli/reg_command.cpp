@@ -15,10 +15,11 @@
 #include "win32/registry_native.h"
 #include "win32/registry_view.h"
 #include "win32/shell_paths.h"
-#include "win32/system_error.h"
 #include "win32/text_transform.h"
 
 #include <win32ui/handle_owner.h>
+#include <win32ui/system/console.h>
+#include <win32ui/system/error_text.h>
 
 #include <algorithm>
 #include <cstdio>
@@ -36,67 +37,15 @@ namespace
 constexpr int kOk = 0;
 constexpr int kFailed = 1;
 
-bool g_console_ready = false;
-HANDLE g_out = nullptr;
-HANDLE g_err = nullptr;
-
-// Windows 7 passes parent console pseudo handles to GUI children, invalid until attach
-bool Usable(HANDLE handle)
-{
-    return handle && handle != INVALID_HANDLE_VALUE && GetFileType(handle) != FILE_TYPE_UNKNOWN;
-}
-
-void EnsureConsole()
-{
-    if (g_console_ready)
-    {
-        return;
-    }
-    g_console_ready = true;
-    g_out = GetStdHandle(STD_OUTPUT_HANDLE);
-    g_err = GetStdHandle(STD_ERROR_HANDLE);
-    if (!Usable(g_out))
-    {
-        if (!AttachConsole(ATTACH_PARENT_PROCESS))
-        {
-            AllocConsole();
-        }
-        g_out = CreateFileW(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
-    }
-    if (!Usable(g_err))
-    {
-        g_err = g_out;
-    }
-}
-
-void WriteTo(HANDLE handle, const std::wstring& text)
-{
-    if (!handle || handle == INVALID_HANDLE_VALUE || text.empty())
-    {
-        return;
-    }
-    DWORD written = 0;
-    if (GetFileType(handle) == FILE_TYPE_CHAR)
-    {
-        WriteConsoleW(handle, text.c_str(), static_cast<DWORD>(text.size()), &written, nullptr);
-        return;
-    }
-    const UINT code_page = GetConsoleOutputCP();
-    const std::string narrow = util::WideToNarrow(text, code_page ? code_page : CP_OEMCP);
-    WriteFile(handle, narrow.data(), static_cast<DWORD>(narrow.size()), &written, nullptr);
-}
-
 void Print(const std::wstring& text)
 {
-    EnsureConsole();
-    WriteTo(g_out, text + L"\r\n");
+    win32ui::WriteConsoleText(win32ui::ConsoleStream::output, text + L"\r\n");
 }
 
 void PrintError(const std::wstring& text)
 {
-    EnsureConsole();
     const bool prefixed = text.rfind(L"ERROR: ", 0) == 0;
-    WriteTo(g_err, (prefixed ? text : L"ERROR: " + text) + L"\r\n");
+    win32ui::WriteConsoleText(win32ui::ConsoleStream::error, (prefixed ? text : L"ERROR: " + text) + L"\r\n");
 }
 
 void PrintSuccess()
@@ -107,7 +56,7 @@ void PrintSuccess()
 
 int Fail(LONG status)
 {
-    PrintError(status == ERROR_FILE_NOT_FOUND ? L"The system was unable to find the specified registry key or value." : util::FormatWin32Error(static_cast<DWORD>(status)));
+    PrintError(status == ERROR_FILE_NOT_FOUND ? L"The system was unable to find the specified registry key or value." : win32ui::FormatWin32Error(static_cast<DWORD>(status)));
     return kFailed;
 }
 
@@ -123,8 +72,8 @@ struct KeyRef
     std::wstring machine;
 };
 
-// [\\machine\]ROOT\subkey, remote roots expose HKLM and HKU only
-// reg.exe save, restore, load, unload and flags accept local keys only
+// [\\machine\]ROOT\subkey, remote roots expose HKLM and HKU only, reg.exe save, restore, load, unload and flags accept
+// local keys only
 bool ParseKey(const std::wstring& text, KeyRef* key, bool local_only = false)
 {
     std::wstring_view view = text;
@@ -192,7 +141,6 @@ std::wstring TypeName(DWORD type)
     return type > REG_QWORD || type == REG_RESOURCE_REQUIREMENTS_LIST ? L"REG_NONE" : reg_exe::TypeName(type);
 }
 
-// reject switches outside reg.exe syntax for this verb
 bool ParseOptions(const std::vector<std::wstring>& args, size_t first, Options* options, std::vector<std::wstring>* positional, std::initializer_list<std::wstring_view> allowed, reg_exe::Verb verb = reg_exe::Verb::kOther)
 {
     std::wstring error;
@@ -249,7 +197,7 @@ std::wstring FormatData(DWORD type, const BYTE* data, DWORD size, const std::wst
             return buffer;
         }
     default:
-        return util::ToHex({data, size}, L'\0', true);
+        return win32ui::HexBytes({data, size}, L'\0', true);
     }
 }
 
@@ -437,7 +385,7 @@ LONG QueryKey(const KeyRef& key, Query& query, bool name_matched)
                 Print(L"");
                 ++query.matches;
             }
-            PrintError(L"Skipped " + regfile::Describe({regfile::Operation::Kind::kKey, child_key.display}, util::FormatWin32Error(static_cast<DWORD>(child_status))));
+            PrintError(L"Skipped " + regfile::Describe({regfile::Operation::Kind::kKey, child_key.display}, win32ui::FormatWin32Error(static_cast<DWORD>(child_status))));
             query.skipped = true;
         }
     }
@@ -724,10 +672,10 @@ int ExportKeyToFile(const KeyRef& key, const std::wstring& path, REGSAM view)
     }
     if (status != ERROR_SUCCESS)
     {
-        PrintError(status == ERROR_FILE_NOT_FOUND ? L"The key doesn't exist: " + key.display : util::FormatWin32Error(static_cast<DWORD>(status)));
+        PrintError(status == ERROR_FILE_NOT_FOUND ? L"The key doesn't exist: " + key.display : win32ui::FormatWin32Error(static_cast<DWORD>(status)));
         return kFailed;
     }
-    if (!util::WriteTextFile(path, std::move(writer).Finish(), true))
+    if (win32ui::WriteTextFileAtomic(path.c_str(), std::move(writer).Finish(), true) != ERROR_SUCCESS)
     {
         PrintError(L"Failed to write " + path);
         return kFailed;
@@ -753,7 +701,7 @@ int CmdExport(const std::vector<std::wstring>& args)
     {
         return kFailed;
     }
-    if (!options.force && !util::IsMissing(positional[1]))
+    if (!options.force && !util::IsMissing(positional[1].c_str()))
     {
         PrintError(positional[1] + L" already exists. Use /y to overwrite.");
         return kFailed;
@@ -807,7 +755,7 @@ int CmdSave(const std::vector<std::wstring>& args)
     {
         return kFailed;
     }
-    if (!options.force && !util::IsMissing(positional[1]))
+    if (!options.force && !util::IsMissing(positional[1].c_str()))
     {
         PrintError(positional[1] + L" already exists. Use /y to overwrite.");
         return kFailed;
@@ -909,8 +857,7 @@ struct Compare
     const Options& options;
     bool differs = false;
 
-    // = equal, < left only or different, > right only or different
-    // /oa /od /os /on select printed lines
+    // = equal, < left only or different, > right only or different, /oa /od /os /on select printed lines
     void Line(wchar_t mark, const KeyRef& key, const RegistryValue* value)
     {
         const bool equal = mark == L'=';
@@ -1193,7 +1140,7 @@ int CmdConvert(const std::vector<std::wstring>& args)
         PrintError(L"Usage: convert <input> <output> [/y], both .reg, .bat, .cmd or .ps1.");
         return kFailed;
     }
-    if (!options.force && !util::IsMissing(positional[1]))
+    if (!options.force && !util::IsMissing(positional[1].c_str()))
     {
         PrintError(positional[1] + L" already exists. Use /y to overwrite.");
         return kFailed;
@@ -1305,7 +1252,7 @@ int RunVerb(const std::wstring& verb, const std::vector<std::wstring>& args)
     }
     return -1;
 }
-} // namespace
+}
 
 bool Execute(const std::vector<std::wstring>& args, int* exit_code)
 {
@@ -1376,7 +1323,7 @@ bool Execute(const std::vector<std::wstring>& args, int* exit_code)
 
 bool PrintErrorToTerminal(const std::wstring& text)
 {
-    if (!Usable(GetStdHandle(STD_ERROR_HANDLE)) && !AttachConsole(ATTACH_PARENT_PROCESS))
+    if (!win32ui::AttachTerminal())
     {
         return false;
     }
@@ -1384,4 +1331,4 @@ bool PrintErrorToTerminal(const std::wstring& text)
     return true;
 }
 
-} // namespace regkit::cli
+}

@@ -5,7 +5,6 @@
 
 #include "frame/main_window.h"
 #include "frame/tools/update_checker.h"
-#include "win32/windows_config.h"
 
 #include <win32ui/handle_owner.h>
 #include <win32ui/list_view/list_view.h>
@@ -15,8 +14,11 @@
 #include <win32ui/menu/shortcuts.h>
 #include <win32ui/splitter/splitter.h>
 #include <win32ui/status_bar/status_bar.h>
+#include <win32ui/system/recent_list.h>
+#include <win32ui/system/worker.h>
 #include <win32ui/tab_strip/tab_strip.h>
 #include <win32ui/toolbar/toolbar.h>
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -56,10 +58,8 @@
 #include "win32/process_rights.h"
 #include "win32/translation.h"
 #include "work/key_watcher.h"
-#include "work/session.h"
 #include "workspace/dialog_state.h"
 #include "workspace/favorites.h"
-#include "workspace/recent_items.h"
 #include "workspace/settings.h"
 #include "workspace/tree_state.h"
 
@@ -88,8 +88,7 @@ class MainWindow::Impl
         kOffline,
     };
 
-    // session for local registry, remote machine or offline hive set
-    // local tabs share one, remote/offline tabs own theirs
+    // local tabs share one session, remote/offline tabs own theirs
     struct RegistrySession
     {
         RegistrySession() = default;
@@ -129,7 +128,7 @@ class MainWindow::Impl
     struct SearchTabLoadPayload;
     struct TraceParseSession;
     struct DefaultParseSession;
-    struct StartupCachePayload : work::MoveOnly
+    struct StartupCachePayload : win32ui::PostedPayload
     {
         uint64_t generation = 0;
         std::vector<HistoryEntry> history_entries;
@@ -137,7 +136,6 @@ class MainWindow::Impl
         std::vector<changes::CommentRule> default_comments;
         bool comments_unreadable = false;
         std::wstring comments_error;
-        // files that exist but couldnt be read, path and reason
         std::vector<std::pair<std::wstring, std::wstring>> file_errors;
         bool history_unreadable = false;
         workspace::TreeState tree_state;
@@ -145,7 +143,7 @@ class MainWindow::Impl
         bool comments_loaded = false;
         bool tree_state_loaded = false;
     };
-    struct ReplacePayload : work::MoveOnly
+    struct ReplacePayload : win32ui::PostedPayload
     {
         struct Change
         {
@@ -163,7 +161,7 @@ class MainWindow::Impl
         int rejected = 0;
         bool cancelled = false;
     };
-    struct ComparePayload : work::MoveOnly
+    struct ComparePayload : win32ui::PostedPayload
     {
         uint64_t generation = 0;
         std::wstring error;
@@ -178,6 +176,7 @@ class MainWindow::Impl
     static LRESULT CALLBACK FilterEditProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data);
     static LRESULT CALLBACK ListViewProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data);
     static LRESULT CALLBACK TreeViewProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data);
+    static LRESULT CALLBACK CloseButtonProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR ref_data);
 
     LRESULT HandleMessage(UINT message, WPARAM wparam, LPARAM lparam);
     std::optional<LRESULT> HandleLifecycleMessage(UINT message, WPARAM wparam, LPARAM lparam);
@@ -194,7 +193,6 @@ class MainWindow::Impl
     std::optional<LRESULT> HandleBrowseMessage(UINT message, WPARAM wparam, LPARAM lparam);
     LRESULT HandleNotification(LPARAM lparam);
     LRESULT HandleTooltipNotification(NMHDR* header);
-    // model cell text for copy, text search, fitting and tooltips
     std::wstring ListCellFieldText(HWND list, int item, int subitem);
     std::wstring SearchCellFieldText(const search::Result& result, int subitem) const;
     LRESULT HandleTabNotification(NMHDR* header, LPARAM lparam);
@@ -211,7 +209,6 @@ class MainWindow::Impl
     void OnDestroy();
     void DiscardWorkerMessages();
     void OnSize(int width, int height);
-    void OnPrintClient(HDC hdc);
     void ApplyThemeToChildren();
     void ApplySystemTheme();
     void LoadThemePresets();
@@ -232,7 +229,6 @@ class MainWindow::Impl
     std::wstring ResolveIconPath(const wchar_t* filename) const;
     void ApplyGridToolbarIcons();
     void SetValueGridEnabled(bool enabled, bool persist);
-    // toolbar icon from selected set, falls back to resources
     HICON ToolbarIconFor(int command, UINT dpi) const;
     void CreateValueColumns();
     void CreateHistoryColumns();
@@ -280,7 +276,6 @@ class MainWindow::Impl
     void EnableAddressAutoComplete();
     std::vector<std::wstring> BuildAddressSuggestions(const std::wstring& input) const;
     void UpdateStatus();
-    // show for ms milliseconds, 0 keeps until next message
     void SetStatusMessage(const std::wstring& text, UINT ms = 8000);
     void SortValueList(int column, bool toggle);
     void SortHistoryList(int column, bool toggle);
@@ -332,6 +327,7 @@ class MainWindow::Impl
     void ActivateTabIndex(int index);
     bool HandleTabCommand(int command_id);
     bool ConfirmCloseTab(int tab_index);
+    bool ConfirmCloseAllTabs();
     bool ConfirmOfflineChanges(RegistrySession& session, const wchar_t* message);
     void MarkOfflineDirty();
     void MarkSessionDirty(RegistrySession& session);
@@ -428,7 +424,6 @@ class MainWindow::Impl
     void OnListColumnsChanged(HWND list);
     void AppendHistoryEntry(const std::wstring& action, const std::wstring& old_data, const std::wstring& new_data);
     void AppendHistoryEntry(HistoryEntry entry);
-    // one cache write, sort and list update per mass change
     void AppendHistoryEntries(std::vector<HistoryEntry> entries);
     void AppendHistoryEntries(std::vector<HistoryEntry> entries, const std::optional<search::Source>& source);
     std::optional<search::Source> HistorySource() const;
@@ -437,7 +432,6 @@ class MainWindow::Impl
     bool PrepareHistoryRevert(const HistoryEntry& entry, HistoryEntry* prepared) const;
     bool OpenHistoryTarget(const HistoryEntry& entry);
     bool RevertHistoryEntry(const HistoryEntry& entry);
-    void ShowAddressContextMenu(HWND edit, POINT screen_pt);
     void ShowTreeContextMenu(HTREEITEM item, POINT screen_pt);
     bool CanOpenHiveFile(const RegistryNode& node);
     void ShowValueContextMenu(int index, POINT screen_pt);
@@ -476,9 +470,8 @@ class MainWindow::Impl
     std::vector<RegistryRootEntry> LocalRoots(REGSAM view);
     void ReloadLocalRoots();
     std::shared_ptr<RegistrySession> LocalViewSession(REGSAM view) const;
-    void HandleTypeToSelectTree(wchar_t ch);
     std::wstring NormalizeRegistryPath(const std::wstring& path) const;
-    // root labels stripped by NormalizeRegistryPath, lets workers normalize without UI state
+    // lets workers normalize without UI state
     std::vector<std::wstring> RegistryPathContexts() const;
     static std::wstring NormalizeRegistryPath(const std::wstring& path, const std::wstring& sid, const std::vector<std::wstring>& contexts);
     std::wstring FormatRegistryPath(const std::wstring& path, registry_path::Style style) const;
@@ -520,7 +513,6 @@ class MainWindow::Impl
     std::wstring CommentsPath() const;
     std::wstring CommentKeyPath(const RegistryNode& node) const;
     bool EditComments(const std::vector<changes::CommentTarget>& targets);
-    // Modify Comment target, empty if selection cannot have a comment
     std::vector<changes::CommentTarget> CommentTargets();
     bool RestartAsAdmin();
     bool RestartAsUser();
@@ -533,10 +525,8 @@ class MainWindow::Impl
     bool RestartAsSystem();
     bool RestartAsTrustedInstaller();
     void LoadSettings();
-    // a file that exists but cant be read, shown once the window runs, headline is translated text
     void ReportFileError(const std::wstring& path, const std::wstring& reason, const wchar_t* headline = nullptr);
     void ShowFileErrors();
-    // the last dialog fields, an unreadable file is reported
     workspace::DialogState LoadDialogState();
     workspace::Settings CurrentSettings() const;
     void SaveSettings() const;
@@ -588,9 +578,7 @@ class MainWindow::Impl
     void UpdateSimulatedChain(HTREEITEM item);
     void ApplySavedWindowPlacement();
     void AddRecentTracePath(const std::wstring& path);
-    void NormalizeRecentTraceList();
     void AddRecentDefaultPath(const std::wstring& path);
-    void NormalizeRecentDefaultList();
     void AppendTraceChildren(const RegistryNode& node, const std::unordered_set<std::wstring>& existing_lower, std::vector<std::wstring>* out) const;
     static std::wstring TracePathLowerForNode(const RegistryNode& node);
     static std::wstring SourceLookupPath(const RegistryNode& node);
@@ -648,6 +636,7 @@ class MainWindow::Impl
     HWND filter_clear_btn_ = nullptr;
     HWND history_label_ = nullptr;
     HWND history_close_btn_ = nullptr;
+    HWND hot_close_button_ = nullptr;
     HWND history_list_ = nullptr;
     HWND key_handles_window_ = nullptr;
     win32ui::StatusBarHooks status_hooks_;
@@ -680,7 +669,6 @@ class MainWindow::Impl
     win32ui::SplitterHooks splitter_hooks_;
     HWND tree_splitter_ = nullptr;
     HWND history_splitter_ = nullptr;
-    // last shown pane sizes, used as drag starting sizes
     int tree_shown_width_ = 0;
     int history_shown_height_ = 0;
     bool splitter_dragging_ = false;
@@ -692,7 +680,7 @@ class MainWindow::Impl
     std::wstring status_account_;
     work::KeyWatcher key_watcher_;
     bool show_value_ = true;
-    work::DebouncedTask<workspace::TreeState> tree_state_saver_;
+    win32ui::DebouncedTask<workspace::TreeState> tree_state_saver_;
     win32ui::ThemeMode theme_mode_ = win32ui::ThemeMode::system;
     std::vector<util::LanguagePack> language_packs_;
     std::wstring icon_dir_;
@@ -704,11 +692,11 @@ class MainWindow::Impl
     std::atomic<uint64_t> value_list_generation_{0};
     bool applying_theme_ = false;
     bool restart_on_close_ = false;
+    bool close_confirmed_ = false;
     bool reset_settings_on_close_ = false;
     std::optional<CacheKind> cache_clear_on_close_;
     bool history_loaded_ = false;
     bool history_cache_failed_ = false;
-    // the history file couldnt be read, history stays in memory until the cache is cleared
     bool history_unreadable_ = false;
     std::vector<std::wstring> file_errors_;
     bool file_errors_posted_ = false;
@@ -732,7 +720,6 @@ class MainWindow::Impl
     bool flushing_external_navigation_ = false;
     bool jump_ui_batch_active_ = false;
     bool tree_redraw_pending_ = false;
-    // restart cleared tree cache, omit tree state from saved tabs
     bool drop_tree_state_ = false;
     bool status_update_pending_ = false;
     bool tree_painted_ = false;
@@ -744,7 +731,7 @@ class MainWindow::Impl
     std::unordered_map<std::wstring, std::wstring> hive_list_;
     std::shared_ptr<const std::unordered_set<std::wstring>> hive_roots_;
     bool deferred_startup_complete_ = false;
-    work::Session startup_cache_session_;
+    win32ui::Session startup_cache_session_;
     bool startup_tree_restore_pending_ = false;
     bool applying_startup_tree_restore_ = false;
     bool window_placement_loaded_ = false;
@@ -761,7 +748,7 @@ class MainWindow::Impl
             space.notify_all();
             session.Join();
         }
-        work::Session session;
+        win32ui::Session session;
         std::mutex mutex;
         std::condition_variable space;
         std::deque<std::vector<search::Result>> batches;
@@ -846,10 +833,10 @@ class MainWindow::Impl
     bool value_preview_request_posted_ = false;
     uint64_t search_last_refresh_tick_ = 0;
     uint64_t search_generation_ = 0;
-    work::Session replace_session_;
+    win32ui::Session replace_session_;
     bool replace_result_pending_ = false;
     std::weak_ptr<RegistrySession> replace_target_;
-    work::Session compare_session_;
+    win32ui::Session compare_session_;
     int active_search_tab_index_ = -1;
     int search_results_view_tab_index_ = -1;
     bool value_activate_from_key_ = false;
@@ -871,14 +858,14 @@ class MainWindow::Impl
     static std::function<std::wstring(const std::wstring&, const std::wstring&)> DefaultDataLookup(std::vector<ActiveDefault> defaults);
     static void CollectTraceChildren(const std::vector<ActiveTrace>& traces, const std::wstring& key_lower, const std::unordered_set<std::wstring>& existing_lower, std::vector<std::wstring>* out);
 
-    struct TraceLoadPayload : work::MoveOnly
+    struct TraceLoadPayload : win32ui::PostedPayload
     {
         uint64_t generation = 0;
         std::vector<ActiveTrace> traces;
         std::unordered_map<std::wstring, trace::Selection> selection_cache;
     };
 
-    struct DefaultLoadPayload : work::MoveOnly
+    struct DefaultLoadPayload : win32ui::PostedPayload
     {
         uint64_t generation = 0;
         std::vector<ActiveDefault> defaults;
@@ -890,7 +877,7 @@ class MainWindow::Impl
         std::wstring source_lower;
         std::shared_ptr<trace::Data> data;
         trace::Selection selection;
-        work::Session work;
+        win32ui::Session work;
         HWND dialog = nullptr;
         bool added_to_active = false;
         bool parsing_done = false;
@@ -902,7 +889,7 @@ class MainWindow::Impl
         std::wstring source_lower;
         std::shared_ptr<defaults::Data> data;
         trace::Selection selection;
-        work::Session work;
+        win32ui::Session work;
         HWND dialog = nullptr;
         bool added_to_active = false;
         bool parsing_done = false;
@@ -912,7 +899,7 @@ class MainWindow::Impl
     {
         std::wstring source_path;
         std::wstring source_lower;
-        work::Session work;
+        win32ui::Session work;
     };
     struct TraceDialogStartContext
     {
@@ -959,12 +946,12 @@ class MainWindow::Impl
         DWORD size = 0;
         std::wstring preview;
     };
-    struct ValuePreviewPayload : work::MoveOnly
+    struct ValuePreviewPayload : win32ui::PostedPayload
     {
         uint64_t generation = 0;
         std::vector<ValuePreviewItem> items;
     };
-    work::LatestTask<ValuePreviewTask> value_preview_loader_;
+    win32ui::LatestTask<ValuePreviewTask> value_preview_loader_;
     struct SearchPreviewRequest
     {
         int index = 0;
@@ -987,13 +974,13 @@ class MainWindow::Impl
         DWORD data_size = 0;
         std::wstring preview;
     };
-    struct SearchPreviewPayload : work::MoveOnly
+    struct SearchPreviewPayload : win32ui::PostedPayload
     {
         uint64_t generation = 0;
         int tab_index = -1;
         std::vector<SearchPreviewItem> items;
     };
-    work::LatestTask<SearchPreviewTask> search_preview_loader_;
+    win32ui::LatestTask<SearchPreviewTask> search_preview_loader_;
     struct SearchSortTask
     {
         uint64_t generation = 0;
@@ -1007,14 +994,14 @@ class MainWindow::Impl
         std::vector<RegistryNode> nodes;
         HWND hwnd = nullptr;
     };
-    struct SearchSortPayload : work::MoveOnly
+    struct SearchSortPayload : win32ui::PostedPayload
     {
         uint64_t generation = 0;
         int tab_index = -1;
         uint64_t sort_revision = 0;
         std::vector<search::Result> rows;
     };
-    work::LatestTask<SearchSortTask> search_sort_loader_;
+    win32ui::LatestTask<SearchSortTask> search_sort_loader_;
     struct SearchTabLoadTask
     {
         uint64_t generation = 0;
@@ -1027,7 +1014,7 @@ class MainWindow::Impl
         std::vector<search::Source> sources;
         HWND hwnd = nullptr;
     };
-    struct SearchTabLoadPayload : work::MoveOnly
+    struct SearchTabLoadPayload : win32ui::PostedPayload
     {
         uint64_t generation = 0;
         int tab_index = -1;
@@ -1037,18 +1024,18 @@ class MainWindow::Impl
         std::wstring path;
         std::wstring error;
     };
-    work::LatestTask<SearchTabLoadTask> search_tab_loader_;
+    win32ui::LatestTask<SearchTabLoadTask> search_tab_loader_;
     uint64_t search_tab_load_generation_ = 0;
     std::vector<ActiveTrace> active_traces_;
     std::unordered_map<std::wstring, trace::Selection> trace_selection_cache_;
-    workspace::RecentItems recent_trace_paths_{10};
+    win32ui::RecentList recent_trace_paths_{10};
     std::vector<ActiveDefault> active_defaults_;
-    workspace::RecentItems recent_default_paths_{10};
-    work::LatestTask<ValueListTask> value_loader_;
+    win32ui::RecentList recent_default_paths_{10};
+    win32ui::LatestTask<ValueListTask> value_loader_;
     frame::UpdateChecker updates_;
-    work::Session trace_load_session_;
+    win32ui::Session trace_load_session_;
     std::unordered_map<std::wstring, std::unique_ptr<TraceParseSession>> trace_parse_sessions_;
-    work::Session default_load_session_;
+    win32ui::Session default_load_session_;
     std::unordered_map<std::wstring, std::unique_ptr<DefaultParseSession>> default_parse_sessions_;
     std::unordered_map<std::wstring, std::unique_ptr<RegFileParseSession>> reg_file_parse_sessions_;
     uint64_t reg_file_session_serial_ = 0;
@@ -1077,4 +1064,4 @@ class MainWindow::Impl
     std::vector<BundledDefault> bundled_defaults_;
 };
 
-} // namespace regkit
+}

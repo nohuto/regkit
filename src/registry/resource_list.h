@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "records/table.h"
+#include <win32ui/dialog/table_dialog.h>
 
 #include <windows.h>
 
@@ -14,8 +14,6 @@ namespace regkit::resource_list
 {
 
 bool IsResourceType(DWORD type) noexcept;
-// decodes REG_RESOURCE_LIST, REG_FULL_RESOURCE_DESCRIPTOR and REG_RESOURCE_REQUIREMENTS_LIST
-// nullopt for malformed data
-std::optional<std::vector<records::Table>> Decode(DWORD type, const BYTE* data, size_t size, bool translated = false);
+std::optional<std::vector<win32ui::TextTable>> Decode(DWORD type, const BYTE* data, size_t size, bool translated = false);
 
-} // namespace regkit::resource_list
+}

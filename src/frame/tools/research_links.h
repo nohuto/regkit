@@ -18,4 +18,4 @@ struct ResearchLink
 std::span<const ResearchLink> ResearchLinks() noexcept;
 const ResearchLink* ResearchLinkForCommand(int command_id) noexcept;
 
-} // namespace regkit::frame
+}

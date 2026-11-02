@@ -52,4 +52,4 @@ class Replacer
     std::wstring replacement_;
 };
 
-} // namespace regkit::search
+}

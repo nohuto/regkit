@@ -3,22 +3,13 @@
 
 #include "win32/file_dialog.h"
 
-#include "win32/process_rights.h"
-#include "win32/system_error.h"
 #include "win32/translation.h"
 
-#include <objsel.h>
-#include <shellapi.h>
-#include <shlobj.h>
-#include <shobjidl.h>
+#include <win32ui/dialog/file_dialog.h>
+#include <win32ui/system/error_text.h>
 
-#include <win32ui/handle_owner.h>
-#include <win32ui/process_token.h>
-
-#include <memory>
-#include <string_view>
-#include <utility>
-#include <vector>
+#include <cwchar>
+#include <span>
 
 namespace regkit::win32
 {
@@ -26,341 +17,45 @@ namespace regkit::win32
 namespace
 {
 
-FolderPrompt g_missing_desktop_prompt = nullptr;
-
-template <typename T>
-class ComPtr
-{
-  public:
-    ComPtr() = default;
-    ~ComPtr()
-    {
-        if (ptr_)
-        {
-            ptr_->Release();
-        }
-    }
-    ComPtr(const ComPtr&) = delete;
-    ComPtr& operator=(const ComPtr&) = delete;
-    T** Receive()
-    {
-        return &ptr_;
-    }
-    T* operator->() const
-    {
-        return ptr_;
-    }
-    explicit operator bool() const
-    {
-        return ptr_ != nullptr;
-    }
-
-  private:
-    T* ptr_ = nullptr;
-};
-
-std::vector<COMDLG_FILTERSPEC> ParseFilter(const wchar_t* filter)
-{
-    std::vector<COMDLG_FILTERSPEC> specs;
-    if (!filter)
-    {
-        return specs;
-    }
-    const wchar_t* cursor = filter;
-    while (*cursor)
-    {
-        const wchar_t* name = cursor;
-        cursor += wcslen(cursor) + 1;
-        if (!*cursor)
-        {
-            break;
-        }
-        const wchar_t* spec = cursor;
-        cursor += wcslen(cursor) + 1;
-        specs.push_back({util::Tr(name), spec});
-    }
-    return specs;
-}
-
 OpenAfter g_open_after = OpenAfter::kNone;
 
-HRESULT ShowDialog(HWND owner, REFCLSID clsid, const wchar_t* filter, FILEOPENDIALOGOPTIONS extra_options, const wchar_t* suggested_name, std::wstring* path, OpenAfter* open_after = nullptr, bool regkit = false)
-{
-    if (!path)
-    {
-        return E_POINTER;
-    }
-    ComPtr<IFileDialog> dialog;
-    HRESULT hr = CoCreateInstance(clsid, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(dialog.Receive()));
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-
-    FILEOPENDIALOGOPTIONS options = 0;
-    hr = dialog->GetOptions(&options);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    hr = dialog->SetOptions(options | FOS_FORCEFILESYSTEM | extra_options);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-
-    const std::vector<COMDLG_FILTERSPEC> specs = ParseFilter(filter);
-    if (!specs.empty())
-    {
-        hr = dialog->SetFileTypes(static_cast<UINT>(specs.size()), specs.data());
-        if (SUCCEEDED(hr))
-        {
-            dialog->SetFileTypeIndex(1);
-        }
-    }
-    if (IsEqualCLSID(clsid, CLSID_FileSaveDialog) && !specs.empty())
-    {
-        const std::wstring_view spec = specs.front().pszSpec;
-        if (spec.starts_with(L"*.") && spec != L"*.*")
-        {
-            dialog->SetDefaultExtension(std::wstring(spec.substr(2, spec.find(L';') - 2)).c_str());
-        }
-    }
-    if (win32ui::IsProcessSystem())
-    {
-        win32ui::UniqueCoTask<PWSTR> own_desktop;
-        if (g_missing_desktop_prompt && SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Desktop, KF_FLAG_DONT_VERIFY, nullptr, own_desktop.put())) &&
-            GetFileAttributesW(own_desktop.get()) == INVALID_FILE_ATTRIBUTES && std::exchange(g_missing_desktop_prompt, nullptr)(owner, own_desktop.get()))
-        {
-            CreateDirectoryW(own_desktop.get(), nullptr);
-        }
-        IShellItem* documents = nullptr;
-        PIDLIST_ABSOLUTE documents_id = nullptr;
-        const std::wstring documents_path = util::GetShellUserDocuments();
-        if (!documents_path.empty() && SUCCEEDED(SHParseDisplayName(documents_path.c_str(), nullptr, &documents_id, 0, nullptr)) &&
-            SUCCEEDED(SHCreateShellItem(nullptr, nullptr, documents_id, &documents)))
-        {
-            dialog->SetDefaultFolder(documents);
-            documents->Release();
-        }
-        CoTaskMemFree(documents_id);
-    }
-    if (suggested_name && *suggested_name)
-    {
-        const std::wstring_view name = suggested_name;
-        const size_t slash = name.find_last_of(L"\\/");
-        IShellItem* folder = nullptr;
-        PIDLIST_ABSOLUTE folder_id = nullptr;
-        if (slash != std::wstring_view::npos && SUCCEEDED(SHParseDisplayName(std::wstring(name.substr(0, slash + 1)).c_str(), nullptr, &folder_id, 0, nullptr)) &&
-            SUCCEEDED(SHCreateShellItem(nullptr, nullptr, folder_id, &folder)))
-        {
-            dialog->SetFolder(folder);
-            folder->Release();
-        }
-        CoTaskMemFree(folder_id);
-        dialog->SetFileName(std::wstring(name.substr(slash == std::wstring_view::npos ? 0 : slash + 1)).c_str());
-    }
-
-    constexpr DWORD kOpenAfterCombo = 2;
-    ComPtr<IFileDialogCustomize> customize;
-    if (open_after && SUCCEEDED(dialog->QueryInterface(IID_PPV_ARGS(customize.Receive()))))
-    {
-        customize->StartVisualGroup(1, util::Tr(L"Open after saving:"));
-        customize->AddComboBox(kOpenAfterCombo);
-        customize->AddControlItem(kOpenAfterCombo, static_cast<DWORD>(OpenAfter::kNone), util::Tr(L"Don't open"));
-        customize->AddControlItem(kOpenAfterCombo, static_cast<DWORD>(OpenAfter::kEditor), util::Tr(L"In text editor"));
-        if (regkit)
-        {
-            customize->AddControlItem(kOpenAfterCombo, static_cast<DWORD>(OpenAfter::kRegKit), util::Tr(L"In RegKit"));
-        }
-        customize->EndVisualGroup();
-        customize->SetSelectedControlItem(kOpenAfterCombo, static_cast<DWORD>(!regkit && g_open_after == OpenAfter::kRegKit ? OpenAfter::kNone : g_open_after));
-    }
-    hr = dialog->Show(owner);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    DWORD selected = static_cast<DWORD>(OpenAfter::kNone);
-    if (customize && SUCCEEDED(customize->GetSelectedControlItem(kOpenAfterCombo, &selected)))
-    {
-        g_open_after = *open_after = static_cast<OpenAfter>(selected);
-    }
-
-    ComPtr<IShellItem> item;
-    hr = dialog->GetResult(item.Receive());
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    win32ui::UniqueCoTask<PWSTR> text;
-    hr = item->GetDisplayName(SIGDN_FILESYSPATH, text.put());
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    *path = text ? text.get() : L"";
-    return S_OK;
 }
 
-} // namespace
-
-void SetMissingDesktopPrompt(FolderPrompt prompt)
+DWORD ChooseFileToSave(HWND owner, const wchar_t* filter, const wchar_t* suggested_name, std::wstring* path, OpenAfter* open_after, bool regkit)
 {
-    g_missing_desktop_prompt = prompt;
+    static const win32ui::FileDialogChoice kChoices[] = {
+        {static_cast<DWORD>(OpenAfter::kNone), util::TrNoop(L"Don't open")},
+        {static_cast<DWORD>(OpenAfter::kEditor), util::TrNoop(L"In text editor")},
+        {static_cast<DWORD>(OpenAfter::kRegKit), util::TrNoop(L"In RegKit")},
+    };
+    DWORD choice = static_cast<DWORD>(!regkit && g_open_after == OpenAfter::kRegKit ? OpenAfter::kNone : g_open_after);
+    win32ui::FileDialogSpec spec;
+    spec.filter = filter;
+    spec.initial_name = suggested_name ? suggested_name : L"";
+    if (open_after)
+    {
+        spec.choice_label = util::TrNoop(L"Open after saving:");
+        spec.choices = std::span(kChoices).first(regkit ? 3 : 2);
+        spec.choice = &choice;
+    }
+    const DWORD error = win32ui::ChooseFileToSave(owner, spec, path);
+    if (error == ERROR_SUCCESS && open_after)
+    {
+        g_open_after = *open_after = static_cast<OpenAfter>(choice);
+    }
+    return error;
 }
 
-HRESULT ChooseFileToOpen(HWND owner, const wchar_t* filter, std::wstring* path)
+std::wstring FormatDialogError(DWORD error)
 {
-    return ShowDialog(owner, CLSID_FileOpenDialog, filter, 0, nullptr, path);
-}
-
-HRESULT ChooseFileToSave(HWND owner, const wchar_t* filter, const wchar_t* suggested_name, std::wstring* path, OpenAfter* open_after, bool regkit)
-{
-    return ShowDialog(owner, CLSID_FileSaveDialog, filter, 0, suggested_name, path, open_after, regkit);
-}
-
-HRESULT OpenInTextEditor(HWND owner, const std::wstring& path)
-{
-    SHELLEXECUTEINFOW info = {};
-    info.cbSize = sizeof(info);
-    info.fMask = SEE_MASK_CLASSNAME | SEE_MASK_NOASYNC | SEE_MASK_FLAG_NO_UI;
-    info.hwnd = owner;
-    info.lpVerb = L"open";
-    info.lpFile = path.c_str();
-    info.lpClass = L".txt";
-    info.nShow = SW_SHOWNORMAL;
-    return ShellExecuteExW(&info) ? S_OK : HRESULT_FROM_WIN32(GetLastError());
-}
-
-HRESULT ChooseFolder(HWND owner, std::wstring* path)
-{
-    return ShowDialog(owner, CLSID_FileOpenDialog, nullptr, FOS_PICKFOLDERS, nullptr, path);
-}
-
-HRESULT ChooseComputer(HWND owner, std::wstring* name)
-{
-    if (!name)
+    // Win32FromHResult keeps the bits of HRESULTs outside FACILITY_WIN32
+    if ((error & 0x80000000u) == 0)
     {
-        return E_POINTER;
-    }
-    ComPtr<IDsObjectPicker> picker;
-    HRESULT hr = CoCreateInstance(CLSID_DsObjectPicker, nullptr, CLSCTX_INPROC_SERVER, IID_IDsObjectPicker, reinterpret_cast<void**>(picker.Receive()));
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-
-    DSOP_SCOPE_INIT_INFO scope = {};
-    scope.cbSize = sizeof(scope);
-    scope.flType = DSOP_SCOPE_TYPE_UPLEVEL_JOINED_DOMAIN | DSOP_SCOPE_TYPE_DOWNLEVEL_JOINED_DOMAIN |
-                   DSOP_SCOPE_TYPE_ENTERPRISE_DOMAIN | DSOP_SCOPE_TYPE_GLOBAL_CATALOG |
-                   DSOP_SCOPE_TYPE_EXTERNAL_UPLEVEL_DOMAIN | DSOP_SCOPE_TYPE_EXTERNAL_DOWNLEVEL_DOMAIN |
-                   DSOP_SCOPE_TYPE_WORKGROUP | DSOP_SCOPE_TYPE_USER_ENTERED_UPLEVEL_SCOPE |
-                   DSOP_SCOPE_TYPE_USER_ENTERED_DOWNLEVEL_SCOPE;
-    scope.flScope = DSOP_SCOPE_FLAG_STARTING_SCOPE | DSOP_SCOPE_FLAG_DEFAULT_FILTER_COMPUTERS;
-    scope.FilterFlags.Uplevel.flBothModes = DSOP_FILTER_COMPUTERS;
-    scope.FilterFlags.flDownlevel = DSOP_DOWNLEVEL_FILTER_COMPUTERS;
-
-    DSOP_INIT_INFO init = {};
-    init.cbSize = sizeof(init);
-    init.cDsScopeInfos = 1;
-    init.aDsScopeInfos = &scope;
-    hr = picker->Initialize(&init);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-
-    ComPtr<IDataObject> selection;
-    hr = picker->InvokeDialog(owner, selection.Receive());
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    if (hr == S_FALSE || !selection)
-    {
-        return HRESULT_FROM_WIN32(ERROR_CANCELLED);
-    }
-
-    FORMATETC format = {};
-    format.cfFormat = static_cast<CLIPFORMAT>(RegisterClipboardFormatW(CFSTR_DSOP_DS_SELECTION_LIST));
-    format.dwAspect = DVASPECT_CONTENT;
-    format.lindex = -1;
-    format.tymed = TYMED_HGLOBAL;
-    STGMEDIUM medium = {};
-    hr = selection->GetData(&format, &medium);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    const std::unique_ptr<STGMEDIUM, decltype(&ReleaseStgMedium)> release(&medium, ReleaseStgMedium);
-    if (auto* list = static_cast<PDS_SELECTION_LIST>(GlobalLock(medium.hGlobal)))
-    {
-        if (list->cItems > 0 && list->aDsSelection[0].pwzName)
-        {
-            *name = list->aDsSelection[0].pwzName;
-        }
-        GlobalUnlock(medium.hGlobal);
-    }
-    if (!name->empty() && name->back() == L'$')
-    {
-        name->pop_back();
-    }
-    return name->empty() ? HRESULT_FROM_WIN32(ERROR_CANCELLED) : S_OK;
-}
-
-bool DialogCancelled(HRESULT hr)
-{
-    return hr == HRESULT_FROM_WIN32(ERROR_CANCELLED);
-}
-
-HRESULT ShellOpen(HWND owner, const wchar_t* target)
-{
-    if (!target || !*target)
-    {
-        return E_INVALIDARG;
-    }
-    SHELLEXECUTEINFOW info = {};
-    info.cbSize = sizeof(info);
-    info.fMask = SEE_MASK_NOASYNC | SEE_MASK_FLAG_NO_UI;
-    info.hwnd = owner;
-    info.lpVerb = L"open";
-    info.lpFile = target;
-    info.nShow = SW_SHOWNORMAL;
-    if (!ShellExecuteExW(&info))
-    {
-        return HRESULT_FROM_WIN32(GetLastError());
-    }
-    return S_OK;
-}
-
-HRESULT RevealInExplorer(const std::wstring& path)
-{
-    if (path.empty())
-    {
-        return E_INVALIDARG;
-    }
-    PIDLIST_ABSOLUTE item = nullptr;
-    HRESULT hr = SHParseDisplayName(path.c_str(), nullptr, &item, 0, nullptr);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    hr = SHOpenFolderAndSelectItems(item, 0, nullptr, 0);
-    CoTaskMemFree(item);
-    return hr;
-}
-
-std::wstring FormatDialogError(HRESULT hr)
-{
-    if (HRESULT_FACILITY(hr) == FACILITY_WIN32)
-    {
-        return util::FormatWin32Error(static_cast<DWORD>(HRESULT_CODE(hr)));
+        return win32ui::FormatWin32Error(error);
     }
     wchar_t code[32] = {};
-    swprintf_s(code, L"0x%08X", static_cast<unsigned>(hr));
+    swprintf_s(code, L"0x%08X", static_cast<unsigned>(error));
     return util::TrDetail(L"The file dialog failed.", code);
 }
 
-} // namespace regkit::win32
+}

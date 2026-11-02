@@ -65,7 +65,8 @@ void MainWindow::Impl::StartTraceParseThread(TraceParseSession* session)
     HWND hwnd = hwnd_;
     std::wstring source = session->source_path;
     std::wstring source_lower = session->source_lower;
-    session->work.Start(L"TraceParseThread", [this, session, hwnd, source, source_lower](uint64_t generation, std::atomic_bool& cancel) {
+    // runs here without a thread, its batches arrive like those of a thread
+    session->work.StartOrRun(L"TraceParseThread", [this, session, hwnd, source, source_lower](uint64_t generation, std::atomic_bool& cancel) {
         constexpr size_t kBatchSize = 256;
         constexpr DWORD kBatchMs = 50;
         auto post_batch = [&](std::vector<KeyValueDialogEntry>* entries, bool done, const std::wstring& error, bool cancelled) {
@@ -81,7 +82,7 @@ void MainWindow::Impl::StartTraceParseThread(TraceParseSession* session)
             payload->error = error;
             payload->cancelled = cancelled;
             if (!hwnd || !IsWindow(hwnd) ||
-                !work::PostPayload(hwnd, frame::message_id::kTraceParseBatch, 0, payload))
+                !win32ui::PostPayload(hwnd, frame::message_id::kTraceParseBatch, 0, payload))
             {
                 return;
             }
@@ -137,7 +138,8 @@ void MainWindow::Impl::StartDefaultParseThread(DefaultParseSession* session)
     HWND hwnd = hwnd_;
     std::wstring source = session->source_path;
     std::wstring source_lower = session->source_lower;
-    session->work.Start(L"DefaultParseThread", [this, session, hwnd, source, source_lower](uint64_t generation, std::atomic_bool& cancel) {
+    // runs here without a thread, its batches arrive like those of a thread
+    session->work.StartOrRun(L"DefaultParseThread", [this, session, hwnd, source, source_lower](uint64_t generation, std::atomic_bool& cancel) {
         constexpr size_t kBatchSize = 256;
         constexpr DWORD kBatchMs = 50;
         auto post_batch = [&](std::vector<KeyValueDialogEntry>* entries, bool done, const std::wstring& error, bool cancelled) {
@@ -153,7 +155,7 @@ void MainWindow::Impl::StartDefaultParseThread(DefaultParseSession* session)
             payload->error = error;
             payload->cancelled = cancelled;
             if (!hwnd || !IsWindow(hwnd) ||
-                !work::PostPayload(hwnd, frame::message_id::kDefaultParseBatch, 0, payload))
+                !win32ui::PostPayload(hwnd, frame::message_id::kDefaultParseBatch, 0, payload))
             {
                 return;
             }
@@ -218,4 +220,4 @@ void MainWindow::Impl::StartDefaultParseThread(DefaultParseSession* session)
     });
 }
 
-} // namespace regkit
+}

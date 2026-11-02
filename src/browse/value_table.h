@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -16,16 +16,13 @@
 namespace regkit
 {
 
-inline constexpr int kValueTooltipMaxWidth = 900;
-inline constexpr int kValueTooltipCursorGap = 18;
-
 namespace rowkind
 {
 
 constexpr LPARAM kKey = 1;
 constexpr LPARAM kValue = 2;
 
-} // namespace rowkind
+}
 
 struct ListRow
 {
@@ -51,7 +48,6 @@ struct ListRow
     bool data_ready = false;
     bool data_preview = false;
     bool simulated = false;
-    // missing registry value, from a trace or unset default
     bool missing = false;
     int image_index = 0;
     LPARAM kind = 0;
@@ -90,4 +86,4 @@ class ValueList
     std::wstring filter_text_;
 };
 
-} // namespace regkit
+}

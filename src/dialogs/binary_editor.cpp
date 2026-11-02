@@ -3,7 +3,6 @@
 
 #include "dialogs/binary_editor.h"
 
-#include "dialogs/binary_text.h"
 #include "dialogs/bitfield_editor.h"
 #include "registry/registry_path.h"
 #include "registry/value_format.h"
@@ -16,6 +15,7 @@
 #include "win32/translation.h"
 
 #include <win32ui/dialog/dialog_window.h>
+#include <win32ui/gdi/fonts.h>
 
 #include <initializer_list>
 #include <utility>
@@ -34,7 +34,7 @@ struct State
     int group_bytes = 1;
     bool unicode = false;
     bool accepted = false;
-    HFONT mono_font = nullptr;
+    win32ui::UniqueFont mono_font;
 };
 
 void SelectGroup(HWND dialog, int selected)
@@ -60,14 +60,14 @@ void UpdatePreview(HWND dialog, State* state)
     }
     state->text = dialog_support::ReadText(dialog, IDC_EDIT);
     std::vector<BYTE> bytes;
-    if (!value_format::ParseHex(state->text, &bytes))
+    if (!win32ui::ParseHexBytes(state->text, &bytes))
     {
         SetDlgItemTextW(dialog, IDC_BINARY_PREVIEW, util::Tr(L"Invalid hex input."));
         SetDlgItemTextW(dialog, IDC_VALUE_BYTES, util::Tr(L"Invalid"));
         return;
     }
     // grouping and text mode affect preview only
-    const std::wstring preview = binary_text::Preview(bytes, state->group_bytes, state->unicode);
+    const std::wstring preview = win32ui::HexDump(bytes, state->group_bytes, state->unicode);
     SetDlgItemTextW(dialog, IDC_BINARY_PREVIEW, preview.c_str());
     SetDlgItemTextW(dialog, IDC_VALUE_BYTES, value_format::ByteCount(bytes.size()).c_str());
 }
@@ -86,13 +86,16 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     auto* state = reinterpret_cast<State*>(GetWindowLongPtrW(dialog, DWLP_USER));
     if (message == WM_SETFONT && state)
     {
-        dialog_support::FollowDialogFont(dialog, reinterpret_cast<HFONT>(wparam), &state->mono_font, {IDC_EDIT, IDC_BINARY_PREVIEW});
+        if (state->mono_font)
+        {
+            win32ui::SetMonoFont(dialog, {IDC_EDIT, IDC_BINARY_PREVIEW}, reinterpret_cast<HFONT>(wparam), &state->mono_font);
+        }
         return FALSE;
     }
     if (message == WM_INITDIALOG)
     {
         state = reinterpret_cast<State*>(lparam);
-        state->text = util::ToHexLines(state->request->data);
+        state->text = win32ui::HexByteLines(state->request->data);
         SetWindowLongPtrW(dialog, DWLP_USER, reinterpret_cast<LONG_PTR>(state));
         SetDlgItemTextW(dialog, IDC_EDIT, state->text.c_str());
         ConfigureIdentity(dialog, *state->request);
@@ -106,7 +109,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
                 EnableWindow(GetDlgItem(dialog, id), FALSE);
             }
         }
-        state->mono_font = dialog_support::ApplyMonoFont(dialog, {IDC_EDIT, IDC_BINARY_PREVIEW});
+        win32ui::SetMonoFont(dialog, {IDC_EDIT, IDC_BINARY_PREVIEW}, nullptr, &state->mono_font);
         win32ui::AnchorDialogControls(dialog, {
                                                   {IDC_VALUE_NAME, win32ui::kAnchorLeft | win32ui::kAnchorTop | win32ui::kAnchorRight},
                                                   {IDC_VALUE_BYTES_LABEL, win32ui::kAnchorTop | win32ui::kAnchorRight},
@@ -130,14 +133,6 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
         UpdatePreview(dialog, state);
         return TRUE;
     }
-    if (message == WM_DESTROY)
-    {
-        if (state)
-        {
-            dialog_support::ReleaseFont(&state->mono_font);
-        }
-        return TRUE;
-    }
     if (message != WM_COMMAND || !state)
     {
         return FALSE;
@@ -154,7 +149,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
         {
             // pass unsaved hex edits into the bit editor and copy its result back
             std::vector<BYTE> bytes;
-            if (!value_format::ParseHex(dialog_support::ReadText(dialog, IDC_EDIT), &bytes) || bytes.empty())
+            if (!win32ui::ParseHexBytes(dialog_support::ReadText(dialog, IDC_EDIT), &bytes) || bytes.empty())
             {
                 ui::ShowError(dialog, util::Tr(L"Invalid hex input."));
                 return TRUE;
@@ -168,7 +163,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
             {
                 return TRUE;
             }
-            SetDlgItemTextW(dialog, IDC_EDIT, util::ToHexLines(result.data).c_str());
+            SetDlgItemTextW(dialog, IDC_EDIT, win32ui::HexByteLines(result.data).c_str());
             UpdatePreview(dialog, state);
             return TRUE;
         }
@@ -201,7 +196,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
         {
             std::wstring text = dialog_support::ReadText(dialog, IDC_EDIT);
             std::vector<BYTE> parsed;
-            if (!value_format::ParseHex(text, &parsed))
+            if (!win32ui::ParseHexBytes(text, &parsed))
             {
                 ui::ShowError(dialog, util::Tr(L"Invalid hex input."));
                 SetFocus(GetDlgItem(dialog, IDC_EDIT));
@@ -221,7 +216,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     }
 }
 
-} // namespace
+}
 
 bool EditBinary(HWND owner, const BinaryRequest& request, BinaryResult* result)
 {
@@ -240,4 +235,4 @@ bool EditBinary(HWND owner, const BinaryRequest& request, BinaryResult* result)
     return true;
 }
 
-} // namespace regkit::editors
+}

@@ -30,4 +30,4 @@ using BrowseKeyCallback = std::function<bool(HWND, std::wstring*)>;
 
 bool PromptSymbolicLink(HWND owner, const std::wstring& suggested_name, const BrowseKeyCallback& browse, SymbolicLinkResult* result);
 
-} // namespace regkit::editors
+}

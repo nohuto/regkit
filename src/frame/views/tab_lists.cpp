@@ -18,8 +18,11 @@ namespace
 
 struct StableListSelection
 {
+    // every row selected, no keys taken
+    bool all = false;
     std::unordered_set<std::wstring> selected;
     std::wstring focused;
+    std::wstring mark;
 };
 
 void AppendIdentityPart(std::wstring* key, const std::wstring& part)
@@ -60,74 +63,69 @@ std::wstring HistoryEntryIdentity(const HistoryEntry& entry)
     return key;
 }
 
+// rows keep their selection, focus and anchor through a rebuild that keeps the same rows (sorting)
 template <typename KeyAt>
-StableListSelection CaptureListSelection(HWND list, KeyAt key_at)
+StableListSelection CaptureKeyedSelection(HWND list, KeyAt key_at)
 {
     StableListSelection state;
-    if (!list)
+    const win32ui::ListSelection rows = win32ui::CaptureListSelection(list);
+    state.all = rows.all;
+    state.selected.reserve(rows.rows.size());
+    for (const int row : rows.rows)
     {
-        return state;
-    }
-    state.selected.reserve(static_cast<size_t>(ListView_GetSelectedCount(list)));
-    int index = -1;
-    while ((index = ListView_GetNextItem(list, index, LVNI_SELECTED)) >= 0)
-    {
-        std::wstring key = key_at(index);
+        std::wstring key = key_at(row);
         if (!key.empty())
         {
             state.selected.emplace(std::move(key));
         }
     }
-    index = ListView_GetNextItem(list, -1, LVNI_FOCUSED);
-    if (index >= 0)
+    if (rows.focused >= 0)
     {
-        state.focused = key_at(index);
+        state.focused = key_at(rows.focused);
+    }
+    if (rows.mark >= 0)
+    {
+        state.mark = key_at(rows.mark);
     }
     return state;
 }
 
 template <typename KeyAt>
-void RestoreListSelection(HWND list, const StableListSelection& state, KeyAt key_at)
+void RestoreKeyedSelection(HWND list, const StableListSelection& state, KeyAt key_at)
 {
-    if (!list)
+    if (!list || (!state.all && state.selected.empty() && state.focused.empty() && state.mark.empty()))
     {
         return;
     }
-    if (state.selected.empty() && state.focused.empty())
-    {
-        return;
-    }
-    SendMessageW(list, WM_SETREDRAW, FALSE, 0);
-    ListView_SetItemState(list, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
-    int focused_index = -1;
+    win32ui::ListSelection rows;
+    rows.all = state.all;
     const int count = ListView_GetItemCount(list);
-    for (int index = 0; index < count; ++index)
+    // with every row selected only the focused and anchor rows are looked for
+    const auto pending = [&] { return !state.selected.empty() || (!state.focused.empty() && rows.focused < 0) || (!state.mark.empty() && rows.mark < 0); };
+    for (int index = 0; index < count && pending(); ++index)
     {
-        std::wstring key = key_at(index);
-        UINT state_mask = 0;
-        if (state.selected.find(key) != state.selected.end())
+        const std::wstring key = key_at(index);
+        if (state.selected.contains(key))
         {
-            state_mask |= LVIS_SELECTED;
+            rows.rows.push_back(index);
         }
-        if (!state.focused.empty() && key == state.focused)
+        if (rows.focused < 0 && !state.focused.empty() && key == state.focused)
         {
-            state_mask |= LVIS_FOCUSED;
-            focused_index = index;
+            rows.focused = index;
         }
-        if (state_mask != 0)
+        if (rows.mark < 0 && !state.mark.empty() && key == state.mark)
         {
-            ListView_SetItemState(list, index, state_mask, state_mask);
+            rows.mark = index;
         }
     }
-    SendMessageW(list, WM_SETREDRAW, TRUE, 0);
-    if (focused_index >= 0)
+    win32ui::ApplyListSelection(list, rows);
+    if (rows.focused >= 0)
     {
-        ListView_EnsureVisible(list, focused_index, FALSE);
+        ListView_EnsureVisible(list, rows.focused, FALSE);
     }
-    RedrawWindow(list, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE);
 }
 
-} // namespace
+}
 
 void MainWindow::Impl::SortValueList(int column, bool toggle)
 {
@@ -147,7 +145,7 @@ void MainWindow::Impl::SortValueList(int column, bool toggle)
         return;
     }
 
-    StableListSelection selection = CaptureListSelection(browse_.values().hwnd(), [this](int index) {
+    StableListSelection selection = CaptureKeyedSelection(browse_.values().hwnd(), [this](int index) {
         const ListRow* row = browse_.values().RowAt(index);
         return row ? ValueRowIdentity(*row) : std::wstring();
     });
@@ -177,7 +175,7 @@ void MainWindow::Impl::SortValueList(int column, bool toggle)
     updating_value_list_ = true;
     SortValueRows(&rows, browse_.columns().sort_column, browse_.columns().sort_ascending, {});
     browse_.values().RebuildFilter();
-    RestoreListSelection(browse_.values().hwnd(), selection, [this](int index) {
+    RestoreKeyedSelection(browse_.values().hwnd(), selection, [this](int index) {
         const ListRow* row = browse_.values().RowAt(index);
         return row ? ValueRowIdentity(*row) : std::wstring();
     });
@@ -206,10 +204,10 @@ void MainWindow::Impl::SortHistoryList(int column, bool toggle)
         }
         return HistoryEntryIdentity(entries[static_cast<size_t>(index)]);
     };
-    StableListSelection selection = CaptureListSelection(history_list_, history_key_at);
+    StableListSelection selection = CaptureKeyedSelection(history_list_, history_key_at);
     change_history_.Sort(history_sort_column_, history_sort_ascending_);
     RebuildHistoryList();
-    RestoreListSelection(history_list_, selection, history_key_at);
+    RestoreKeyedSelection(history_list_, selection, history_key_at);
 
     win32ui::UpdateListViewSort(history_list_, history_sort_column_, history_sort_ascending_);
 }
@@ -238,7 +236,21 @@ void MainWindow::Impl::SortSearchTabResults(SearchTab* tab, bool keep_order)
         }
         return static_cast<size_t>(row) < tab->results.size() ? SearchResultIdentity(tab->results[static_cast<size_t>(row)]) : std::wstring();
     };
-    const StableListSelection selection = shown ? CaptureListSelection(search_results_list_, key_at) : StableListSelection();
+    // rows that arrived since the last refresh join the list first, the sort can move a selected row past the shown
+    // ones
+    const auto show_all_rows = [this, tab] {
+        const size_t count = tab->is_compare ? tab->compare_rows.size() : tab->results.size();
+        if (static_cast<size_t>(ListView_GetItemCount(search_results_list_)) != count)
+        {
+            ListView_SetItemCountEx(search_results_list_, static_cast<int>(count), LVSICF_NOINVALIDATEALL | LVSICF_NOSCROLL);
+        }
+        tab->last_ui_count = count;
+    };
+    if (shown)
+    {
+        show_all_rows();
+    }
+    const StableListSelection selection = shown ? CaptureKeyedSelection(search_results_list_, key_at) : StableListSelection();
     // sort clicks preserve shown order for ties, new/reloaded rows use earlier columns
     const util::SortKeys earlier = keep_order ? util::SortKeys() : tab->sort_earlier;
     if (!tab->is_compare && tab->max_results > 0 && tab->results.size() > tab->max_results)
@@ -265,7 +277,9 @@ void MainWindow::Impl::SortSearchTabResults(SearchTab* tab, bool keep_order)
     }
     if (shown)
     {
-        RestoreListSelection(search_results_list_, selection, key_at);
+        // trimmed rows leave
+        show_all_rows();
+        RestoreKeyedSelection(search_results_list_, selection, key_at);
         RedrawWindow(search_results_list_, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE);
     }
 }
@@ -302,7 +316,7 @@ void MainWindow::Impl::ClearHistoryItems(bool delete_cache)
     if (delete_cache)
     {
         std::wstring path = HistoryCachePath();
-        if (!path.empty() && (DeleteFileW(path.c_str()) || util::IsMissing(path)))
+        if (!path.empty() && (DeleteFileW(path.c_str()) || util::IsMissing(path.c_str())))
         {
             history_unreadable_ = false;
         }
@@ -335,7 +349,8 @@ void MainWindow::Impl::RemoveSelectedHistoryItems()
     }
     ListView_SetItemState(history_list_, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
     RebuildHistoryList();
-    if (HistoryStaysInMemory() || history_unreadable_)
+    // before the cache loaded the file holds rows this list lacks
+    if (HistoryStaysInMemory() || history_unreadable_ || !history_loaded_)
     {
         return;
     }
@@ -466,6 +481,23 @@ bool MainWindow::Impl::ConfirmCloseTab(int tab_index)
                                                         L"Save before closing the tab?")))
     {
         return false;
+    }
+    return true;
+}
+
+bool MainWindow::Impl::ConfirmCloseAllTabs()
+{
+    // commit running replace changes before save prompts
+    if (replace_result_pending_ && replace_target_.lock() != local_session_)
+    {
+        StopReplace();
+    }
+    for (int index = static_cast<int>(tabs_.size()) - 1; index >= 0; --index)
+    {
+        if (!ConfirmCloseTab(index))
+        {
+            return false;
+        }
     }
     return true;
 }
@@ -821,32 +853,7 @@ bool MainWindow::Impl::InvertSelectionInFocusedList()
     {
         updating_value_list_ = true;
     }
-    SendMessageW(focus, WM_SETREDRAW, FALSE, 0);
-    int first_selected = -1;
-    for (int i = 0; i < count; ++i)
-    {
-        UINT state = ListView_GetItemState(focus, i, LVIS_SELECTED);
-        if (state & LVIS_SELECTED)
-        {
-            ListView_SetItemState(focus, i, 0, LVIS_SELECTED);
-        }
-        else
-        {
-            ListView_SetItemState(focus, i, LVIS_SELECTED, LVIS_SELECTED);
-            if (first_selected < 0)
-            {
-                first_selected = i;
-            }
-        }
-    }
-    if (first_selected < 0)
-    {
-        first_selected = 0;
-    }
-    ListView_SetItemState(focus, first_selected, LVIS_FOCUSED, LVIS_FOCUSED);
-    ListView_EnsureVisible(focus, first_selected, FALSE);
-    SendMessageW(focus, WM_SETREDRAW, TRUE, 0);
-    InvalidateRect(focus, nullptr, TRUE);
+    win32ui::InvertListSelection(focus);
     if (value_list)
     {
         updating_value_list_ = was_updating;
@@ -858,4 +865,4 @@ bool MainWindow::Impl::InvertSelectionInFocusedList()
     return true;
 }
 
-} // namespace regkit
+}

@@ -8,6 +8,10 @@
 #include "ui/dialog_layout.h"
 #include "win32/translation.h"
 
+#include <win32ui/dialog/edit.h>
+#include <win32ui/dialog/file_dialog.h>
+#include <win32ui/dialog/tooltip.h>
+
 #include <dwmapi.h>
 
 namespace regkit
@@ -21,7 +25,7 @@ bool MainWindow::Impl::OnCreate()
         ChangeWindowMessageFilterEx(hwnd_, WM_COPYDATA, MSGFLT_ALLOW, nullptr);
     }
     updates_.Attach(hwnd_, [this](const std::wstring& text) { SetStatusMessage(text); });
-    win32::SetMissingDesktopPrompt([](HWND owner, const std::wstring& path) {
+    win32ui::SetMissingDesktopPrompt([](HWND owner, const wchar_t* path) {
         return ui::PromptKeyChoice(owner, util::Tr(L"SYSTEM has no Desktop folder, so Windows reports \"Location is not available\" in file dialogs. Create this folder to prevent the error?"), path, util::Tr(L"Create Folder"), util::Tr(L"Create"), L"", util::Tr(L"Cancel")) == IDYES;
     });
     ui_font_ = CreateUIFont();
@@ -73,6 +77,10 @@ bool MainWindow::Impl::OnCreate()
     {
         return false;
     }
+    // one line each, so a paste with line breaks isnt refused
+    win32ui::KeepSingleLine(browse_.address());
+    win32ui::KeepSingleLine(browse_.filter());
+    win32ui::SelectAllOnFocus(browse_.address());
     AttachMainList(browse_.values().hwnd());
     // hidden RegEdit tree supports tools navigating through tree messages
     regedit_compat_tree_.Create(hwnd_, instance_, kRegEditCompatTreeId, false, false);
@@ -91,34 +99,22 @@ bool MainWindow::Impl::OnCreate()
     SetWindowPos(regedit_compat_tree_.hwnd(), HWND_TOP, -32000, -32000, 1, 1, SWP_NOACTIVATE);
     ShowWindow(regedit_compat_tree_.hwnd(), SW_HIDE);
 
-    value_tooltip_ =
-        CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASSW, nullptr, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd_, nullptr, instance_, nullptr);
-    if (value_tooltip_)
-    {
-        TOOLINFOW info = {};
-        info.cbSize = sizeof(info);
-        info.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
-        info.hwnd = hwnd_;
-        info.uId = reinterpret_cast<UINT_PTR>(browse_.go_button());
-        info.lpszText = const_cast<wchar_t*>(util::Tr(L"Go"));
-        SendMessageW(value_tooltip_, TTM_ADDTOOLW, 0, reinterpret_cast<LPARAM>(&info));
-        SendMessageW(value_tooltip_, TTM_SETMAXTIPWIDTH, 0, kValueTooltipMaxWidth);
-        win32ui::ApplyThemeToWindow(value_tooltip_);
-    }
+    value_tooltip_ = win32ui::AddTooltip(hwnd_, browse_.go_button(), util::Tr(L"Go"));
+    // owner drawn buttons show only their glyph, the text names them for screen readers
+    SetWindowTextW(browse_.go_button(), util::Tr(L"Go"));
+    win32ui::ApplyThemeToWindow(value_tooltip_);
 
     tab_hooks_ = appearance::TabStripThemeHooks();
     tab_hooks_.closable = [](void* context, int index) { return static_cast<MainWindow::Impl*>(context)->CanCloseTab(index); };
     tab_hooks_.close = [](void* context, int index) { static_cast<MainWindow::Impl*>(context)->CloseTab(index); };
-    tab_hooks_.close_name = util::Tr(L"Close Tab");
     tab_hooks_.context = this;
     tab_ = win32ui::CreateTabStrip(hwnd_, kTabId, util::Tr(L"Tabs"), &tab_hooks_);
     ApplyFont(tab_, ui_font_);
 
     tree_header_ = CreateWindowExW(0, L"STATIC", util::Tr(L"Key Tree"), WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | SS_LEFT | SS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kTreeHeaderId)), instance_, nullptr);
-    tree_close_btn_ =
-        CreateWindowExW(0, L"BUTTON", L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kTreeHeaderCloseId)), instance_, nullptr);
+    tree_close_btn_ = CreateWindowExW(0, L"BUTTON", util::Tr(L"Close"), WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kTreeHeaderCloseId)), instance_, nullptr);
     filter_clear_btn_ =
-        CreateWindowExW(0, L"BUTTON", L"", WS_CHILD | WS_CLIPSIBLINGS | BS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kFilterClearId)), instance_, nullptr);
+        CreateWindowExW(0, L"BUTTON", util::Tr(L"Clear Filter"), WS_CHILD | WS_CLIPSIBLINGS | BS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kFilterClearId)), instance_, nullptr);
     SetWindowPos(tree_close_btn_, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
     ConfigureTree(browse_.tree());
@@ -153,8 +149,12 @@ bool MainWindow::Impl::OnCreate()
         nullptr
     );
     history_close_btn_ =
-        CreateWindowExW(0, L"BUTTON", L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kHistoryHeaderCloseId)), instance_, nullptr);
+        CreateWindowExW(0, L"BUTTON", util::Tr(L"Close"), WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_OWNERDRAW, 0, 0, 0, 0, hwnd_, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kHistoryHeaderCloseId)), instance_, nullptr);
     SetWindowPos(history_close_btn_, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    for (HWND button : {tree_close_btn_, filter_clear_btn_, history_close_btn_})
+    {
+        SetWindowSubclass(button, CloseButtonProc, kCloseButtonSubclassId, reinterpret_cast<DWORD_PTR>(this));
+    }
     splitter_hooks_.size = [](void* context, HWND splitter) {
         const auto* impl = static_cast<MainWindow::Impl*>(context);
         return splitter == impl->tree_splitter_ ? impl->tree_shown_width_ : impl->history_shown_height_;
@@ -204,6 +204,8 @@ bool MainWindow::Impl::OnCreate()
     CreateSearchColumns();
     ApplyThemeToChildren();
     SetValueGridEnabled(settings_.show_value_grid, false);
+    // grid buttons of main and dialog lists save the setting
+    win32ui::SetListGridChanged([](void* context, bool shown) { static_cast<MainWindow::Impl*>(context)->SetValueGridEnabled(shown, true); }, this);
     UpdateToolbarStates();
 
     browse_.roots() = LocalRoots(0);
@@ -249,6 +251,7 @@ void MainWindow::Impl::ConfigureTree(RegistryTree& tree)
     tree.SetVirtualChildProvider(
         [this](const RegistryNode& node, const std::unordered_set<std::wstring>& existing_lower, std::vector<std::wstring>* out) { AppendTraceChildren(node, existing_lower, out); }
     );
+    tree.SetExpandAllCommand(hwnd_, cmd::kTreeExpandAll);
     win32ui::AttachThemedBorder(tree.hwnd());
     win32ui::ApplyThemeToWindow(tree.hwnd());
     if (tree_images_)
@@ -308,14 +311,15 @@ void MainWindow::Impl::StartStartupCacheLoad(bool include_tree_state)
     int history_sort_column = history_sort_column_;
     bool history_sort_ascending = history_sort_ascending_;
     const HWND hwnd = hwnd_;
-    startup_cache_session_.Start(L"StartupCacheThread", [this, include_tree_state, history_max_rows, history_sort_column, history_sort_ascending, hwnd](uint64_t generation, const std::atomic_bool& cancel) {
+    // runs here without a thread, history is only written once it loaded
+    startup_cache_session_.StartOrRun(L"StartupCacheThread", [this, include_tree_state, history_max_rows, history_sort_column, history_sort_ascending, hwnd](uint64_t generation, const std::atomic_bool& cancel) {
         auto payload = std::make_unique<StartupCachePayload>();
         payload->generation = generation;
 
         std::wstring comments_content;
         std::wstring reason;
         const std::wstring defaults_path =
-            util::JoinPath(util::GetModuleDirectory(), L"assets\\comments\\default-comments.jsonc");
+            util::JoinPath(util::ModuleDirectory(), L"assets\\comments\\default-comments.jsonc");
         if (!util::ReadStateFile(defaults_path, &comments_content, &reason, util::kMaxCommentFileBytes) ||
             (!comments_content.empty() && !changes::ParseComments(comments_content, &payload->default_comments, &reason)))
         {
@@ -377,7 +381,7 @@ void MainWindow::Impl::StartStartupCacheLoad(bool include_tree_state)
         }
         if (hwnd && IsWindow(hwnd))
         {
-            work::PostPayload(hwnd, frame::message_id::kStartupCacheReady, static_cast<WPARAM>(generation), payload);
+            win32ui::PostPayload(hwnd, frame::message_id::kStartupCacheReady, static_cast<WPARAM>(generation), payload);
         }
     });
 }
@@ -393,7 +397,6 @@ void MainWindow::Impl::ApplyStartupCachePayload(std::unique_ptr<StartupCachePayl
     {
         return;
     }
-    // ignore results from cancelled/replaced startup load
     if (!startup_cache_session_.IsCurrent(owned->generation))
     {
         return;
@@ -458,7 +461,7 @@ void MainWindow::Impl::OnDestroy()
         DestroyWindow(key_handles_window_);
     }
     key_handles_window_ = nullptr;
-    appearance::SetListGridChangedCallback(nullptr, nullptr);
+    win32ui::SetListGridChanged(nullptr, nullptr);
     if (hwnd_)
     {
         RemovePropW(hwnd_, kRegKitWindowProperty);
@@ -558,7 +561,7 @@ void MainWindow::Impl::DiscardWorkerMessages()
     {
         while (PeekMessageW(&message, hwnd_, id, id, PM_REMOVE))
         {
-            work::TakePayload<work::MoveOnly>(message.lParam).reset();
+            win32ui::TakePayload<win32ui::PostedPayload>(message.lParam).reset();
         }
     }
     while (PeekMessageW(&message, hwnd_, frame::message_id::kExternalHandoff, frame::message_id::kExternalHandoff, PM_REMOVE))
@@ -567,4 +570,4 @@ void MainWindow::Impl::DiscardWorkerMessages()
     }
 }
 
-} // namespace regkit
+}

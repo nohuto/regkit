@@ -9,8 +9,11 @@
 #include "ui/dialog_support.h"
 
 #include <win32ui/dialog/dialog_metrics.h>
+#include <win32ui/dialog/edit.h>
+#include <win32ui/gdi/fonts.h>
 #include <win32ui/gdi/icon_loader.h>
 #include <win32ui/handle_owner.h>
+#include <win32ui/window.h>
 #include <win32ui/window_metrics.h>
 
 namespace regkit
@@ -21,15 +24,7 @@ using namespace window_detail;
 int MainWindow::Impl::TextRowHeight(int nominal, int padding) const
 {
     const UINT dpi = win32ui::DpiForWindow(hwnd_);
-    TEXTMETRICW metrics = {};
-    if (HDC hdc = GetDC(hwnd_))
-    {
-        const HGDIOBJ old_font = SelectObject(hdc, ui_font_);
-        GetTextMetricsW(hdc, &metrics);
-        SelectObject(hdc, old_font);
-        ReleaseDC(hwnd_, hdc);
-    }
-    return std::max(win32ui::ScaleForDpi(nominal, dpi), static_cast<int>(metrics.tmHeight) + win32ui::ScaleForDpi(padding, dpi));
+    return std::max(win32ui::ScaleForDpi(nominal, dpi), static_cast<int>(win32ui::FontMetrics(ui_font_).tmHeight) + win32ui::ScaleForDpi(padding, dpi));
 }
 
 void MainWindow::Impl::LayoutContent(bool dragging)
@@ -110,7 +105,7 @@ void MainWindow::Impl::LayoutContent(bool dragging)
     {
         const Placement& p = placements[i];
         RECT old_rect = {};
-        if (dragging && GetChildRectInParent(hwnd_, p.hwnd, &old_rect))
+        if (dragging && win32ui::ChildRect(hwnd_, p.hwnd, &old_rect))
         {
             UnionRect(&dirty, &dirty, &old_rect);
             UnionRect(&dirty, &dirty, &p.rect);
@@ -449,11 +444,11 @@ std::wstring MainWindow::Impl::ResolveIconDir(bool use_light) const
         }
         std::wstring dark_dir = util::JoinPath(root, L"dark");
         std::wstring light_dir = util::JoinPath(root, L"light");
-        if (util::IsDirectory(dark_dir) && util::IsDirectory(light_dir))
+        if (util::IsDirectory(dark_dir.c_str()) && util::IsDirectory(light_dir.c_str()))
         {
             return use_light ? light_dir : dark_dir;
         }
-        return util::IsDirectory(root) ? root : L"";
+        return util::IsDirectory(root.c_str()) ? root : L"";
     }
     const std::wstring base = AssetsIconsRoot();
     if (!IsIconSetName(settings_.icon_set, kIconSetClassic) || base.empty())
@@ -461,7 +456,7 @@ std::wstring MainWindow::Impl::ResolveIconDir(bool use_light) const
         return L"";
     }
     const std::wstring dir = util::JoinPath(base, kIconSetClassic);
-    return util::IsDirectory(dir) ? dir : L"";
+    return util::IsDirectory(dir.c_str()) ? dir : L"";
 }
 
 std::wstring MainWindow::Impl::ResolveIconPath(const wchar_t* filename) const
@@ -482,12 +477,6 @@ void MainWindow::Impl::ApplyGridToolbarIcons()
             win32ui::RefreshListView(list);
         }
     }
-    appearance::SetListGridChangedCallback(
-        [](void* context, bool enabled) {
-            static_cast<MainWindow::Impl*>(context)->SetValueGridEnabled(enabled, true);
-        },
-        this
-    );
 }
 
 void MainWindow::Impl::SetValueGridEnabled(bool enabled, bool persist)
@@ -539,18 +528,11 @@ void MainWindow::Impl::ReloadThemeIcons()
     UINT dpi = win32ui::DpiForWindow(hwnd_);
     bool use_light = win32ui::ThemeLightGlyphs();
     icon_dir_ = ResolveIconDir(use_light);
-    auto set_redraw = [](HWND hwnd, bool enable) {
-        if (!hwnd)
-        {
-            return;
-        }
-        SendMessageW(hwnd, WM_SETREDRAW, enable ? TRUE : FALSE, 0);
-    };
-    // pause redraw while replacing image lists, toolbar manages its own redraw
-    set_redraw(browse_.tree().hwnd(), false);
-    set_redraw(browse_.values().hwnd(), false);
-    set_redraw(search_results_list_, false);
-    set_redraw(browse_.go_button(), false);
+    // pause redraw while replacing image lists, toolbar manages its own redraw, hidden windows stay hidden
+    const win32ui::RedrawScope tree_redraw(browse_.tree().hwnd(), RDW_INVALIDATE | RDW_ERASE);
+    const win32ui::RedrawScope values_redraw(browse_.values().hwnd(), RDW_INVALIDATE | RDW_ERASE);
+    const win32ui::RedrawScope results_redraw(search_results_list_, RDW_INVALIDATE | RDW_ERASE);
+    const win32ui::RedrawScope go_redraw(browse_.go_button(), RDW_INVALIDATE | RDW_ERASE);
 
     win32ui::RefreshToolbar(toolbar_);
 
@@ -575,27 +557,6 @@ void MainWindow::Impl::ReloadThemeIcons()
     }
     address_go_icon_ = win32ui::LoadIconResource(use_light ? IDI_ICON_LIGHT_GO : IDI_ICON_DARK_GO, dpi);
     ApplyGridToolbarIcons();
-
-    set_redraw(browse_.tree().hwnd(), true);
-    set_redraw(browse_.values().hwnd(), true);
-    set_redraw(search_results_list_, true);
-    set_redraw(browse_.go_button(), true);
-    if (browse_.tree().hwnd())
-    {
-        InvalidateRect(browse_.tree().hwnd(), nullptr, TRUE);
-    }
-    if (browse_.values().hwnd())
-    {
-        InvalidateRect(browse_.values().hwnd(), nullptr, TRUE);
-    }
-    if (search_results_list_)
-    {
-        InvalidateRect(search_results_list_, nullptr, TRUE);
-    }
-    if (browse_.go_button())
-    {
-        InvalidateRect(browse_.go_button(), nullptr, TRUE);
-    }
 }
 
 void MainWindow::Impl::LayoutControls(int width, int height)
@@ -661,8 +622,7 @@ void MainWindow::Impl::LayoutControls(int width, int height)
         }
         place(browse_.address(), padding, y, address_width, address_height);
         place(browse_.go_button(), padding + address_width, y, address_btn_width, address_height);
-        SetEditMargins(browse_.address(), 6, 6);
-        SetEditVerticalRect(browse_.address(), ui_font_, 2, 6, 6);
+        win32ui::SetEditPadding(browse_.address(), 6, 2);
         y += address_height + gap;
     }
 
@@ -692,8 +652,7 @@ void MainWindow::Impl::LayoutControls(int width, int height)
                 place(tab_, padding, y, tabs_width, rows_height);
                 place(browse_.filter(), padding + tabs_width + filter_gap, filter_y, edit_width, filter_height);
                 place(filter_clear_btn_, padding + tabs_width + filter_gap + edit_width, filter_y, address_btn_width, filter_height);
-                SetEditMargins(browse_.filter(), 6, 6);
-                SetEditVerticalRect(browse_.filter(), ui_font_, 2, 6, 6);
+                win32ui::SetEditPadding(browse_.filter(), 6, 2);
                 ShowWindow(browse_.filter(), SW_SHOW);
                 ShowWindow(filter_clear_btn_, SW_SHOW);
             }
@@ -722,8 +681,7 @@ void MainWindow::Impl::LayoutControls(int width, int height)
             int edit_width = std::max(filter_min_width / 2, filter_width - address_btn_width);
             place(browse_.filter(), filter_x, filter_y, edit_width, filter_height);
             place(filter_clear_btn_, filter_x + edit_width, filter_y, address_btn_width, filter_height);
-            SetEditMargins(browse_.filter(), 6, 6);
-            SetEditVerticalRect(browse_.filter(), ui_font_, 2, 6, 6);
+            win32ui::SetEditPadding(browse_.filter(), 6, 2);
             ShowWindow(browse_.filter(), SW_SHOW);
             ShowWindow(filter_clear_btn_, SW_SHOW);
         }
@@ -759,4 +717,4 @@ void MainWindow::Impl::LayoutControls(int width, int height)
     }
 }
 
-} // namespace regkit
+}

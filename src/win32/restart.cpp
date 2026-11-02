@@ -7,18 +7,67 @@
 
 #include "win32/shell_paths.h"
 
-#include <win32ui/handle_owner.h>
+#include <win32ui/system/process_launch.h>
 
-#include <cerrno>
-
-#include <shellapi.h>
+#include <algorithm>
 
 namespace regkit::win32
 {
 
+namespace
+{
+
+std::wstring BaseArguments(const wchar_t* target_arg, const RestartParent& parent, bool restore_session)
+{
+    std::wstring arguments;
+    if (target_arg)
+    {
+        win32ui::AppendArgument(&arguments, target_arg);
+    }
+    win32ui::AppendArgument(&arguments, kRestartParentArg);
+    win32ui::AppendArgument(&arguments, std::to_wstring(parent.pid));
+    if (parent.created != 0)
+    {
+        win32ui::AppendArgument(&arguments, kRestartParentTimeArg);
+        win32ui::AppendArgument(&arguments, std::to_wstring(parent.created));
+    }
+    const std::wstring data_dir = util::GetAppDataFolder();
+    if (!data_dir.empty())
+    {
+        win32ui::AppendArgument(&arguments, kRestartDataDirArg);
+        win32ui::AppendArgument(&arguments, data_dir);
+        if (restore_session)
+        {
+            win32ui::AppendArgument(&arguments, kRestartSessionArg);
+        }
+    }
+    const std::wstring user_sid = util::GetShellUserSidString();
+    if (!user_sid.empty())
+    {
+        win32ui::AppendArgument(&arguments, kRestartUserSidArg);
+        win32ui::AppendArgument(&arguments, user_sid);
+    }
+    return arguments;
+}
+
+RestartParent ThisProcess()
+{
+    const DWORD pid = GetCurrentProcessId();
+    return {pid, win32ui::ProcessCreationTime(pid)};
+}
+
+}
+
 bool ArgTakesValue(const std::wstring& arg)
 {
-    return util::EqualsInsensitive(arg, kRestartParentArg) || util::EqualsInsensitive(arg, kRestartDataDirArg) || util::EqualsInsensitive(arg, kRestartUserSidArg);
+    for (const wchar_t* flag : {kRestartParentArg, kRestartParentTimeArg, kRestartDataDirArg, kRestartUserSidArg})
+    {
+        if (util::EqualsInsensitive(arg, flag))
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool IsInternalRestartArg(const std::wstring& arg)
@@ -48,101 +97,50 @@ std::wstring RestartDataDir(const std::vector<std::wstring>& args)
 
 bool RestoreSessionRequested()
 {
-    int argc = 0;
-    LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-    if (!argv)
-    {
-        return false;
-    }
-    bool requested = false;
-    for (int i = 1; i < argc && !requested; ++i)
-    {
-        requested = util::EqualsInsensitive(argv[i], kRestartSessionArg);
-    }
-    LocalFree(argv);
-    return requested;
+    const std::vector<std::wstring> args = win32ui::CommandLineArgs();
+    return std::any_of(args.begin(), args.end(), [](const std::wstring& arg) { return util::EqualsInsensitive(arg, kRestartSessionArg); });
 }
 
 std::wstring RestartUserSid()
 {
-    int argc = 0;
-    const win32ui::UniqueLocal<LPWSTR*> args(CommandLineToArgvW(GetCommandLineW(), &argc));
-    LPWSTR* argv = args.get();
-    for (int i = 1; argv && i + 1 < argc; ++i)
+    const std::vector<std::wstring> args = win32ui::CommandLineArgs();
+    for (size_t i = 0; i + 1 < args.size(); ++i)
     {
-        if (util::EqualsInsensitive(argv[i], kRestartUserSidArg) && util::StartsWithInsensitive(argv[i + 1], L"S-") && !wcschr(argv[i + 1], L'\\'))
+        if (util::EqualsInsensitive(args[i], kRestartUserSidArg) && util::StartsWithInsensitive(args[i + 1], L"S-") &&
+            args[i + 1].find(L'\\') == std::wstring::npos)
         {
-            return argv[i + 1];
+            return args[i + 1];
         }
     }
     return {};
 }
 
-namespace
+RestartParent RestartParentOf(const std::vector<std::wstring>& args)
 {
-
-std::wstring QuoteArgument(const std::wstring& arg)
-{
-    if (!arg.empty() && arg.find_first_of(L" \t\"") == std::wstring::npos)
+    RestartParent parent;
+    for (size_t i = 0; i + 1 < args.size(); ++i)
     {
-        return arg;
-    }
-    std::wstring quoted = L"\"";
-    size_t backslashes = 0;
-    for (wchar_t character : arg)
-    {
-        if (character == L'"')
+        if (util::EqualsInsensitive(args[i], kRestartParentArg))
         {
-            quoted.append(backslashes + 1, L'\\');
+            const ULONGLONG pid = win32ui::ParseUnsigned(args[i + 1]).value_or(0);
+            parent.pid = pid <= MAXDWORD ? static_cast<DWORD>(pid) : 0;
         }
-        backslashes = character == L'\\' ? backslashes + 1 : 0;
-        quoted.push_back(character);
-    }
-    quoted.append(backslashes, L'\\');
-    quoted.push_back(L'"');
-    return quoted;
-}
-
-void AppendArgument(std::wstring* arguments, const std::wstring& arg)
-{
-    if (!arguments->empty())
-    {
-        arguments->push_back(L' ');
-    }
-    arguments->append(arg);
-}
-
-} // namespace
-
-std::wstring RestartArguments(const wchar_t* target_arg, DWORD parent_pid, bool restore_session)
-{
-    std::wstring arguments = target_arg ? target_arg : L"";
-    if (parent_pid != 0)
-    {
-        AppendArgument(&arguments, kRestartParentArg);
-        AppendArgument(&arguments, std::to_wstring(parent_pid));
-    }
-    const std::wstring data_dir = util::GetAppDataFolder();
-    if (!data_dir.empty())
-    {
-        AppendArgument(&arguments, kRestartDataDirArg);
-        AppendArgument(&arguments, QuoteArgument(data_dir));
-        if (restore_session)
+        else if (util::EqualsInsensitive(args[i], kRestartParentTimeArg))
         {
-            AppendArgument(&arguments, kRestartSessionArg);
+            parent.created = win32ui::ParseUnsigned(args[i + 1]).value_or(0);
         }
     }
-    const std::wstring user_sid = util::GetShellUserSidString();
-    if (!user_sid.empty())
-    {
-        AppendArgument(&arguments, kRestartUserSidArg);
-        AppendArgument(&arguments, user_sid);
-    }
-    return arguments;
+    return parent.pid != 0 ? parent : RestartParent{};
 }
-std::wstring RestartArguments(const wchar_t* target_arg, DWORD parent_pid, const std::vector<std::wstring>& original_args)
+
+std::wstring RestartArguments(const wchar_t* target_arg, bool restore_session)
 {
-    std::wstring arguments = RestartArguments(target_arg, parent_pid);
+    return BaseArguments(target_arg, ThisProcess(), restore_session);
+}
+
+std::wstring RestartArguments(const wchar_t* target_arg, const RestartParent& parent, const std::vector<std::wstring>& original_args)
+{
+    std::wstring arguments = BaseArguments(target_arg, parent.pid != 0 ? parent : ThisProcess(), true);
     for (size_t i = 0; i < original_args.size(); ++i)
     {
         const std::wstring& arg = original_args[i];
@@ -154,73 +152,9 @@ std::wstring RestartArguments(const wchar_t* target_arg, DWORD parent_pid, const
             }
             continue;
         }
-        AppendArgument(&arguments, QuoteArgument(arg));
+        win32ui::AppendArgument(&arguments, arg);
     }
     return arguments;
 }
 
-HRESULT LaunchElevated(HWND owner, const std::wstring& exe, const std::wstring& arguments)
-{
-    if (exe.empty())
-    {
-        return E_INVALIDARG;
-    }
-    SHELLEXECUTEINFOW info = {};
-    info.cbSize = sizeof(info);
-    info.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC;
-    info.hwnd = owner;
-    info.lpVerb = L"runas";
-    info.lpFile = exe.c_str();
-    info.lpParameters = arguments.empty() ? nullptr : arguments.c_str();
-    info.nShow = SW_SHOWNORMAL;
-    if (!ShellExecuteExW(&info))
-    {
-        return HRESULT_FROM_WIN32(GetLastError());
-    }
-    if (info.hProcess)
-    {
-        CloseHandle(info.hProcess);
-    }
-    return S_OK;
 }
-
-DWORD RestartParentPid(const std::vector<std::wstring>& args)
-{
-    for (size_t i = 0; i + 1 < args.size(); ++i)
-    {
-        if (!util::EqualsInsensitive(args[i], kRestartParentArg))
-        {
-            continue;
-        }
-        const std::wstring& text = args[i + 1];
-        if (text.empty() || text.find_first_not_of(L"0123456789") != std::wstring::npos)
-        {
-            continue;
-        }
-        errno = 0;
-        const unsigned long value = wcstoul(text.c_str(), nullptr, 10);
-        if (errno == ERANGE || value == 0)
-        {
-            continue;
-        }
-        return static_cast<DWORD>(value);
-    }
-    return 0;
-}
-
-void WaitForParentExit(DWORD parent_pid)
-{
-    if (parent_pid == 0 || parent_pid == GetCurrentProcessId())
-    {
-        return;
-    }
-    HANDLE parent = OpenProcess(SYNCHRONIZE, FALSE, parent_pid);
-    if (!parent)
-    {
-        return;
-    }
-    WaitForSingleObject(parent, 30000);
-    CloseHandle(parent);
-}
-
-} // namespace regkit::win32

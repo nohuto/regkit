@@ -41,7 +41,6 @@ struct Snapshot
     std::wstring label;
     std::wstring base_path;
     std::unordered_map<std::wstring, Key> keys;
-    // unreadable keys below the base, omitted on both sides
     std::vector<std::wstring> unreadable;
 };
 
@@ -65,7 +64,6 @@ std::vector<Row> BuildRows(const Snapshot& first, const Snapshot& second, RowFil
 std::wstring SerializeRows(const std::vector<Row>& rows);
 bool ParseRows(const std::wstring& content, std::vector<Row>* rows, std::wstring* error = nullptr);
 bool SaveRows(const std::wstring& path, const std::vector<Row>& rows);
-// false for a missing file, false with the reason for one that cant be read
 bool LoadRows(const std::wstring& path, std::vector<Row>* rows, std::wstring* error = nullptr);
 
-} // namespace regkit::search::compare
+}

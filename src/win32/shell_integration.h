@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -18,4 +18,4 @@ LONG RemoveEditMenuIfOwned(const std::wstring& exe_path);
 bool IsRegEditReplacementRegistered(const std::wstring& exe_path);
 LONG SetRegEditReplacement(const std::wstring& exe_path, bool enable, bool* conflict = nullptr, bool overwrite_existing = false, bool allow_writable_location = false);
 
-} // namespace regkit::win32
+}

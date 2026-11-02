@@ -3,7 +3,9 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/text/language_pack.h>
+#include <win32ui/text/text.h>
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -14,21 +16,19 @@
 namespace regkit::util
 {
 
-struct LanguagePack
-{
-    std::wstring code;
-    std::wstring name;
-};
+using win32ui::LanguagePack;
 
 bool LoadLanguage(const std::wstring& code);
 std::vector<LanguagePack> InstalledLanguages();
-const wchar_t* Tr(const wchar_t* text);
+inline const wchar_t* Tr(const wchar_t* text)
+{
+    return win32ui::Text(text);
+}
 std::wstring TrDetail(const wchar_t* headline, std::wstring_view detail);
 std::wstring TrLabel(const wchar_t* label, std::wstring_view value);
 constexpr const wchar_t* TrNoop(const wchar_t* text)
 {
     return text;
 }
-bool TranslateDialog(HWND dialog);
 
-} // namespace regkit::util
+}

@@ -3,55 +3,35 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
-
 #include <win32ui/list_view/sort.h>
+#include <win32ui/system/strings.h>
+#include <win32ui/window.h>
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
-#include <cstddef>
-#include <span>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace regkit::util
 {
 
-inline constexpr int HexDigitValue(wchar_t character)
-{
-    return character >= L'0' && character <= L'9'   ? character - L'0'
-           : character >= L'a' && character <= L'f' ? character - L'a' + 10
-           : character >= L'A' && character <= L'F' ? character - L'A' + 10
-                                                    : -1;
-}
-std::wstring WindowText(HWND window);
-std::wstring DialogText(HWND dialog, int control_id);
-bool ParseUnsignedNumber(std::wstring_view text, int base, unsigned long long* value);
-std::wstring ToLower(std::wstring_view text);
-std::wstring TrimWhitespace(std::wstring_view text);
-std::wstring FormatLocalTime(const SYSTEMTIME& time, bool with_seconds = false);
-std::wstring LocalTimeFormat();
-bool IsBlank(std::wstring_view text);
-std::wstring ExpandEnvironmentStringsDynamic(const std::wstring& text);
-std::wstring ToHex(std::span<const BYTE> data, wchar_t separator = L' ', bool uppercase = false, size_t max_bytes = 0);
-// 16 bytes per line, edits wrap huge lines very slowly
-std::wstring ToHexLines(std::span<const BYTE> data);
-
-int CompareInsensitive(std::wstring_view left, std::wstring_view right);
-int CompareListText(std::wstring_view left, std::wstring_view right);
-
+using win32ui::CompareInsensitive;
+using win32ui::CompareListText;
 using win32ui::CompareSorted;
+using win32ui::ContainsInsensitive;
+using win32ui::DialogItemText;
+using win32ui::EndsWithInsensitive;
+using win32ui::EqualsInsensitive;
+using win32ui::HexDigitValue;
+using win32ui::IsBlank;
+using win32ui::JoinLines;
+using win32ui::ParseBool;
 using win32ui::SortKeys;
+using win32ui::SplitLines;
+using win32ui::StartsWithInsensitive;
+using win32ui::ToLower;
+using win32ui::TrimWhitespace;
+using win32ui::WindowText;
 
-bool EqualsInsensitive(std::wstring_view left, std::wstring_view right);
-bool StartsWithInsensitive(std::wstring_view text, std::wstring_view prefix);
-bool EndsWithInsensitive(std::wstring_view text, std::wstring_view suffix);
-bool ContainsInsensitive(std::wstring_view text, std::wstring_view needle);
-int FindInsensitive(std::wstring_view text, std::wstring_view needle);
-bool ParseBool(std::wstring_view text);
-
-std::vector<std::wstring> SplitLines(std::wstring_view text);
-std::wstring JoinLines(const std::vector<std::wstring>& lines);
-
-} // namespace regkit::util
+}

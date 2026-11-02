@@ -28,6 +28,7 @@
 #include "frame/window/shortcut_bindings.h"
 #include "regfile/reg_file.h"
 #include "regfile/registry_transfer.h"
+#include "registry/hive_files.h"
 #include "registry/registry_backends.h"
 #include "registry/registry_path.h"
 #include "registry/registry_store.h"
@@ -37,7 +38,6 @@
 #include "search/search.h"
 #include "ui/dialog_layout.h"
 #include "ui/feedback.h"
-#include "ui/font_picker.h"
 #include "ui/theme.h"
 #include "win32/file_dialog.h"
 #include "win32/process_rights.h"
@@ -170,23 +170,4 @@ inline bool GetValueEntry(const RegistryNode& node, const std::wstring& name, Re
     return false;
 }
 
-inline bool SelectValueByName(ValueList& list, const std::wstring& name)
-{
-    for (size_t i = 0; i < list.RowCount(); ++i)
-    {
-        const ListRow* row = list.RowAt(static_cast<int>(i));
-        if (!row || row->kind != rowkind::kValue)
-        {
-            continue;
-        }
-        if (row->extra == name)
-        {
-            ListView_SetItemState(list.hwnd(), static_cast<int>(i), LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-            ListView_EnsureVisible(list.hwnd(), static_cast<int>(i), FALSE);
-            return true;
-        }
-    }
-    return false;
 }
-
-} // namespace regkit::command_detail

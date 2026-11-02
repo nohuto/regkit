@@ -10,7 +10,7 @@
 #include <sddl.h>
 
 #include <win32ui/handle_owner.h>
-#include <win32ui/process_token.h>
+#include <win32ui/system/process_token.h>
 
 #include <initializer_list>
 
@@ -100,7 +100,7 @@ Context FromToken(HANDLE token)
     return token && AuthzInitializeContextFromToken(0, token, ResourceManager(), nullptr, none, nullptr, context.put()) ? std::move(context) : Context();
 }
 
-} // namespace
+}
 
 std::optional<ACCESS_MASK> ForSid(PSECURITY_DESCRIPTOR descriptor, PSID sid)
 {
@@ -149,4 +149,4 @@ std::wstring Describe(ACCESS_MASK granted)
     return text;
 }
 
-} // namespace regkit::key_access
+}

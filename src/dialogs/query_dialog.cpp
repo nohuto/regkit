@@ -6,8 +6,15 @@
 #include "dialogs/query_prompts.h"
 #include "win32/text_transform.h"
 
+#include <win32ui/dialog/autocomplete.h>
 #include <win32ui/dialog/combo_box.h>
 #include <win32ui/dialog/dialog_window.h>
+#include <win32ui/dialog/text_prompt.h>
+#include <win32ui/dialog/tooltip.h>
+#include <win32ui/menu/popup_menu.h>
+#include <win32ui/system/date_time.h>
+#include <win32ui/system/recent_list.h>
+#include <win32ui/theme/theme.h>
 
 #include <algorithm>
 #include <cerrno>
@@ -17,7 +24,6 @@
 #include <commctrl.h>
 #include <windowsx.h>
 
-#include "dialogs/value_editor.h"
 #include "records/escaped_fields.h"
 #include "registry/registry_store.h"
 #include "resource.h"
@@ -40,7 +46,7 @@ struct SearchDialogState
     SearchDialogResult* out = nullptr;
     SearchSources sources;
     bool recursive = true;
-    std::vector<std::wstring> history;
+    win32ui::RecentList history{20};
     std::vector<std::wstring> root_names;
     std::vector<bool> root_selected;
     std::vector<DWORD> data_types;
@@ -84,7 +90,7 @@ std::vector<std::wstring> LoadSearchHistory(HWND owner)
     }
     else if (!path.empty())
     {
-        for (const std::wstring_view line : record_fields::Lines(content))
+        for (const std::wstring_view line : win32ui::LineViews(content))
         {
             if (!line.empty())
             {
@@ -105,22 +111,7 @@ void SaveSearchHistory(const std::vector<std::wstring>& items)
     const std::wstring path = SearchHistoryPath();
     if (!path.empty() && !content.empty())
     {
-        util::WriteTextFile(path, content, false);
-    }
-}
-
-void UpdateHistoryList(std::vector<std::wstring>* items, const std::wstring& entry)
-{
-    if (!items || entry.empty())
-    {
-        return;
-    }
-    std::erase_if(*items, [&](const std::wstring& item) { return util::EqualsInsensitive(item, entry); });
-    items->insert(items->begin(), entry);
-    const size_t max_items = 20;
-    if (items->size() > max_items)
-    {
-        items->resize(max_items);
+        win32ui::WriteTextFileAtomic(path.c_str(), content);
     }
 }
 
@@ -184,8 +175,7 @@ void ShowRootSelectionMenu(HWND owner, SearchDialogState* state)
         }
         AppendMenuW(menu, flags, static_cast<UINT>(1000 + i), state->root_names[i].c_str());
     }
-    int cmd =
-        TrackPopupMenu(menu, TPM_RETURNCMD | TPM_LEFTALIGN | TPM_TOPALIGN, rect.left, rect.bottom, 0, owner, nullptr);
+    const int cmd = win32ui::TrackDropdownMenu(menu, rect, owner);
     DestroyMenu(menu);
     if (cmd >= 1000)
     {
@@ -212,16 +202,7 @@ bool GetDateTimeValue(HWND control, FILETIME* out)
     }
     SYSTEMTIME local = {};
     DWORD result = static_cast<DWORD>(SendMessageW(control, DTM_GETSYSTEMTIME, 0, reinterpret_cast<LPARAM>(&local)));
-    if (result != GDT_VALID)
-    {
-        return false;
-    }
-    SYSTEMTIME utc = {};
-    if (!TzSpecificLocalTimeToSystemTime(nullptr, &local, &utc))
-    {
-        return false;
-    }
-    return SystemTimeToFileTime(&utc, out) != 0;
+    return result == GDT_VALID && win32ui::LocalToFileTime(local, out);
 }
 
 void SetDateTimeValue(HWND control, const FILETIME& value)
@@ -230,13 +211,8 @@ void SetDateTimeValue(HWND control, const FILETIME& value)
     {
         return;
     }
-    SYSTEMTIME utc = {};
     SYSTEMTIME local = {};
-    if (!FileTimeToSystemTime(&value, &utc))
-    {
-        return;
-    }
-    if (!SystemTimeToTzSpecificLocalTime(nullptr, &utc, &local))
+    if (!win32ui::FileTimeToLocal(value, &local))
     {
         return;
     }
@@ -387,15 +363,15 @@ void UpdateDialogEnableState(SearchDialogState* state)
 
 void LoadInitialState(SearchDialogState* state)
 {
-    state->history = LoadSearchHistory(state->dialog);
-    win32ui::SetComboItems(Item(state, IDC_FIND_WHAT), state->history);
+    state->history.Assign(LoadSearchHistory(state->dialog));
+    win32ui::SetComboItems(Item(state, IDC_FIND_WHAT), state->history.items());
     if (state->out && (!state->out->criteria.query.empty() || state->out->criteria.anomalies))
     {
         SetWindowTextW(Item(state, IDC_FIND_WHAT), state->out->criteria.query.c_str());
     }
-    else if (!state->history.empty())
+    else if (!state->history.items().empty())
     {
-        SetWindowTextW(Item(state, IDC_FIND_WHAT), state->history.front().c_str());
+        SetWindowTextW(Item(state, IDC_FIND_WHAT), state->history.items().front().c_str());
     }
 
     auto roots = RegistryStore::DefaultRoots(state->sources.extra_hives);
@@ -663,14 +639,14 @@ INT_PTR CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
         state = reinterpret_cast<SearchDialogState*>(lparam);
         SetWindowLongPtrW(hwnd, DWLP_USER, reinterpret_cast<LONG_PTR>(state));
         state->dialog = hwnd;
-        const std::wstring time_format = util::LocalTimeFormat();
+        const std::wstring time_format = win32ui::DateTimePattern();
         for (const int id : {IDC_FIND_MODIFIED_FROM, IDC_FIND_MODIFIED_TO})
         {
             SendDlgItemMessageW(hwnd, id, DTM_SETFORMAT, 0, reinterpret_cast<LPARAM>(time_format.c_str()));
             SendDlgItemMessageW(hwnd, id, DTM_SETSYSTEMTIME, GDT_NONE, 0);
         }
-        appearance::AttachAutoComplete(Item(state, IDC_FIND_SCOPE_EDIT), appearance::SuggestKeys);
-        appearance::AttachAutoComplete(Item(state, IDC_FIND_EXCLUDE_EDIT), [](const std::wstring& text) {
+        win32ui::AttachAutoComplete(Item(state, IDC_FIND_SCOPE_EDIT), appearance::SuggestKeys);
+        win32ui::AttachAutoComplete(Item(state, IDC_FIND_EXCLUDE_EDIT), [](const std::wstring& text) {
             const size_t split = text.find_first_not_of(L' ', std::min(text.size(), text.find_last_of(L",;") + 1));
             const std::wstring head = text.substr(0, std::min(split, text.size()));
             std::vector<std::wstring> items = appearance::SuggestKeys(text.substr(head.size()));
@@ -680,14 +656,14 @@ INT_PTR CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
             }
             return items;
         });
-        ui::AddTooltip(
+        win32ui::ApplyThemeToWindow(win32ui::AddTooltip(
             hwnd,
             Item(state, IDC_FIND_REGEX),
             util::Tr(L"PCRE syntax: ^ $ anchors, character classes, greedy, lazy (*?) and possessive (*+) quantifiers,\n"
                      L"(?<name>...) groups, lookaround (?=...) (?<=...), backreferences \\1 and Unicode classes \\p{L}, \\w, "
                      L"\\X.\n"
                      L"Matching is unicode aware and ignores case unless 'Match case' is set.")
-        );
+        ));
         SetDlgItemTextW(hwnd, IDC_FIND_LIMIT_EDIT, L"1000");
         LoadInitialState(state);
         UpdateDialogEnableState(state);
@@ -758,16 +734,16 @@ INT_PTR CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
                 return TRUE;
             case IDC_FIND_EXCLUDE_BUTTON:
                 {
-                    editors::TextRequest request;
-                    request.title = util::Tr(L"Exclude Keys");
-                    request.label = util::Tr(L"Each line should include one key.");
-                    request.text = util::JoinLines(SplitExcludePaths(util::WindowText(Item(state, IDC_FIND_EXCLUDE_EDIT))));
-                    request.multiline = true;
-                    request.browse = ShowBrowseKeyDialog;
-                    editors::TextResult result;
-                    if (editors::EditText(hwnd, request, &result))
+                    std::wstring keys = util::JoinLines(SplitExcludePaths(util::WindowText(Item(state, IDC_FIND_EXCLUDE_EDIT))));
+                    const win32ui::TextPrompt prompt = {
+                        .title = util::Tr(L"Exclude Keys"),
+                        .label = util::Tr(L"Each line should include one key."),
+                        .multiline = true,
+                        .browse = [](void*, HWND owner, std::wstring* line) { return ShowBrowseKeyDialog(owner, line); },
+                    };
+                    if (win32ui::PromptText(hwnd, prompt, &keys) == 0)
                     {
-                        SetWindowTextW(Item(state, IDC_FIND_EXCLUDE_EDIT), JoinExcludePaths(util::SplitLines(result.text)).c_str());
+                        SetWindowTextW(Item(state, IDC_FIND_EXCLUDE_EDIT), JoinExcludePaths(util::SplitLines(keys)).c_str());
                     }
                     return TRUE;
                 }
@@ -778,8 +754,8 @@ INT_PTR CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
                     {
                         return TRUE;
                     }
-                    UpdateHistoryList(&state->history, result.criteria.query);
-                    SaveSearchHistory(state->history);
+                    state->history.Add(result.criteria.query);
+                    SaveSearchHistory(state->history.items());
 
                     *state->out = std::move(result);
                     win32ui::EndDialogWindow(hwnd, IDOK);
@@ -799,7 +775,7 @@ INT_PTR CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
     return FALSE;
 }
 
-} // namespace
+}
 
 bool ShowBrowseKeyDialog(HWND owner, std::wstring* selected_path)
 {
@@ -860,9 +836,9 @@ void SearchDialogFields(workspace::DialogFields& fields, SearchDialogResult* res
     fields.Field(L"find_start_key", &result->start_key);
     for (const auto& [key, time] : {std::pair{L"find_modified_from", &criteria.modified_from}, std::pair{L"find_modified_to", &criteria.modified_to}})
     {
-        uint64_t ticks = (static_cast<uint64_t>(time->dwHighDateTime) << 32) | time->dwLowDateTime;
+        uint64_t ticks = win32ui::FileTimeTicks(*time);
         fields.Field(key, &ticks);
-        *time = {static_cast<DWORD>(ticks), static_cast<DWORD>(ticks >> 32)};
+        *time = win32ui::FileTimeFromTicks(ticks);
     }
     // lists are stored as one comma separated value
     std::wstring exclude = JoinExcludePaths(criteria.exclude_paths);
@@ -888,4 +864,4 @@ void SearchDialogFields(workspace::DialogFields& fields, SearchDialogResult* res
     }
 }
 
-} // namespace regkit
+}

@@ -51,7 +51,6 @@ bool IsNumberedControlSet(const std::wstring& text)
            std::all_of(text.begin() + kPrefix.size(), text.end(), [](wchar_t ch) { return iswdigit(ch) != 0; });
 }
 
-// maps first HKLM\SYSTEM control set to the current one, empty if none
 std::wstring WithCurrentControlSet(const std::wstring& path, bool numbered)
 {
     const std::wstring& current = CurrentControlSet();
@@ -180,7 +179,7 @@ std::wstring ResolveLinks(const std::wstring& path)
     return current;
 }
 
-} // namespace
+}
 
 std::wstring MapControlSetToCurrent(const std::wstring& path)
 {
@@ -241,4 +240,4 @@ Normalizers PathNormalizers()
     return normalizers;
 }
 
-} // namespace regkit::trace
+}

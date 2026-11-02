@@ -5,10 +5,10 @@
 
 #include "registry/key_algorithms.h"
 #include "win32/shell_paths.h"
-#include "win32/system_error.h"
 #include "win32/translation.h"
 
 #include <win32ui/handle_owner.h>
+#include <win32ui/system/error_text.h>
 #include <win32ui/system_api.h>
 
 #include <algorithm>
@@ -47,7 +47,7 @@ class OffregApi
   public:
     OffregApi()
     {
-        const std::wstring directory = util::GetModuleDirectory();
+        const std::wstring directory = util::ModuleDirectory();
         const std::wstring path = directory.empty() ? std::wstring() : util::JoinPath(directory, L"offreg.dll");
         const DWORD attributes = path.empty() ? INVALID_FILE_ATTRIBUTES : GetFileAttributesW(path.c_str());
         if (attributes == INVALID_FILE_ATTRIBUTES || (attributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0)
@@ -151,7 +151,7 @@ OffregApi* Api()
 std::wstring OffregLoadFailure()
 {
     std::wstring message = util::Tr(L"offreg.dll couldn't be loaded.");
-    const std::wstring detail = util::FormatWin32Error(OffregInstance().load_error());
+    const std::wstring detail = win32ui::FormatWin32Error(OffregInstance().load_error());
     if (!detail.empty())
     {
         message += L"\n";
@@ -182,8 +182,8 @@ std::wstring SelectedControlSet(OffregApi* api, ORHKEY root)
     return control_set;
 }
 
-// Windows creates volatile CurrentControlSet links at boot
-// offline, map through Select\Current unless a real CurrentControlSet key exists
+// Windows creates volatile CurrentControlSet links at boot, offline map through Select\Current unless a real
+// CurrentControlSet key exists
 std::wstring ResolveControlSet(OffregApi* api, ORHKEY root, const std::wstring& subkey)
 {
     constexpr std::wstring_view kLink = L"CurrentControlSet";
@@ -335,12 +335,12 @@ bool WithApi(std::wstring* error, Action&& action)
     const DWORD result = action(*api);
     if (result != ERROR_SUCCESS && error)
     {
-        *error = util::FormatWin32Error(result);
+        *error = win32ui::FormatWin32Error(result);
     }
     return result == ERROR_SUCCESS;
 }
 
-} // namespace
+}
 
 bool OpenHive(const std::wstring& path, HKEY* root, std::wstring* error)
 {
@@ -503,4 +503,4 @@ bool RenameValue(const RegistryNode& node, const std::wstring& old_name, const s
     return key && registry_backend::RenameValue(key, old_name, new_name, both_names_left);
 }
 
-} // namespace regkit::registry_backend::offline
+}

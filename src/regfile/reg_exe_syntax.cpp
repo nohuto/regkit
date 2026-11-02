@@ -43,7 +43,7 @@ bool Fail(std::wstring* error, const std::wstring& message)
     return false;
 }
 
-} // namespace
+}
 
 bool IsSwitch(std::wstring_view text, std::wstring_view name)
 {
@@ -266,17 +266,17 @@ bool BuildData(DWORD type, std::wstring_view text, std::wstring_view separator, 
             {
                 number.erase(0, 1);
             }
-            unsigned long long value = 0;
-            if (!util::ParseUnsignedNumber(number, 10, &value))
+            const std::optional<uint64_t> value = win32ui::ParseUnsigned(number, 10, true);
+            if (!value)
             {
                 return Fail(error, util::TrLabel(L"Invalid numeric data", text));
             }
-            if (type != REG_QWORD && value > 0xFFFFFFFFull)
+            if (type != REG_QWORD && *value > 0xFFFFFFFFull)
             {
                 return Fail(error, util::TrLabel(L"Numeric data out of range for a DWORD", text));
             }
             // reg.exe stores REG_DWORD_BIG_ENDIAN as little endian, like REG_DWORD
-            *data = value_format::UnsignedBytes(value, type == REG_QWORD ? sizeof(ULONGLONG) : sizeof(DWORD));
+            *data = value_format::UnsignedBytes(*value, type == REG_QWORD ? sizeof(ULONGLONG) : sizeof(DWORD));
             return true;
         }
     case REG_BINARY:
@@ -293,9 +293,9 @@ bool BuildData(DWORD type, std::wstring_view text, std::wstring_view separator, 
             {
                 digits.insert(digits.begin(), L'0');
             }
-            return value_format::ParseHex(digits, data) || Fail(error, util::TrLabel(L"Invalid binary data", text));
+            return win32ui::ParseHexBytes(digits, data) || Fail(error, util::TrLabel(L"Invalid binary data", text));
         }
     }
 }
 
-} // namespace regkit::reg_exe
+}

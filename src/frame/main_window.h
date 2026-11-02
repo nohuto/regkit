@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -35,4 +35,4 @@ class MainWindow
     std::unique_ptr<Impl> impl_;
 };
 
-} // namespace regkit
+}

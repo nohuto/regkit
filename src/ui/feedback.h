@@ -4,7 +4,8 @@
 #pragma once
 
 #include "win32/file_dialog.h"
-#include "win32/windows_config.h"
+
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -18,12 +19,10 @@ namespace regkit
 namespace ui
 {
 
-bool ListViewItemSelected(HWND list, int item_index);
-
 void ShowError(HWND owner, const std::wstring& message);
+void ShowStartError(HWND owner);
 void ShowWarning(HWND owner, const std::wstring& message);
 void ShowInfo(HWND owner, const std::wstring& message);
-// selects the file in Explorer, else shows its path
 void RevealFile(HWND owner, const std::wstring& path);
 void ShowAbout(HWND owner);
 bool ConfirmRegFileMerge(HWND owner, const std::wstring& path);
@@ -44,15 +43,14 @@ struct ChoiceButtonWidths
 int PromptKeyChoice(HWND owner, const std::wstring& message, const std::wstring& key_path, const std::wstring& title, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label, ChoiceButtonWidths widths = {});
 int PromptChoice(HWND owner, const std::wstring& message, const std::wstring& title, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label, ChoiceButtonWidths widths = {}, int width = 420);
 bool ConfirmPrivilegedRestart(HWND owner, const std::wstring& title);
-bool ReportFileDialogResult(HWND owner, HRESULT hr);
+bool ReportFileDialogResult(HWND owner, DWORD error);
 bool PromptOpenFile(HWND owner, const wchar_t* filter, std::wstring* path);
 bool PromptSaveFile(HWND owner, const wchar_t* filter, std::wstring* path, win32::OpenAfter* open_after = nullptr, bool regkit = false);
 
 inline constexpr wchar_t kRegFileFilter[] = L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0\0";
 inline constexpr wchar_t kHiveFileFilter[] = L"Hive Files (*.*)\0*.*\0";
 inline constexpr wchar_t kImportFileFilter[] = L"Registry Files (*.reg)\0*.reg\0Registry Hive Files\0*.dat;*.hiv;*.hive;*.sav\0All Files (*.*)\0*.*\0\0";
-bool LaunchNewInstance(const std::wstring& arguments = std::wstring());
-HWND AddTooltip(HWND owner, HWND control, const wchar_t* text);
+DWORD LaunchNewInstance(HWND owner, const std::wstring& arguments = std::wstring());
 
-} // namespace ui
-} // namespace regkit
+}
+}

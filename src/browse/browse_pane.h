@@ -94,12 +94,8 @@ class Pane
     void ResetNavigation();
 
     bool SelectValue(const std::wstring& name);
-    void TypeSelectTree(wchar_t ch, DWORD now);
-    void set_tree_type_select_descend(bool descend) noexcept;
 
   private:
-    static void UpdateTypeBuffer(wchar_t ch, DWORD now, std::wstring* buffer, DWORD* tick);
-
     HWND address_ = nullptr;
     HWND go_button_ = nullptr;
     HWND filter_ = nullptr;
@@ -113,9 +109,6 @@ class Pane
     std::vector<std::wstring> navigation_history_;
     int navigation_index_ = -1;
     bool programmatic_navigation_ = false;
-    std::wstring tree_type_buffer_;
-    DWORD tree_type_tick_ = 0;
-    bool tree_type_select_descend_ = false;
 };
 
-} // namespace regkit::browse
+}

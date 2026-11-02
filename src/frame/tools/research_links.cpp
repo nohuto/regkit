@@ -45,7 +45,7 @@ constexpr std::array<ResearchLink, 22> kLinks = {{
 
 static_assert(kLinks.size() == static_cast<std::size_t>(cmd::kResearchItemMax - cmd::kResearchItemBase + 1));
 
-} // namespace
+}
 
 std::span<const ResearchLink> ResearchLinks() noexcept
 {
@@ -61,4 +61,4 @@ const ResearchLink* ResearchLinkForCommand(int command_id) noexcept
     return &kLinks[static_cast<std::size_t>(command_id - cmd::kResearchItemBase)];
 }
 
-} // namespace regkit::frame
+}

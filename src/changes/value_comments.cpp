@@ -3,7 +3,6 @@
 
 #include "changes/value_comments.h"
 
-#include "records/json.h"
 #include "registry/value_format.h"
 #include "win32/file_text.h"
 #include "win32/text_transform.h"
@@ -161,7 +160,7 @@ void AppendMember(std::wstring* out, const wchar_t* name, std::wstring_view valu
     }
 }
 
-} // namespace
+}
 
 bool ValueComments::Load(const std::wstring& path)
 {
@@ -178,7 +177,7 @@ bool ValueComments::Load(const std::wstring& path)
 
 bool ValueComments::Save(const std::wstring& path) const
 {
-    return !path.empty() && util::WriteTextFile(path, SerializeComments(*this), false);
+    return !path.empty() && win32ui::WriteTextFileAtomic(path.c_str(), SerializeComments(*this)) == ERROR_SUCCESS;
 }
 
 void ValueComments::Clear()
@@ -265,7 +264,7 @@ void ValueComments::Reindex()
 bool ParseComments(const std::wstring& content, std::vector<CommentRule>* out, std::wstring* error)
 {
     std::vector<CommentRule> rules;
-    win32ui::JsonReader reader(content, json::Errors(error), 4);
+    win32ui::JsonReader reader(content, win32ui::JsonErrorText(error), 4);
     bool format = false;
     const bool read = reader.Object([&](const std::wstring& member) {
         if (member == L"format")
@@ -375,4 +374,4 @@ ResolvedComment ResolveComment(const ValueComments& user, const ValueComments& d
     return {};
 }
 
-} // namespace regkit::changes
+}

@@ -8,7 +8,8 @@
 #include "ui/dialog_layout.h"
 #include "win32/translation.h"
 
-#include <win32ui/dialog/single_line_edit.h>
+#include <win32ui/dialog/edit.h>
+#include <win32ui/dialog/tooltip.h>
 
 namespace regkit
 {
@@ -44,7 +45,7 @@ std::wstring HistoryActionText(const HistoryEntry& entry)
     return entry.backup_mode ? entry.action + L" (" + util::Tr(L"Backup/restore mode") + L")" : entry.action;
 }
 
-} // namespace
+}
 
 LRESULT MainWindow::Impl::HandleNotification(LPARAM lparam)
 {
@@ -185,29 +186,7 @@ LRESULT MainWindow::Impl::HandleTooltipNotification(NMHDR* header)
 {
     if (header->code == TTN_SHOW && header->hwndFrom == value_tooltip_)
     {
-        RECT tip = {};
-        POINT pt = {};
-        MONITORINFO monitor = {};
-        monitor.cbSize = sizeof(monitor);
-        if (!GetWindowRect(value_tooltip_, &tip) || !GetCursorPos(&pt) ||
-            !GetMonitorInfoW(MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST), &monitor))
-        {
-            return 0;
-        }
-        const int width = tip.right - tip.left;
-        const int height = tip.bottom - tip.top;
-        int x = pt.x + kValueTooltipCursorGap;
-        int y = pt.y + kValueTooltipCursorGap;
-        if (x + width > monitor.rcWork.right)
-        {
-            x = std::max<LONG>(monitor.rcWork.left, pt.x - kValueTooltipCursorGap - width);
-        }
-        if (y + height > monitor.rcWork.bottom)
-        {
-            y = std::max<LONG>(monitor.rcWork.top, pt.y - kValueTooltipCursorGap - height);
-        }
-        SetWindowPos(value_tooltip_, HWND_TOPMOST, x, y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE);
-        return TRUE;
+        return win32ui::PlaceTipNearCursor(value_tooltip_, win32ui::WindowDpi(hwnd_)) ? TRUE : 0;
     }
     return 0;
 }
@@ -846,7 +825,7 @@ LRESULT MainWindow::Impl::HandleSearchListCustomDraw(NMLVCUSTOMDRAW* draw)
             HFONT font = reinterpret_cast<HFONT>(SendMessageW(search_results_list_, WM_GETFONT, 0, 0));
             HFONT old_font = font ? reinterpret_cast<HFONT>(SelectObject(draw->nmcd.hdc, font)) : nullptr;
             // draw matched range after the list view paints the full cell
-            DrawSearchMatchOverlay(draw->nmcd.hdc, cell, cell_text, static_cast<int>(result->match_start), static_cast<int>(result->match_length));
+            win32ui::DrawCellTextMatch(draw->nmcd.hdc, cell, cell_text, static_cast<int>(result->match_start), static_cast<int>(result->match_length), win32ui::CurrentThemeColors().focus);
             if (old_font)
             {
                 SelectObject(draw->nmcd.hdc, old_font);
@@ -1182,4 +1161,4 @@ LRESULT MainWindow::Impl::HandleSearchNotification(NMHDR* header, LPARAM lparam)
     return 0;
 }
 
-} // namespace regkit
+}

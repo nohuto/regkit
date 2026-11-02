@@ -29,4 +29,4 @@ class FavoritesStore
     static bool ImportFromRegEdit(size_t* imported_count, std::wstring* error);
 };
 
-} // namespace regkit::workspace
+}

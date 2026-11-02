@@ -4,7 +4,8 @@
 #pragma once
 
 #include "win32/file_dialog.h"
-#include "win32/windows_config.h"
+
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -19,4 +20,4 @@ bool ExportRegFileSelection(HWND owner, const std::wstring& base_key_path, REGSA
 bool LoadHive(HWND owner, HKEY* root, std::wstring* error);
 bool UnloadHive(HWND owner, HKEY root, const std::wstring& subkey, std::wstring* error);
 
-} // namespace regkit
+}

@@ -30,7 +30,7 @@ std::wstring SerializeActiveList(const std::vector<Source>& sources, const Resol
     return content;
 }
 
-} // namespace
+}
 
 void MainWindow::Impl::StartDefaultLoadWorker()
 {
@@ -50,7 +50,8 @@ void MainWindow::Impl::StartDefaultLoadWorker()
         return;
     }
     const HWND hwnd = hwnd_;
-    default_load_session_.StartIfIdle(L"DefaultsLoadThread", [this, entries = std::move(entries), hwnd](uint64_t generation, const std::atomic_bool& cancel) {
+    // runs here without a thread, saving an unrestored list would drop its entries
+    default_load_session_.StartOrRun(L"DefaultsLoadThread", [this, entries = std::move(entries), hwnd](uint64_t generation, const std::atomic_bool& cancel) {
         auto payload = std::make_unique<DefaultLoadPayload>();
         payload->generation = generation;
         std::unordered_set<std::wstring> loaded;
@@ -98,7 +99,7 @@ void MainWindow::Impl::StartDefaultLoadWorker()
         }
         if (hwnd && IsWindow(hwnd))
         {
-            work::PostPayload(hwnd, frame::message_id::kDefaultLoadReady, 0, payload);
+            win32ui::PostPayload(hwnd, frame::message_id::kDefaultLoadReady, 0, payload);
         }
     });
 }
@@ -252,7 +253,7 @@ void MainWindow::Impl::LoadTraceSettings()
         has_entry = false;
     };
 
-    for (const std::wstring_view raw : record_fields::Lines(content))
+    for (const std::wstring_view raw : win32ui::LineViews(content))
     {
         ++line_number;
         if (raw.starts_with(L"pair="))
@@ -385,7 +386,7 @@ void MainWindow::Impl::SaveTraceSettings() const
         }
         content.push_back(L'\n');
     }
-    util::WriteTextFile(path, content, false);
+    win32ui::WriteTextFileAtomic(path.c_str(), content);
 }
 
 void MainWindow::Impl::SaveActiveTraces() const
@@ -393,7 +394,7 @@ void MainWindow::Impl::SaveActiveTraces() const
     const std::wstring path = ActiveTracesPath();
     if (!path.empty())
     {
-        util::WriteTextFile(path, SerializeActiveList(active_traces_, [this](const std::wstring& label) { return ResolveBundledTracePath(label); }), false);
+        win32ui::WriteTextFileAtomic(path.c_str(), SerializeActiveList(active_traces_, [this](const std::wstring& label) { return ResolveBundledTracePath(label); }));
     }
 }
 
@@ -402,7 +403,7 @@ void MainWindow::Impl::SaveActiveDefaults() const
     const std::wstring path = ActiveDefaultsPath();
     if (!path.empty())
     {
-        util::WriteTextFile(path, SerializeActiveList(active_defaults_, [this](const std::wstring& label) { return ResolveBundledDefaultPath(label); }), false);
+        win32ui::WriteTextFileAtomic(path.c_str(), SerializeActiveList(active_defaults_, [this](const std::wstring& label) { return ResolveBundledDefaultPath(label); }));
     }
 }
 
@@ -545,4 +546,4 @@ bool MainWindow::Impl::RemoveDefaultByPath(const std::wstring& path)
     return true;
 }
 
-} // namespace regkit
+}

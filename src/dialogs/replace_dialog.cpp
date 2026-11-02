@@ -11,7 +11,10 @@
 #include "win32/translation.h"
 #include "workspace/dialog_state.h"
 
+#include <win32ui/dialog/autocomplete.h>
 #include <win32ui/dialog/dialog_window.h>
+#include <win32ui/dialog/tooltip.h>
+#include <win32ui/theme/theme.h>
 
 namespace regkit
 {
@@ -92,8 +95,8 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
             CheckDlgButton(dialog, check.id, initial.*check.field ? BST_CHECKED : BST_UNCHECKED);
         }
         UpdateValueDataOptions(dialog);
-        appearance::AttachAutoComplete(GetDlgItem(dialog, IDC_REPLACE_KEY), appearance::SuggestKeys);
-        ui::AddTooltip(
+        win32ui::AttachAutoComplete(GetDlgItem(dialog, IDC_REPLACE_KEY), appearance::SuggestKeys);
+        win32ui::ApplyThemeToWindow(win32ui::AddTooltip(
             dialog,
             GetDlgItem(dialog, IDC_REPLACE_REGEX),
             util::Tr(L"PCRE syntax: ^ $ anchors, character classes, greedy, lazy (*?) and possessive (*+) quantifiers,\n"
@@ -101,7 +104,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
                      L"\\X.\n"
                      L"Replace with: $1 or ${1} for a group, $<name> or ${name} for a named group, $& for the whole match, $$ "
                      L"for a dollar.")
-        );
+        ));
         return TRUE;
     }
     if (message != WM_COMMAND || !state)
@@ -136,7 +139,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     }
 }
 
-} // namespace
+}
 
 bool ShowReplaceDialog(HWND owner, ReplaceDialogResult* result)
 {
@@ -156,4 +159,4 @@ void ReplaceDialogFields(workspace::DialogFields& fields, ReplaceDialogResult* r
     fields.Field(L"replace_start_key", &result->start_key);
 }
 
-} // namespace regkit
+}

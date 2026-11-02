@@ -26,7 +26,7 @@ DialogState LoadDialogState(std::wstring* error)
         return state;
     }
     size_t line_number = 0;
-    for (const std::wstring_view line : record_fields::Lines(content))
+    for (const std::wstring_view line : win32ui::LineViews(content))
     {
         ++line_number;
         const size_t separator = line.find(L'=');
@@ -56,7 +56,7 @@ void SaveDialogState(const DialogState& state)
     const std::wstring path = DialogStatePath();
     if (!path.empty())
     {
-        util::WriteTextFile(path, content, false);
+        win32ui::WriteTextFileAtomic(path.c_str(), content);
     }
 }
 
@@ -86,4 +86,4 @@ void DialogFields::Field(std::wstring_view key, uint64_t* value)
     record_fields::ParseUnsigned(text, UINT64_MAX, value);
 }
 
-} // namespace regkit::workspace
+}

@@ -12,4 +12,4 @@ bool EditBitfieldDefinition(HWND owner, bitfield::Definition* definition, bool l
 bool EditBitfieldField(HWND owner, const bitfield::Definition& parent, int editing, bitfield::Field* field);
 void ShowBitfieldDefinitionEditor(HWND owner, const std::wstring& path);
 
-} // namespace regkit::editors
+}

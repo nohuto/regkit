@@ -43,7 +43,7 @@ bool Decode(std::string_view buffer, std::wstring* content, std::wstring* error)
     {
         buffer.remove_prefix(3);
     }
-    *content = util::Utf8ToWide(buffer);
+    *content = win32ui::Utf8ToWide(buffer).value_or(std::wstring());
     if (content->empty())
     {
         if (error)
@@ -55,7 +55,7 @@ bool Decode(std::string_view buffer, std::wstring* content, std::wstring* error)
     return true;
 }
 
-} // namespace
+}
 
 bool ParseEntries(std::string_view buffer, const Normalizers& normalizers, const EntryCallback& callback, std::wstring* error, const std::atomic_bool* cancel)
 {
@@ -173,4 +173,4 @@ bool Parse(const std::wstring& label, const std::wstring& source, std::string_vi
     *data = std::move(parsed);
     return true;
 }
-} // namespace regkit::trace
+}

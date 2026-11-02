@@ -10,8 +10,9 @@
 
 #include "resource.h"
 
+#include <win32ui/dialog/autocomplete.h>
 #include <win32ui/dialog/dialog_window.h>
-#include <win32ui/dialog/single_line_edit.h>
+#include <win32ui/dialog/edit.h>
 
 #include <utility>
 
@@ -102,7 +103,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
         SetWindowLongPtrW(dialog, DWLP_USER, reinterpret_cast<LONG_PTR>(state));
         InitControls(dialog, state);
         win32ui::FitDialogText(dialog);
-        appearance::AttachAutoComplete(GetDlgItem(dialog, IDC_COMMENT_KEY_PATH), appearance::SuggestKeys);
+        win32ui::AttachAutoComplete(GetDlgItem(dialog, IDC_COMMENT_KEY_PATH), appearance::SuggestKeys);
         win32ui::AllowLineBreaks(GetDlgItem(dialog, IDC_EDIT));
         win32ui::AnchorDialogControls(
             dialog,
@@ -157,7 +158,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     }
 }
 
-} // namespace
+}
 
 bool EditComment(HWND owner, const CommentRequest& request, CommentResult* result)
 {
@@ -173,4 +174,4 @@ bool EditComment(HWND owner, const CommentRequest& request, CommentResult* resul
     return true;
 }
 
-} // namespace regkit::editors
+}

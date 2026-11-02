@@ -40,7 +40,7 @@ std::wstring CaseRenameStep(std::wstring_view old_name, std::wstring_view new_na
     return old_name != new_name && util::EqualsInsensitive(old_name, new_name) ? std::wstring(new_name) + L"~" + std::to_wstring(GetTickCount64()) : std::wstring();
 }
 
-} // namespace
+}
 
 std::vector<RegistryRootEntry> RegistryStore::DefaultRoots(bool include_extra)
 {
@@ -446,4 +446,4 @@ bool RegistryStore::RenameValue(const RegistryNode& node, const std::wstring& ol
     );
 }
 
-} // namespace regkit
+}

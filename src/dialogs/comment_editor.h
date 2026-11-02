@@ -41,4 +41,4 @@ struct CommentResult
 
 bool EditComment(HWND owner, const CommentRequest& request, CommentResult* result);
 
-} // namespace regkit::editors
+}

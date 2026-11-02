@@ -3,125 +3,10 @@
 
 #include "win32/shell_paths.h"
 
-#include "win32/text_transform.h"
-
-#include <win32ui/handle_owner.h>
-#include <win32ui/system_api.h>
-
-#include <algorithm>
 #include <shlobj.h>
 
 namespace regkit::util
 {
-
-std::wstring GetModulePath()
-{
-    DWORD capacity = MAX_PATH;
-    for (;;)
-    {
-        std::wstring path(capacity, L'\0');
-        const DWORD length = GetModuleFileNameW(nullptr, path.data(), capacity);
-        if (length == 0)
-        {
-            return {};
-        }
-        if (length < capacity)
-        {
-            path.resize(length);
-            return path;
-        }
-        if (capacity >= 32768)
-        {
-            return {};
-        }
-        capacity = std::min<DWORD>(capacity * 2, 32768);
-    }
-}
-
-std::wstring GetModuleDirectory()
-{
-    std::wstring path = GetModulePath();
-    if (path.empty())
-    {
-        return {};
-    }
-    static const auto remove_file_spec = win32ui::ImportProc<HRESULT(WINAPI*)(PWSTR, size_t)>(L"kernelbase.dll", "PathCchRemoveFileSpec");
-    if (remove_file_spec)
-    {
-        path.push_back(L'\0');
-        if (FAILED(remove_file_spec(path.data(), path.size())))
-        {
-            return {};
-        }
-        path.resize(wcsnlen_s(path.data(), path.size()));
-        return path;
-    }
-    const size_t separator = path.find_last_of(L"\\/");
-    if (separator == std::wstring::npos)
-    {
-        return {};
-    }
-    path.resize(separator);
-    return path;
-}
-
-std::wstring JoinPath(const std::wstring& left, const std::wstring& right)
-{
-    if (left.empty())
-    {
-        return right;
-    }
-    const size_t capacity = std::min<size_t>(std::max<size_t>(MAX_PATH, left.size() + right.size() + 2), 32768);
-    static const auto combine = win32ui::ImportProc<HRESULT(WINAPI*)(PWSTR, size_t, PCWSTR, PCWSTR)>(L"kernelbase.dll", "PathCchCombine");
-    if (combine)
-    {
-        std::wstring output(capacity, L'\0');
-        if (SUCCEEDED(combine(output.data(), output.size(), left.c_str(), right.c_str())))
-        {
-            return output.c_str();
-        }
-    }
-    return left.back() == L'\\' ? left + right : left + L"\\" + right;
-}
-
-std::wstring FileName(std::wstring_view path)
-{
-    const size_t separator = path.find_last_of(L"\\/");
-    return std::wstring(separator == std::wstring_view::npos ? path : path.substr(separator + 1));
-}
-
-std::wstring FileBaseName(std::wstring_view path)
-{
-    std::wstring name = FileName(path);
-    return name.substr(0, name.find_last_of(L'.'));
-}
-
-std::wstring TrimTrailingSeparators(std::wstring path)
-{
-    while (!path.empty() && (path.back() == L'\\' || path.back() == L'/'))
-    {
-        path.pop_back();
-    }
-    return path;
-}
-
-bool IsFile(const std::wstring& path)
-{
-    const DWORD attributes = GetFileAttributesW(path.c_str());
-    return attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY);
-}
-
-bool IsDirectory(const std::wstring& path)
-{
-    const DWORD attributes = GetFileAttributesW(path.c_str());
-    return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
-}
-
-bool IsMissing(const std::wstring& path)
-{
-    const DWORD error = GetFileAttributesW(path.c_str()) == INVALID_FILE_ATTRIBUTES ? GetLastError() : ERROR_SUCCESS;
-    return error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND;
-}
 
 std::wstring GetAppDataFolder()
 {
@@ -133,18 +18,18 @@ std::wstring GetAppDataFolder()
         if (written > 0 && written < override_size)
         {
             path.resize(written);
-            SHCreateDirectoryExW(nullptr, path.c_str(), nullptr);
+            win32ui::EnsureDirectory(path.c_str());
             return path;
         }
     }
 
-    win32ui::UniqueCoTask<PWSTR> base;
-    if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, base.put())) || !base)
+    const std::wstring base = win32ui::KnownFolderPath(FOLDERID_LocalAppData);
+    if (base.empty())
     {
         return {};
     }
-    std::wstring folder = JoinPath(base.get(), L"Noverse\\RegKit");
-    SHCreateDirectoryExW(nullptr, folder.c_str(), nullptr);
+    std::wstring folder = JoinPath(base, L"Noverse\\RegKit");
+    win32ui::EnsureDirectory(folder.c_str());
     return folder;
 }
 
@@ -156,25 +41,8 @@ std::wstring GetCacheFolder()
         return {};
     }
     folder = JoinPath(folder, L"cache");
-    SHCreateDirectoryExW(nullptr, folder.c_str(), nullptr);
+    win32ui::EnsureDirectory(folder.c_str());
     return folder;
 }
 
-bool HasFileExtension(std::wstring_view path, std::wstring_view extension)
-{
-    const size_t dot = path.find_last_of(L'.');
-    const size_t separator = path.find_last_of(L"\\/");
-    return dot != std::wstring_view::npos && (separator == std::wstring_view::npos || dot > separator) &&
-           EqualsInsensitive(path.substr(dot), extension);
 }
-
-std::wstring EnsureFileExtension(std::wstring path, std::wstring_view extension)
-{
-    if (!path.empty() && !HasFileExtension(path, extension))
-    {
-        path.append(extension);
-    }
-    return path;
-}
-
-} // namespace regkit::util

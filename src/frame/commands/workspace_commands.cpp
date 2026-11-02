@@ -4,11 +4,13 @@
 #include "frame/commands/command_detail.h"
 #include "frame/window_impl.h"
 #include "frame/tools/research_links.h"
-#include "ui/autocomplete.h"
 #include "win32/shell_integration.h"
 #include "win32/translation.h"
 
-#include <win32ui/process_token.h>
+#include <win32ui/dialog/autocomplete.h>
+#include <win32ui/system/error_text.h>
+#include <win32ui/system/process_token.h>
+#include <win32ui/system/shell_open.h>
 
 namespace regkit
 {
@@ -18,11 +20,7 @@ bool MainWindow::Impl::HandleWorkspaceAppearanceCommand(int command_id)
 {
     if (const auto* link = frame::ResearchLinkForCommand(command_id))
     {
-        const HRESULT hr = win32::ShellOpen(hwnd_, link->url);
-        if (FAILED(hr))
-        {
-            ui::ShowError(hwnd_, win32::FormatDialogError(hr));
-        }
+        ui::ReportFileDialogResult(hwnd_, win32ui::ShellOpen(hwnd_, link->url));
         return true;
     }
     if (command_id >= cmd::kTabClose && command_id <= cmd::kTabSelectMax)
@@ -99,7 +97,10 @@ bool MainWindow::Impl::HandleWindowAppearanceCommand(int command_id)
     switch (command_id)
     {
     case cmd::kWindowNew:
-        ui::LaunchNewInstance();
+        if (const DWORD error = ui::LaunchNewInstance(hwnd_); error != ERROR_SUCCESS)
+        {
+            ui::ShowError(hwnd_, util::TrDetail(L"A new RegKit window couldn't be opened.", win32ui::FormatWin32Error(error)));
+        }
         return true;
     case cmd::kWindowClose:
         PostMessageW(hwnd_, WM_CLOSE, 0, 0);
@@ -209,10 +210,10 @@ bool MainWindow::Impl::HandleLaunchHelpCommand(int command_id)
         }
         return true;
     case cmd::kOptionsReplaceRegEdit:
-        ReplaceRegEdit(!win32::IsRegEditReplacementRegistered(util::GetModulePath()));
+        ReplaceRegEdit(!win32::IsRegEditReplacementRegistered(util::ModulePath()));
         return true;
     case cmd::kOptionsEditContextMenu:
-        SetEditContextMenu(!win32::IsEditMenuRegistered(util::GetModulePath()));
+        SetEditContextMenu(!win32::IsEditMenuRegistered(util::ModulePath()));
         return true;
     case cmd::kOptionsSingleInstance:
         settings_.single_instance = !settings_.single_instance;
@@ -248,7 +249,7 @@ bool MainWindow::Impl::HandleLaunchHelpCommand(int command_id)
         return true;
     case cmd::kOptionsAutoComplete:
         settings_.autocomplete = !settings_.autocomplete;
-        appearance::SetAutoCompleteEnabled(settings_.autocomplete);
+        win32ui::SetAutoCompleteEnabled(settings_.autocomplete);
         SaveSettings();
         return true;
     case cmd::kOptionsHiveFileDir:
@@ -265,10 +266,10 @@ bool MainWindow::Impl::HandleLaunchHelpCommand(int command_id)
         ui::ShowAbout(hwnd_);
         return true;
     case cmd::kHelpContents:
-        win32::ShellOpen(hwnd_, kHelpUrl);
+        ui::ReportFileDialogResult(hwnd_, win32ui::ShellOpen(hwnd_, kHelpUrl));
         return true;
     case cmd::kHelpDiscord:
-        win32::ShellOpen(hwnd_, kDiscordUrl);
+        ui::ReportFileDialogResult(hwnd_, win32ui::ShellOpen(hwnd_, kDiscordUrl));
         return true;
     case cmd::kHelpCheckUpdates:
         updates_.Check(false);
@@ -282,4 +283,4 @@ bool MainWindow::Impl::HandleLaunchHelpCommand(int command_id)
     }
 }
 
-} // namespace regkit
+}

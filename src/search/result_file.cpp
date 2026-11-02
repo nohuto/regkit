@@ -6,6 +6,8 @@
 #include "records/escaped_fields.h"
 #include "win32/file_text.h"
 
+#include <win32ui/system/date_time.h>
+
 #include <cstdint>
 #include <string_view>
 #include <utility>
@@ -47,8 +49,7 @@ bool ParseVersionedRecord(std::vector<std::wstring>&& fields, Result* out)
     result.data_text = std::move(fields[2]);
     result.type = static_cast<DWORD>(type);
     result.data_size = static_cast<DWORD>(data_size);
-    result.modified.dwLowDateTime = static_cast<DWORD>(modified & 0xFFFFFFFFull);
-    result.modified.dwHighDateTime = static_cast<DWORD>(modified >> 32);
+    result.modified = win32ui::FileTimeFromTicks(modified);
     result.match_field = static_cast<MatchField>(match_field);
     result.match_start = static_cast<uint32_t>(match_start);
     result.match_length = static_cast<uint32_t>(match_length);
@@ -59,7 +60,7 @@ bool ParseVersionedRecord(std::vector<std::wstring>&& fields, Result* out)
     return true;
 }
 
-} // namespace
+}
 
 bool ParseResults(const std::wstring& content, std::vector<Result>* out, std::wstring* error)
 {
@@ -69,7 +70,7 @@ bool ParseResults(const std::wstring& content, std::vector<Result>* out, std::ws
     }
     std::vector<Result> results;
     size_t line_number = 0;
-    for (const std::wstring_view line : record_fields::Lines(content))
+    for (const std::wstring_view line : win32ui::LineViews(content))
     {
         ++line_number;
         if (line.empty())
@@ -97,8 +98,7 @@ std::wstring SerializeResults(const std::vector<Result>& results)
     std::wstring content;
     for (const Result& result : results)
     {
-        const uint64_t modified =
-            (static_cast<uint64_t>(result.modified.dwHighDateTime) << 32) | result.modified.dwLowDateTime;
+        const uint64_t modified = win32ui::FileTimeTicks(result.modified);
         record_fields::AppendRecord(
             &content,
             {result.key_path, result.value_name, result.data_text, std::to_wstring(result.type), std::to_wstring(result.data_size), std::to_wstring(modified), std::to_wstring(static_cast<int>(result.match_field)), std::to_wstring(result.match_start), std::to_wstring(result.match_length), std::to_wstring(static_cast<int>(result.kind)), std::to_wstring(static_cast<int>(result.data_state)), std::to_wstring(result.source)}
@@ -115,7 +115,7 @@ bool LoadResults(const std::wstring& path, std::vector<Result>* results, std::ws
 
 bool SaveResults(const std::wstring& path, const std::vector<Result>& results)
 {
-    return !path.empty() && util::WriteTextFile(path, SerializeResults(results), false);
+    return !path.empty() && win32ui::WriteTextFileAtomic(path.c_str(), SerializeResults(results)) == ERROR_SUCCESS;
 }
 
-} // namespace regkit::search
+}

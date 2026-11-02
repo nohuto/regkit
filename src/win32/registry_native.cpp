@@ -6,6 +6,7 @@
 #include "win32/process_rights.h"
 
 #include <win32ui/handle_owner.h>
+#include <win32ui/system/error_text.h>
 #include <win32ui/system_api.h>
 
 #include <winternl.h>
@@ -39,7 +40,6 @@ using NtSetInformationKeyFn = NTSTATUS(NTAPI*)(HANDLE, ULONG, PVOID, ULONG);
 using NtQueryValueKeyFn = NTSTATUS(NTAPI*)(HANDLE, PUNICODE_STRING, ULONG, PVOID, ULONG, PULONG);
 using NtSetValueKeyFn = NTSTATUS(NTAPI*)(HANDLE, PUNICODE_STRING, ULONG, ULONG, PVOID, ULONG);
 using NtDeleteValueKeyFn = NTSTATUS(NTAPI*)(HANDLE, PUNICODE_STRING);
-using RtlNtStatusToDosErrorFn = ULONG(NTAPI*)(NTSTATUS);
 
 constexpr REGSAM kViewFlags = KEY_WOW64_32KEY | KEY_WOW64_64KEY;
 constexpr NTSTATUS kBufferOverflow = static_cast<NTSTATUS>(0x80000005L);
@@ -53,12 +53,6 @@ constexpr ULONG kKeyWriteTimeInformation = 0;
 constexpr ULONG kKeyControlFlagsInformation = 2;
 constexpr ULONG kKeyValuePartialInformation = 2;
 constexpr ULONG kPartialHeader = 3 * sizeof(ULONG);
-
-LONG DosError(NTSTATUS status)
-{
-    static const auto convert = win32ui::ImportProc<RtlNtStatusToDosErrorFn>(L"ntdll.dll", "RtlNtStatusToDosError");
-    return NT_SUCCESS(status) ? ERROR_SUCCESS : static_cast<LONG>(convert ? convert(status) : ERROR_GEN_FAILURE);
-}
 
 // bit 0 tags remote RPC handles, never pass to native calls, bit 1 tags HKCR handles
 HANDLE RootHandle(HKEY key)
@@ -106,7 +100,7 @@ LONG OpenNative(HKEY parent, const std::wstring& path, REGSAM access, bool open_
     {
         key->reset(reinterpret_cast<HKEY>(handle));
     }
-    return DosError(status);
+    return win32ui::Win32FromNtStatus(status);
 }
 
 template <size_t N>
@@ -123,7 +117,7 @@ std::optional<ULONG> KeyWord(HKEY key, ULONG info_class)
     return QueryKeyWords(key, info_class, word) ? std::optional<ULONG>(word[0]) : std::nullopt;
 }
 
-} // namespace
+}
 
 win32ui::UniqueHKey OpenNativeRegistryKey(const std::wstring& path, REGSAM access, bool open_link, LONG* error)
 {
@@ -235,13 +229,12 @@ LONG CreateRegistryKey(HKEY parent, const std::wstring& name, REGSAM access, DWO
             *disposition = created;
         }
     }
-    return DosError(status);
+    return win32ui::Win32FromNtStatus(status);
 }
 
 LONG RenameRegistryKey(HKEY parent, const std::wstring& old_name, const std::wstring& new_name)
 {
-    // NtRenameKey renames the link itself
-    // RegRenameKey follows targets and truncates names at embedded NULs
+    // NtRenameKey renames the link itself, RegRenameKey follows targets and truncates names at embedded NULs
     static const auto rename_key = win32ui::ImportProc<NtRenameKeyFn>(L"ntdll.dll", "NtRenameKey");
     win32ui::UniqueHKey key;
     LONG result = OpenRegistryPath(parent, old_name, KEY_WRITE, true, &key);
@@ -254,7 +247,7 @@ LONG RenameRegistryKey(HKEY parent, const std::wstring& old_name, const std::wst
     {
         result = ERROR_INVALID_PARAMETER;
     }
-    return result == ERROR_SUCCESS ? DosError(rename_key(RootHandle(key.get()), &counted)) : result;
+    return result == ERROR_SUCCESS ? win32ui::Win32FromNtStatus(rename_key(RootHandle(key.get()), &counted)) : result;
 }
 
 LONG DeleteRegistryTree(HKEY key)
@@ -289,7 +282,7 @@ LONG DeleteRegistryTree(HKEY key)
         }
     }
     // empty subkeys delete the key behind a remote handle
-    return RootHandle(key) ? DosError(delete_key(RootHandle(key))) : RegDeleteKeyExW(key, L"", 0, 0);
+    return RootHandle(key) ? win32ui::Win32FromNtStatus(delete_key(RootHandle(key))) : RegDeleteKeyExW(key, L"", 0, 0);
 }
 
 bool DeleteNativeRegistryKey(HKEY key)
@@ -347,13 +340,13 @@ LONG SetKeyLastWriteTime(HKEY key, const FILETIME& time)
     LARGE_INTEGER value = {};
     value.LowPart = time.dwLowDateTime;
     value.HighPart = static_cast<LONG>(time.dwHighDateTime);
-    return set_information ? DosError(set_information(RootHandle(key), kKeyWriteTimeInformation, &value, sizeof(value))) : ERROR_CALL_NOT_IMPLEMENTED;
+    return set_information ? win32ui::Win32FromNtStatus(set_information(RootHandle(key), kKeyWriteTimeInformation, &value, sizeof(value))) : ERROR_CALL_NOT_IMPLEMENTED;
 }
 
 LONG SetKeyControlFlags(HKEY key, ULONG flags)
 {
     static const auto set_information = win32ui::ImportProc<NtSetInformationKeyFn>(L"ntdll.dll", "NtSetInformationKey");
-    return set_information ? DosError(set_information(RootHandle(key), kKeyControlFlagsInformation, &flags, sizeof(flags))) : ERROR_CALL_NOT_IMPLEMENTED;
+    return set_information ? win32ui::Win32FromNtStatus(set_information(RootHandle(key), kKeyControlFlagsInformation, &flags, sizeof(flags))) : ERROR_CALL_NOT_IMPLEMENTED;
 }
 
 LONG QueryValueCounted(HKEY key, const std::wstring& name, DWORD* type, BYTE* data, DWORD* size)
@@ -371,7 +364,7 @@ LONG QueryValueCounted(HKEY key, const std::wstring& name, DWORD* type, BYTE* da
     const bool header = NT_SUCCESS(status) || status == kBufferOverflow;
     if (!header && status != kBufferTooSmall)
     {
-        return DosError(status);
+        return win32ui::Win32FromNtStatus(status);
     }
     const auto* words = reinterpret_cast<const ULONG*>(buffer.data());
     if (type && header)
@@ -398,7 +391,7 @@ LONG SetValueCounted(HKEY key, const std::wstring& name, DWORD type, const BYTE*
     {
         return ERROR_INVALID_PARAMETER;
     }
-    return DosError(set_value(RootHandle(key), &counted, 0, type, const_cast<BYTE*>(data), size));
+    return win32ui::Win32FromNtStatus(set_value(RootHandle(key), &counted, 0, type, const_cast<BYTE*>(data), size));
 }
 
 LONG DeleteValueCounted(HKEY key, const std::wstring& name)
@@ -409,36 +402,6 @@ LONG DeleteValueCounted(HKEY key, const std::wstring& name)
     {
         return ERROR_INVALID_PARAMETER;
     }
-    return DosError(delete_value(RootHandle(key), &counted));
+    return win32ui::Win32FromNtStatus(delete_value(RootHandle(key), &counted));
 }
-
-LONG ReadRegistryString(HKEY root, const wchar_t* subkey, const wchar_t* value_name, std::wstring* value)
-{
-    constexpr DWORD kTypes = RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ | RRF_NOEXPAND;
-    value->clear();
-    LONG result = ERROR_MORE_DATA;
-    for (int attempt = 0; attempt < 3 && result == ERROR_MORE_DATA; ++attempt)
-    {
-        DWORD size = 0;
-        result = RegGetValueW(root, subkey, value_name, kTypes, nullptr, nullptr, &size);
-        if (result != ERROR_SUCCESS)
-        {
-            return result;
-        }
-        value->resize(size / sizeof(wchar_t) + 1);
-        size = static_cast<DWORD>(value->size() * sizeof(wchar_t));
-        result = RegGetValueW(root, subkey, value_name, kTypes, nullptr, value->data(), &size);
-        value->resize(result == ERROR_SUCCESS ? wcsnlen_s(value->c_str(), size / sizeof(wchar_t)) : 0);
-    }
-    return result;
 }
-
-LONG WriteRegistryString(HKEY root, const wchar_t* subkey, const wchar_t* value_name, const std::wstring& value)
-{
-    if (value.size() >= (std::numeric_limits<DWORD>::max)() / sizeof(wchar_t) - 1)
-    {
-        return ERROR_INVALID_DATA;
-    }
-    return RegSetKeyValueW(root, subkey, value_name, REG_SZ, value.c_str(), static_cast<DWORD>((value.size() + 1) * sizeof(wchar_t)));
-}
-} // namespace regkit::util

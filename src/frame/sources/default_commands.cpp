@@ -18,10 +18,10 @@ bool MainWindow::Impl::AddDefaultFromFile(const std::wstring& label, const std::
     }
     std::wstring source = path;
     std::wstring use_label = label;
-    if (!util::IsFile(source))
+    if (!util::IsFile(source.c_str()))
     {
         std::wstring bundled = ResolveBundledDefaultPath(path);
-        if (!bundled.empty() && util::IsFile(bundled))
+        if (!bundled.empty() && util::IsFile(bundled.c_str()))
         {
             source = bundled;
             if (use_label.empty())
@@ -160,24 +160,14 @@ void MainWindow::Impl::ClearDefaults()
     SaveSettings();
 }
 
-void MainWindow::Impl::NormalizeRecentTraceList()
-{
-    recent_trace_paths_.Normalize();
-}
-
-void MainWindow::Impl::NormalizeRecentDefaultList()
-{
-    recent_default_paths_.Normalize();
-}
-
 void MainWindow::Impl::AddRecentTracePath(const std::wstring& path)
 {
-    recent_trace_paths_.Add(path);
+    recent_trace_paths_.Add(util::TrimWhitespace(path));
 }
 
 void MainWindow::Impl::AddRecentDefaultPath(const std::wstring& path)
 {
-    recent_default_paths_.Add(path);
+    recent_default_paths_.Add(util::TrimWhitespace(path));
 }
 
 std::vector<MainWindow::Impl::DefaultValueChoice> MainWindow::Impl::CollectDefaultChoices(
@@ -229,4 +219,4 @@ std::vector<MainWindow::Impl::DefaultValueChoice> MainWindow::Impl::CollectDefau
     return choices;
 }
 
-} // namespace regkit
+}

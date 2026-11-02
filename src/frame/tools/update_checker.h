@@ -3,19 +3,18 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/system/worker.h>
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
 #include <functional>
 #include <string>
 
-#include "work/session.h"
-
 namespace regkit::frame
 {
 
-struct UpdateCheckPayload : work::MoveOnly
+struct UpdateCheckPayload : win32ui::PostedPayload
 {
     bool silent = false;
     bool failed = false;
@@ -56,10 +55,10 @@ class UpdateChecker
 
     HWND owner_ = nullptr;
     StatusCallback status_;
-    work::Session session_;
+    win32ui::Session session_;
     std::wstring setup_path_;
     std::string setup_sha256_;
     bool setup_running_ = false;
 };
 
-} // namespace regkit::frame
+}

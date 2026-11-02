@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -22,7 +22,6 @@ struct TypeLabel
     const wchar_t* name;
 };
 
-// standard value types in picker order
 std::span<const TypeLabel> TypeLabels();
 DWORD NormalizeType(DWORD type);
 std::wstring TypeName(DWORD type);
@@ -32,7 +31,6 @@ std::wstring DisplayData(DWORD type, const BYTE* data, DWORD size, bool resolve_
 
 uint64_t ReadUnsigned(std::span<const BYTE> data, size_t width, bool big_endian = false);
 std::vector<BYTE> UnsignedBytes(uint64_t value, size_t width, bool big_endian = false);
-bool ParseHex(std::wstring_view text, std::vector<BYTE>* output);
 std::vector<BYTE> StringData(std::wstring_view text);
 bool DecodeString(std::span<const BYTE> data, std::wstring* output);
 std::vector<std::wstring> MultiStringItems(std::span<const BYTE> data);
@@ -40,4 +38,4 @@ std::vector<BYTE> MultiStringData(const std::vector<std::wstring>& items);
 std::wstring MultiStringText(const std::vector<BYTE>& data);
 std::vector<BYTE> MultiStringData(std::wstring_view lines);
 
-} // namespace regkit::value_format
+}

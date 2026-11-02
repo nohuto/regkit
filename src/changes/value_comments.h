@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -68,6 +68,10 @@ class ValueComments
     void Set(CommentRule rule);
     void Erase(const CommentRule& rule);
     const std::vector<CommentRule>& rules() const noexcept;
+    bool HasKeyRules() const noexcept
+    {
+        return !key_index_.empty();
+    }
 
   private:
     void Reindex();
@@ -83,4 +87,4 @@ std::wstring SerializeComments(const ValueComments& comments);
 CommentRule ValueRule(const CommentTarget& target);
 ResolvedComment ResolveComment(const ValueComments& user, const ValueComments& defaults, const CommentTarget& target);
 
-} // namespace regkit::changes
+}

@@ -6,7 +6,6 @@
 #include <windows.h>
 
 #include "frame/commands/command_ids.h"
-#include "ui/list_view_support.h"
 
 #include <win32ui/menu/popup_menu.h>
 #include <win32ui/menu/shortcuts.h>
@@ -72,4 +71,4 @@ inline void AppendRadioCommand(HMENU menu, int command, const wchar_t* text)
     win32ui::AppendRadioItem(menu, static_cast<UINT_PTR>(command), text, ShortcutText(command));
 }
 
-} // namespace regkit::frame
+}

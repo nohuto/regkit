@@ -122,7 +122,7 @@ std::wstring JoinRange(const std::vector<std::wstring>& parts, size_t first, siz
     return result;
 }
 
-} // namespace
+}
 
 bool HasComponentPrefix(std::wstring_view path, std::wstring_view prefix)
 {
@@ -214,7 +214,7 @@ namespace
 
 constexpr std::wstring_view kVirtualStore = L"HKEY_CURRENT_USER\\Software\\Classes\\VirtualStore\\MACHINE\\";
 
-} // namespace
+}
 
 std::wstring VirtualStorePath(std::wstring_view native_path)
 {
@@ -613,4 +613,4 @@ bool ResolveJumpTarget(std::wstring_view target, const std::function<std::wstrin
     return false;
 }
 
-} // namespace regkit::registry_path
+}

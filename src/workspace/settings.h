@@ -75,12 +75,10 @@ struct Settings
     std::vector<bool> value_column_visible;
 };
 
-// the settings given back unchanged and the reason in error when a line isnt a setting
 Settings ParseSettings(const std::wstring& content, Settings settings = {}, std::wstring* error = nullptr);
 std::wstring SerializeSettings(const Settings& settings);
 Settings DefaultOptions(const Settings& settings);
-// false for a missing file, false with the reason for one that cant be read
 bool LoadSettings(const std::wstring& path, Settings* settings, std::wstring* error = nullptr);
 bool SaveSettings(const std::wstring& path, const Settings& settings);
 
-} // namespace regkit::workspace
+}

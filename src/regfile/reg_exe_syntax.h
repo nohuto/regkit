@@ -4,7 +4,8 @@
 #pragma once
 
 #include "win32/registry_view.h"
-#include "win32/windows_config.h"
+
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -54,4 +55,4 @@ bool ParseType(std::wstring_view text, DWORD* type);
 std::wstring TypeName(DWORD type);
 bool BuildData(DWORD type, std::wstring_view text, std::wstring_view separator, std::vector<BYTE>* data, std::wstring* error);
 
-} // namespace regkit::reg_exe
+}

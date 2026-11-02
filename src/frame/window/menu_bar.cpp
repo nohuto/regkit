@@ -13,7 +13,7 @@
 #include "win32/text_transform.h"
 #include "win32/translation.h"
 
-#include <win32ui/process_token.h>
+#include <win32ui/system/process_token.h>
 
 #include <filesystem>
 #include <optional>
@@ -53,17 +53,10 @@ CacheAvailability InspectCacheFiles(const std::wstring& folder)
     {
         return available;
     }
-    WIN32_FIND_DATAW data = {};
-    HANDLE find = FindFirstFileW(util::JoinPath(folder, L"*").c_str(), &data);
-    if (find == INVALID_HANDLE_VALUE)
-    {
-        return available;
-    }
-    do
-    {
+    util::ForEachFile(util::JoinPath(folder, L"*").c_str(), [&](const WIN32_FIND_DATAW& data) {
         if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
         {
-            continue;
+            return true;
         }
         available.any = true;
         const wchar_t* name = data.cFileName;
@@ -75,35 +68,9 @@ CacheAvailability InspectCacheFiles(const std::wstring& folder)
         available.dialog_state = available.dialog_state || util::EqualsInsensitive(name, L"dialog_state.ini");
         available.tree_state = available.tree_state || util::EqualsInsensitive(name, L"tree_state.ini");
         available.temporary = available.temporary || HasCachePattern(name, L"export_", L".reg");
-    } while (FindNextFileW(find, &data) != 0);
-    FindClose(find);
+        return true;
+    });
     return available;
-}
-
-bool MenuHasDirectCommand(HMENU menu, UINT command)
-{
-    const int count = menu ? GetMenuItemCount(menu) : 0;
-    for (int position = 0; position < count; ++position)
-    {
-        if (GetMenuItemID(menu, position) == command)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-int SubMenuPosition(HMENU menu, UINT command)
-{
-    const int count = GetMenuItemCount(menu);
-    for (int position = 0; position < count; ++position)
-    {
-        if (MenuHasDirectCommand(GetSubMenu(menu, position), command))
-        {
-            return position;
-        }
-    }
-    return -1;
 }
 
 constexpr int kSimpleModeHidden[] = {
@@ -149,40 +116,6 @@ constexpr int kSimpleModeHidden[] = {
     cmd::kFavoritesExport,
 };
 
-bool IsSeparator(HMENU menu, int position)
-{
-    MENUITEMINFOW item = {};
-    item.cbSize = sizeof(item);
-    item.fMask = MIIM_FTYPE | MIIM_SUBMENU;
-    return GetMenuItemInfoW(menu, position, TRUE, &item) && (item.fType & MFT_SEPARATOR) && !item.hSubMenu;
-}
-
-void RemoveSimpleModeItems(HMENU menu)
-{
-    for (int position = GetMenuItemCount(menu) - 1; position >= 0; --position)
-    {
-        HMENU sub = GetSubMenu(menu, position);
-        const int sub_count = sub ? GetMenuItemCount(sub) : 0;
-        if (sub)
-        {
-            RemoveSimpleModeItems(sub);
-        }
-        const bool emptied = sub && sub_count > 0 && GetMenuItemCount(sub) == 0;
-        const bool hidden = !sub && std::ranges::find(kSimpleModeHidden, static_cast<int>(GetMenuItemID(menu, position))) != std::end(kSimpleModeHidden);
-        if (emptied || hidden)
-        {
-            DeleteMenu(menu, static_cast<UINT>(position), MF_BYPOSITION);
-        }
-    }
-    for (int position = GetMenuItemCount(menu) - 1; position >= 0; --position)
-    {
-        if (IsSeparator(menu, position) && (position == 0 || position == GetMenuItemCount(menu) - 1 || IsSeparator(menu, position - 1)))
-        {
-            DeleteMenu(menu, static_cast<UINT>(position), MF_BYPOSITION);
-        }
-    }
-}
-
 // context menu items that follow selection like menu bar items
 constexpr int kSelectionCommands[] = {
     cmd::kEditPermissions,
@@ -203,21 +136,7 @@ constexpr int kSelectionCommands[] = {
     cmd::kEditCopyKeyPathNativeResolved,
 };
 
-bool IsMenuInside(HMENU root, HMENU menu)
-{
-    const int count = root ? GetMenuItemCount(root) : 0;
-    for (int position = 0; position < count; ++position)
-    {
-        HMENU child = GetSubMenu(root, position);
-        if (child && (child == menu || IsMenuInside(child, menu)))
-        {
-            return true;
-        }
-    }
-    return false;
 }
-
-} // namespace
 
 std::wstring MainWindow::Impl::CommandTooltipText(int command_id) const
 {
@@ -572,12 +491,16 @@ void MainWindow::Impl::BuildMenus()
     {
         for (int command : {cmd::kOptionsReadOnly, cmd::kToolsKeyHandles, cmd::kWindowNew, cmd::kTraceGuide, cmd::kDefaultLoadCustom, cmd::kResearchItemBase})
         {
-            DeleteMenu(menu, static_cast<UINT>(SubMenuPosition(menu, command)), MF_BYPOSITION);
+            const int position = win32ui::SubMenuWithCommand(menu, static_cast<UINT>(command));
+            if (position >= 0)
+            {
+                DeleteMenu(menu, static_cast<UINT>(position), MF_BYPOSITION);
+            }
         }
         ApplySimpleMode(menu);
     }
-    trace_menu_ = IsMenuInside(menu, trace_menu) ? trace_menu : nullptr;
-    default_menu_ = IsMenuInside(menu, default_menu) ? default_menu : nullptr;
+    trace_menu_ = win32ui::MenuContains(menu, trace_menu) ? trace_menu : nullptr;
+    default_menu_ = win32ui::MenuContains(menu, default_menu) ? default_menu : nullptr;
 
     menu_bar_.Attach(hwnd_, menu);
     menu_bar_.ApplyTheme();
@@ -587,7 +510,7 @@ void MainWindow::Impl::ApplySimpleMode(HMENU menu) const
 {
     if (settings_.simple_mode)
     {
-        RemoveSimpleModeItems(menu);
+        win32ui::RemoveMenuCommands(menu, kSimpleModeHidden);
     }
 }
 
@@ -609,7 +532,6 @@ bool MainWindow::Impl::CommandEnabled(int command, CommandState* state)
     const bool writable = !settings_.read_only;
     const RegistryMode mode = session_->mode;
     const HWND values = browse_.values().hwnd();
-    // single selected value that is not simulated
     auto selected_value = [&]() -> const ListRow* {
         if (!state->row_known)
         {
@@ -855,9 +777,9 @@ bool MainWindow::Impl::CommandChecked(int command) const
     case cmd::kOptionsHkcuFollowsUser:
         return settings_.hkcu_follows_shell_user;
     case cmd::kOptionsReplaceRegEdit:
-        return win32::IsRegEditReplacementRegistered(util::GetModulePath());
+        return win32::IsRegEditReplacementRegistered(util::ModulePath());
     case cmd::kOptionsEditContextMenu:
-        return win32::IsEditMenuRegistered(util::GetModulePath());
+        return win32::IsEditMenuRegistered(util::ModulePath());
     case cmd::kOptionsSingleInstance:
         return settings_.single_instance;
     case cmd::kOptionsAutoComplete:
@@ -904,7 +826,7 @@ void MainWindow::Impl::UpdateMenuState(HMENU menu)
     CommandState state{this};
     FillBitfieldMenu(menu);
     RefreshResetDefaultMenu(menu, &state);
-    if (IsMenuInside(GetMenu(hwnd_), menu))
+    if (win32ui::MenuContains(GetMenu(hwnd_), menu))
     {
         FillMenuLists(menu);
         const win32ui::MenuHooks hooks = {
@@ -916,7 +838,7 @@ void MainWindow::Impl::UpdateMenuState(HMENU menu)
             [](void* context, int command) { return static_cast<CommandState*>(context)->window->CommandChecked(command); },
         };
         win32ui::UpdateMenuPopup(menu, hooks);
-        const int save_tabs_position = SubMenuPosition(menu, cmd::kOptionsSaveTabs);
+        const int save_tabs_position = win32ui::SubMenuWithCommand(menu, cmd::kOptionsSaveTabs);
         if (save_tabs_position >= 0)
         {
             CheckMenuItem(menu, static_cast<UINT>(save_tabs_position), MF_BYPOSITION | (settings_.save_tab_kinds != 0 ? MF_CHECKED : MF_UNCHECKED));
@@ -1018,7 +940,7 @@ void MainWindow::Impl::RefreshBundledDefaultsCache()
     bundled_defaults_.clear();
     bundled_defaults_loaded_ = true;
 
-    std::wstring module_dir = util::GetModuleDirectory();
+    std::wstring module_dir = util::ModuleDirectory();
     if (module_dir.empty())
     {
         return;
@@ -1129,4 +1051,4 @@ void MainWindow::Impl::RefreshResetDefaultMenu(HMENU menu, CommandState* state)
     }
 }
 
-} // namespace regkit
+}

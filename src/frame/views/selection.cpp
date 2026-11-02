@@ -129,20 +129,21 @@ void MainWindow::Impl::RestoreValueSelection()
     {
         return;
     }
-    ListView_SetItemState(list, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
     const std::unordered_set<std::wstring> wanted(names.begin(), names.end());
-    bool first = true;
+    win32ui::ListSelection selection;
     const int rows = static_cast<int>(browse_.values().RowCount());
     for (int row_index = 0; row_index < rows; ++row_index)
     {
         const ListRow* row = browse_.values().RowAt(row_index);
-        if (!row || row->kind != rowkind::kValue || !wanted.count(row->extra))
+        if (row && row->kind == rowkind::kValue && wanted.contains(row->extra))
         {
-            continue;
+            selection.rows.push_back(row_index);
         }
-        ListView_SetItemState(list, row_index, LVIS_SELECTED | (first ? LVIS_FOCUSED : 0), LVIS_SELECTED | LVIS_FOCUSED);
-        first = false;
     }
+    // first restored row takes focus and anchors Shift extensions
+    selection.focused = selection.rows.empty() ? -1 : selection.rows.front();
+    selection.mark = selection.focused;
+    win32ui::ApplyListSelection(list, selection);
     const int current_top = ListView_GetTopIndex(list);
     if (top > 0 && top != current_top)
     {
@@ -179,18 +180,7 @@ void MainWindow::Impl::SelectListRowAtIndex(HWND list, int index)
     {
         return;
     }
-    if (index >= count)
-    {
-        index = count - 1;
-    }
-    ListView_SetItemState(list, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
-    ListView_SetItemState(list, index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-    ListView_EnsureVisible(list, index, FALSE);
+    win32ui::SelectOnlyListRow(list, std::min(index, count - 1));
 }
 
-void MainWindow::Impl::HandleTypeToSelectTree(wchar_t ch)
-{
-    browse_.TypeSelectTree(ch, GetTickCount());
 }
-
-} // namespace regkit

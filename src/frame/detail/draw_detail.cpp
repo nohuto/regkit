@@ -43,107 +43,18 @@
 #include "trace/trace_loader.h"
 #include "trace/trace_parser.h"
 #include "ui/feedback.h"
-#include "ui/list_view_support.h"
 #include "win32/file_dialog.h"
 #include "win32/file_text.h"
 #include "win32/process_rights.h"
 #include "win32/registry_native.h"
 #include "win32/restart.h"
 #include "win32/shell_paths.h"
-#include "win32/system_error.h"
 #include "win32/text_transform.h"
 #include "workspace/settings.h"
 #include "workspace/tab_state.h"
 
 namespace regkit::window_detail
 {
-
-bool GetChildRectInParent(HWND parent, HWND child, RECT* rect)
-{
-    if (!parent || !child || !rect)
-    {
-        return false;
-    }
-    if (!GetWindowRect(child, rect))
-    {
-        return false;
-    }
-    MapWindowPoints(nullptr, parent, reinterpret_cast<POINT*>(rect), 2);
-    return true;
-}
-
-void DrawSearchMatchOverlay(HDC hdc, const RECT& cell, std::wstring_view text, int start, int length)
-{
-    if (text.empty() || start < 0 || length <= 0)
-    {
-        return;
-    }
-    int total = static_cast<int>(text.size());
-    if (start >= total)
-    {
-        return;
-    }
-    if (start + length > total)
-    {
-        length = total - start;
-    }
-    constexpr int kMaxOverlayChars = 512;
-    if (total > kMaxOverlayChars)
-    {
-        if (start >= kMaxOverlayChars)
-        {
-            return;
-        }
-        text = text.substr(0, static_cast<size_t>(kMaxOverlayChars));
-        total = kMaxOverlayChars;
-        if (start + length > total)
-        {
-            length = total - start;
-        }
-    }
-    const int available = cell.right - cell.left;
-    SIZE full = {};
-    if (available <= 0 || !GetTextExtentPoint32W(hdc, text.data(), total, &full))
-    {
-        return;
-    }
-    int visible = total;
-    if (full.cx > available)
-    {
-        SIZE ellipsis = {};
-        if (!GetTextExtentPoint32W(hdc, L"...", 3, &ellipsis) || ellipsis.cx >= available)
-        {
-            return;
-        }
-        SIZE fitted = {};
-        if (!GetTextExtentExPointW(hdc, text.data(), total, available - ellipsis.cx, &visible, nullptr, &fitted))
-        {
-            return;
-        }
-    }
-    if (start >= visible)
-    {
-        return;
-    }
-    if (start + length > visible)
-    {
-        length = visible - start;
-    }
-    SIZE prefix = {};
-    if (!GetTextExtentPoint32W(hdc, text.data(), start, &prefix))
-    {
-        return;
-    }
-    const int x = cell.left + prefix.cx;
-    TEXTMETRICW metrics = {};
-    GetTextMetricsW(hdc, &metrics);
-    const int y = cell.top + (cell.bottom - cell.top - metrics.tmHeight) / 2;
-    const int old_mode = SetBkMode(hdc, TRANSPARENT);
-    const COLORREF old_color = SetTextColor(hdc, win32ui::CurrentThemeColors().focus);
-    ExtTextOutW(hdc, x, y, ETO_CLIPPED, &cell, text.data() + start, static_cast<UINT>(length), nullptr);
-    SetTextColor(hdc, old_color);
-    SetBkMode(hdc, old_mode);
-}
 
 int SearchMatchSubItem(const search::Result& result)
 {
@@ -164,4 +75,4 @@ int SearchMatchSubItem(const search::Result& result)
     }
 }
 
-} // namespace regkit::window_detail
+}

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -89,4 +89,4 @@ std::vector<Definition> Matching(const std::wstring& key_path, const std::wstrin
 std::wstring SuggestedFileName(const std::wstring& value_name);
 const wchar_t* FileFilter();
 
-} // namespace regkit::editors::bitfield
+}

@@ -5,9 +5,9 @@
 #include "win32/text_transform.h"
 
 #include "win32/process_rights.h"
-#include "win32/registry_native.h"
 
 #include <win32ui/handle_owner.h>
+#include <win32ui/system/registry_value.h>
 
 #include <shlobj.h>
 
@@ -56,7 +56,7 @@ std::wstring CommandKey(const EditMenu& menu)
 bool RegistryStringEquals(const wchar_t* subkey, const wchar_t* value_name, const std::wstring& expected)
 {
     std::wstring value;
-    return util::ReadRegistryString(HKEY_CURRENT_USER, subkey, value_name, &value) == ERROR_SUCCESS &&
+    return win32ui::ReadRegistryString(HKEY_CURRENT_USER, subkey, value_name, &value, RRF_NOEXPAND) == ERROR_SUCCESS &&
            util::EqualsInsensitive(value, expected);
 }
 
@@ -104,12 +104,12 @@ bool OwnsRegEditDebugger(const std::wstring& debugger, const std::wstring& exe_p
 
 LONG ReadRegEditDebugger(std::wstring* debugger)
 {
-    return util::ReadRegistryString(HKEY_LOCAL_MACHINE, kRegEditImageOptionsKey, L"Debugger", debugger);
+    return win32ui::ReadRegistryString(HKEY_LOCAL_MACHINE, kRegEditImageOptionsKey, L"Debugger", debugger, RRF_NOEXPAND);
 }
 
 LONG WriteRegEditDebugger(const std::wstring& exe_path)
 {
-    return util::WriteRegistryString(HKEY_LOCAL_MACHINE, kRegEditImageOptionsKey, L"Debugger", L"\"" + exe_path + L"\"");
+    return win32ui::WriteRegistryString(HKEY_LOCAL_MACHINE, kRegEditImageOptionsKey, L"Debugger", (L"\"" + exe_path + L"\"").c_str());
 }
 
 LONG DeleteOwnedRegEditDebugger(const std::wstring& exe_path)
@@ -142,7 +142,7 @@ LONG DeleteOwnedRegEditDebugger(const std::wstring& exe_path)
     return ERROR_SUCCESS;
 }
 
-} // namespace
+}
 
 bool IsEditMenuRegistered(const std::wstring& exe_path)
 {
@@ -150,7 +150,7 @@ bool IsEditMenuRegistered(const std::wstring& exe_path)
     {
         std::wstring label;
         if (exe_path.empty() || !RegistryStringEquals(CommandKey(menu).c_str(), nullptr, EditMenuCommand(exe_path)) ||
-            util::ReadRegistryString(HKEY_CURRENT_USER, menu.key, nullptr, &label) != ERROR_SUCCESS || label != kEditMenuLabel ||
+            win32ui::ReadRegistryString(HKEY_CURRENT_USER, menu.key, nullptr, &label, RRF_NOEXPAND) != ERROR_SUCCESS || label != kEditMenuLabel ||
             !RegistryStringEquals(menu.key, L"Icon", exe_path + L",0"))
         {
             return false;
@@ -174,18 +174,18 @@ LONG SetEditMenu(const std::wstring& exe_path, bool enable, LONG* cleanup_error)
     {
         for (const EditMenu& menu : kEditMenus)
         {
-            result = util::WriteRegistryString(HKEY_CURRENT_USER, menu.key, nullptr, kEditMenuLabel);
+            result = win32ui::WriteRegistryString(HKEY_CURRENT_USER, menu.key, nullptr, kEditMenuLabel);
             if (result == ERROR_SUCCESS)
             {
-                result = util::WriteRegistryString(HKEY_CURRENT_USER, menu.key, L"Icon", exe_path + L",0");
+                result = win32ui::WriteRegistryString(HKEY_CURRENT_USER, menu.key, L"Icon", (exe_path + L",0").c_str());
             }
             if (result == ERROR_SUCCESS && menu.applies_to)
             {
-                result = util::WriteRegistryString(HKEY_CURRENT_USER, menu.key, L"AppliesTo", menu.applies_to);
+                result = win32ui::WriteRegistryString(HKEY_CURRENT_USER, menu.key, L"AppliesTo", menu.applies_to);
             }
             if (result == ERROR_SUCCESS)
             {
-                result = util::WriteRegistryString(HKEY_CURRENT_USER, CommandKey(menu).c_str(), nullptr, EditMenuCommand(exe_path));
+                result = win32ui::WriteRegistryString(HKEY_CURRENT_USER, CommandKey(menu).c_str(), nullptr, EditMenuCommand(exe_path).c_str());
             }
             if (result != ERROR_SUCCESS)
             {
@@ -206,7 +206,6 @@ LONG SetEditMenu(const std::wstring& exe_path, bool enable, LONG* cleanup_error)
     {
         result = DeleteEditMenu();
     }
-    // refresh Explorer after file association changes
     SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     return result;
 }
@@ -263,4 +262,4 @@ LONG SetRegEditReplacement(const std::wstring& exe_path, bool enable, bool* conf
     return ERROR_ALREADY_EXISTS;
 }
 
-} // namespace regkit::win32
+}

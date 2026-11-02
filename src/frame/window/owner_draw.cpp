@@ -20,8 +20,21 @@ void MainWindow::Impl::DrawPanelButton(const DRAWITEMSTRUCT* info)
     const RECT& rect = info->rcItem;
     const bool header = info->CtlID == kTreeHeaderCloseId || info->CtlID == kHistoryHeaderCloseId;
     const bool pressed = (info->itemState & ODS_SELECTED) != 0;
-    FillRect(hdc, &rect, win32ui::CachedBrush(pressed ? colors.hover : header ? colors.header
-                                                                              : colors.surface));
+    // close glyphs look like the close buttons of the tab strip
+    const bool glyph = info->CtlID != kAddressGoId;
+    COLORREF fill = header ? colors.header : colors.surface;
+    COLORREF mark = colors.muted_text;
+    if (pressed)
+    {
+        fill = glyph ? colors.selection : colors.hover;
+        mark = colors.selection_text;
+    }
+    else if (glyph && info->hwndItem == hot_close_button_)
+    {
+        fill = colors.hover;
+        mark = colors.text;
+    }
+    FillRect(hdc, &rect, win32ui::CachedBrush(fill));
     const UINT dpi = win32ui::DpiForWindow(info->hwndItem);
     if (!header)
     {
@@ -30,9 +43,9 @@ void MainWindow::Impl::DrawPanelButton(const DRAWITEMSTRUCT* info)
         LineTo(hdc, rect.left, rect.bottom - 3);
         SelectObject(hdc, old_pen);
     }
-    if (info->CtlID != kAddressGoId)
+    if (glyph)
     {
-        win32ui::DrawCloseGlyph(hdc, rect, colors.muted_text, dpi);
+        win32ui::DrawCloseGlyph(hdc, rect, mark, dpi);
         return;
     }
     const int icon_size = win32ui::ScaleForDpi(win32ui::kIconDip, dpi);
@@ -48,4 +61,4 @@ void MainWindow::Impl::DrawPanelButton(const DRAWITEMSTRUCT* info)
     }
 }
 
-} // namespace regkit
+}

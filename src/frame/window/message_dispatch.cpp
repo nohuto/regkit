@@ -82,4 +82,4 @@ MessageArea ClassifyMessage(UINT message) noexcept
     }
 }
 
-} // namespace regkit::frame
+}

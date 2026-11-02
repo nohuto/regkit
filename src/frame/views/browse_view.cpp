@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include <win32ui/gdi/icon_loader.h>
+#include <win32ui/window.h>
 #include <win32ui/window_metrics.h>
 
 #include <functional>
@@ -149,8 +150,7 @@ void MainWindow::Impl::CreateHistoryColumns()
 namespace
 {
 
-// hidden and unavailable columns keep subitems at width 0
-// unavailable columns also stay out of the header menu
+// hidden and unavailable columns keep subitems at width 0, unavailable columns also stay out of the header menu
 void ApplyListColumns(HWND list, const ui::ColumnSet& set, const std::function<bool(size_t)>& unavailable = nullptr)
 {
     std::vector<win32ui::ListColumn> columns(set.items.size());
@@ -164,22 +164,12 @@ void ApplyListColumns(HWND list, const ui::ColumnSet& set, const std::function<b
         columns[i].visible = i >= set.visible.size() || set.visible[i];
         columns[i].available = !unavailable || !unavailable(i);
     }
-    HWND header = ListView_GetHeader(list);
-    SendMessageW(list, WM_SETREDRAW, FALSE, 0);
-    if (header)
-    {
-        SendMessageW(header, WM_SETREDRAW, FALSE, 0);
-    }
+    const win32ui::RedrawScope list_redraw(list, RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
+    const win32ui::RedrawScope header_redraw(ListView_GetHeader(list), 0);
     win32ui::SetListColumns(list, columns);
-    if (header)
-    {
-        SendMessageW(header, WM_SETREDRAW, TRUE, 0);
-    }
-    SendMessageW(list, WM_SETREDRAW, TRUE, 0);
-    RedrawWindow(list, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
 }
 
-} // namespace
+}
 
 void MainWindow::Impl::ApplyValueColumns()
 {
@@ -452,7 +442,15 @@ void MainWindow::Impl::UpdateValueListForNode(RegistryNode* node)
     task->trace_data_list = std::move(trace_data_list);
     task->default_data_list = std::move(default_data_list);
     task->hive_roots = show_keys_in_list ? hive_roots_ : nullptr;
-    value_loader_.Submit(std::move(task));
+    bool accepted = false;
+    value_loader_.Submit(std::move(task), &accepted);
+    // worker couldnt start, shown as unreadable instead of empty, the next selection or F5 tries again
+    if (!accepted)
+    {
+        value_list_loading_ = false;
+        value_list_error_ = ERROR_NOT_ENOUGH_MEMORY;
+        UpdateStatus();
+    }
 }
 
 void MainWindow::Impl::ScheduleValueListRename(LPARAM kind, const std::wstring& name)
@@ -571,17 +569,10 @@ void MainWindow::Impl::UpdateAddressBar(RegistryNode* node)
         return;
     }
     const std::wstring path = node ? registry_path::Build(*node) : std::wstring();
-    if (static_cast<size_t>(GetWindowTextLengthW(address)) == path.size())
+    if (!win32ui::SetTextIfChanged(address, path.c_str()))
     {
-        std::wstring current(path.size() + 1, L'\0');
-        GetWindowTextW(address, current.data(), static_cast<int>(current.size()));
-        current.resize(path.size());
-        if (current == path)
-        {
-            return;
-        }
+        return;
     }
-    SetWindowTextW(address, path.c_str());
     const int end = static_cast<int>(path.size());
     SendMessageW(address, EM_SETSEL, end, end);
     SendMessageW(address, EM_SCROLLCARET, 0, 0);
@@ -591,17 +582,10 @@ void MainWindow::Impl::UpdateAddressBar(RegistryNode* node)
 void MainWindow::Impl::UpdateGoButtonState()
 {
     HWND go = browse_.go_button();
-    if (!go)
+    if (go && win32ui::SetEnabled(go, GetWindowTextLengthW(browse_.address()) > 0))
     {
-        return;
+        InvalidateRect(go, nullptr, TRUE);
     }
-    const bool enabled = GetWindowTextLengthW(browse_.address()) > 0;
-    if ((IsWindowEnabled(go) != FALSE) == enabled)
-    {
-        return;
-    }
-    EnableWindow(go, enabled);
-    InvalidateRect(go, nullptr, TRUE);
 }
 
-} // namespace regkit
+}

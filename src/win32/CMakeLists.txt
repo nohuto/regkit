@@ -7,13 +7,6 @@ regkit_add_library(regkit_win32
     restart.cpp
     shell_integration.cpp
     shell_paths.cpp
-    system_error.cpp
-    text_transform.cpp
     translation.cpp
 )
 target_link_libraries(regkit_win32 PUBLIC win32ui::win32ui)
-
-target_link_libraries(regkit_win32 PRIVATE
-    userenv
-    wtsapi32
-)

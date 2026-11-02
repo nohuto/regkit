@@ -4,7 +4,8 @@
 #pragma once
 
 #include "trace/trace_data.h"
-#include "win32/windows_config.h"
+
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -38,4 +39,4 @@ bool ShowTraceDialog(HWND owner, const TraceDialogOptions& options, trace::Selec
 void TraceDialogPostEntries(HWND dialog, std::vector<KeyValueDialogEntry>* entries);
 void TraceDialogPostDone(HWND dialog, bool done);
 
-} // namespace regkit
+}

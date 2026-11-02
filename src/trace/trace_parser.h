@@ -25,4 +25,4 @@ bool ParseEntries(std::string_view buffer, const Normalizers& normalizers, const
 
 bool Parse(const std::wstring& label, const std::wstring& source, std::string_view buffer, const Normalizers& normalizers, Data* data, std::wstring* error, const std::atomic_bool* cancel = nullptr);
 
-} // namespace regkit::trace
+}

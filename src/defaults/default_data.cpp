@@ -57,4 +57,4 @@ void Merge(Data* data, const std::vector<Entry>& entries, const AliasPath& alias
     }
 }
 
-} // namespace regkit::defaults
+}

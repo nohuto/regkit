@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -72,4 +72,4 @@ bool Transform(TransformId id, DWORD type, const std::vector<BYTE>& source, std:
 Decoded Decode(DecoderId id, const BYTE* data, size_t size);
 DecoderId Suggest(const std::wstring& key_path, const std::wstring& value_name, size_t size);
 
-} // namespace regkit::value_decoder
+}

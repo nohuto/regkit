@@ -3,39 +3,23 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
-
-#include <win32ui/handle_owner.h>
+#include <win32ui/system/process_token.h>
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
-#include <initializer_list>
 #include <string>
-#include <vector>
 
 namespace regkit::util
 {
 
-bool EnableTokenPrivilege(HANDLE token, const wchar_t* name, TOKEN_PRIVILEGES* previous = nullptr);
-
-class PrivilegeScope
-{
-  public:
-    explicit PrivilegeScope(std::initializer_list<const wchar_t*> names);
-    ~PrivilegeScope();
-    PrivilegeScope(const PrivilegeScope&) = delete;
-    PrivilegeScope& operator=(const PrivilegeScope&) = delete;
-
-    bool held() const noexcept
-    {
-        return held_;
-    }
-
-  private:
-    win32ui::UniqueHandle token_;
-    std::vector<LUID> enabled_;
-    bool held_ = false;
-};
+using win32ui::AccountName;
+using win32ui::IsProcessPrivileged;
+using win32ui::IsUacEnabled;
+using win32ui::IsWritableByNonAdmins;
+using win32ui::OpenShellToken;
+using win32ui::PrivilegeScope;
+using win32ui::ShellUserMatchesProcess;
 
 // HKEY_CURRENT_USER follows the signed in user while enabled
 std::wstring GetCurrentUserSidString();
@@ -45,15 +29,6 @@ bool ShellUserDiffers();
 void SetCurrentUserFollowsShell(bool enable);
 bool CurrentUserFollowsShell();
 HKEY MapCurrentUserRoot(HKEY root);
-std::wstring AccountName(const std::wstring& sid);
-std::wstring GetShellUserDocuments();
-std::wstring GetProcessImagePath(DWORD process_id);
-bool IsProcessPrivileged();
-bool IsWritableByNonAdmins(const std::wstring& file_path);
-bool IsUacEnabled();
-win32ui::UniqueHandle OpenShellToken(DWORD access);
-// also false if shell window is absent or its account cannot be read
-bool ShellUserMatchesProcess();
 struct ServiceState
 {
     DWORD state = 0;
@@ -62,8 +37,5 @@ struct ServiceState
 LONG QueryRemoteRegistryService(const std::wstring& machine, ServiceState* state);
 LONG StartRemoteRegistryService(const std::wstring& machine, bool enable);
 LONG StopRemoteRegistryService(const std::wstring& machine, DWORD start_type);
-bool LaunchProcessAsSystem(const std::wstring& command_line, const std::wstring& work_dir, DWORD* error_code = nullptr, bool* impersonation_lost = nullptr);
-bool LaunchProcessAsShellUser(const std::wstring& command_line, const std::wstring& work_dir, DWORD* error_code = nullptr, bool* impersonation_lost = nullptr);
-bool LaunchProcessAsTrustedInstaller(const std::wstring& command_line, const std::wstring& work_dir, DWORD* error_code = nullptr, bool* impersonation_lost = nullptr);
 
-} // namespace regkit::util
+}

@@ -12,6 +12,8 @@
 #include "registry/registry_path.h"
 #include "win32/translation.h"
 
+#include <win32ui/window.h>
+
 namespace regkit
 {
 using namespace command_detail;
@@ -57,8 +59,7 @@ bool MainWindow::Impl::HandleToolsCommand(int command_id)
     case cmd::kToolsKeyHandles:
         if (IsWindow(key_handles_window_))
         {
-            ShowWindow(key_handles_window_, SW_RESTORE);
-            SetForegroundWindow(key_handles_window_);
+            win32ui::BringToFront(key_handles_window_);
             return true;
         }
         key_handles_window_ = ShowKeyHandlesWindow(hwnd_, [this](const std::wstring& path, bool new_tab) {
@@ -115,4 +116,4 @@ bool MainWindow::Impl::HandleToolsCommand(int command_id)
     }
 }
 
-} // namespace regkit
+}

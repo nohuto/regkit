@@ -153,13 +153,13 @@ bool ParseTaggedFields(const std::vector<std::wstring>& fields, PersistedTab* ta
     return true;
 }
 
-} // namespace
+}
 
 TabState ParseTabs(const std::wstring& content, std::wstring* error)
 {
     TabState state;
     size_t line_number = 0;
-    for (const std::wstring_view line : record_fields::Lines(content))
+    for (const std::wstring_view line : win32ui::LineViews(content))
     {
         ++line_number;
         if (line.empty())
@@ -251,7 +251,7 @@ bool LoadTabs(const std::wstring& path, TabState* state, std::wstring* error)
 
 bool SaveTabs(const std::wstring& path, const TabState& state)
 {
-    return !path.empty() && util::WriteTextFile(path, SerializeTabs(state), false);
+    return !path.empty() && win32ui::WriteTextFileAtomic(path.c_str(), SerializeTabs(state)) == ERROR_SUCCESS;
 }
 
-} // namespace regkit::workspace
+}

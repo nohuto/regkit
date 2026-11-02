@@ -46,7 +46,7 @@ TreeState ParseTreeState(const std::wstring& content, std::wstring* error)
 {
     TreeState state;
     size_t line_number = 0;
-    for (const std::wstring_view line : record_fields::Lines(content))
+    for (const std::wstring_view line : win32ui::LineViews(content))
     {
         ++line_number;
         if (line.empty())
@@ -125,7 +125,7 @@ bool LoadTreeState(const std::wstring& path, TreeState* state, std::wstring* err
 
 bool SaveTreeState(const std::wstring& path, const TreeState& state)
 {
-    return !path.empty() && util::WriteTextFile(path, SerializeTreeState(state), false);
+    return !path.empty() && win32ui::WriteTextFileAtomic(path.c_str(), SerializeTreeState(state)) == ERROR_SUCCESS;
 }
 
-} // namespace regkit::workspace
+}

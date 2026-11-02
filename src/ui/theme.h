@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
-
 #include <win32ui/theme/theme.h>
+#include <win32ui/window.h>
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -14,6 +14,6 @@
 namespace regkit
 {
 
-void EnsureSubclass(HWND hwnd, SUBCLASSPROC proc, UINT_PTR id, DWORD_PTR data = 0);
+using win32ui::EnsureSubclass;
 
-} // namespace regkit
+}

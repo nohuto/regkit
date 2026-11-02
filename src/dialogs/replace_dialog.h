@@ -4,7 +4,8 @@
 #pragma once
 
 #include "search/replace.h"
-#include "win32/windows_config.h"
+
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -23,4 +24,4 @@ using ReplaceDialogResult = search::ReplaceOptions;
 bool ShowReplaceDialog(HWND owner, ReplaceDialogResult* result);
 void ReplaceDialogFields(workspace::DialogFields& fields, ReplaceDialogResult* result);
 
-} // namespace regkit
+}

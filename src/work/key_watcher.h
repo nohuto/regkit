@@ -3,9 +3,8 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
-
 #include <win32ui/handle_owner.h>
+#include <win32ui/windows_config.h>
 
 #include <atomic>
 #include <cstdint>
@@ -48,4 +47,4 @@ class KeyWatcher
     win32ui::UniqueHandle rearm_;
 };
 
-} // namespace regkit::work
+}

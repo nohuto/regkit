@@ -3,86 +3,18 @@
 
 #include "win32/process_rights.h"
 #include "win32/restart.h"
-#include "win32/shell_paths.h"
 #include "win32/text_transform.h"
 
-#include <algorithm>
 #include <atomic>
-#include <mutex>
-#include <new>
 #include <vector>
 
-#include <aclapi.h>
-#include <sddl.h>
-#include <shlobj.h>
-#include <userenv.h>
-#include <winsvc.h>
-#include <wtsapi32.h>
-
 #include <win32ui/handle_owner.h>
-#include <win32ui/process_token.h>
+#include <win32ui/system/service_control.h>
 
 namespace regkit::util
 {
 namespace
 {
-
-struct DestroyEnvironment
-{
-    void operator()(LPVOID block) const noexcept
-    {
-        DestroyEnvironmentBlock(block);
-    }
-};
-
-struct CloseService
-{
-    void operator()(SC_HANDLE service) const noexcept
-    {
-        CloseServiceHandle(service);
-    }
-};
-
-using UniqueEnvironment = win32ui::UniqueNullable<LPVOID, DestroyEnvironment>;
-using UniqueService = win32ui::UniqueNullable<SC_HANDLE, CloseService>;
-
-constexpr DWORD kNoSession = static_cast<DWORD>(-1);
-
-std::vector<BYTE> TokenInformation(HANDLE token, TOKEN_INFORMATION_CLASS type)
-{
-    DWORD size = 0;
-    GetTokenInformation(token, type, nullptr, 0, &size);
-    std::vector<BYTE> buffer(size);
-    if (size == 0 || !GetTokenInformation(token, type, buffer.data(), size, &size))
-    {
-        buffer.clear();
-    }
-    return buffer;
-}
-
-std::vector<BYTE> CurrentTokenInformation(TOKEN_INFORMATION_CLASS type)
-{
-    win32ui::UniqueHandle token;
-    return OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, token.put()) ? TokenInformation(token.get(), type)
-                                                                           : std::vector<BYTE>();
-}
-
-PSID CurrentUserSid(const std::vector<BYTE>& buffer)
-{
-    return buffer.empty() ? nullptr : reinterpret_cast<const TOKEN_USER*>(buffer.data())->User.Sid;
-}
-
-std::wstring UserSidString(const std::vector<BYTE>& user)
-{
-    win32ui::UniqueLocal<LPWSTR> sid;
-    return !user.empty() && ConvertSidToStringSidW(CurrentUserSid(user), sid.put()) ? std::wstring(sid.get()) : std::wstring();
-}
-
-const std::wstring& ProcessUserSid()
-{
-    static const std::wstring cached = UserSidString(CurrentTokenInformation(TokenUser));
-    return cached;
-}
 
 // signed in desktop user hives, set only when process user differs
 struct ShellUserRoots
@@ -97,8 +29,8 @@ const ShellUserRoots& ShellRoots()
     static const ShellUserRoots roots = [] {
         ShellUserRoots result;
         const win32ui::UniqueHandle token = OpenShellToken(TOKEN_QUERY);
-        result.sid = token ? UserSidString(TokenInformation(token.get(), TokenUser)) : win32::RestartUserSid();
-        if (result.sid.empty() || EqualsInsensitive(result.sid, ProcessUserSid()) ||
+        result.sid = token ? win32ui::TokenUserSid(token.get()) : win32::RestartUserSid();
+        if (result.sid.empty() || EqualsInsensitive(result.sid, win32ui::ProcessUserSid()) ||
             RegOpenKeyExW(HKEY_USERS, result.sid.c_str(), 0, MAXIMUM_ALLOWED, result.user.put()) != ERROR_SUCCESS)
         {
             result.sid.clear();
@@ -115,452 +47,29 @@ const ShellUserRoots& ShellRoots()
 
 std::atomic_bool g_follow_shell_user{false};
 
-DWORD GetActiveSessionId()
+win32ui::UniqueService OpenRemoteRegistry(const std::wstring& machine, DWORD access, LONG* error)
 {
-    DWORD current = 0;
-    if (ProcessIdToSessionId(GetCurrentProcessId(), &current))
-    {
-        return current;
-    }
-    DWORD count = 0;
-    PWTS_SESSION_INFOW sessions = nullptr;
-    if (!WTSEnumerateSessionsW(WTS_CURRENT_SERVER_HANDLE, 0, 1, &sessions, &count))
-    {
-        return kNoSession;
-    }
-    DWORD active_session = kNoSession;
-    for (DWORD i = 0; i < count; ++i)
-    {
-        if (sessions[i].State == WTS_CONNECTSTATE_CLASS::WTSActive)
-        {
-            active_session = sessions[i].SessionId;
-            break;
-        }
-    }
-    WTSFreeMemory(sessions);
-    return active_session;
-}
-
-bool OpenSystemToken(DWORD session_id, HANDLE* token)
-{
-    DWORD lsass_pid = 0;
-    DWORD winlogon_pid = 0;
-    DWORD process_count = 0;
-    PWTS_PROCESS_INFOW processes = nullptr;
-    if (WTSEnumerateProcessesW(WTS_CURRENT_SERVER_HANDLE, 0, 1, &processes, &process_count))
-    {
-        for (DWORD i = 0; i < process_count; ++i)
-        {
-            const auto& process = processes[i];
-            if (!process.pProcessName || !process.pUserSid ||
-                !IsWellKnownSid(process.pUserSid, WELL_KNOWN_SID_TYPE::WinLocalSystemSid))
-            {
-                continue;
-            }
-            if (lsass_pid == 0 && process.SessionId == 0 && EqualsInsensitive(process.pProcessName, L"lsass.exe"))
-            {
-                lsass_pid = process.ProcessId;
-            }
-            else if (winlogon_pid == 0 && process.SessionId == session_id &&
-                     EqualsInsensitive(process.pProcessName, L"winlogon.exe"))
-            {
-                winlogon_pid = process.ProcessId;
-            }
-        }
-        WTSFreeMemory(processes);
-    }
-
-    win32ui::UniqueHandle system_process;
-    // prefer session zero SYSTEM token and fall back to the active session
-    if (lsass_pid != 0)
-    {
-        system_process.reset(OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, lsass_pid));
-    }
-    if (!system_process && winlogon_pid != 0)
-    {
-        system_process.reset(OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, winlogon_pid));
-    }
-    if (!system_process)
-    {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return false;
-    }
-    return OpenProcessToken(system_process.get(), TOKEN_DUPLICATE, token) != FALSE;
-}
-
-bool EnableAllPrivileges(HANDLE token)
-{
-    std::vector<BYTE> buffer = TokenInformation(token, TokenPrivileges);
-    if (buffer.empty())
-    {
-        return false;
-    }
-    auto* privileges = reinterpret_cast<TOKEN_PRIVILEGES*>(buffer.data());
-    for (DWORD i = 0; i < privileges->PrivilegeCount; ++i)
-    {
-        privileges->Privileges[i].Attributes = SE_PRIVILEGE_ENABLED;
-    }
-    AdjustTokenPrivileges(token, FALSE, privileges, static_cast<DWORD>(buffer.size()), nullptr, nullptr);
-    return GetLastError() == ERROR_SUCCESS;
-}
-
-bool QueryServiceProcess(SC_HANDLE service, SERVICE_STATUS_PROCESS* status)
-{
-    DWORD bytes = 0;
-    return QueryServiceStatusEx(service, SC_STATUS_PROCESS_INFO, reinterpret_cast<LPBYTE>(status), sizeof(SERVICE_STATUS_PROCESS), &bytes) != FALSE;
-}
-
-bool WaitWhileServicePending(SC_HANDLE service, DWORD pending_state, SERVICE_STATUS_PROCESS* status)
-{
-    constexpr ULONGLONG kMaxWaitMs = 60000;
-    const ULONGLONG start = GetTickCount64();
-    DWORD checkpoint = status->dwCheckPoint;
-    ULONGLONG progress = start;
-    while (status->dwCurrentState == pending_state)
-    {
-        Sleep(std::clamp<DWORD>(status->dwWaitHint / 10, 100, 2000));
-        if (!QueryServiceProcess(service, status))
-        {
-            return false;
-        }
-        const ULONGLONG now = GetTickCount64();
-        if (status->dwCheckPoint > checkpoint)
-        {
-            checkpoint = status->dwCheckPoint;
-            progress = now;
-        }
-        if (now - progress > std::max<ULONGLONG>(status->dwWaitHint, 5000) || now - start > kMaxWaitMs)
-        {
-            SetLastError(ERROR_SERVICE_REQUEST_TIMEOUT);
-            return false;
-        }
-    }
-    return true;
-}
-
-UniqueService OpenRemoteRegistry(const std::wstring& machine, DWORD access, LONG* error)
-{
-    UniqueService scm(OpenSCManagerW(machine.c_str(), nullptr, SC_MANAGER_CONNECT));
-    UniqueService service(scm ? OpenServiceW(scm.get(), L"RemoteRegistry", access) : nullptr);
+    win32ui::UniqueService scm(OpenSCManagerW(machine.c_str(), nullptr, SC_MANAGER_CONNECT));
+    win32ui::UniqueService service(scm ? OpenServiceW(scm.get(), L"RemoteRegistry", access) : nullptr);
     *error = service ? ERROR_SUCCESS : static_cast<LONG>(GetLastError());
     return service;
 }
 
-bool OpenServiceProcessToken(const wchar_t* service_name, HANDLE* token)
-{
-    UniqueService scm(OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT));
-    UniqueService service(scm ? OpenServiceW(scm.get(), service_name, SERVICE_QUERY_STATUS | SERVICE_START) : nullptr);
-    SERVICE_STATUS_PROCESS status = {};
-    if (!service || !QueryServiceProcess(service.get(), &status) ||
-        !WaitWhileServicePending(service.get(), SERVICE_STOP_PENDING, &status))
-    {
-        return false;
-    }
-    if (status.dwCurrentState == SERVICE_STOPPED)
-    {
-        if (!StartServiceW(service.get(), 0, nullptr) && GetLastError() != ERROR_SERVICE_ALREADY_RUNNING)
-        {
-            return false;
-        }
-        if (!QueryServiceProcess(service.get(), &status))
-        {
-            return false;
-        }
-    }
-    if (!WaitWhileServicePending(service.get(), SERVICE_START_PENDING, &status))
-    {
-        return false;
-    }
-    if (status.dwCurrentState != SERVICE_RUNNING || status.dwProcessId == 0)
-    {
-        DWORD error = status.dwWin32ExitCode == ERROR_SERVICE_SPECIFIC_ERROR ? status.dwServiceSpecificExitCode
-                                                                             : status.dwWin32ExitCode;
-        SetLastError(error != ERROR_SUCCESS ? error : ERROR_SERVICE_NOT_ACTIVE);
-        return false;
-    }
-    win32ui::UniqueHandle process(OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, status.dwProcessId));
-    return process && OpenProcessToken(process.get(), MAXIMUM_ALLOWED, token);
-}
-
-bool LaunchWithToken(HANDLE token, const std::wstring& command_line, const std::wstring& work_dir, bool as_user)
-{
-    UniqueEnvironment env;
-    if (!CreateEnvironmentBlock(env.put(), token, FALSE))
-    {
-        return false;
-    }
-    STARTUPINFOW startup = {};
-    startup.cb = sizeof(startup);
-    startup.lpDesktop = const_cast<LPWSTR>(L"winsta0\\default");
-    PROCESS_INFORMATION process = {};
-    std::wstring command = command_line;
-    const wchar_t* directory = work_dir.empty() ? nullptr : work_dir.c_str();
-    const BOOL launched =
-        as_user ? CreateProcessAsUserW(token, nullptr, command.data(), nullptr, nullptr, FALSE, CREATE_UNICODE_ENVIRONMENT, env.get(), directory, &startup, &process)
-                : CreateProcessWithTokenW(token, 0, nullptr, command.data(), CREATE_UNICODE_ENVIRONMENT, env.get(), directory, &startup, &process);
-    if (!launched)
-    {
-        return false;
-    }
-    CloseHandle(process.hThread);
-    CloseHandle(process.hProcess);
-    return true;
-}
-
-bool LaunchElevatedToken(const std::wstring& command_line, const std::wstring& work_dir, const wchar_t* service_name)
-{
-    win32ui::UniqueHandle current_token;
-    win32ui::UniqueHandle current_impersonation;
-    win32ui::UniqueHandle system_token;
-    win32ui::UniqueHandle system_impersonation;
-    win32ui::UniqueHandle source_token;
-    win32ui::UniqueHandle target_token;
-    DWORD session_id = kNoSession;
-    // get debug access before opening a protected SYSTEM process
-    if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, current_token.put()) ||
-        !DuplicateTokenEx(current_token.get(), MAXIMUM_ALLOWED, nullptr, SecurityImpersonation, TokenImpersonation, current_impersonation.put()) ||
-        !EnableTokenPrivilege(current_impersonation.get(), SE_DEBUG_NAME) ||
-        !SetThreadToken(nullptr, current_impersonation.get()))
-    {
-        return false;
-    }
-    session_id = GetActiveSessionId();
-    if (session_id == kNoSession)
-    {
-        SetLastError(ERROR_NO_TOKEN);
-        return false;
-    }
-    if (!OpenSystemToken(session_id, system_token.put()) ||
-        !DuplicateTokenEx(system_token.get(), MAXIMUM_ALLOWED, nullptr, SecurityImpersonation, TokenImpersonation, system_impersonation.put()) ||
-        !EnableAllPrivileges(system_impersonation.get()) || !SetThreadToken(nullptr, system_impersonation.get()))
-    {
-        return false;
-    }
-    if (service_name && !OpenServiceProcessToken(service_name, source_token.put()))
-    {
-        return false;
-    }
-    // attach primary token to the active session before launching the UI
-    return DuplicateTokenEx(service_name ? source_token.get() : system_token.get(), MAXIMUM_ALLOWED, nullptr, SecurityIdentification, TokenPrimary, target_token.put()) &&
-           SetTokenInformation(target_token.get(), TokenSessionId, &session_id, sizeof(session_id)) &&
-           EnableAllPrivileges(target_token.get()) && LaunchWithToken(target_token.get(), command_line, work_dir, true);
-}
-
-bool ReportLaunch(bool launched, DWORD* error_code)
-{
-    const DWORD error = launched ? ERROR_SUCCESS : GetLastError();
-    if (error_code)
-    {
-        *error_code = error;
-    }
-    SetLastError(error);
-    return launched;
-}
-
-bool LaunchImpersonated(const std::wstring& command_line, const std::wstring& work_dir, const wchar_t* service_name, DWORD* error_code, bool* impersonation_lost)
-{
-    if (impersonation_lost)
-    {
-        *impersonation_lost = false;
-    }
-    if (command_line.empty())
-    {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return ReportLaunch(false, error_code);
-    }
-    win32ui::UniqueHandle previous_thread_token;
-    const bool had_thread_token = OpenThreadToken(GetCurrentThread(), TOKEN_IMPERSONATE | TOKEN_QUERY, TRUE, previous_thread_token.put()) != FALSE;
-    if (!had_thread_token && GetLastError() != ERROR_NO_TOKEN)
-    {
-        return ReportLaunch(false, error_code);
-    }
-    bool launched = false;
-    try
-    {
-        launched = LaunchElevatedToken(command_line, work_dir, service_name);
-    }
-    catch (const std::bad_alloc&)
-    {
-        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-    }
-    DWORD error = launched ? ERROR_SUCCESS : GetLastError();
-    if (had_thread_token ? !SetThreadToken(nullptr, previous_thread_token.get()) : !RevertToSelf())
-    {
-        error = GetLastError();
-        if (impersonation_lost)
-        {
-            *impersonation_lost = true;
-        }
-    }
-    if (error_code)
-    {
-        *error_code = error;
-    }
-    SetLastError(error);
-    return launched;
-}
-
-bool GrantsWriteToNonAdmins(const std::wstring& path, const std::vector<std::vector<BYTE>>& trusted_sids)
-{
-    constexpr ACCESS_MASK kWriteAccess = FILE_WRITE_DATA | FILE_APPEND_DATA | FILE_WRITE_EA | FILE_WRITE_ATTRIBUTES |
-                                         FILE_DELETE_CHILD | DELETE | WRITE_DAC | WRITE_OWNER | GENERIC_WRITE |
-                                         GENERIC_ALL;
-    PSECURITY_DESCRIPTOR descriptor = nullptr;
-    PSID owner = nullptr;
-    PACL dacl = nullptr;
-    if (GetNamedSecurityInfoW(path.c_str(), SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, &owner, nullptr, &dacl, nullptr, &descriptor) != ERROR_SUCCESS)
-    {
-        return true;
-    }
-    const auto trusted = [&](PSID sid) {
-        return std::any_of(trusted_sids.begin(), trusted_sids.end(), [&](const std::vector<BYTE>& entry) {
-            return EqualSid(const_cast<PSID>(static_cast<const void*>(entry.data())), sid) != FALSE;
-        });
-    };
-    bool writable = !owner || !dacl || !trusted(owner);
-    for (DWORD index = 0; dacl && !writable && index < dacl->AceCount; ++index)
-    {
-        void* entry = nullptr;
-        if (!GetAce(dacl, index, &entry))
-        {
-            writable = true;
-            break;
-        }
-        const auto* header = static_cast<const ACE_HEADER*>(entry);
-        if ((header->AceFlags & INHERIT_ONLY_ACE) != 0 || header->AceType == ACCESS_DENIED_ACE_TYPE ||
-            header->AceType == ACCESS_DENIED_CALLBACK_ACE_TYPE)
-        {
-            continue;
-        }
-        const auto* ace = static_cast<const ACCESS_ALLOWED_ACE*>(entry);
-        writable =
-            (header->AceType != ACCESS_ALLOWED_ACE_TYPE && header->AceType != ACCESS_ALLOWED_CALLBACK_ACE_TYPE) ||
-            ((ace->Mask & kWriteAccess) != 0 && !trusted(const_cast<PSID>(static_cast<const void*>(&ace->SidStart))));
-    }
-    LocalFree(descriptor);
-    return writable;
-}
-
-} // namespace
-
-bool EnableTokenPrivilege(HANDLE token, const wchar_t* name, TOKEN_PRIVILEGES* previous)
-{
-    TOKEN_PRIVILEGES privileges = {};
-    privileges.PrivilegeCount = 1;
-    privileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-    DWORD previous_size = previous ? sizeof(TOKEN_PRIVILEGES) : 0;
-    return LookupPrivilegeValueW(nullptr, name, &privileges.Privileges[0].Luid) &&
-           AdjustTokenPrivileges(token, FALSE, &privileges, previous_size, previous, previous ? &previous_size : nullptr) &&
-           GetLastError() == ERROR_SUCCESS;
-}
-
-namespace
-{
-
-// scopes share process token across threads, first enables privilege, last restores it
-struct PrivilegeHold
-{
-    LUID luid = {};
-    int count = 0;
-    TOKEN_PRIVILEGES previous = {};
-};
-std::mutex g_hold_mutex;
-std::vector<PrivilegeHold> g_holds;
-
-std::vector<PrivilegeHold>::iterator FindHold(const LUID& luid)
-{
-    return std::find_if(g_holds.begin(), g_holds.end(), [&luid](const PrivilegeHold& hold) {
-        return hold.luid.LowPart == luid.LowPart && hold.luid.HighPart == luid.HighPart;
-    });
-}
-
-} // namespace
-
-PrivilegeScope::PrivilegeScope(std::initializer_list<const wchar_t*> names)
-{
-    enabled_.reserve(names.size());
-    held_ = OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, token_.put()) != FALSE;
-    const std::lock_guard<std::mutex> lock(g_hold_mutex);
-    for (const wchar_t* name : names)
-    {
-        LUID luid = {};
-        held_ = held_ && LookupPrivilegeValueW(nullptr, name, &luid);
-        if (!held_)
-        {
-            break;
-        }
-        if (const auto hold = FindHold(luid); hold != g_holds.end())
-        {
-            ++hold->count;
-            enabled_.push_back(luid);
-            continue;
-        }
-        TOKEN_PRIVILEGES previous = {};
-        held_ = EnableTokenPrivilege(token_.get(), name, &previous);
-        if (held_)
-        {
-            g_holds.push_back({luid, 1, previous});
-            enabled_.push_back(luid);
-        }
-    }
-}
-
-PrivilegeScope::~PrivilegeScope()
-{
-    const std::lock_guard<std::mutex> lock(g_hold_mutex);
-    for (auto luid = enabled_.rbegin(); luid != enabled_.rend(); ++luid)
-    {
-        const auto hold = FindHold(*luid);
-        if (hold == g_holds.end() || --hold->count > 0)
-        {
-            continue;
-        }
-        // restore state from before the first scope
-        if (hold->previous.PrivilegeCount != 0)
-        {
-            AdjustTokenPrivileges(token_.get(), FALSE, &hold->previous, sizeof(hold->previous), nullptr, nullptr);
-        }
-        g_holds.erase(hold);
-    }
-}
-
-std::wstring GetProcessImagePath(DWORD process_id)
-{
-    win32ui::UniqueHandle process(OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, process_id));
-    if (!process)
-    {
-        return {};
-    }
-    for (DWORD capacity = MAX_PATH; capacity <= 32768; capacity *= 2)
-    {
-        std::wstring path(capacity, L'\0');
-        DWORD length = capacity;
-        if (QueryFullProcessImageNameW(process.get(), 0, path.data(), &length))
-        {
-            path.resize(length);
-            return path;
-        }
-        if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-        {
-            return {};
-        }
-    }
-    return {};
 }
 
 std::wstring GetCurrentUserSidString()
 {
-    return CurrentUserFollowsShell() ? ShellRoots().sid : ProcessUserSid();
+    return CurrentUserFollowsShell() ? ShellRoots().sid : win32ui::ProcessUserSid();
 }
 
 std::wstring GetClassesUserSidString()
 {
-    return CurrentUserFollowsShell() && ShellRoots().classes ? ShellRoots().sid : ProcessUserSid();
+    return CurrentUserFollowsShell() && ShellRoots().classes ? ShellRoots().sid : win32ui::ProcessUserSid();
 }
 
 std::wstring GetShellUserSidString()
 {
-    return ShellUserDiffers() ? ShellRoots().sid : ProcessUserSid();
+    return ShellUserDiffers() ? ShellRoots().sid : win32ui::ProcessUserSid();
 }
 
 bool ShellUserDiffers()
@@ -589,108 +98,15 @@ HKEY MapCurrentUserRoot(HKEY root)
                                                                                                      : root;
 }
 
-std::wstring AccountName(const std::wstring& sid_text)
-{
-    PSID sid = nullptr;
-    if (!ConvertStringSidToSidW(sid_text.c_str(), &sid))
-    {
-        return sid_text;
-    }
-    wchar_t name[256] = {};
-    wchar_t domain[256] = {};
-    DWORD name_size = _countof(name);
-    DWORD domain_size = _countof(domain);
-    SID_NAME_USE use = SidTypeUnknown;
-    const bool found = LookupAccountSidW(nullptr, sid, name, &name_size, domain, &domain_size, &use) != FALSE;
-    LocalFree(sid);
-    return !found ? sid_text : domain[0] ? std::wstring(domain) + L"\\" + name
-                                         : std::wstring(name);
-}
-
-std::wstring GetShellUserDocuments()
-{
-    // signed in user Documents, including after SYSTEM/TrustedInstaller restarts
-    win32ui::UniqueCoTask<PWSTR> documents;
-    return SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Documents, 0, OpenShellToken(TOKEN_QUERY | TOKEN_IMPERSONATE | TOKEN_DUPLICATE).get(), documents.put())) && documents
-               ? std::wstring(documents.get())
-               : std::wstring();
-}
-
-bool IsUacEnabled()
-{
-    DWORD value = 1;
-    DWORD size = sizeof(value);
-    return RegGetValueW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System", L"EnableLUA", RRF_RT_REG_DWORD, nullptr, &value, &size) != ERROR_SUCCESS ||
-           value != 0;
-}
-
-bool IsWritableByNonAdmins(const std::wstring& file_path)
-{
-    std::vector<std::vector<BYTE>> trusted_sids;
-    const std::wstring user_sid = !IsUacEnabled() && win32ui::IsProcessElevated() ? ProcessUserSid() : std::wstring();
-    for (const wchar_t* text : {L"S-1-5-18", L"S-1-5-32-544", L"S-1-3-4", L"S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464", user_sid.c_str()})
-    {
-        win32ui::UniqueLocal<PSID> sid;
-        if (*text && ConvertStringSidToSidW(text, sid.put()))
-        {
-            trusted_sids.emplace_back(static_cast<BYTE*>(sid.get()), static_cast<BYTE*>(sid.get()) + GetLengthSid(sid.get()));
-        }
-    }
-    for (std::wstring path = file_path; path.size() > 3;)
-    {
-        const DWORD attributes = GetFileAttributesW(path.c_str());
-        if (attributes == INVALID_FILE_ATTRIBUTES || (attributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0 ||
-            GrantsWriteToNonAdmins(path, trusted_sids))
-        {
-            return true;
-        }
-        const size_t slash = path.find_last_of(L'\\');
-        if (slash == std::wstring::npos)
-        {
-            break;
-        }
-        path.resize(slash <= 2 ? slash + 1 : slash);
-    }
-    return file_path.empty();
-}
-
-bool IsProcessPrivileged()
-{
-    return win32ui::IsProcessElevated() || win32ui::IsProcessSystem() || win32ui::IsProcessTrustedInstaller();
-}
-
-win32ui::UniqueHandle OpenShellToken(DWORD access)
-{
-    DWORD shell_pid = 0;
-    win32ui::UniqueHandle token;
-    if (!GetWindowThreadProcessId(GetShellWindow(), &shell_pid) || shell_pid == 0)
-    {
-        SetLastError(ERROR_NOT_FOUND);
-        return token;
-    }
-    const win32ui::UniqueHandle shell_process(OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, shell_pid));
-    if (shell_process)
-    {
-        OpenProcessToken(shell_process.get(), access, token.put());
-    }
-    return token;
-}
-
-bool ShellUserMatchesProcess()
-{
-    const win32ui::UniqueHandle token = OpenShellToken(TOKEN_QUERY);
-    return token && EqualsInsensitive(UserSidString(TokenInformation(token.get(), TokenUser)), ProcessUserSid());
-}
-
 LONG QueryRemoteRegistryService(const std::wstring& machine, ServiceState* state)
 {
     LONG error = ERROR_SUCCESS;
-    const UniqueService service = OpenRemoteRegistry(machine, SERVICE_QUERY_STATUS | SERVICE_QUERY_CONFIG, &error);
+    const win32ui::UniqueService service = OpenRemoteRegistry(machine, SERVICE_QUERY_STATUS | SERVICE_QUERY_CONFIG, &error);
     SERVICE_STATUS_PROCESS status = {};
     DWORD size = 0;
     QueryServiceConfigW(service.get(), nullptr, 0, &size);
     std::vector<BYTE> config(size);
-    if (!service || !QueryServiceProcess(service.get(), &status) || config.empty() ||
+    if (!service || !win32ui::QueryServiceProcess(service.get(), &status) || config.empty() ||
         !QueryServiceConfigW(service.get(), reinterpret_cast<QUERY_SERVICE_CONFIGW*>(config.data()), size, &size))
     {
         return service ? static_cast<LONG>(GetLastError()) : error;
@@ -703,7 +119,7 @@ LONG QueryRemoteRegistryService(const std::wstring& machine, ServiceState* state
 LONG StartRemoteRegistryService(const std::wstring& machine, bool enable)
 {
     LONG error = ERROR_SUCCESS;
-    const UniqueService service = OpenRemoteRegistry(machine, SERVICE_QUERY_STATUS | SERVICE_START | SERVICE_STOP | SERVICE_CHANGE_CONFIG, &error);
+    const win32ui::UniqueService service = OpenRemoteRegistry(machine, SERVICE_QUERY_STATUS | SERVICE_START | SERVICE_STOP | SERVICE_CHANGE_CONFIG, &error);
     if (!service)
     {
         return error;
@@ -715,8 +131,8 @@ LONG StartRemoteRegistryService(const std::wstring& machine, bool enable)
     SERVICE_STATUS_PROCESS status = {};
     LONG result = ERROR_SUCCESS;
     const bool accepted = StartServiceW(service.get(), 0, nullptr) != FALSE;
-    if ((!accepted && GetLastError() != ERROR_SERVICE_ALREADY_RUNNING) || !QueryServiceProcess(service.get(), &status) ||
-        !WaitWhileServicePending(service.get(), SERVICE_START_PENDING, &status))
+    if ((!accepted && GetLastError() != ERROR_SERVICE_ALREADY_RUNNING) || !win32ui::QueryServiceProcess(service.get(), &status) ||
+        !win32ui::WaitWhileServicePending(service.get(), SERVICE_START_PENDING, &status))
     {
         result = static_cast<LONG>(GetLastError());
     }
@@ -740,7 +156,7 @@ LONG StartRemoteRegistryService(const std::wstring& machine, bool enable)
 LONG StopRemoteRegistryService(const std::wstring& machine, DWORD start_type)
 {
     LONG error = ERROR_SUCCESS;
-    const UniqueService service = OpenRemoteRegistry(machine, SERVICE_QUERY_STATUS | SERVICE_STOP | SERVICE_CHANGE_CONFIG, &error);
+    const win32ui::UniqueService service = OpenRemoteRegistry(machine, SERVICE_QUERY_STATUS | SERVICE_STOP | SERVICE_CHANGE_CONFIG, &error);
     SERVICE_STATUS stopped = {};
     if (!service || (!ControlService(service.get(), SERVICE_CONTROL_STOP, &stopped) && GetLastError() != ERROR_SERVICE_NOT_ACTIVE) ||
         !ChangeServiceConfigW(service.get(), SERVICE_NO_CHANGE, start_type, SERVICE_NO_CHANGE, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr))
@@ -750,31 +166,4 @@ LONG StopRemoteRegistryService(const std::wstring& machine, DWORD start_type)
     return ERROR_SUCCESS;
 }
 
-bool LaunchProcessAsShellUser(const std::wstring& command_line, const std::wstring& work_dir, DWORD* error_code, bool* impersonation_lost)
-{
-    if (impersonation_lost)
-    {
-        *impersonation_lost = false;
-    }
-    if (command_line.empty())
-    {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return ReportLaunch(false, error_code);
-    }
-    // shell token returns privileged restarts to the signed in user
-    const win32ui::UniqueHandle shell_token = OpenShellToken(TOKEN_DUPLICATE);
-    win32ui::UniqueHandle target_token;
-    return ReportLaunch(shell_token && DuplicateTokenEx(shell_token.get(), MAXIMUM_ALLOWED, nullptr, SecurityImpersonation, TokenPrimary, target_token.put()) && LaunchWithToken(target_token.get(), command_line, work_dir, false), error_code);
 }
-
-bool LaunchProcessAsSystem(const std::wstring& command_line, const std::wstring& work_dir, DWORD* error_code, bool* impersonation_lost)
-{
-    return LaunchImpersonated(command_line, work_dir, nullptr, error_code, impersonation_lost);
-}
-
-bool LaunchProcessAsTrustedInstaller(const std::wstring& command_line, const std::wstring& work_dir, DWORD* error_code, bool* impersonation_lost)
-{
-    return LaunchImpersonated(command_line, work_dir, L"TrustedInstaller", error_code, impersonation_lost);
-}
-
-} // namespace regkit::util

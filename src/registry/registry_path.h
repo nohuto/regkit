@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -44,7 +44,7 @@ std::wstring BuildNative(const RegistryNode& node);
 bool InVolatileHive(std::wstring_view native_path);
 ClassSource ClassesSource(std::wstring_view native_path);
 std::wstring ClassesSourcePath(std::wstring_view native_path, std::wstring_view current_user_sid);
-// UAC virtual store holds per user HKLM\SOFTWARE copies, empty if no virtual path exists
+// UAC virtual store holds per user HKLM\SOFTWARE copies
 std::wstring VirtualStorePath(std::wstring_view native_path);
 std::wstring GlobalKeyPath(std::wstring_view path);
 
@@ -55,7 +55,6 @@ bool LinkLeavesUserHives(std::wstring_view source_native, std::wstring_view targ
 std::wstring Normalize(std::wstring_view path, std::wstring_view current_user_sid = {});
 std::wstring Format(std::wstring_view normalized_path, Style style, std::wstring_view tree_root = L"Computer");
 bool ParseRoot(std::wstring_view path, RegistryNode* node);
-// key path, optionally with value as key!value, key: value or trailing name
 bool ResolveJumpTarget(std::wstring_view target, const std::function<std::wstring(const std::wstring&)>& normalize, const std::function<bool(const std::wstring&, RegistryNode*)>& key_exists, std::wstring* key_path, std::wstring* value_name, bool* value_missing);
 std::vector<std::wstring> Split(std::wstring_view path);
 std::wstring Join(const std::vector<std::wstring>& parts, size_t first_part = 0);
@@ -65,5 +64,5 @@ RegistryNode ChildNode(const RegistryNode& parent, std::wstring_view name);
 std::wstring Parent(std::wstring_view path);
 std::wstring Leaf(std::wstring_view path);
 
-} // namespace registry_path
-} // namespace regkit
+}
+}

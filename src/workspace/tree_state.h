@@ -18,11 +18,9 @@ struct TreeState
     void Normalize();
 };
 
-// empty state and the reason in error when a line isnt a tree state line
 TreeState ParseTreeState(const std::wstring& content, std::wstring* error = nullptr);
 std::wstring SerializeTreeState(const TreeState& state);
-// false for a missing file, false with the reason for one that cant be read
 bool LoadTreeState(const std::wstring& path, TreeState* state, std::wstring* error = nullptr);
 bool SaveTreeState(const std::wstring& path, const TreeState& state);
 
-} // namespace regkit::workspace
+}

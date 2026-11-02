@@ -1,9 +1,12 @@
 # Copyright (C) 2026 nohuto
 # generates the template and merges new text into existing PO files
 
-param([Parameter(Mandatory)][string]$gettext, [string]$language)
+param([Parameter(Mandatory)][string]$gettext, [string]$language, [string]$win32ui)
 
 $src = "$PSScriptRoot\src"
+# the shared library's texts are translated through RegKit's catalog too, default is its checkout next to RegKit
+if (!$win32ui) { $win32ui = "$PSScriptRoot\..\win32-ui" }
+$librarySrc = [IO.Path]::GetFullPath("$win32ui\src")
 $lang = "$PSScriptRoot\assets\lang"
 $pot = "$lang\regkit.pot"
 $temp = Join-Path ([IO.Path]::GetTempPath()) "regkit-translations-$PID"
@@ -67,6 +70,9 @@ function updateTemplate {
     [IO.File]::WriteAllLines("$temp\files.txt", [string[]]($files | % { $_.Substring($src.Length + 1).Replace('\', '/') }), $utf8)
 
     invokeTool xgettext '--language=C++', '--from-code=UTF-8', '--keyword=Tr', '--keyword=TrNoop', '--keyword=TrDetail:1', '--keyword=TrLabel:1', '--add-comments=TRANSLATORS', '--add-location=file', '--no-wrap', '--package-name=RegKit', '--msgid-bugs-address=https://github.com/nohuto/regkit/issues', '-D', $src, '-f', "$temp\files.txt", '-o', "$temp\code.pot"
+    $libraryFiles = (gci "$librarySrc\win32ui" -Recurse -Include *.cpp, *.h -ErrorAction Stop).FullName
+    [IO.File]::WriteAllLines("$temp\library.txt", [string[]]($libraryFiles | % { $_.Substring($librarySrc.Length + 1).Replace('\', '/') }), $utf8)
+    invokeTool xgettext '--language=C++', '--from-code=UTF-8', '--keyword=Text', '--keyword=TextNoop', '--force-po', '--add-comments=TRANSLATORS', '--add-location=file', '--no-wrap', '-D', $librarySrc, '-f', "$temp\library.txt", '-o', "$temp\library.pot"
 
     $texts = [ordered]@{}
     addRcTexts $texts
@@ -75,7 +81,7 @@ function updateTemplate {
     foreach ($entry in $texts.GetEnumerator()) { $lines.AddRange([string[]]@("#: $($entry.Value -join ' ')", "msgid `"$($entry.Key)`"", 'msgstr ""', '')) }
     [IO.File]::WriteAllLines("$temp\extra.pot", $lines, $utf8)
 
-    invokeTool msgcat '--use-first', '--add-location=file', '--no-wrap', '-o', "$temp\regkit.pot", "$temp\code.pot", "$temp\extra.pot"
+    invokeTool msgcat '--use-first', '--add-location=file', '--no-wrap', '-o', "$temp\regkit.pot", "$temp\code.pot", "$temp\library.pot", "$temp\extra.pot"
     $content = [IO.File]::ReadAllText("$temp\regkit.pot")
     $start = $content.IndexOf('#, fuzzy')
     if ($start -lt 0) { throw "msgcat wrote no template header" }
@@ -88,6 +94,7 @@ try {
     foreach ($tool in 'xgettext', 'msgcat', 'msginit', 'msgmerge', 'msgfmt') {
         if (!(Test-Path -LiteralPath (Join-Path $gettext "$tool.exe"))) { throw "$tool.exe wasnt found in '$gettext', pass the bin folder of GNU gettext" }
     }
+    if (!(Test-Path -LiteralPath "$librarySrc\win32ui")) { throw "win32ui wasnt found in '$win32ui', pass its checkout with -win32ui" }
     if ($language) { $language = getLang $language }
     ni -ItemType Directory -Force $temp -ErrorAction Stop | Out-Null
     updateTemplate

@@ -127,19 +127,19 @@ void Line(std::wstring* output, std::wstring_view key, std::wstring_view value)
     output->append(key).append(L"=").append(value).append(L"\n");
 }
 
-} // namespace
+}
 
 Settings ParseSettings(const std::wstring& content, Settings settings, std::wstring* error)
 {
     const Settings original = settings;
     size_t line_number = 0;
-    for (const std::wstring_view line : record_fields::Lines(content))
+    for (const std::wstring_view line : win32ui::LineViews(content))
     {
         ++line_number;
         const size_t separator = line.find(L'=');
         if (separator == std::wstring::npos)
         {
-            if (util::TrimWhitespace(line).empty())
+            if (util::IsBlank(line))
             {
                 continue;
             }
@@ -321,7 +321,7 @@ bool LoadSettings(const std::wstring& path, Settings* settings, std::wstring* er
 
 bool SaveSettings(const std::wstring& path, const Settings& settings)
 {
-    return !path.empty() && util::WriteTextFile(path, SerializeSettings(settings), false);
+    return !path.empty() && win32ui::WriteTextFileAtomic(path.c_str(), SerializeSettings(settings)) == ERROR_SUCCESS;
 }
 
-} // namespace regkit::workspace
+}

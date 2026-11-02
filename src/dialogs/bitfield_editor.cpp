@@ -10,7 +10,6 @@
 #include "ui/dialog_layout.h"
 #include "ui/dialog_support.h"
 #include "ui/feedback.h"
-#include "ui/list_view_support.h"
 #include "win32/file_dialog.h"
 #include "win32/translation.h"
 
@@ -19,9 +18,12 @@
 
 #include <win32ui/dialog/combo_box.h>
 #include <win32ui/dialog/dialog_window.h>
+#include <win32ui/dialog/file_dialog.h>
 #include <win32ui/dialog/message_dialog.h>
 #include <win32ui/list_view/sort.h>
 #include <win32ui/menu/popup_menu.h>
+#include <win32ui/theme/theme.h>
+#include <win32ui/window.h>
 #include <win32ui/window_metrics.h>
 
 #include <commctrl.h>
@@ -173,9 +175,7 @@ void WriteWindow(Editor* editor)
 
 std::wstring MaskText(unsigned width, uint64_t mask)
 {
-    wchar_t buffer[32] = {};
-    swprintf_s(buffer, L"0x%0*llX", static_cast<int>(width / 4), mask);
-    return buffer;
+    return win32ui::FormatHex(mask, static_cast<int>(width / 4));
 }
 
 std::wstring FieldValueText(const Field& field, uint64_t value)
@@ -238,7 +238,7 @@ void SetRowText(HWND list, const Editor& editor, int row)
         return;
     }
     const std::wstring value = FieldValueText(*field, editor.value);
-    const std::wstring meaning = dialog_support::SingleLine(RowMeaning(*field, editor.value));
+    const std::wstring meaning = win32ui::SingleLineText(RowMeaning(*field, editor.value));
     ListView_SetItemText(list, row, kColumnField, const_cast<wchar_t*>(field->name.c_str()));
     ListView_SetItemText(list, row, kColumnValue, const_cast<wchar_t*>(value.c_str()));
     ListView_SetItemText(list, row, kColumnMeaning, const_cast<wchar_t*>(meaning.c_str()));
@@ -264,7 +264,7 @@ void FillList(HWND dialog, Editor* editor)
 {
     const HWND list = GetDlgItem(dialog, IDC_BITFIELD_LIST);
     editor->updating = true;
-    SendMessageW(list, WM_SETREDRAW, FALSE, 0);
+    const win32ui::RedrawScope redraw(list, RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
     ListView_DeleteAllItems(list);
     for (unsigned row = 0; row < editor->width; ++row)
     {
@@ -284,9 +284,7 @@ void FillList(HWND dialog, Editor* editor)
             ListView_SetCheckState(list, static_cast<int>(row), (editor->value >> bit) & 1ull);
         }
     }
-    SendMessageW(list, WM_SETREDRAW, TRUE, 0);
     SortBitRows(list, editor, editor->sort_column, false);
-    RedrawWindow(list, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
     editor->updating = false;
     UpdateValueText(dialog, *editor);
 }
@@ -298,7 +296,7 @@ void RefreshCombo(HWND dialog, Editor* editor)
         editor->filtering ? dialog_support::ReadText(dialog, IDC_BITFIELD_DEFINITION) : std::wstring();
     const DWORD selection = editor->filtering ? static_cast<DWORD>(SendMessageW(combo, CB_GETEDITSEL, 0, 0)) : 0;
     editor->updating_combo = true;
-    SendMessageW(combo, WM_SETREDRAW, FALSE, 0);
+    const win32ui::RedrawScope redraw(combo, RDW_INVALIDATE | RDW_ERASE);
     SendMessageW(combo, CB_RESETCONTENT, 0, 0);
     for (size_t i = 0; i < editor->choices.size(); ++i)
     {
@@ -320,8 +318,6 @@ void RefreshCombo(HWND dialog, Editor* editor)
         SetWindowTextW(combo, filter.c_str());
         SendMessageW(combo, CB_SETEDITSEL, 0, static_cast<LPARAM>(selection));
     }
-    SendMessageW(combo, WM_SETREDRAW, TRUE, 0);
-    InvalidateRect(combo, nullptr, TRUE);
     win32ui::FitDroppedWidth(combo);
     editor->updating_combo = false;
 }
@@ -334,12 +330,7 @@ void SelectRow(HWND dialog, const Editor& editor, unsigned bit)
     }
     const HWND list = GetDlgItem(dialog, IDC_BITFIELD_LIST);
     const int row = RowForBit(list, bit);
-    if (row < 0)
-    {
-        return;
-    }
-    ListView_SetItemState(list, row, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-    ListView_EnsureVisible(list, row, FALSE);
+    win32ui::SelectOnlyListRow(list, row);
 }
 
 void ApplyChoice(HWND dialog, Editor* editor, int choice)
@@ -361,7 +352,7 @@ void ApplyChoice(HWND dialog, Editor* editor, int choice)
         editor->offset = definition.byte_offset;
         editor->value = ReadWindow(*editor);
     }
-    SetDlgItemTextW(dialog, IDC_BITFIELD_COMMENT, dialog_support::ToDisplayText(definition.comment).c_str());
+    SetDlgItemTextW(dialog, IDC_BITFIELD_COMMENT, win32ui::EditLineBreaks(definition.comment).c_str());
     EnableWindow(GetDlgItem(dialog, IDC_BITFIELD_EDIT_DEF), choice != 0);
     EnableWindow(GetDlgItem(dialog, IDC_BITFIELD_SAVE_AS), choice != 0);
     FillList(dialog, editor);
@@ -398,8 +389,7 @@ bool AcceptDefinition(HWND dialog, const Editor& editor, const Definition& defin
 void LoadFromFile(HWND dialog, Editor* editor)
 {
     std::wstring path;
-    const HRESULT hr = win32::ChooseFileToOpen(dialog, bitfield::FileFilter(), &path);
-    if (!ui::ReportFileDialogResult(dialog, hr))
+    if (!ui::ReportFileDialogResult(dialog, win32ui::ChooseFileToOpen(dialog, {.filter = bitfield::FileFilter()}, &path)))
     {
         return;
     }
@@ -449,13 +439,13 @@ void SaveCurrent(HWND dialog, Editor* editor)
 {
     const Definition& definition = editor->definition();
     std::wstring path;
-    const HRESULT hr = win32::ChooseFileToSave(
+    const DWORD chosen = win32::ChooseFileToSave(
         dialog,
         bitfield::FileFilter(),
         bitfield::SuggestedFileName(definition.value_name.empty() ? editor->value_name : definition.value_name).c_str(),
         &path
     );
-    if (!ui::ReportFileDialogResult(dialog, hr))
+    if (!ui::ReportFileDialogResult(dialog, chosen))
     {
         return;
     }
@@ -629,14 +619,12 @@ void SetAllBits(HWND dialog, Editor* editor, bool set)
     editor->value = set ? bitfield::WidthMask(editor->width) : 0;
     const HWND list = GetDlgItem(dialog, IDC_BITFIELD_LIST);
     editor->updating = true;
-    SendMessageW(list, WM_SETREDRAW, FALSE, 0);
+    const win32ui::RedrawScope redraw(list, RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
     for (unsigned row = 0; row < editor->width; ++row)
     {
         ListView_SetCheckState(list, static_cast<int>(row), set);
         SetRowText(list, *editor, static_cast<int>(row));
     }
-    SendMessageW(list, WM_SETREDRAW, TRUE, 0);
-    RedrawWindow(list, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
     editor->updating = false;
     UpdateValueText(dialog, *editor);
 }
@@ -683,10 +671,10 @@ bool BitRowMenu(void*, HWND list, int row, POINT screen)
     AppendMenuW(menu, MF_STRING | (field ? 0 : MF_GRAYED), kMenuRemoveField, util::Tr(L"&Remove Field"));
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING | bit_flags, kMenuCopyMask, util::Tr(L"Copy &Mask"));
-    appearance::AppendRowMenuCommands(menu, list);
+    win32ui::AppendListRowCommands(menu, list);
 
     const int chosen = win32ui::TrackContextMenu(menu, screen, dialog);
-    if (appearance::RunRowMenuCommand(list, chosen))
+    if (win32ui::RunListRowCommand(list, static_cast<UINT>(chosen)))
     {
         return true;
     }
@@ -793,8 +781,8 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
             EnableWindow(GetDlgItem(dialog, IDC_BITFIELD_CLEAR_ALL), FALSE);
             EnableWindow(GetDlgItem(dialog, IDOK), FALSE);
         }
-        static const win32ui::ListViewHooks hooks = appearance::DialogListHooks(BitRowMenu);
-        dialog_support::SetupListView(
+        static const win32ui::ListViewHooks hooks = win32ui::DialogListHooks(BitRowMenu);
+        win32ui::SetupDialogList(
             GetDlgItem(dialog, IDC_BITFIELD_LIST),
             &hooks,
             editor->read_only ? 0u : static_cast<DWORD>(LVS_EX_CHECKBOXES),
@@ -908,7 +896,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     }
 }
 
-} // namespace
+}
 
 bool EditBitfield(HWND owner, const BitfieldRequest& request, BitfieldResult* result)
 {
@@ -950,4 +938,4 @@ bool EditBitfield(HWND owner, const BitfieldRequest& request, BitfieldResult* re
     return true;
 }
 
-} // namespace regkit::editors
+}

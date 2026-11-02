@@ -6,6 +6,7 @@
 #include "win32/process_rights.h"
 
 #include <win32ui/handle_owner.h>
+#include <win32ui/system/error_text.h>
 #include <win32ui/system_api.h>
 
 #include <tlhelp32.h>
@@ -51,12 +52,10 @@ struct HandleTable
 
 using QuerySystemInformationFn = NTSTATUS(NTAPI*)(ULONG, PVOID, ULONG, PULONG);
 using QueryObjectFn = NTSTATUS(NTAPI*)(HANDLE, ULONG, PVOID, ULONG, PULONG);
-using StatusToDosErrorFn = ULONG(NTAPI*)(NTSTATUS);
 
 DWORD QueryHandleTable(std::vector<ULONG_PTR>* buffer)
 {
     static const auto query = win32ui::ImportProc<QuerySystemInformationFn>(L"ntdll.dll", "NtQuerySystemInformation");
-    static const auto to_dos = win32ui::ImportProc<StatusToDosErrorFn>(L"ntdll.dll", "RtlNtStatusToDosError");
     if (!query)
     {
         return ERROR_PROC_NOT_FOUND;
@@ -73,7 +72,7 @@ DWORD QueryHandleTable(std::vector<ULONG_PTR>* buffer)
         }
         if (status != kInfoLengthMismatch)
         {
-            return to_dos ? to_dos(status) : ERROR_GEN_FAILURE;
+            return win32ui::Win32FromNtStatus(status);
         }
         bytes = needed > bytes ? needed + kTableMarginBytes : bytes * 2;
         if (bytes > kMaxTableBytes)
@@ -164,7 +163,7 @@ DWORD LoadKeyEntries(std::vector<HandleEntry>* keys)
     return ERROR_SUCCESS;
 }
 
-} // namespace
+}
 
 KeyHandleSnapshot SnapshotKeyHandles(const std::atomic_bool& cancel)
 {
@@ -268,4 +267,4 @@ DWORD CloseKeyHandles(const std::vector<KeyHandle>& targets, size_t* closed)
     return *closed == targets.size() ? ERROR_SUCCESS : result;
 }
 
-} // namespace regkit::win32
+}

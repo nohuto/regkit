@@ -86,7 +86,7 @@ LiveKey OpenSecurity(const RegistryNode& node, REGSAM access, SECURITY_INFORMATI
     return LiveKey(node, access, true);
 }
 
-} // namespace
+}
 
 bool HasSubKeys(const RegistryNode& node)
 {
@@ -325,4 +325,4 @@ bool RenameValue(const RegistryNode& node, const std::wstring& old_name, const s
     return key && registry_backend::RenameValue(key, old_name, new_name, both_names_left);
 }
 
-} // namespace regkit::registry_backend::live
+}

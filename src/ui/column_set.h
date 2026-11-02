@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -22,7 +22,6 @@ struct ColumnInfo
     int fmt = LVCFMT_LEFT;
 };
 
-// list columns by logical index, with current width and visibility
 struct ColumnSet
 {
     std::vector<ColumnInfo> items;
@@ -41,4 +40,4 @@ struct ColumnSet
     }
 };
 
-} // namespace regkit::ui
+}

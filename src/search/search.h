@@ -191,7 +191,6 @@ using BatchCallback = std::function<bool(ResultBatch&&)>;
 
 bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag, const BatchCallback& publish, const ProgressCallback& progress, regex::Status* status = nullptr);
 
-// column -1 is the location order
 void SortResults(std::vector<Result>* results, int column, bool ascending, const util::SortKeys& earlier = {}, const std::vector<Source>& sources = {});
 
-} // namespace regkit::search
+}

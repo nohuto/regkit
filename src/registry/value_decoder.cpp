@@ -8,10 +8,10 @@
 #include "win32/translation.h"
 
 #include <win32ui/handle_owner.h>
+#include <win32ui/system/date_time.h>
 
 #include <objbase.h>
 #include <sddl.h>
-#include <wincrypt.h>
 #include <ws2tcpip.h>
 
 #include <climits>
@@ -102,249 +102,15 @@ bool SourceText(DWORD type, const std::vector<BYTE>& data, std::wstring* text, s
     return false;
 }
 
-int Base64Index(wchar_t character)
-{
-    if (character >= L'A' && character <= L'Z')
-    {
-        return character - L'A';
-    }
-    if (character >= L'a' && character <= L'z')
-    {
-        return character - L'a' + 26;
-    }
-    if (character >= L'0' && character <= L'9')
-    {
-        return character - L'0' + 52;
-    }
-    if (character == L'+')
-    {
-        return 62;
-    }
-    if (character == L'/')
-    {
-        return 63;
-    }
-    return -1;
-}
-
-bool ValidateBase64(const std::wstring& text, size_t padding, std::wstring* error)
-{
-    const size_t body = text.size() - padding;
-    for (size_t i = 0; i < body; ++i)
-    {
-        if (Base64Index(text[i]) < 0)
-        {
-            *error = AtOffset(util::Tr(L"Invalid Base64 character."), i);
-            return false;
-        }
-    }
-    // unused padding bits must be zero
-    if (padding == 2)
-    {
-        if ((Base64Index(text[body - 1]) & 0x0F) != 0)
-        {
-            *error = util::Tr(L"Invalid Base64 padding bits.");
-            return false;
-        }
-    }
-    else if (padding == 1)
-    {
-        if ((Base64Index(text[body - 1]) & 0x03) != 0)
-        {
-            *error = util::Tr(L"Invalid Base64 padding bits.");
-            return false;
-        }
-    }
-    return true;
-}
-
-bool DecodeWithCrypto(const std::wstring& text, DWORD flags, std::vector<BYTE>* out, std::wstring* error)
-{
-    out->clear();
-    if (text.empty())
-    {
-        return true;
-    }
-    if (text.size() > static_cast<size_t>(MAXDWORD))
-    {
-        *error = util::Tr(L"Input is too large to decode.");
-        return false;
-    }
-    DWORD size = 0;
-    if (!CryptStringToBinaryW(text.c_str(), static_cast<DWORD>(text.size()), flags, nullptr, &size, nullptr, nullptr))
-    {
-        *error = util::Tr(L"The text couldn't be decoded.");
-        return false;
-    }
-    out->resize(size);
-    if (size == 0)
-    {
-        return true;
-    }
-    if (!CryptStringToBinaryW(text.c_str(), static_cast<DWORD>(text.size()), flags, out->data(), &size, nullptr, nullptr))
-    {
-        out->clear();
-        *error = util::Tr(L"The text couldn't be decoded.");
-        return false;
-    }
-    out->resize(size);
-    return true;
-}
-
-bool TransformBase64(const std::wstring& text, std::vector<BYTE>* out, std::wstring* error)
-{
-    if ((text.size() % 4) != 0)
-    {
-        *error = util::Tr(L"Base64 length isn't a multiple of four.");
-        return false;
-    }
-    size_t padding = 0;
-    while (padding < 2 && padding < text.size() && text[text.size() - 1 - padding] == L'=')
-    {
-        ++padding;
-    }
-    if (!ValidateBase64(text, padding, error))
-    {
-        return false;
-    }
-    return DecodeWithCrypto(text, CRYPT_STRING_BASE64, out, error);
-}
-
-bool TransformBase64Url(const std::wstring& text, std::vector<BYTE>* out, std::wstring* error)
-{
-    std::wstring normalized;
-    normalized.reserve(text.size() + 2);
-    for (size_t i = 0; i < text.size(); ++i)
-    {
-        const wchar_t character = text[i];
-        if (character == L'-')
-        {
-            normalized.push_back(L'+');
-        }
-        else if (character == L'_')
-        {
-            normalized.push_back(L'/');
-        }
-        else if (character == L'=')
-        {
-            normalized.push_back(L'=');
-        }
-        else if (Base64Index(character) >= 0 && character != L'+' && character != L'/')
-        {
-            normalized.push_back(character);
-        }
-        else
-        {
-            *error = AtOffset(util::Tr(L"Invalid Base64URL character."), i);
-            return false;
-        }
-    }
-    size_t padding = 0;
-    while (padding < 2 && padding < normalized.size() && normalized[normalized.size() - 1 - padding] == L'=')
-    {
-        ++padding;
-    }
-    if (normalized.find(L'=') != std::wstring::npos && normalized.find(L'=') != normalized.size() - padding)
-    {
-        *error = util::Tr(L"Base64URL padding isn't at the end.");
-        return false;
-    }
-    const size_t remainder = normalized.size() % 4;
-    if (remainder == 1)
-    {
-        *error = util::Tr(L"Base64URL length isn't valid.");
-        return false;
-    }
-    if (remainder != 0)
-    {
-        if (padding != 0)
-        {
-            *error = util::Tr(L"Base64URL padding is incomplete.");
-            return false;
-        }
-        padding = 4 - remainder;
-        normalized.append(padding, L'=');
-    }
-    if (!ValidateBase64(normalized, padding, error))
-    {
-        return false;
-    }
-    return DecodeWithCrypto(normalized, CRYPT_STRING_BASE64, out, error);
-}
-
-bool HexSeparator(wchar_t character)
-{
-    return character == L' ' || character == L'\t' || character == L'\r' || character == L'\n' || character == L':' ||
-           character == L'-';
-}
-
 bool TransformHex(const std::wstring& text, std::vector<BYTE>* out, std::wstring* error)
 {
-    std::wstring normalized;
-    normalized.reserve(text.size());
-    size_t index = 0;
-    while (index < text.size())
+    size_t at = 0;
+    if (win32ui::ParseHexBytes(text, out, &at))
     {
-        if (HexSeparator(text[index]))
-        {
-            ++index;
-            continue;
-        }
-        if (text[index] == L'0' && index + 1 < text.size() && (text[index + 1] == L'x' || text[index + 1] == L'X'))
-        {
-            index += 2;
-            continue;
-        }
-        if (util::HexDigitValue(text[index]) < 0)
-        {
-            *error = AtOffset(util::Tr(L"Invalid hex character."), index);
-            return false;
-        }
-        if (index + 1 >= text.size() || util::HexDigitValue(text[index + 1]) < 0)
-        {
-            *error = AtOffset(util::Tr(L"Incomplete hex byte."), index);
-            return false;
-        }
-        normalized.push_back(text[index]);
-        normalized.push_back(text[index + 1]);
-        index += 2;
+        return true;
     }
-    return DecodeWithCrypto(normalized, CRYPT_STRING_HEX, out, error);
-}
-
-bool TransformPercent(const std::wstring& text, std::vector<BYTE>* out, std::wstring* error)
-{
-    out->clear();
-    out->reserve(text.size());
-    for (size_t i = 0; i < text.size(); ++i)
-    {
-        const wchar_t character = text[i];
-        if (character == L'%')
-        {
-            if (i + 2 >= text.size())
-            {
-                *error = AtOffset(util::Tr(L"Incomplete percent escape."), i);
-                return false;
-            }
-            const int high = util::HexDigitValue(text[i + 1]);
-            const int low = util::HexDigitValue(text[i + 2]);
-            if (high < 0 || low < 0)
-            {
-                *error = AtOffset(util::Tr(L"Invalid percent escape."), i);
-                return false;
-            }
-            out->push_back(static_cast<BYTE>((high << 4) | low));
-            i += 2;
-            continue;
-        }
-        if (character > 0x7F)
-        {
-            *error = util::Tr(L"Percent encoded text must be ASCII.");
-            return false;
-        }
-        out->push_back(static_cast<BYTE>(character));
-    }
-    return true;
+    *error = AtOffset(util::HexDigitValue(text[at]) >= 0 ? util::Tr(L"Incomplete hex byte.") : util::Tr(L"Invalid hex character."), at);
+    return false;
 }
 
 bool AppendTimeFields(uint64_t ticks, std::vector<Field>* fields, std::wstring* error)
@@ -354,20 +120,18 @@ bool AppendTimeFields(uint64_t ticks, std::vector<Field>* fields, std::wstring* 
         *error = util::Tr(L"Invalid FILETIME.");
         return false;
     }
-    FILETIME file_time = {};
-    file_time.dwLowDateTime = static_cast<DWORD>(ticks & 0xFFFFFFFFull);
-    file_time.dwHighDateTime = static_cast<DWORD>(ticks >> 32);
+    const FILETIME file_time = win32ui::FileTimeFromTicks(ticks);
     SYSTEMTIME utc = {};
     if (!FileTimeToSystemTime(&file_time, &utc))
     {
         *error = util::Tr(L"Invalid FILETIME.");
         return false;
     }
-    fields->push_back({L"UTC", util::FormatLocalTime(utc, true)});
+    fields->push_back({L"UTC", win32ui::FormatDateTime(utc, true)});
     SYSTEMTIME local = {};
-    if (SystemTimeToTzSpecificLocalTime(nullptr, &utc, &local))
+    if (win32ui::FileTimeToLocal(file_time, &local))
     {
-        fields->push_back({util::Tr(L"Local"), util::FormatLocalTime(local, true)});
+        fields->push_back({util::Tr(L"Local"), win32ui::FormatDateTime(local, true)});
     }
     return true;
 }
@@ -423,7 +187,7 @@ Decoded DecodeUtf8(const BYTE* data, size_t size)
     {
         return Success({util::Tr(L"Text"), L""}, {util::Tr(L"Bytes"), L"0"});
     }
-    std::wstring text = util::Utf8ToWide(std::string_view(reinterpret_cast<const char*>(data), size));
+    std::wstring text = win32ui::Utf8ToWide(std::string_view(reinterpret_cast<const char*>(data), size)).value_or(std::wstring());
     if (text.empty())
     {
         return Failure(util::Tr(L"Invalid UTF-8."));
@@ -516,7 +280,7 @@ Decoded DecodeSystemTime(const BYTE* data, size_t size)
     }
     Decoded decoded;
     decoded.ok = true;
-    decoded.fields.push_back({util::Tr(L"Date and time"), util::FormatLocalTime(time, true)});
+    decoded.fields.push_back({util::Tr(L"Date and time"), win32ui::FormatDateTime(time, true)});
     decoded.fields.push_back({util::Tr(L"Year"), std::to_wstring(time.wYear)});
     decoded.fields.push_back({util::Tr(L"Month"), std::to_wstring(time.wMonth)});
     decoded.fields.push_back({util::Tr(L"Day"), std::to_wstring(time.wDay)});
@@ -726,7 +490,7 @@ constexpr PathRule kPathRules[] = {
     {L"\\NetworkList\\Profiles\\", false, L"DateLastConnected", 16, DecoderId::kSystemTime},
 };
 
-} // namespace
+}
 
 std::vector<TransformEntry> AvailableTransforms(DWORD type, const std::vector<BYTE>& data)
 {
@@ -809,13 +573,13 @@ bool Transform(TransformId id, DWORD type, const std::vector<BYTE>& source, std:
     switch (id)
     {
     case TransformId::kBase64:
-        return TransformBase64(text, out, error);
+        return win32ui::DecodeBase64(text, false, out, error);
     case TransformId::kBase64Url:
-        return TransformBase64Url(text, out, error);
+        return win32ui::DecodeBase64(text, true, out, error);
     case TransformId::kHex:
         return TransformHex(text, out, error);
     case TransformId::kPercent:
-        return TransformPercent(text, out, error);
+        return win32ui::DecodePercent(text, out, error);
     default:
         break;
     }
@@ -877,4 +641,4 @@ DecoderId Suggest(const std::wstring& key_path, const std::wstring& value_name, 
     return DecoderId::kRawBytes;
 }
 
-} // namespace regkit::value_decoder
+}

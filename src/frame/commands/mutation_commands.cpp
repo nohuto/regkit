@@ -7,6 +7,8 @@
 #include "win32/text_transform.h"
 #include "win32/translation.h"
 
+#include <win32ui/system/error_text.h>
+
 namespace regkit
 {
 using namespace command_detail;
@@ -57,7 +59,7 @@ std::wstring NativeTargetPath(const std::wstring& path)
     return native + rest;
 }
 
-} // namespace
+}
 
 bool MainWindow::Impl::HandleMutationCommand(int command_id)
 {
@@ -108,7 +110,7 @@ bool MainWindow::Impl::HandleMutationCommand(int command_id)
             if (!registry_backend::live::CreateRegistryLink(*browse_.current_node(), link.name, native, &error))
             {
                 std::wstring message = util::Tr(L"Failed to create the symbolic link.");
-                const std::wstring detail = util::FormatWin32Error(error);
+                const std::wstring detail = win32ui::FormatWin32Error(error);
                 if (!detail.empty())
                 {
                     message += L"\n";
@@ -1083,4 +1085,4 @@ bool MainWindow::Impl::HandleDeleteCommand(int command_id)
     }
 }
 
-} // namespace regkit
+}

@@ -54,4 +54,4 @@ void AddEntry(Data* data, const Entry& entry, std::unordered_set<std::wstring>* 
 void Merge(Data* data, const std::vector<Entry>& entries, std::unordered_set<std::wstring>* affected_keys = nullptr);
 void Sort(Data* data);
 
-} // namespace regkit::trace
+}

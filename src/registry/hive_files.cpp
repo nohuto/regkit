@@ -9,6 +9,7 @@
 
 #include <win32ui/handle_owner.h>
 
+#include <cstring>
 #include <cwchar>
 #include <unordered_set>
 
@@ -53,18 +54,10 @@ std::wstring ResolveDevicePath(const std::wstring& path)
     return path;
 }
 
-// hives start with regf, skip other folder files without failing the load
-bool HasHiveSignature(const std::wstring& path)
-{
-    const win32ui::UniqueHandle file(CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
-    char signature[4] = {};
-    DWORD read = 0;
-    return file && ReadFile(file.get(), signature, sizeof(signature), &read, nullptr) && read == sizeof(signature) && memcmp(signature, "regf", sizeof(signature)) == 0;
-}
-
 void AddOfflineHiveCandidate(std::vector<OfflineHiveCandidate>* out, std::unordered_set<std::wstring>* seen, const std::wstring& path, const std::wstring& label)
 {
-    if (!out || !seen || !util::IsFile(path) || !HasHiveSignature(path))
+    // skip other folder files without failing the load
+    if (!out || !seen || !util::IsFile(path.c_str()) || !IsHiveFile(path))
     {
         return;
     }
@@ -120,45 +113,27 @@ void CollectUserHiveCandidates(const std::wstring& folder, const std::wstring& b
 
 void CollectUserHivesRecursive(const std::wstring& folder, const std::wstring& base, std::vector<OfflineHiveCandidate>* out, std::unordered_set<std::wstring>* seen)
 {
-    WIN32_FIND_DATAW data = {};
-    std::wstring search = util::JoinPath(folder, L"*");
-    const win32ui::UniqueFind find(FindFirstFileW(search.c_str(), &data));
-    if (!find)
-    {
-        return;
-    }
-    do
-    {
-        if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+    util::ForEachFile(util::JoinPath(folder, L"*").c_str(), [&](const WIN32_FIND_DATAW& data) {
+        if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0 && (data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) == 0)
         {
-            continue;
+            const std::wstring subdir = util::JoinPath(folder, data.cFileName);
+            CollectUserHiveCandidates(subdir, base, out, seen);
+            CollectUserHivesRecursive(subdir, base, out, seen);
         }
-        if (wcscmp(data.cFileName, L".") == 0 || wcscmp(data.cFileName, L"..") == 0)
-        {
-            continue;
-        }
-        if ((data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0)
-        {
-            continue;
-        }
-        std::wstring subdir = util::JoinPath(folder, data.cFileName);
-        CollectUserHiveCandidates(subdir, base, out, seen);
-        CollectUserHivesRecursive(subdir, base, out, seen);
-    } while (FindNextFileW(find.get(), &data));
+        return true;
+    });
 }
 
 bool ShouldIncludeOfflineHiveFile(const std::wstring& name)
 {
-    size_t dot = name.find_last_of(L'.');
-    if (dot == std::wstring::npos)
+    if (name.find(L'.') == std::wstring::npos)
     {
         return true;
     }
     // old .log files also start with regf, check signatures only for hive extensions
-    const std::wstring ext = name.substr(dot);
     for (const wchar_t* hive_ext : {L".dat", L".hiv", L".hve", L".hive", L".sav"})
     {
-        if (util::EqualsInsensitive(ext, hive_ext))
+        if (util::HasFileExtension(name, hive_ext))
         {
             return true;
         }
@@ -168,30 +143,25 @@ bool ShouldIncludeOfflineHiveFile(const std::wstring& name)
 
 void CollectLooseHivesInFolder(const std::wstring& folder, std::vector<OfflineHiveCandidate>* out, std::unordered_set<std::wstring>* seen)
 {
-    WIN32_FIND_DATAW data = {};
-    std::wstring search = util::JoinPath(folder, L"*");
-    const win32ui::UniqueFind find(FindFirstFileW(search.c_str(), &data));
-    if (!find)
-    {
-        return;
-    }
-    do
-    {
-        if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+    util::ForEachFile(util::JoinPath(folder, L"*").c_str(), [&](const WIN32_FIND_DATAW& data) {
+        if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && ShouldIncludeOfflineHiveFile(data.cFileName))
         {
-            continue;
+            AddOfflineHiveCandidate(out, seen, util::JoinPath(folder, data.cFileName), util::FileBaseName(data.cFileName));
         }
-        if (!ShouldIncludeOfflineHiveFile(data.cFileName))
-        {
-            continue;
-        }
-        std::wstring candidate = util::JoinPath(folder, data.cFileName);
-        std::wstring label = util::FileBaseName(data.cFileName);
-        AddOfflineHiveCandidate(out, seen, candidate, label);
-    } while (FindNextFileW(find.get(), &data));
+        return true;
+    });
 }
 
-} // namespace
+}
+
+bool IsHiveFile(const std::wstring& path)
+{
+    const win32ui::UniqueHandle file(CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
+    char signature[4] = {};
+    DWORD read = 0;
+    return file && ReadFile(file.get(), signature, sizeof(signature), &read, nullptr) && read == sizeof(signature) &&
+           std::memcmp(signature, "regf", sizeof(signature)) == 0;
+}
 
 std::wstring NormalizeHiveFilePath(const std::wstring& raw_path)
 {
@@ -222,7 +192,7 @@ std::wstring NormalizeHiveFilePath(const std::wstring& raw_path)
             path = std::wstring(windows_dir) + suffix;
         }
     }
-    std::wstring expanded = util::ExpandEnvironmentStringsDynamic(path);
+    std::wstring expanded = win32ui::ExpandEnvironment(path.c_str());
     if (!expanded.empty())
     {
         path = std::move(expanded);
@@ -295,4 +265,4 @@ std::wstring ResolveOfflineRootName(const std::wstring& path, bool is_dir, const
     return L"HKEY_LOCAL_MACHINE";
 }
 
-} // namespace regkit
+}

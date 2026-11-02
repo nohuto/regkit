@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -17,4 +17,4 @@ using KeyHandlesNavigate = std::function<void(const std::wstring& path, bool new
 
 HWND ShowKeyHandlesWindow(HWND owner, KeyHandlesNavigate navigate);
 
-} // namespace regkit
+}

@@ -127,7 +127,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     return FALSE;
 }
 
-} // namespace
+}
 
 bool ChooseExport(HWND owner, const ExportRequest& request, ExportResult* result)
 {
@@ -146,4 +146,4 @@ bool ChooseExport(HWND owner, const ExportRequest& request, ExportResult* result
     return true;
 }
 
-} // namespace regkit::editors
+}

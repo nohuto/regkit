@@ -29,7 +29,8 @@ void MainWindow::Impl::StartTraceLoadWorker()
         return;
     }
     const HWND hwnd = hwnd_;
-    trace_load_session_.StartIfIdle(L"TraceLoadThread", [this, selection_cache = std::move(selection_cache), entries = std::move(entries), hwnd](uint64_t generation, const std::atomic_bool& cancel) mutable {
+    // runs here without a thread, saving an unrestored list would drop its entries
+    trace_load_session_.StartOrRun(L"TraceLoadThread", [this, selection_cache = std::move(selection_cache), entries = std::move(entries), hwnd](uint64_t generation, const std::atomic_bool& cancel) mutable {
         auto payload = std::make_unique<TraceLoadPayload>();
         payload->generation = generation;
         payload->selection_cache = std::move(selection_cache);
@@ -78,7 +79,7 @@ void MainWindow::Impl::StartTraceLoadWorker()
         }
         if (hwnd && IsWindow(hwnd))
         {
-            work::PostPayload(hwnd, frame::message_id::kTraceLoadReady, 0, payload);
+            win32ui::PostPayload(hwnd, frame::message_id::kTraceLoadReady, 0, payload);
         }
     });
 }
@@ -101,4 +102,4 @@ void MainWindow::Impl::StopTraceParseSessions()
     trace_parse_sessions_.clear();
 }
 
-} // namespace regkit
+}

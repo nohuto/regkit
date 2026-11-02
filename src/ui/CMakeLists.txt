@@ -3,10 +3,7 @@ regkit_add_library(regkit_ui
     dialog_layout.cpp
     dialog_support.cpp
     feedback.cpp
-    font_picker.cpp
-    list_view_support.cpp
     presets.cpp
-    theme.cpp
 )
 target_include_directories(regkit_ui PRIVATE
     "${PROJECT_SOURCE_DIR}/resources"

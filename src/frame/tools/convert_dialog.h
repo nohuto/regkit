@@ -40,4 +40,4 @@ struct ConvertSettings
 void ShowConvertDialog(HWND owner, ConvertSettings* settings);
 void ConvertDialogFields(workspace::DialogFields& fields, ConvertSettings* settings);
 
-} // namespace regkit
+}

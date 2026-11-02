@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -23,4 +23,4 @@ struct DecodeRequest
 
 void ShowValueDecoder(HWND owner, const DecodeRequest& request);
 
-} // namespace regkit::editors
+}

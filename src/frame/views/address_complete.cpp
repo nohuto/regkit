@@ -6,6 +6,8 @@
 
 #include "ui/autocomplete.h"
 
+#include <win32ui/dialog/autocomplete.h>
+
 namespace regkit
 {
 using namespace window_detail;
@@ -15,7 +17,7 @@ void MainWindow::Impl::EnableAddressAutoComplete()
     if (!address_autocomplete_)
     {
         appearance::SetKeySuggest([this](const std::wstring& text) { return BuildAddressSuggestions(text); });
-        address_autocomplete_ = appearance::AttachAutoComplete(browse_.address(), appearance::SuggestKeys);
+        address_autocomplete_ = win32ui::AttachAutoComplete(browse_.address(), appearance::SuggestKeys);
     }
 }
 
@@ -62,4 +64,4 @@ std::vector<std::wstring> MainWindow::Impl::BuildAddressSuggestions(const std::w
     return items;
 }
 
-} // namespace regkit
+}

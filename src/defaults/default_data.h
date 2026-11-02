@@ -49,4 +49,4 @@ using AliasPath = std::function<std::wstring(const std::wstring& path)>;
 
 void Merge(Data* data, const std::vector<Entry>& entries, const AliasPath& alias, std::unordered_set<std::wstring>* affected_keys = nullptr);
 
-} // namespace regkit::defaults
+}

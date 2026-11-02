@@ -385,11 +385,12 @@ std::vector<Token> Tokenize(std::wstring_view text)
             }
             const bool suffix = at(index) == L'l' || at(index) == L'L';
             index += suffix;
-            unsigned long long value = 0;
-            if (index == digits || IsIdentifier(at(index)) || !util::ParseUnsignedNumber(std::wstring(hex ? L"0x" : L"") + std::wstring(text.substr(digits, index - digits - suffix)), 10, &value))
+            const std::optional<uint64_t> parsed = index == digits || IsIdentifier(at(index)) ? std::nullopt : win32ui::ParseUnsigned(text.substr(digits, index - digits - suffix), hex ? 16 : 10);
+            if (!parsed)
             {
                 fail(util::TrLabel(L"Unsupported number", text.substr(start, index - start + 1)));
             }
+            const unsigned long long value = parsed.value_or(0);
             Token& token = push(Kind::kNumber, std::wstring(text.substr(start, index - start)));
             token.wide = suffix || (hex ? value > 0xFFFFFFFFull : value > 0x7FFFFFFFull);
             token.number = hex && !token.wide ? static_cast<int>(static_cast<unsigned int>(value)) : static_cast<long long>(value);
@@ -548,7 +549,6 @@ class Interpreter
         Take();
     }
 
-    // returns true on exit
     bool Statement()
     {
         if (At(Kind::kWord, L"exit") || At(Kind::kWord, L"return"))
@@ -1074,9 +1074,14 @@ class Interpreter
         {
             const bool qword = kind == L"qword";
             unsigned long long number = static_cast<unsigned long long>(data.number);
-            if (data.type == Item::Type::kString && !util::ParseUnsignedNumber(data.text, 10, &number))
+            if (data.type == Item::Type::kString)
             {
-                Fail(util::TrLabel(L"Invalid number", data.text));
+                const std::optional<uint64_t> parsed = win32ui::ParseUnsigned(data.text, 10, true);
+                if (!parsed)
+                {
+                    Fail(util::TrLabel(L"Invalid number", data.text));
+                }
+                number = parsed.value_or(number);
             }
             if (data.type != Item::Type::kString && data.type != Item::Type::kNumber)
             {
@@ -1278,7 +1283,6 @@ class Interpreter
         }
     }
 
-    // named argument or positional argument at this index
     static const Item* Find(const std::vector<Argument>& arguments, std::initializer_list<std::wstring_view> names, size_t position)
     {
         size_t positional = 0;
@@ -1408,7 +1412,7 @@ bool DotNetValue(const Value& value, std::wstring* expression, std::wstring* kin
     }
 }
 
-} // namespace
+}
 
 bool ParsePowerShell(std::wstring_view content, std::vector<Operation>* output, std::wstring* error)
 {
@@ -1486,4 +1490,4 @@ std::wstring RenderPowerShell(const std::vector<Operation>& operations, bool adm
            (native ? kNativeHelper : L"") + (native ? L"\r\n" : L"") + body;
 }
 
-} // namespace regkit::regfile
+}

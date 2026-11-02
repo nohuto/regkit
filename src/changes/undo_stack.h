@@ -35,7 +35,6 @@ struct UndoOperation
     RegistryValue new_value;
     KeySnapshot key_snapshot;
     KeySnapshot new_key_snapshot;
-    // kGroup stores a mass change as one undo step, in original order
     std::vector<UndoOperation> steps;
 };
 
@@ -59,4 +58,4 @@ class UndoStack
     std::vector<UndoOperation> redo_;
 };
 
-} // namespace regkit::changes
+}

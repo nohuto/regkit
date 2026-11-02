@@ -7,7 +7,8 @@
 #include "registry/virtual_registry.h"
 #include "win32/registry_native.h"
 #include "win32/registry_view.h"
-#include "win32/windows_config.h"
+
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -132,7 +133,6 @@ class RegistryStore
     static bool IsOfflineRoot(HKEY root);
     static bool QueryValue(const RegistryNode& node, const std::wstring& value_name, RegistryValue* out);
     static bool QueryKeyInfo(const RegistryNode& node, KeyInfo* info);
-    // also true if parent lists the key but its information cannot be read
     static bool KeyExists(const RegistryNode& node);
     static KeyInspection InspectKey(const RegistryNode& node, bool want_info, bool want_source = false);
     static bool QuerySymbolicLinkTarget(const RegistryNode& node, std::wstring* target, bool* denied = nullptr);
@@ -150,7 +150,6 @@ class RegistryStore
     static bool GetVirtualRootName(HKEY root, std::wstring* root_name);
     static bool QueryKeyDetails(const RegistryNode& node, KeyDetails* details, bool open_link = false);
     static std::wstring OfflineControlSet(const RegistryNode& node);
-    // live keys only, UAC virtualization flags used by reg flags
     static LONG SetKeyControlFlags(const RegistryNode& node, ULONG flags);
     static bool CreateKey(const RegistryNode& node, const std::wstring& name, const KeyCreateOptions& options = {}, bool* created_volatile = nullptr);
     static bool CreateKeyLink(const RegistryNode& node, const std::wstring& name, const std::wstring& nt_target, const KeyCreateOptions& options = {});
@@ -164,4 +163,4 @@ class RegistryStore
     static bool RenameValue(const RegistryNode& node, const std::wstring& old_name, const std::wstring& new_name, bool* both_names_left = nullptr);
 };
 
-} // namespace regkit
+}

@@ -4,7 +4,6 @@
 #include "frame/detail/control_detail.h"
 
 #include "frame/window_impl.h"
-#include "ui/list_view_support.h"
 
 #include <algorithm>
 #include <chrono>
@@ -52,62 +51,10 @@
 #include "workspace/settings.h"
 #include "workspace/tab_state.h"
 
+#include <win32ui/system/date_time.h>
+
 namespace regkit::window_detail
 {
-
-void SetEditMargins(HWND hwnd, int left, int right)
-{
-    if (!hwnd)
-    {
-        return;
-    }
-    SendMessageW(hwnd, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELONG(left, right));
-}
-
-void SetEditVerticalRect(HWND hwnd, HFONT font, int min_pad, int left_pad, int right_pad)
-{
-    if (!hwnd)
-    {
-        return;
-    }
-    RECT rect = {};
-    GetClientRect(hwnd, &rect);
-    rect.left += left_pad;
-    rect.right -= right_pad;
-    int pad = min_pad;
-    if (font)
-    {
-        HDC hdc = GetDC(hwnd);
-        HFONT old = reinterpret_cast<HFONT>(SelectObject(hdc, font));
-        TEXTMETRICW tm = {};
-        if (GetTextMetricsW(hdc, &tm))
-        {
-            int line_height = static_cast<int>(tm.tmHeight + tm.tmExternalLeading);
-            int available = rect.bottom - rect.top;
-            int centered = (available - line_height) / 2;
-            if (centered > pad)
-            {
-                pad = centered;
-            }
-            int max_line = std::max(1, available - pad * 2);
-            if (line_height > max_line)
-            {
-                line_height = max_line;
-            }
-            rect.top += pad;
-            rect.bottom = rect.top + line_height;
-            SelectObject(hdc, old);
-            ReleaseDC(hwnd, hdc);
-            SendMessageW(hwnd, EM_SETRECT, 0, reinterpret_cast<LPARAM>(&rect));
-            return;
-        }
-        SelectObject(hdc, old);
-        ReleaseDC(hwnd, hdc);
-    }
-    rect.top += pad;
-    rect.bottom -= pad;
-    SendMessageW(hwnd, EM_SETRECT, 0, reinterpret_cast<LPARAM>(&rect));
-}
 
 std::wstring LeafName(const RegistryNode& node)
 {
@@ -187,49 +134,14 @@ std::wstring FormatFileTime(const FILETIME& filetime)
     {
         return L"";
     }
-    FILETIME local = {};
-    SYSTEMTIME st = {};
-    if (!FileTimeToLocalFileTime(&filetime, &local) || !FileTimeToSystemTime(&local, &st))
-    {
-        return L"";
-    }
-    return util::FormatLocalTime(st);
+    return win32ui::FormatFileTime(filetime);
 }
 
 std::wstring FormatCommentDisplay(const std::wstring& text)
 {
-    std::wstring out;
-    out.reserve(text.size());
-    bool last_space = false;
-    for (wchar_t ch : text)
-    {
-        if (ch == L'\r' || ch == L'\n' || ch == L'\t')
-        {
-            ch = L' ';
-        }
-        if (ch == L' ')
-        {
-            if (last_space)
-            {
-                continue;
-            }
-            last_space = true;
-        }
-        else
-        {
-            last_space = false;
-        }
-        out.push_back(ch);
-    }
+    std::wstring out = win32ui::SingleLineText(text);
+    out.erase(std::unique(out.begin(), out.end(), [](wchar_t left, wchar_t right) { return left == L' ' && right == L' '; }), out.end());
     return out;
-}
-
-uint64_t FileTimeToUint64(const FILETIME& filetime)
-{
-    ULARGE_INTEGER value = {};
-    value.LowPart = filetime.dwLowDateTime;
-    value.HighPart = filetime.dwHighDateTime;
-    return value.QuadPart;
 }
 
 static int CompareUint64(uint64_t left, uint64_t right)
@@ -337,25 +249,7 @@ void ApplyFont(HWND hwnd, HFONT font)
 
 HTREEITEM FindChildByText(HWND tree, HTREEITEM parent, const std::wstring& text)
 {
-    wchar_t buffer[256] = {};
-    HTREEITEM child = TreeView_GetChild(tree, parent);
-    while (child)
-    {
-        TVITEMW item = {};
-        item.mask = TVIF_TEXT;
-        item.hItem = child;
-        item.pszText = buffer;
-        item.cchTextMax = static_cast<int>(_countof(buffer));
-        if (TreeView_GetItem(tree, &item))
-        {
-            if (EqualsInsensitive(registry_path::DisplayName(text), buffer))
-            {
-                return child;
-            }
-        }
-        child = TreeView_GetNextSibling(tree, child);
-    }
-    return nullptr;
+    return win32ui::FindTreeChild(tree, parent, registry_path::DisplayName(text));
 }
 
-} // namespace regkit::window_detail
+}

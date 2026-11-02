@@ -93,7 +93,7 @@ bool ReplayStep(const changes::UndoOperation& operation, bool redo, bool* rename
     return false;
 }
 
-} // namespace
+}
 
 MainWindow::Impl::ReplayResult MainWindow::Impl::ApplyUndoOperation(const changes::UndoOperation& operation, bool redo, size_t* replayed, bool* left_both_names)
 {
@@ -334,4 +334,4 @@ bool MainWindow::Impl::ResolvePathInRoots(const std::vector<RegistryRootEntry>& 
     return false;
 }
 
-} // namespace regkit
+}

@@ -7,6 +7,7 @@
 #include "win32/translation.h"
 
 #include <win32ui/dialog/message_dialog.h>
+#include <win32ui/system/shell_open.h>
 
 namespace regkit
 {
@@ -46,20 +47,6 @@ std::vector<std::wstring> FindLinks(std::wstring_view text)
         start = end - 1;
     }
     return links;
-}
-
-std::wstring MenuLabel(std::wstring text)
-{
-    if (text.size() > 96)
-    {
-        text.resize(93);
-        text += L"...";
-    }
-    for (size_t amp = text.find(L'&'); amp != std::wstring::npos; amp = text.find(L'&', amp + 2))
-    {
-        text.insert(amp, 1, L'&');
-    }
-    return text;
 }
 
 struct KeyMenu
@@ -116,7 +103,7 @@ void AppendKeyMenu(HMENU menu, const KeyMenu& key)
     frame::AppendCommand(menu, MF_STRING, cmd::kEditKeyInfo, util::Tr(L"&Key Information..."));
 }
 
-} // namespace
+}
 
 void MainWindow::Impl::RecordNavigation(const std::wstring& path)
 {
@@ -159,79 +146,6 @@ void MainWindow::Impl::NavigateUp()
             browse_.UndoNavigation(0);
         }
         UpdateToolbarStates();
-    }
-}
-
-void MainWindow::Impl::ShowAddressContextMenu(HWND edit, POINT screen_pt)
-{
-    if (!edit)
-    {
-        return;
-    }
-    enum AddressCommand
-    {
-        kAddressUndo = 1,
-        kAddressCut,
-        kAddressCopy,
-        kAddressPaste,
-        kAddressPasteGo,
-        kAddressDelete,
-        kAddressSelectAll,
-    };
-
-    DWORD selection_start = 0;
-    DWORD selection_end = 0;
-    SendMessageW(edit, EM_GETSEL, reinterpret_cast<WPARAM>(&selection_start), reinterpret_cast<LPARAM>(&selection_end));
-    const bool has_selection = selection_end > selection_start;
-    const bool writable = (GetWindowLongPtrW(edit, GWL_STYLE) & ES_READONLY) == 0;
-    const bool can_undo = SendMessageW(edit, EM_CANUNDO, 0, 0) != 0;
-    const bool has_text = GetWindowTextLengthW(edit) > 0;
-    const bool has_clipboard_text = IsClipboardFormatAvailable(CF_UNICODETEXT) != FALSE;
-
-    HMENU menu = CreatePopupMenu();
-    auto append = [&](bool enabled, int command, const wchar_t* text, const wchar_t* shortcut) {
-        win32ui::AppendMenuItem(menu, MF_STRING | (enabled ? MF_ENABLED : MF_GRAYED), static_cast<UINT_PTR>(command), text, shortcut);
-    };
-
-    append(can_undo && writable, kAddressUndo, util::Tr(L"&Undo"), L"Ctrl+Z");
-    AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-    append(has_selection && writable, kAddressCut, util::Tr(L"Cu&t"), L"Ctrl+X");
-    append(has_selection, kAddressCopy, util::Tr(L"&Copy"), L"Ctrl+C");
-    append(has_clipboard_text && writable, kAddressPaste, util::Tr(L"&Paste"), L"Ctrl+V");
-    append(has_clipboard_text && writable, kAddressPasteGo, util::Tr(L"Paste and &Go"), L"Ctrl+Shift+V");
-    append(has_selection && writable, kAddressDelete, util::Tr(L"&Delete"), L"Del");
-    AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-    append(has_text, kAddressSelectAll, util::Tr(L"Select &All"), L"Ctrl+A");
-
-    const int command = win32ui::TrackContextMenu(menu, screen_pt, hwnd_);
-
-    switch (command)
-    {
-    case kAddressUndo:
-        SendMessageW(edit, WM_UNDO, 0, 0);
-        break;
-    case kAddressCut:
-        SendMessageW(edit, WM_CUT, 0, 0);
-        break;
-    case kAddressCopy:
-        SendMessageW(edit, WM_COPY, 0, 0);
-        break;
-    case kAddressPaste:
-        SendMessageW(edit, WM_PASTE, 0, 0);
-        break;
-    case kAddressPasteGo:
-        SendMessageW(edit, EM_SETSEL, 0, -1);
-        SendMessageW(edit, WM_PASTE, 0, 0);
-        SendMessageW(edit, WM_KEYDOWN, VK_RETURN, 0);
-        break;
-    case kAddressDelete:
-        SendMessageW(edit, WM_CLEAR, 0, 0);
-        break;
-    case kAddressSelectAll:
-        SendMessageW(edit, EM_SETSEL, 0, -1);
-        break;
-    default:
-        break;
     }
 }
 
@@ -375,7 +289,7 @@ void MainWindow::Impl::ShowValueContextMenu(int index, POINT screen_pt)
             HMENU link_menu = CreatePopupMenu();
             for (size_t link = 0; link < links.size(); ++link)
             {
-                AppendMenuW(link_menu, MF_STRING, cmd::kOpenLinkBase + link, MenuLabel(links[link]).c_str());
+                AppendMenuW(link_menu, MF_STRING, cmd::kOpenLinkBase + link, win32ui::MenuName(links[link], 96).c_str());
             }
             AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(link_menu), util::Tr(L"&Open Link"));
         }
@@ -423,7 +337,7 @@ void MainWindow::Impl::ShowValueContextMenu(int index, POINT screen_pt)
 
     if (command >= cmd::kOpenLinkBase && command < cmd::kOpenLinkBase + static_cast<int>(links.size()))
     {
-        ui::ReportFileDialogResult(hwnd_, win32::ShellOpen(hwnd_, links[command - cmd::kOpenLinkBase].c_str()));
+        ui::ReportFileDialogResult(hwnd_, win32ui::ShellOpen(hwnd_, links[command - cmd::kOpenLinkBase].c_str()));
     }
     else if (command != 0)
     {
@@ -789,4 +703,4 @@ void MainWindow::Impl::ShowSearchResultContextMenu(int index, POINT screen_pt)
     }
 }
 
-} // namespace regkit
+}

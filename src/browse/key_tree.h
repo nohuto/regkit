@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -16,6 +16,8 @@
 #include <vector>
 
 #include "registry/registry_store.h"
+
+#include <win32ui/tree_view/tree_view.h>
 
 namespace regkit
 {
@@ -55,7 +57,7 @@ class RegistryTree
         return roots_;
     }
     uint64_t synced_revision = 0;
-    RegistryNode* NodeFromItem(HTREEITEM item);
+    RegistryNode* NodeFromItem(HTREEITEM item) const;
     HTREEITEM InsertChild(HTREEITEM parent, const std::wstring& name);
     void Resync(HTREEITEM item, bool load = true);
     void OnItemExpanding(const NMTREEVIEWW* info);
@@ -65,8 +67,14 @@ class RegistryTree
     {
         return item && (item == standard_group_item_ || item == real_group_item_);
     }
+    void SetExpandAllCommand(HWND window, int command) noexcept
+    {
+        expand_all_window_ = window;
+        expand_all_command_ = command;
+    }
 
   private:
+    void LoadChildren(HTREEITEM item);
     RegistryNode* StoreNode(std::unique_ptr<RegistryNode> node);
     bool AddChildren(HTREEITEM parent, RegistryNode* node);
     bool HasChildren(const RegistryNode& node);
@@ -86,6 +94,9 @@ class RegistryTree
     int root_icon_ = 0;
     int redraw_suspended_ = 0;
     bool regedit_layout_ = false;
+    win32ui::TreeViewHooks hooks_;
+    HWND expand_all_window_ = nullptr;
+    int expand_all_command_ = 0;
 };
 
-} // namespace regkit
+}

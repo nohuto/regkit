@@ -10,6 +10,7 @@
 #include "win32/text_transform.h"
 
 #include <win32ui/handle_owner.h>
+#include <win32ui/system/date_time.h>
 
 #include <algorithm>
 
@@ -89,14 +90,11 @@ void Stamp(HistoryEntry* entry)
     GetLocalTime(&local);
     FILETIME now = {};
     GetSystemTimeAsFileTime(&now);
-    ULARGE_INTEGER value = {};
-    value.LowPart = now.dwLowDateTime;
-    value.HighPart = now.dwHighDateTime;
     // strictly increasing timestamps preserve batch order within one clock tick
     static uint64_t last = 0;
-    last = std::max<uint64_t>(value.QuadPart, last + 1);
+    last = std::max<uint64_t>(win32ui::FileTimeTicks(now), last + 1);
     entry->timestamp = last;
-    entry->time_text = util::FormatLocalTime(local, true);
+    entry->time_text = win32ui::FormatDateTime(local, true);
 }
 
 void DecodeRevert(const std::vector<std::wstring>& fields, HistoryEntry* entry)
@@ -106,7 +104,7 @@ void DecodeRevert(const std::vector<std::wstring>& fields, HistoryEntry* entry)
     RegistryValue value;
     if (!entry ||
         !record_fields::ParseUnsigned(fields[7], static_cast<uint64_t>(HistoryEntry::RevertKind::kDeleteKey), &kind) ||
-        !record_fields::ParseUnsigned(fields[9], MAXDWORD, &type) || !value_format::ParseHex(fields[10], &value.data))
+        !record_fields::ParseUnsigned(fields[9], MAXDWORD, &type) || !win32ui::ParseHexBytes(fields[10], &value.data))
     {
         return;
     }
@@ -116,7 +114,7 @@ void DecodeRevert(const std::vector<std::wstring>& fields, HistoryEntry* entry)
     entry->revert_value = std::move(value);
 }
 
-} // namespace
+}
 
 std::vector<HistoryEntry> ChangeHistory::Append(std::vector<HistoryEntry> entries, size_t maximum)
 {
@@ -161,7 +159,7 @@ HistoryDocument ParseHistory(const std::wstring& content, std::wstring* error)
 {
     HistoryDocument document;
     size_t line_number = 0;
-    for (const std::wstring_view line : record_fields::Lines(content))
+    for (const std::wstring_view line : win32ui::LineViews(content))
     {
         ++line_number;
         if (line.empty())
@@ -202,7 +200,7 @@ HistoryDocument ParseHistory(const std::wstring& content, std::wstring* error)
 std::wstring SerializeHistoryEntry(const HistoryEntry& entry)
 {
     std::wstring line;
-    record_fields::AppendRecord(&line, {std::to_wstring(entry.timestamp), entry.time_text, entry.action, entry.old_data, entry.new_data, entry.key_path, entry.value_name, std::to_wstring(static_cast<int>(entry.revert_kind)), entry.revert_value.name, std::to_wstring(entry.revert_value.type), util::ToHex(entry.revert_value.data), entry.backup_mode ? L"1" : L"0", std::to_wstring(entry.source_kind), entry.source_name, std::to_wstring(entry.source_view)});
+    record_fields::AppendRecord(&line, {std::to_wstring(entry.timestamp), entry.time_text, entry.action, entry.old_data, entry.new_data, entry.key_path, entry.value_name, std::to_wstring(static_cast<int>(entry.revert_kind)), entry.revert_value.name, std::to_wstring(entry.revert_value.type), win32ui::HexBytes(entry.revert_value.data), entry.backup_mode ? L"1" : L"0", std::to_wstring(entry.source_kind), entry.source_name, std::to_wstring(entry.source_view)});
     return line;
 }
 
@@ -221,7 +219,7 @@ bool WriteHistoryFile(const std::wstring& path, const std::vector<HistoryEntry>&
     {
         return DeleteFileW(path.c_str()) != 0 || GetLastError() == ERROR_FILE_NOT_FOUND;
     }
-    return util::WriteTextFile(path, content, false);
+    return win32ui::WriteTextFileAtomic(path.c_str(), content) == ERROR_SUCCESS;
 }
 
 bool AppendHistoryFile(const std::wstring& path, const std::vector<HistoryEntry>& entries)
@@ -231,7 +229,7 @@ bool AppendHistoryFile(const std::wstring& path, const std::vector<HistoryEntry>
     {
         lines += SerializeHistoryEntry(entry);
     }
-    const std::string bytes = util::WideToUtf8(lines);
+    const std::string bytes = win32ui::WideToMultiByte(lines, CP_UTF8);
     win32ui::UniqueHandle file(path.empty() ? INVALID_HANDLE_VALUE : CreateFileW(path.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
     DWORD written = 0;
     return file && !bytes.empty() &&
@@ -273,4 +271,4 @@ bool FindNearestExistingPath(const std::wstring& path, const PathExists& path_ex
     return false;
 }
 
-} // namespace regkit::changes
+}

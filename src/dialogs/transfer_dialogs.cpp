@@ -16,9 +16,11 @@
 #include "win32/process_rights.h"
 #include "win32/registry_view.h"
 #include "win32/shell_paths.h"
-#include "win32/system_error.h"
 #include "win32/text_transform.h"
 #include "win32/translation.h"
+
+#include <win32ui/dialog/text_prompt.h>
+#include <win32ui/system/error_text.h>
 
 #include <algorithm>
 #include <vector>
@@ -29,7 +31,7 @@ namespace regkit
 namespace
 {
 
-using util::FormatWin32Error;
+using win32ui::FormatWin32Error;
 
 constexpr wchar_t kRegFileFilter[] = L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0";
 
@@ -50,7 +52,7 @@ bool ResolveExportKey(const std::wstring& key_path, REGSAM view, RegistryNode* n
 
 bool WriteRegFile(const std::wstring& path, regfile::Writer&& writer, std::wstring* error)
 {
-    if (util::WriteTextFile(path, std::move(writer).Finish(), true))
+    if (win32ui::WriteTextFileAtomic(path.c_str(), std::move(writer).Finish(), true) == ERROR_SUCCESS)
     {
         return true;
     }
@@ -65,12 +67,12 @@ bool ReportUnreadableKey(LONG status, const std::wstring& display, std::wstring*
 {
     if (error)
     {
-        *error = util::FormatWin32Error(static_cast<DWORD>(status)) + L"\n" + display;
+        *error = win32ui::FormatWin32Error(static_cast<DWORD>(status)) + L"\n" + display;
     }
     return false;
 }
 
-} // namespace
+}
 
 bool ExportRegFile(HWND owner, const std::wstring& key_path, REGSAM view, bool allow_hive, std::wstring* error, std::wstring* saved_path, win32::OpenAfter* open_after)
 {
@@ -242,16 +244,10 @@ bool UnloadHive(HWND owner, HKEY root, const std::wstring& subkey, std::wstring*
     std::wstring target = subkey;
     if (target.empty())
     {
-        editors::TextRequest request;
-        request.title = util::Tr(L"Unload Hive");
-        request.label = util::Tr(L"Key name:");
-        request.text = target;
-        editors::TextResult result;
-        if (!editors::EditText(owner, request, &result))
+        if (win32ui::PromptText(owner, {.title = util::Tr(L"Unload Hive"), .label = util::Tr(L"Key name:")}, &target) != 0)
         {
             return false;
         }
-        target = std::move(result.text);
     }
     if (target.empty())
     {
@@ -282,4 +278,4 @@ bool UnloadHive(HWND owner, HKEY root, const std::wstring& subkey, std::wstring*
     return true;
 }
 
-} // namespace regkit
+}

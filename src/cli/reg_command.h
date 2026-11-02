@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -14,7 +14,6 @@ namespace regkit::cli
 {
 
 bool Execute(const std::vector<std::wstring>& args, int* exit_code);
-// false when RegKit was not started from a terminal
 bool PrintErrorToTerminal(const std::wstring& text);
 
-} // namespace regkit::cli
+}

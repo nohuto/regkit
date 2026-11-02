@@ -3,19 +3,16 @@
 
 #include "dialogs/bitfield_definition.h"
 
-#include "records/json.h"
 #include "win32/file_text.h"
 #include "win32/shell_paths.h"
 #include "win32/text_transform.h"
 #include "win32/translation.h"
 
-#include <win32ui/handle_owner.h>
 #include <win32ui/json/reader.h>
 #include <win32ui/json/writer.h>
+#include <win32ui/system/paths.h>
 
 #include <algorithm>
-#include <cstdio>
-#include <cstring>
 
 namespace regkit::editors::bitfield
 {
@@ -249,7 +246,7 @@ void AppendMember(std::wstring* out, const wchar_t* indent, const wchar_t* name,
 
 std::wstring BundleDirectory()
 {
-    const std::wstring module_dir = util::GetModuleDirectory();
+    const std::wstring module_dir = util::ModuleDirectory();
     if (module_dir.empty())
     {
         return L"";
@@ -265,32 +262,23 @@ std::vector<DefinitionFile> LoadBundledFiles()
     {
         return files;
     }
-    WIN32_FIND_DATAW found = {};
-    const win32ui::UniqueFind search(FindFirstFileW(util::JoinPath(directory, L"*.regkit-bitfield.jsonc").c_str(), &found));
-    if (search)
-    {
-        do
+    util::ForEachFile(util::JoinPath(directory, L"*.regkit-bitfield.jsonc").c_str(), [&](const WIN32_FIND_DATAW& found) {
+        DefinitionFile file;
+        std::wstring error;
+        // ignore invalid files without hiding remaining definitions
+        if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && Load(util::JoinPath(directory, found.cFileName), &file, &error))
         {
-            if (found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-            {
-                continue;
-            }
-            DefinitionFile file;
-            std::wstring error;
-            // ignore invalid files without hiding remaining definitions
-            if (Load(util::JoinPath(directory, found.cFileName), &file, &error))
-            {
-                files.push_back(std::move(file));
-            }
-        } while (FindNextFileW(search.get(), &found));
-    }
+            files.push_back(std::move(file));
+        }
+        return true;
+    });
     std::stable_sort(files.begin(), files.end(), [](const DefinitionFile& left, const DefinitionFile& right) {
         return util::CompareInsensitive(left.name, right.name) < 0;
     });
     return files;
 }
 
-} // namespace
+}
 
 uint64_t Field::Extract(uint64_t value) const
 {
@@ -578,13 +566,12 @@ bool Parse(const std::vector<BYTE>& utf8, DefinitionFile* file, std::wstring* er
     }
     const BYTE* data = utf8.data();
     size_t size = utf8.size();
-    // accept optional UTF-8 BOM
     if (size >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF)
     {
         data += 3;
         size -= 3;
     }
-    const std::wstring text = util::Utf8ToWide(std::string_view(reinterpret_cast<const char*>(data), size));
+    const std::wstring text = win32ui::Utf8ToWide(std::string_view(reinterpret_cast<const char*>(data), size)).value_or(std::wstring());
     if (size > 0 && text.empty())
     {
         if (error)
@@ -595,7 +582,7 @@ bool Parse(const std::vector<BYTE>& utf8, DefinitionFile* file, std::wstring* er
     }
     DefinitionFile parsed;
     std::wstring message;
-    win32ui::JsonReader reader(text, json::Errors(&message), kMaxDepth);
+    win32ui::JsonReader reader(text, win32ui::JsonErrorText(&message), kMaxDepth);
     if (!ReadFile(reader, &parsed))
     {
         if (error)
@@ -615,7 +602,7 @@ bool Parse(const std::vector<BYTE>& utf8, DefinitionFile* file, std::wstring* er
 bool Load(const std::wstring& path, DefinitionFile* file, std::wstring* error)
 {
     std::vector<BYTE> bytes;
-    if (!util::ReadFileBytes(path, &bytes, kMaxFileBytes))
+    if (win32ui::ReadFileBytes(path.c_str(), &bytes, kMaxFileBytes) != ERROR_SUCCESS || bytes.empty())
     {
         if (error)
         {
@@ -739,7 +726,7 @@ bool Save(const std::wstring& path, const DefinitionFile& file, std::wstring* er
     }
     // formatting can exceed the Load size limit for otherwise valid data
     const std::wstring text = Serialize(copy);
-    if (util::WideToUtf8(text).size() > kMaxFileBytes)
+    if (win32ui::WideToMultiByte(text, CP_UTF8).size() > kMaxFileBytes)
     {
         if (error)
         {
@@ -747,7 +734,7 @@ bool Save(const std::wstring& path, const DefinitionFile& file, std::wstring* er
         }
         return false;
     }
-    if (!util::WriteTextFile(path, text, false))
+    if (win32ui::WriteTextFileAtomic(path.c_str(), text) != ERROR_SUCCESS)
     {
         if (error)
         {
@@ -787,15 +774,8 @@ std::vector<Definition> Matching(const std::wstring& key_path, const std::wstrin
 
 std::wstring SuggestedFileName(const std::wstring& value_name)
 {
-    std::wstring base = value_name.empty() ? L"Default" : value_name;
-    for (wchar_t& c : base)
-    {
-        if (c < 0x20 || wcschr(L"<>:\"/\\|?*", c))
-        {
-            c = L'_';
-        }
-    }
-    return base + kExtension;
+    const std::wstring safe = win32ui::SafeFileName(value_name);
+    return (safe.empty() ? std::wstring(L"Default") : safe) + kExtension;
 }
 
 const wchar_t* FileFilter()
@@ -804,4 +784,4 @@ const wchar_t* FileFilter()
            L"(*.jsonc;*.json)\0*.jsonc;*.json\0";
 }
 
-} // namespace regkit::editors::bitfield
+}

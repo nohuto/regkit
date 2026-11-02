@@ -5,17 +5,16 @@
 
 #include "win32/translation.h"
 
+#include <win32ui/dialog/file_dialog.h>
 #include <win32ui/dialog/message_dialog.h>
-#include <win32ui/window_metrics.h>
+#include <win32ui/system/error_text.h>
+#include <win32ui/system/process_launch.h>
+#include <win32ui/system/shell_open.h>
 
 #include <algorithm>
 #include <cwchar>
 #include <vector>
 
-#include <commctrl.h>
-#include <shellapi.h>
-
-#include "ui/theme.h"
 #include "win32/file_dialog.h"
 #include "win32/process_rights.h"
 #include "win32/shell_paths.h"
@@ -28,8 +27,7 @@ namespace
 {
 constexpr wchar_t kAppTitle[] = L"RegKit";
 
-// up to three buttons in IDYES, IDNO, IDCANCEL order, omit empty labels
-// first is default, width is outer width in DIPs
+// up to three buttons in IDYES, IDNO, IDCANCEL order, omit empty labels, first is default, width is outer width in DIPs
 int ShowChoiceDialog(HWND owner, const std::wstring& title, const std::wstring& message, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label, PCWSTR icon_id, int width, ChoiceButtonWidths button_widths = {}, const std::wstring& detail = std::wstring())
 {
     win32ui::MessageSpec spec;
@@ -52,37 +50,29 @@ int ShowChoiceDialog(HWND owner, const std::wstring& title, const std::wstring& 
         }
     }
     spec.default_id = spec.buttons.empty() ? IDCANCEL : spec.buttons.front().id;
-    const UINT dpi = win32ui::WindowDpi(owner ? GetAncestor(owner, GA_ROOT) : nullptr);
-    RECT frame = {};
-    win32ui::AdjustWindowRectForDpi(&frame, WS_POPUP | WS_CAPTION | WS_SYSMENU, WS_EX_DLGMODALFRAME | WS_EX_CONTROLPARENT, dpi);
-    spec.width_dip = win32ui::Unscale(win32ui::Scale(width, dpi) - (frame.right - frame.left), dpi);
+    spec.outer_width_dip = width;
     return static_cast<int>(win32ui::ShowMessage(owner, spec));
 }
 
 // first line is message, remaining lines are details
 void ShowErrorDialog(HWND owner, const std::wstring& title, const std::wstring& message)
 {
-    const size_t split = message.find(L'\n');
-    std::wstring text = message.substr(0, split);
-    if (!text.empty() && text.back() == L'\r')
-    {
-        text.pop_back();
-    }
-    const size_t detail_start = split == std::wstring::npos ? std::wstring::npos : message.find_first_not_of(L"\r\n", split);
-    const std::wstring detail = detail_start == std::wstring::npos ? std::wstring() : message.substr(detail_start);
+    std::wstring text;
+    std::wstring detail;
+    win32ui::SplitMessageText(message, &text, &detail);
     ShowChoiceDialog(owner, title, text, util::Tr(L"OK"), L"", L"", nullptr, detail.empty() ? 320 : 520, {}, detail);
 }
 
-} // namespace
-
-bool ListViewItemSelected(HWND list, int item_index)
-{
-    return item_index >= 0 && (ListView_GetItemState(list, item_index, LVIS_SELECTED) & LVIS_SELECTED) != 0;
 }
 
 void ShowError(HWND owner, const std::wstring& message)
 {
     ShowErrorDialog(owner, util::Tr(L"Error"), message);
+}
+
+void ShowStartError(HWND owner)
+{
+    ShowError(owner, util::TrDetail(L"The background task couldn't be started.", win32ui::FormatWin32Error(ERROR_NOT_ENOUGH_MEMORY)));
 }
 
 void ShowWarning(HWND owner, const std::wstring& message)
@@ -98,7 +88,7 @@ void ShowInfo(HWND owner, const std::wstring& message)
 void RevealFile(HWND owner, const std::wstring& path)
 {
     // shell under another account fails only after a long wait
-    if (!util::ShellUserMatchesProcess() || FAILED(win32::RevealInExplorer(path)))
+    if (!util::ShellUserMatchesProcess() || win32ui::RevealInExplorer(path.c_str()) != ERROR_SUCCESS)
     {
         ShowError(owner, util::TrDetail(L"The file couldn't be shown in Explorer.", path));
     }
@@ -180,7 +170,7 @@ bool ConfirmDelete(HWND owner, const std::wstring& title, const std::vector<std:
 
 bool ConfirmOverwrite(HWND owner, const std::wstring& path, const std::wstring& confirmed_path)
 {
-    return util::IsMissing(path) || util::EqualsInsensitive(path, confirmed_path) ||
+    return util::IsMissing(path.c_str()) || util::EqualsInsensitive(path, confirmed_path) ||
            PromptKeyChoice(owner, util::Tr(L"The file already exists. Replace it?"), path, kAppTitle, util::Tr(L"Replace"), L"", util::Tr(L"Cancel")) == IDYES;
 }
 
@@ -218,7 +208,7 @@ int PromptChoice(HWND owner, const std::wstring& message, const std::wstring& ti
 bool ConfirmPrivilegedRestart(HWND owner, const std::wstring& title)
 {
     // relaunch executes whichever file occupies this path at that time
-    const std::wstring exe_path = util::GetModulePath();
+    const std::wstring exe_path = util::ModulePath();
     return !util::IsWritableByNonAdmins(exe_path) ||
            PromptKeyChoice(
                owner,
@@ -237,7 +227,7 @@ bool ConfirmPrivilegedRestart(HWND owner, const std::wstring& title)
 
 bool PromptOpenFile(HWND owner, const wchar_t* filter, std::wstring* path)
 {
-    return ReportFileDialogResult(owner, win32::ChooseFileToOpen(owner, filter, path));
+    return ReportFileDialogResult(owner, win32ui::ChooseFileToOpen(owner, {.filter = filter}, path));
 }
 
 bool PromptSaveFile(HWND owner, const wchar_t* filter, std::wstring* path, win32::OpenAfter* open_after, bool regkit)
@@ -245,47 +235,17 @@ bool PromptSaveFile(HWND owner, const wchar_t* filter, std::wstring* path, win32
     return ReportFileDialogResult(owner, win32::ChooseFileToSave(owner, filter, nullptr, path, open_after, regkit));
 }
 
-bool ReportFileDialogResult(HWND owner, HRESULT hr)
+bool ReportFileDialogResult(HWND owner, DWORD error)
 {
-    if (FAILED(hr) && !win32::DialogCancelled(hr))
+    if (error != ERROR_SUCCESS && error != ERROR_CANCELLED)
     {
-        ShowError(owner, win32::FormatDialogError(hr));
+        ShowError(owner, win32::FormatDialogError(error));
     }
-    return SUCCEEDED(hr);
+    return error == ERROR_SUCCESS;
 }
 
-bool LaunchNewInstance(const std::wstring& arguments)
+DWORD LaunchNewInstance(HWND owner, const std::wstring& arguments)
 {
-    std::wstring exe = util::GetModulePath();
-    if (exe.empty())
-    {
-        return false;
-    }
-    HINSTANCE result = ShellExecuteW(nullptr, L"open", exe.c_str(), arguments.empty() ? nullptr : arguments.c_str(), nullptr, SW_SHOWNORMAL);
-    return reinterpret_cast<intptr_t>(result) > 32;
+    return win32ui::LaunchProcess(owner, util::ModulePath(), arguments);
 }
-
-HWND AddTooltip(HWND owner, HWND control, const wchar_t* text)
-{
-    if (!owner || !control || !text)
-    {
-        return nullptr;
-    }
-    HWND tip =
-        CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASSW, nullptr, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, owner, nullptr, nullptr, nullptr);
-    if (!tip)
-    {
-        return nullptr;
-    }
-    TOOLINFOW info = {};
-    info.cbSize = sizeof(info);
-    info.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
-    info.hwnd = owner;
-    info.uId = reinterpret_cast<UINT_PTR>(control);
-    info.lpszText = const_cast<wchar_t*>(text);
-    SendMessageW(tip, TTM_ADDTOOL, 0, reinterpret_cast<LPARAM>(&info));
-    SendMessageW(tip, TTM_SETMAXTIPWIDTH, 0, win32ui::Scale(600, win32ui::DpiForWindow(owner)));
-    win32ui::ApplyThemeToWindow(tip);
-    return tip;
 }
-} // namespace regkit::ui

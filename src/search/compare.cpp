@@ -71,7 +71,7 @@ void AppendKeys(const Map& source, std::unordered_set<std::wstring>* seen, std::
     }
 }
 
-} // namespace
+}
 
 bool CaptureRegistry(const std::wstring& base_path, const RegistryNode& base_node, bool recursive, Snapshot* snapshot, std::wstring* error, std::atomic_bool* cancel)
 {
@@ -417,7 +417,7 @@ bool ParseRows(const std::wstring& content, std::vector<Row>* rows, std::wstring
     }
     std::vector<Row> parsed;
     size_t line_number = 0;
-    for (const std::wstring_view line : record_fields::Lines(content))
+    for (const std::wstring_view line : win32ui::LineViews(content))
     {
         ++line_number;
         if (line.empty())
@@ -450,7 +450,7 @@ bool ParseRows(const std::wstring& content, std::vector<Row>* rows, std::wstring
 
 bool SaveRows(const std::wstring& path, const std::vector<Row>& rows)
 {
-    return !path.empty() && util::WriteTextFile(path, SerializeRows(rows), false);
+    return !path.empty() && win32ui::WriteTextFileAtomic(path.c_str(), SerializeRows(rows)) == ERROR_SUCCESS;
 }
 
 bool LoadRows(const std::wstring& path, std::vector<Row>* rows, std::wstring* error)
@@ -459,4 +459,4 @@ bool LoadRows(const std::wstring& path, std::vector<Row>* rows, std::wstring* er
     return rows && !path.empty() && util::ReadStateFile(path, &content, error, 64ull * 1024ull * 1024ull) && !content.empty() && ParseRows(content, rows, error);
 }
 
-} // namespace regkit::search::compare
+}

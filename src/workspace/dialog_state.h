@@ -14,7 +14,6 @@ namespace regkit::workspace
 using DialogState = std::map<std::wstring, std::wstring, std::less<>>;
 
 std::wstring DialogStatePath();
-// empty state and the reason in error when the file cant be read
 DialogState LoadDialogState(std::wstring* error = nullptr);
 void SaveDialogState(const DialogState& state);
 
@@ -44,4 +43,4 @@ class DialogFields
     bool write_;
 };
 
-} // namespace regkit::workspace
+}

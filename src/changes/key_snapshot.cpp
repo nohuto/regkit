@@ -135,7 +135,7 @@ bool Restore(const RegistryNode& parent, const KeySnapshot& snapshot, bool* crea
     return (link || Fill(node, snapshot)) && WriteAttributes(node, snapshot);
 }
 
-} // namespace
+}
 
 bool ReplaceKey(const RegistryNode& node, const KeySnapshot& snapshot)
 {
@@ -207,4 +207,4 @@ bool RestoreKey(const RegistryNode& parent, const KeySnapshot& snapshot)
     return false;
 }
 
-} // namespace regkit::changes
+}

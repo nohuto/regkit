@@ -8,6 +8,7 @@ BinPackArguments: false
 BinPackParameters: false
 
 ColumnLimit: 0
+FixNamespaceComments: false
 IndentCaseBlocks: true
 InsertNewlineAtEOF: true
 PointerAlignment: Left

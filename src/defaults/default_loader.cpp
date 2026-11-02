@@ -176,7 +176,7 @@ std::wstring ShortWindowsName(const std::wstring& folder)
     return text;
 }
 
-} // namespace
+}
 
 std::wstring ShortLabel(const std::wstring& label, const std::wstring& source_path)
 {
@@ -224,4 +224,4 @@ std::wstring ShortLabel(const std::wstring& label, const std::wstring& source_pa
     return text;
 }
 
-} // namespace regkit::defaults
+}

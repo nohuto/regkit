@@ -6,6 +6,8 @@
 #include "win32/text_transform.h"
 #include "win32/translation.h"
 
+#include <win32ui/system/date_time.h>
+
 namespace regkit
 {
 using namespace window_detail;
@@ -235,7 +237,7 @@ void MainWindow::Impl::StartValueListWorker()
                 if (inspection.info_valid && task->include_dates)
                 {
                     row.date = FormatFileTime(info.last_write);
-                    row.date_value = FileTimeToUint64(info.last_write);
+                    row.date_value = win32ui::FileTimeTicks(info.last_write);
                     row.has_date = (row.date_value != 0);
                 }
                 if (inspection.info_valid && task->include_details)
@@ -461,7 +463,7 @@ void MainWindow::Impl::StartValueListWorker()
         {
             return;
         }
-        work::PostPayload(task->hwnd, frame::message_id::kValueListReady, static_cast<WPARAM>(task->generation), payload);
+        win32ui::PostPayload(task->hwnd, frame::message_id::kValueListReady, static_cast<WPARAM>(task->generation), payload);
     });
 }
 
@@ -506,7 +508,7 @@ void MainWindow::Impl::StartValuePreviewWorker()
         {
             return;
         }
-        work::PostPayload(task->hwnd, frame::message_id::kValuePreviewReady, static_cast<WPARAM>(task->generation), payload);
+        win32ui::PostPayload(task->hwnd, frame::message_id::kValuePreviewReady, static_cast<WPARAM>(task->generation), payload);
     });
 }
 
@@ -592,7 +594,7 @@ void MainWindow::Impl::StartSearchPreviewWorker()
         {
             return;
         }
-        work::PostPayload(task->hwnd, frame::message_id::kSearchPreviewReady, static_cast<WPARAM>(task->generation), payload);
+        win32ui::PostPayload(task->hwnd, frame::message_id::kSearchPreviewReady, static_cast<WPARAM>(task->generation), payload);
     });
 }
 
@@ -725,7 +727,7 @@ void MainWindow::Impl::StartSearchSortWorker()
         payload->tab_index = task->tab_index;
         payload->sort_revision = task->sort_revision;
         payload->rows = std::move(task->rows);
-        work::PostPayload(task->hwnd, frame::message_id::kSearchSortReady, static_cast<WPARAM>(task->generation), payload);
+        win32ui::PostPayload(task->hwnd, frame::message_id::kSearchSortReady, static_cast<WPARAM>(task->generation), payload);
     });
 }
 
@@ -786,7 +788,8 @@ void MainWindow::Impl::StartSearchTabLoadWorker()
     {
         return;
     }
-    search_tab_loader_.Start(L"SearchTabLoadThread", [](std::unique_ptr<SearchTabLoadTask> task, const std::atomic_bool& stopping) {
+    // newer task is the load of another tab, this one still posts, or its tab would keep load_pending and never load
+    search_tab_loader_.Start(L"SearchTabLoadThread", [](std::unique_ptr<SearchTabLoadTask> task, const std::atomic_bool&) {
         if (!task)
         {
             return;
@@ -802,11 +805,7 @@ void MainWindow::Impl::StartSearchTabLoadWorker()
         {
             search::SortResults(&payload->rows, task->sort_column, task->sort_ascending, task->sort_earlier, task->sources);
         }
-        if (stopping.load())
-        {
-            return;
-        }
-        work::PostPayload(task->hwnd, frame::message_id::kSearchTabLoadReady, static_cast<WPARAM>(task->generation), payload);
+        win32ui::PostPayload(task->hwnd, frame::message_id::kSearchTabLoadReady, static_cast<WPARAM>(task->generation), payload);
     });
 }
 
@@ -819,4 +818,4 @@ void MainWindow::Impl::StopValueListWorker()
     search_tab_loader_.Stop();
 }
 
-} // namespace regkit
+}

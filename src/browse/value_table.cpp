@@ -9,11 +9,16 @@
 
 #include "win32/text_transform.h"
 
+#include <win32ui/list_view/list_view.h>
+#include <win32ui/window_metrics.h>
+
 namespace regkit
 {
 
 namespace
 {
+
+constexpr int kValueTooltipMaxWidthDip = 900;
 
 void AppendSearchField(std::wstring* out, const std::wstring& text)
 {
@@ -48,7 +53,7 @@ std::wstring BuildSearchText(const ListRow& row)
     return text;
 }
 
-} // namespace
+}
 
 void ValueList::Create(HWND parent, HINSTANCE instance, int control_id)
 {
@@ -66,7 +71,7 @@ void ValueList::Create(HWND parent, HINSTANCE instance, int control_id)
         instance,
         nullptr
     );
-    SendMessageW(ListView_GetToolTips(hwnd_), TTM_SETMAXTIPWIDTH, 0, kValueTooltipMaxWidth);
+    SendMessageW(ListView_GetToolTips(hwnd_), TTM_SETMAXTIPWIDTH, 0, win32ui::Scale(kValueTooltipMaxWidthDip, win32ui::WindowDpi(hwnd_)));
 }
 
 HWND ValueList::hwnd() const
@@ -90,30 +95,38 @@ bool ValueList::MergeRows(std::vector<ListRow> rows)
     auto same = [](const ListRow& left, const ListRow& right) { return left.kind == right.kind && left.extra == right.extra; };
     if (HasFilter() || !std::equal(rows.begin(), rows.end(), rows_.begin(), rows_.end(), same))
     {
-        // rows moved, preserve selection and focus by name
+        // rows moved, preserve selection, focus and anchor by name
         using Identity = std::pair<LPARAM, std::wstring>;
+        const win32ui::ListSelection before = win32ui::CaptureListSelection(hwnd_);
+        const auto identity_at = [this](int index) {
+            const ListRow* row = RowAt(index);
+            return row ? Identity(row->kind, row->extra) : Identity(-1, {});
+        };
         std::set<Identity> selected;
-        for (int i = -1; (i = ListView_GetNextItem(hwnd_, i, LVNI_SELECTED)) >= 0;)
+        for (int i = 0, count = before.all ? static_cast<int>(visible_indices_.size()) : 0; i < count; ++i)
         {
-            if (const ListRow* row = RowAt(i))
-            {
-                selected.emplace(row->kind, row->extra);
-            }
+            selected.insert(identity_at(i));
         }
-        const ListRow* focused_row = RowAt(ListView_GetNextItem(hwnd_, -1, LVNI_FOCUSED));
-        const Identity focused = focused_row ? Identity(focused_row->kind, focused_row->extra) : Identity(-1, {});
+        for (const int i : before.rows)
+        {
+            selected.insert(identity_at(i));
+        }
+        const Identity focused = identity_at(before.focused);
+        const Identity mark = identity_at(before.mark);
         SetRows(std::move(rows));
-        ListView_SetItemState(hwnd_, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+        win32ui::ListSelection after;
         for (int i = 0; i < static_cast<int>(visible_indices_.size()); ++i)
         {
             const ListRow& row = rows_[static_cast<size_t>(visible_indices_[static_cast<size_t>(i)])];
             const Identity identity(row.kind, row.extra);
-            const UINT state = (selected.count(identity) ? LVIS_SELECTED : 0) | (focused == identity ? LVIS_FOCUSED : 0);
-            if (state)
+            if (selected.contains(identity))
             {
-                ListView_SetItemState(hwnd_, i, state, state);
+                after.rows.push_back(i);
             }
+            after.focused = focused == identity ? i : after.focused;
+            after.mark = mark == identity ? i : after.mark;
         }
+        win32ui::ApplyListSelection(hwnd_, after);
         return false;
     }
     for (size_t i = 0; i < rows.size(); ++i)
@@ -187,24 +200,12 @@ void ValueList::RebuildFilter()
     // selection follows rows, call native selection APIs only when positions change
     const std::vector<int> previous = std::move(visible_indices_);
     const int count = static_cast<int>(previous.size());
-    std::vector<int> selected;
-    int focused = -1;
-    if (hwnd_)
+    win32ui::ListSelection selection = win32ui::CaptureListSelection(hwnd_);
+    if (selection.all)
     {
-        if (ListView_GetSelectedCount(hwnd_) == static_cast<UINT>(count))
-        {
-            selected.resize(previous.size());
-            std::iota(selected.begin(), selected.end(), 0);
-        }
-        else
-        {
-            for (int i = -1; (i = ListView_GetNextItem(hwnd_, i, LVNI_SELECTED)) >= 0 && i < count;)
-            {
-                selected.push_back(i);
-            }
-        }
-        focused = ListView_GetNextItem(hwnd_, -1, LVNI_FOCUSED);
-        focused = focused < count ? focused : -1;
+        selection.all = false;
+        selection.rows.resize(previous.size());
+        std::iota(selection.rows.begin(), selection.rows.end(), 0);
     }
     visible_indices_.clear();
     visible_indices_.reserve(rows_.size());
@@ -237,35 +238,27 @@ void ValueList::RebuildFilter()
         }
     }
     ListView_SetItemCountEx(hwnd_, static_cast<int>(visible_indices_.size()), LVSICF_NOINVALIDATEALL | LVSICF_NOSCROLL);
-    auto position = [&](int old_index) {
-        const auto it = std::lower_bound(visible_indices_.begin(), visible_indices_.end(), previous[static_cast<size_t>(old_index)]);
-        return it != visible_indices_.end() && *it == previous[static_cast<size_t>(old_index)] ? static_cast<int>(it - visible_indices_.begin()) : -1;
+    bool moved = false;
+    const auto remap = [&](int* index) {
+        if (*index < 0)
+        {
+            return;
+        }
+        const int old_row = *index < count ? previous[static_cast<size_t>(*index)] : -1;
+        const auto it = std::lower_bound(visible_indices_.begin(), visible_indices_.end(), old_row);
+        const int next = old_row >= 0 && it != visible_indices_.end() && *it == old_row ? static_cast<int>(it - visible_indices_.begin()) : -1;
+        moved |= next != *index;
+        *index = next;
     };
-    const int focus = focused >= 0 ? position(focused) : -1;
-    bool moved = focus != focused;
-    size_t kept = 0;
-    for (int& index : selected)
+    remap(&selection.focused);
+    remap(&selection.mark);
+    for (int& index : selection.rows)
     {
-        const int next = position(index);
-        moved |= next != index;
-        kept += next >= 0;
-        index = next;
+        remap(&index);
     }
     if (moved)
     {
-        const bool all = kept > 0 && kept == visible_indices_.size();
-        ListView_SetItemState(hwnd_, -1, all ? LVIS_SELECTED : 0, LVIS_SELECTED | LVIS_FOCUSED);
-        for (const int index : selected)
-        {
-            if (index >= 0 && !all)
-            {
-                ListView_SetItemState(hwnd_, index, LVIS_SELECTED, LVIS_SELECTED);
-            }
-        }
-        if (focus >= 0)
-        {
-            ListView_SetItemState(hwnd_, focus, LVIS_FOCUSED, LVIS_FOCUSED);
-        }
+        win32ui::ApplyListSelection(hwnd_, selection);
     }
     RedrawWindow(hwnd_, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE);
 }
@@ -341,4 +334,4 @@ const std::vector<ListRow>& ValueList::rows() const
     return rows_;
 }
 
-} // namespace regkit
+}

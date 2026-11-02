@@ -63,9 +63,7 @@ target_link_libraries(regkit_frame PRIVATE
     regkit_records
     regkit_registry
     regkit_win32
-    bcrypt
     comctl32
     shlwapi
     uxtheme
-    winhttp
 )

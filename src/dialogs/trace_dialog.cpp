@@ -4,6 +4,7 @@
 #include "dialogs/trace_dialog.h"
 
 #include <win32ui/dialog/dialog_window.h>
+#include <win32ui/tree_view/tree_view.h>
 
 #include <algorithm>
 #include <cwchar>
@@ -272,18 +273,8 @@ void AddEntry(HWND tree, TraceDialogState* state, const KeyValueDialogEntry& ent
 
 TraceNodeData* GetNodeData(HWND tree, HTREEITEM item)
 {
-    if (!tree || !item)
-    {
-        return nullptr;
-    }
-    TVITEMW info = {};
-    info.mask = TVIF_PARAM;
-    info.hItem = item;
-    if (!TreeView_GetItem(tree, &info))
-    {
-        return nullptr;
-    }
-    return reinterpret_cast<TraceNodeData*>(info.lParam);
+    LPARAM data = 0;
+    return win32ui::TreeItemData(tree, item, &data) ? reinterpret_cast<TraceNodeData*>(data) : nullptr;
 }
 
 void AppendCheckedNodes(HWND tree, HTREEITEM item, trace::Selection* selection, std::unordered_set<std::wstring>* seen_keys)
@@ -328,21 +319,6 @@ void AppendCheckedNodes(HWND tree, HTREEITEM item, trace::Selection* selection, 
             AppendCheckedNodes(tree, child, selection, seen_keys);
         }
         item = TreeView_GetNextSibling(tree, item);
-    }
-}
-
-void ApplyCheckStateToChildren(HWND tree, HTREEITEM parent, bool checked)
-{
-    if (!tree || !parent)
-    {
-        return;
-    }
-    HTREEITEM child = TreeView_GetChild(tree, parent);
-    while (child)
-    {
-        TreeView_SetCheckState(tree, child, checked);
-        ApplyCheckStateToChildren(tree, child, checked);
-        child = TreeView_GetNextSibling(tree, child);
     }
 }
 
@@ -523,7 +499,7 @@ INT_PTR CALLBACK TraceDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
                         {
                             bool checked = TreeView_GetCheckState(state->tree, change->hItem) != FALSE;
                             state->updating_checks = true;
-                            ApplyCheckStateToChildren(state->tree, change->hItem, checked);
+                            win32ui::SetTreeChecksBelow(state->tree, change->hItem, checked);
                             state->updating_checks = false;
                         }
                     }
@@ -555,7 +531,7 @@ INT_PTR CALLBACK TraceDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
     return FALSE;
 }
 
-} // namespace
+}
 
 bool ShowTraceDialog(HWND owner, const TraceDialogOptions& options, trace::Selection* selection, TraceDialogReadyCallback on_ready, void* context)
 {
@@ -589,4 +565,4 @@ void TraceDialogPostDone(HWND dialog, bool done)
     PostMessageW(dialog, kDialogDoneMessage, done ? 1 : 0, 0);
 }
 
-} // namespace regkit
+}

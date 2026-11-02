@@ -41,4 +41,4 @@ std::wstring RenderBatch(const std::vector<Operation>& operations, bool admin_ch
 bool ParsePowerShell(std::wstring_view content, std::vector<Operation>* output, std::wstring* error);
 std::wstring RenderPowerShell(const std::vector<Operation>& operations, bool admin_check, std::vector<std::wstring>* skipped);
 
-} // namespace regkit::regfile
+}

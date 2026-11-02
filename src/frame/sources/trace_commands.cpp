@@ -147,7 +147,7 @@ std::wstring MainWindow::Impl::ResolveBundledTracePath(const std::wstring& label
         file.append(L".txt");
     }
 
-    std::wstring module_dir = util::GetModuleDirectory();
+    std::wstring module_dir = util::ModuleDirectory();
     if (module_dir.empty())
     {
         return L"";
@@ -178,7 +178,7 @@ std::wstring MainWindow::Impl::ResolveBundledDefaultPath(const std::wstring& lab
         file.append(L".reg");
     }
 
-    std::wstring module_dir = util::GetModuleDirectory();
+    std::wstring module_dir = util::ModuleDirectory();
     if (module_dir.empty())
     {
         return L"";
@@ -186,7 +186,7 @@ std::wstring MainWindow::Impl::ResolveBundledDefaultPath(const std::wstring& lab
     std::wstring assets = util::JoinPath(module_dir, L"assets");
     std::wstring defaults = util::JoinPath(assets, L"defaults");
     std::wstring direct = util::JoinPath(defaults, file);
-    if (util::IsFile(direct))
+    if (util::IsFile(direct.c_str()))
     {
         return direct;
     }
@@ -199,28 +199,20 @@ std::wstring MainWindow::Impl::ResolveBundledDefaultPath(const std::wstring& lab
             return entry.path;
         }
     }
-    WIN32_FIND_DATAW data = {};
-    HANDLE find = FindFirstFileW(util::JoinPath(defaults, L"*").c_str(), &data);
-    if (find != INVALID_HANDLE_VALUE)
-    {
-        do
+    std::wstring found;
+    util::ForEachFile(util::JoinPath(defaults, L"*").c_str(), [&](const WIN32_FIND_DATAW& data) {
+        if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
         {
-            if (!(data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || wcscmp(data.cFileName, L".") == 0 ||
-                wcscmp(data.cFileName, L"..") == 0)
+            std::wstring candidate = util::JoinPath(util::JoinPath(defaults, data.cFileName), file);
+            if (util::IsFile(candidate.c_str()))
             {
-                continue;
+                found = std::move(candidate);
+                return false;
             }
-            std::wstring directory = util::JoinPath(defaults, data.cFileName);
-            std::wstring candidate = util::JoinPath(directory, file);
-            if (util::IsFile(candidate))
-            {
-                FindClose(find);
-                return candidate;
-            }
-        } while (FindNextFileW(find, &data));
-        FindClose(find);
-    }
-    return direct;
+        }
+        return true;
+    });
+    return found.empty() ? direct : found;
 }
 
 bool MainWindow::Impl::AddTraceFromFile(const std::wstring& label, const std::wstring& path, const trace::Selection* selection_override, bool prompt_for_selection, bool update_ui)
@@ -231,11 +223,11 @@ bool MainWindow::Impl::AddTraceFromFile(const std::wstring& label, const std::ws
         return false;
     }
     std::wstring use_label = label;
-    if (!util::IsFile(source))
+    if (!util::IsFile(source.c_str()))
     {
         std::wstring candidate_label = use_label.empty() ? source : use_label;
         std::wstring bundled = ResolveBundledTracePath(candidate_label);
-        if (!bundled.empty() && util::IsFile(bundled))
+        if (!bundled.empty() && util::IsFile(bundled.c_str()))
         {
             source = bundled;
             if (use_label.empty())
@@ -394,4 +386,4 @@ void MainWindow::Impl::ClearTrace()
     SaveSettings();
 }
 
-} // namespace regkit
+}

@@ -3,10 +3,9 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
-
 #include <win32ui/gdi/gdi_cache.h>
 #include <win32ui/gdi/icon_loader.h>
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -80,7 +79,6 @@ std::wstring NormalizeMachineName(const std::wstring& text);
 
 std::wstring StripMachinePrefix(const std::wstring& machine);
 
-// false for a missing or empty list, false with the reason for one that cant be read
 bool ReadActiveEntries(const std::wstring& path, std::vector<std::wstring>* entries, std::wstring* error);
 bool ResolveActiveSource(const std::wstring& entry, const std::function<std::wstring(const std::wstring&)>& resolve_bundled, const wchar_t* fallback_label, std::wstring* source, std::wstring* label);
 
@@ -88,7 +86,7 @@ using util::EqualsInsensitive;
 
 using util::StartsWithInsensitive;
 
-struct RegFileParsePayload : work::MoveOnly
+struct RegFileParsePayload : win32ui::PostedPayload
 {
     uint64_t generation = 0;
     std::wstring source_path;
@@ -98,4 +96,4 @@ struct RegFileParsePayload : work::MoveOnly
     bool cancelled = false;
 };
 
-} // namespace regkit::window_detail
+}

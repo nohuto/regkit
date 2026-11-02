@@ -52,7 +52,7 @@ Status MapError(int code)
     return Status::kFailed;
 }
 
-} // namespace
+}
 
 class Pattern
 {
@@ -288,4 +288,4 @@ std::wstring ErrorText(const Error& error)
     return util::TrDetail(L"The find text isn't a valid regular expression.", util::TrLabel(L"Position", std::to_wstring(error.offset + 1)) + L"\n" + error.message);
 }
 
-} // namespace regkit::search::regex
+}

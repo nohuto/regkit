@@ -6,12 +6,14 @@
 #include "ui/autocomplete.h"
 #include "ui/dialog_support.h"
 #include "ui/feedback.h"
-#include "win32/file_dialog.h"
 #include "win32/translation.h"
 
 #include "resource.h"
 
+#include <win32ui/dialog/autocomplete.h>
 #include <win32ui/dialog/dialog_window.h>
+#include <win32ui/dialog/file_dialog.h>
+#include <win32ui/system/paths.h>
 
 #include <utility>
 
@@ -29,24 +31,7 @@ struct State
 
 bool ChooseFile(HWND owner, std::wstring* path)
 {
-    const HRESULT hr = win32::ChooseFileToOpen(owner, ui::kHiveFileFilter, path);
-    if (FAILED(hr) && !win32::DialogCancelled(hr))
-    {
-        ui::ShowError(owner, win32::FormatDialogError(hr));
-    }
-    return SUCCEEDED(hr);
-}
-
-std::wstring FileNameOf(const std::wstring& path)
-{
-    const size_t slash = path.find_last_of(L"\\/");
-    std::wstring name = slash == std::wstring::npos ? path : path.substr(slash + 1);
-    const size_t dot = name.find_last_of(L'.');
-    if (dot != std::wstring::npos && dot > 0)
-    {
-        name.erase(dot);
-    }
-    return name;
+    return ui::ReportFileDialogResult(owner, win32ui::ChooseFileToOpen(owner, {.filter = ui::kHiveFileFilter}, path));
 }
 
 INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lparam)
@@ -76,7 +61,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
             SetDlgItemTextW(dialog, IDC_LOAD_HIVE_PATH, path.c_str());
             if (dialog_support::ReadText(dialog, IDC_LOAD_HIVE_NAME).empty())
             {
-                SetDlgItemTextW(dialog, IDC_LOAD_HIVE_NAME, FileNameOf(path).c_str());
+                SetDlgItemTextW(dialog, IDC_LOAD_HIVE_NAME, win32ui::FileBaseName(path).c_str());
             }
         }
         return TRUE;
@@ -114,7 +99,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     return FALSE;
 }
 
-} // namespace
+}
 
 bool ChooseHiveToLoad(HWND owner, LoadHiveResult* result)
 {
@@ -158,7 +143,7 @@ INT_PTR CALLBACK SymbolicLinkDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARA
                 SetDlgItemTextW(dlg, IDC_SYMLINK_NAME, state->name.c_str());
                 SetDlgItemTextW(dlg, IDC_SYMLINK_TARGET, state->target.c_str());
             }
-            appearance::AttachAutoComplete(GetDlgItem(dlg, IDC_SYMLINK_TARGET), appearance::SuggestKeys);
+            win32ui::AttachAutoComplete(GetDlgItem(dlg, IDC_SYMLINK_TARGET), appearance::SuggestKeys);
             return TRUE;
         }
     case WM_COMMAND:
@@ -206,7 +191,7 @@ INT_PTR CALLBACK SymbolicLinkDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARA
     return FALSE;
 }
 
-} // namespace
+}
 
 bool PromptSymbolicLink(HWND owner, const std::wstring& suggested_name, const BrowseKeyCallback& browse, SymbolicLinkResult* result)
 {
@@ -221,4 +206,4 @@ bool PromptSymbolicLink(HWND owner, const std::wstring& suggested_name, const Br
     return win32ui::RunProcDialog(owner, MAKEINTRESOURCEW(IDD_NEW_SYMLINK), SymbolicLinkDialogProc, reinterpret_cast<LPARAM>(&dialog)) == IDOK;
 }
 
-} // namespace regkit::editors
+}

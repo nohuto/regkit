@@ -12,4 +12,4 @@ bool LoadEntries(const std::wstring& path, const Normalizers& normalizers, const
 
 bool Load(const std::wstring& label, const std::wstring& path, const Normalizers& normalizers, Data* data, std::wstring* error, const std::atomic_bool* cancel = nullptr);
 
-} // namespace regkit::trace
+}

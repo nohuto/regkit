@@ -31,4 +31,4 @@ struct BitfieldResult
 
 bool EditBitfield(HWND owner, const BitfieldRequest& request, BitfieldResult* result);
 
-} // namespace regkit::editors
+}

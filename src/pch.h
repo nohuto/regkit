@@ -6,7 +6,7 @@
 // rand_s must be enabled before CRT headers below pull in stdlib
 #define _CRT_RAND_S
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 

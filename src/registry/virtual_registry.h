@@ -31,4 +31,4 @@ struct VirtualRegistryData
     std::shared_ptr<std::shared_mutex> mutex = std::make_shared<std::shared_mutex>();
 };
 
-} // namespace regkit
+}

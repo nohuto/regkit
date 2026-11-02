@@ -4,7 +4,6 @@
 #include "frame/window_detail.h"
 #include "frame/window_impl.h"
 
-#include "dialogs/table_dialog.h"
 #include "registry/key_access.h"
 #include "registry/resource_list.h"
 #include "registry/value_format.h"
@@ -12,8 +11,12 @@
 #include "win32/translation.h"
 
 #include <win32ui/dialog/dialog_window.h>
+#include <win32ui/dialog/table_dialog.h>
 #include <win32ui/gdi/fonts.h>
-#include <win32ui/process_token.h>
+#include <win32ui/system/date_time.h>
+#include <win32ui/system/error_text.h>
+#include <win32ui/system/process_launch.h>
+#include <win32ui/system/process_token.h>
 
 namespace regkit
 {
@@ -61,19 +64,54 @@ std::wstring IntegrityLevelName(BYTE* descriptor)
     return text;
 }
 
-} // namespace
+constexpr std::pair<ULONG, const wchar_t*> kControlFlags[] = {
+    {util::kKeyDontVirtualize, util::TrNoop(L"Don't virtualize")},
+    {util::kKeyDontSilentFail, util::TrNoop(L"Don't silent fail")},
+    {util::kKeyRecurseFlag, util::TrNoop(L"Recurse")}
+};
+
+struct KeyInfoContext
+{
+    RegistryNode node;
+    ULONG control_flags = 0;
+};
+
+bool ApplyControlFlag(void* context, HWND dialog, size_t row, bool checked)
+{
+    auto* key = static_cast<KeyInfoContext*>(context);
+    const ULONG flags = checked ? key->control_flags | kControlFlags[row].first : key->control_flags & ~kControlFlags[row].first;
+    const LONG status = RegistryStore::SetKeyControlFlags(key->node, flags);
+    if (status != ERROR_SUCCESS)
+    {
+        ui::ShowError(dialog, FormatWin32Error(status));
+        return false;
+    }
+    key->control_flags = flags;
+    return true;
+}
+
+void OpenKeyPermissions(void* context, HWND owner)
+{
+    ShowRegistryPermissions(owner, static_cast<KeyInfoContext*>(context)->node);
+}
+
+void EditResourceBinary(void* context, HWND dialog)
+{
+    *static_cast<bool*>(context) = true;
+    win32ui::EndDialogWindow(dialog, IDCANCEL);
+}
+
+}
 
 void MainWindow::Impl::ShowKeyInfoDialog(const RegistryNode& node)
 {
-    editors::TablesRequest request;
-    request.title = util::Tr(L"Key Information");
-    request.identifier = registry_path::DisplayName(registry_path::Build(node));
+    const std::wstring identifier = registry_path::DisplayName(registry_path::Build(node));
     // link keys describe themselves, denied keys retain rows needing no query access
     KeyDetails details;
     const bool readable = RegistryStore::QueryKeyDetails(node, &details, true);
     if (!readable && details.native.native_name.empty())
     {
-        ui::ShowError(hwnd_, util::Tr(L"The key information couldn't be read.") + std::wstring(L"\n") + request.identifier);
+        ui::ShowError(hwnd_, util::Tr(L"The key information couldn't be read.") + std::wstring(L"\n") + identifier);
         return;
     }
     const auto yes_no = [](bool value) { return std::wstring(value ? util::Tr(L"Yes") : util::Tr(L"No")); };
@@ -89,10 +127,10 @@ void MainWindow::Impl::ShowKeyInfoDialog(const RegistryNode& node)
         return text.empty() ? std::wstring(util::Tr(L"None")) : text;
     };
     const std::vector<std::wstring> property_columns = {util::Tr(L"Property"), util::Tr(L"Value")};
-    records::Table general = {util::Tr(L"General"), property_columns, {}};
-    records::Table contents = {util::Tr(L"Contents"), property_columns, {}};
-    records::Table flags = {util::Tr(L"Flags"), property_columns, {}};
-    const auto add = [](records::Table& table, const wchar_t* label, std::wstring value) { table.rows.push_back({label, std::move(value)}); };
+    win32ui::TextTable general = {util::Tr(L"General"), property_columns, {}};
+    win32ui::TextTable contents = {util::Tr(L"Contents"), property_columns, {}};
+    win32ui::TextTable flags = {util::Tr(L"Flags"), property_columns, {}};
+    const auto add = [](win32ui::TextTable& table, const wchar_t* label, std::wstring value) { table.rows.push_back({label, std::move(value)}); };
 
     const util::NativeKeyInfo& native = details.native;
     add(general, util::Tr(L"Name"), registry_path::DisplayName(LeafName(node)));
@@ -116,18 +154,17 @@ void MainWindow::Impl::ShowKeyInfoDialog(const RegistryNode& node)
         std::wstring class_name = details.class_name.empty() ? std::wstring(util::Tr(L"None")) : registry_path::DisplayName(details.class_name);
         if (std::any_of(details.class_name.begin(), details.class_name.end(), [](wchar_t ch) { return !iswprint(ch); }))
         {
-            class_name.append(L" (").append(util::ToHex(std::span(reinterpret_cast<const BYTE*>(details.class_name.data()), details.class_name.size() * sizeof(wchar_t)), L' ', true)).append(L")");
+            class_name.append(L" (").append(win32ui::HexBytes(std::span(reinterpret_cast<const BYTE*>(details.class_name.data()), details.class_name.size() * sizeof(wchar_t)), L' ', true)).append(L")");
         }
         add(general, util::Tr(L"Class name"), class_name);
-        FILETIME local = {};
-        SYSTEMTIME time = {};
-        if (FileTimeToLocalFileTime(&details.info.last_write, &local) && FileTimeToSystemTime(&local, &time))
+        if (const std::wstring local = win32ui::FormatFileTime(details.info.last_write, true); !local.empty())
         {
-            add(general, util::Tr(L"Last write time"), util::FormatLocalTime(time, true));
+            add(general, util::Tr(L"Last write time"), local);
         }
+        SYSTEMTIME time = {};
         if (FileTimeToSystemTime(&details.info.last_write, &time))
         {
-            add(general, util::Tr(L"Last write time (UTC)"), util::FormatLocalTime(time, true));
+            add(general, util::Tr(L"Last write time (UTC)"), win32ui::FormatDateTime(time, true));
         }
 
         add(contents, util::Tr(L"Subkeys"), std::to_wstring(details.info.subkey_count));
@@ -159,11 +196,6 @@ void MainWindow::Impl::ShowKeyInfoDialog(const RegistryNode& node)
         }
         add(flags, L"WOW64", wow64);
     }
-    static constexpr std::pair<ULONG, const wchar_t*> kControlFlags[] = {
-        {util::kKeyDontVirtualize, util::TrNoop(L"Don't virtualize")},
-        {util::kKeyDontSilentFail, util::TrNoop(L"Don't silent fail")},
-        {util::kKeyRecurseFlag, util::TrNoop(L"Recurse")}
-    };
     // reg flags accepts only HKLM\SOFTWARE, the subtree UAC virtualizes
     const std::wstring store = registry_path::VirtualStorePath(native.native_name);
     const bool editable_flags = native.control_flags && !store.empty() && session_->mode == RegistryMode::kLocal && !settings_.read_only;
@@ -195,29 +227,20 @@ void MainWindow::Impl::ShowKeyInfoDialog(const RegistryNode& node)
     {
         add(flags, util::Tr(L"Integrity level"), IntegrityLevelName(descriptor.data()));
     }
-    request.tables = {std::move(general), std::move(contents), std::move(flags)};
-    auto control_flags = std::make_shared<ULONG>(native.control_flags.value_or(0));
+    std::vector<win32ui::TextTable> tables = {std::move(general), std::move(contents), std::move(flags)};
+    KeyInfoContext context = {node, native.control_flags.value_or(0)};
+    win32ui::TablesSpec spec = {.title = util::Tr(L"Key Information"), .identifier = identifier, .action_label = util::Tr(L"Permissions..."), .context = &context};
     if (editable_flags)
     {
-        records::Table virtualization = {util::Tr(L"Virtualization flags"), {util::Tr(L"Flag")}, {}};
+        win32ui::TextTable virtualization = {util::Tr(L"Virtualization flags"), {util::Tr(L"Flag")}, {}};
         for (const auto& [bit, name] : kControlFlags)
         {
             virtualization.rows.push_back({util::Tr(name)});
-            request.checked.push_back((*control_flags & bit) != 0);
+            spec.checked.push_back((context.control_flags & bit) != 0);
         }
-        request.check_table = static_cast<int>(request.tables.size());
-        request.tables.push_back(std::move(virtualization));
-        request.on_check = [node, control_flags](HWND dialog, size_t row, bool checked) {
-            const ULONG flags = checked ? *control_flags | kControlFlags[row].first : *control_flags & ~kControlFlags[row].first;
-            const LONG status = RegistryStore::SetKeyControlFlags(node, flags);
-            if (status != ERROR_SUCCESS)
-            {
-                ui::ShowError(dialog, FormatWin32Error(status));
-                return false;
-            }
-            *control_flags = flags;
-            return true;
-        };
+        spec.check_table = static_cast<int>(tables.size());
+        spec.on_check = ApplyControlFlag;
+        tables.push_back(std::move(virtualization));
     }
 
     SECURITY_INFORMATION access_parts = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
@@ -226,40 +249,30 @@ void MainWindow::Impl::ShowKeyInfoDialog(const RegistryNode& node)
     if (RegistryStore::ReadKeySecurity(node, &access_parts, &access_descriptor, &access_error))
     {
         // show required write level before the user tries it
-        records::Table access = {util::Tr(L"Access"), {util::Tr(L"Run level"), util::Tr(L"Access"), util::Tr(L"Can write")}, {}};
+        win32ui::TextTable access = {util::Tr(L"Access"), {util::Tr(L"Run level"), util::Tr(L"Access"), util::Tr(L"Can write")}, {}};
         for (const key_access::RunLevel& level : key_access::ForRunLevels(access_descriptor.data()))
         {
             access.rows.push_back({util::Tr(level.name), level.granted ? key_access::Describe(*level.granted) : std::wstring(), level.granted ? yes_no(key_access::CanWrite(*level.granted)) : std::wstring()});
         }
-        request.tables.push_back(std::move(access));
+        tables.push_back(std::move(access));
     }
     else if (!RegistryStore::IsVirtualRoot(node.root))
     {
         const std::wstring detail = FormatWin32Error(static_cast<DWORD>(access_error));
-        request.tables.push_back({util::Tr(L"Access"), {util::Tr(L"Error")}, {{std::wstring(util::Tr(L"The key's permissions couldn't be read.")) + (detail.empty() ? L"" : L" " + detail)}}});
+        tables.push_back({util::Tr(L"Access"), {util::Tr(L"Error")}, {{std::wstring(util::Tr(L"The key's permissions couldn't be read.")) + (detail.empty() ? L"" : L" " + detail)}}});
     }
-    request.action_label = util::Tr(L"Permissions...");
-    if (!settings_.read_only)
-    {
-        request.action = [node](HWND owner) { ShowRegistryPermissions(owner, node); };
-    }
-    editors::ShowTables(hwnd_, request);
+    spec.tables = tables;
+    spec.action = settings_.read_only ? nullptr : OpenKeyPermissions;
+    win32ui::ShowTables(hwnd_, spec);
 }
 
 bool MainWindow::Impl::ShowResourceList(const RegistryValue& value)
 {
-    editors::TablesRequest request;
-    request.title = util::Tr(L"Edit Value");
-    request.identifier = value.name.empty() ? std::wstring(util::Tr(L"(Default)")) : registry_path::DisplayName(value.name);
-    auto tables = resource_list::Decode(value_format::NormalizeType(value.type), value.data.data(), value.data.size(), util::EndsWithInsensitive(value.name, L".Translated"));
-    request.tables = tables ? std::move(*tables) : std::vector<records::Table>{{util::Tr(L"Error"), {util::Tr(L"Error")}, {{util::Tr(L"The resource data is malformed.")}}}};
+    const std::wstring identifier = value.name.empty() ? std::wstring(util::Tr(L"(Default)")) : registry_path::DisplayName(value.name);
+    auto decoded = resource_list::Decode(value_format::NormalizeType(value.type), value.data.data(), value.data.size(), util::EndsWithInsensitive(value.name, L".Translated"));
+    const std::vector<win32ui::TextTable> tables = decoded ? std::move(*decoded) : std::vector<win32ui::TextTable>{{util::Tr(L"Error"), {util::Tr(L"Error")}, {{util::Tr(L"The resource data is malformed.")}}}};
     bool edit_binary = false;
-    request.action_label = util::Tr(L"Edit Binary...");
-    request.action = [&edit_binary](HWND dialog) {
-        edit_binary = true;
-        win32ui::EndDialogWindow(dialog, IDCANCEL);
-    };
-    editors::ShowTables(hwnd_, request);
+    win32ui::ShowTables(hwnd_, {.title = util::Tr(L"Edit Value"), .identifier = identifier, .tables = tables, .action_label = util::Tr(L"Edit Binary..."), .action = EditResourceBinary, .context = &edit_binary});
     return edit_binary;
 }
 
@@ -268,7 +281,7 @@ namespace
 
 bool RestartExePath(HWND owner, std::wstring* exe_path)
 {
-    *exe_path = util::GetModulePath();
+    *exe_path = util::ModulePath();
     if (!exe_path->empty())
     {
         return true;
@@ -290,14 +303,12 @@ bool BeginRestart(HWND owner, const wchar_t* target_arg, const wchar_t* failure)
     {
         return false;
     }
-    // pass current PID so the replacement waits for this instance to exit
-    const HRESULT hr =
-        win32::LaunchElevated(owner, exe_path, win32::RestartArguments(target_arg, GetCurrentProcessId()));
-    if (FAILED(hr))
+    // replacement waits for this instance to exit
+    if (const DWORD error = win32ui::LaunchElevated(owner, exe_path, win32::RestartArguments(target_arg)); error != ERROR_SUCCESS)
     {
-        if (!win32::DialogCancelled(hr))
+        if (error != ERROR_CANCELLED)
         {
-            ui::ShowError(owner, std::wstring(failure) + L"\n" + win32::FormatDialogError(hr));
+            ui::ShowError(owner, WithErrorDetail(failure, error));
         }
         return false;
     }
@@ -305,24 +316,21 @@ bool BeginRestart(HWND owner, const wchar_t* target_arg, const wchar_t* failure)
     return true;
 }
 
-bool BrokerRestart(HWND owner, const wchar_t* target_arg, const wchar_t* failure, bool (*launch)(const std::wstring&, const std::wstring&, DWORD*, bool*))
+bool BrokerRestart(HWND owner, const wchar_t* target_arg, const wchar_t* failure, DWORD (*launch)(const std::wstring&, const std::wstring&, DWORD*))
 {
     std::wstring exe_path;
     if (!RestartExePath(owner, &exe_path))
     {
         return false;
     }
-    const std::wstring command_line =
-        L"\"" + exe_path + L"\" " + win32::RestartArguments(target_arg, GetCurrentProcessId());
-    DWORD error = 0;
-    bool impersonation_lost = false;
-    const bool launched = launch(command_line, L"", &error, &impersonation_lost);
-    if (impersonation_lost)
+    DWORD restore_error = ERROR_SUCCESS;
+    const DWORD error = launch(exe_path, win32::RestartArguments(target_arg), &restore_error);
+    if (restore_error != ERROR_SUCCESS)
     {
-        ui::ShowError(owner, WithErrorDetail(util::Tr(L"RegKit couldn't restore its own security context and must close now."), error));
-        ExitProcess(launched ? 0u : 1u);
+        ui::ShowError(owner, WithErrorDetail(util::Tr(L"RegKit couldn't restore its own security context and must close now."), restore_error));
+        ExitProcess(error == ERROR_SUCCESS ? 0u : 1u);
     }
-    if (!launched)
+    if (error != ERROR_SUCCESS)
     {
         ui::ShowError(owner, WithErrorDetail(failure, error));
         return false;
@@ -331,7 +339,7 @@ bool BrokerRestart(HWND owner, const wchar_t* target_arg, const wchar_t* failure
     return true;
 }
 
-} // namespace
+}
 
 bool MainWindow::Impl::PrepareSessionHandover()
 {
@@ -355,11 +363,12 @@ bool MainWindow::Impl::SaveSessionForRestart()
 
 bool MainWindow::Impl::LaunchRestart(bool restore_session)
 {
-    if (ui::LaunchNewInstance(win32::RestartArguments(nullptr, GetCurrentProcessId(), restore_session)))
+    const DWORD error = ui::LaunchNewInstance(hwnd_, win32::RestartArguments(nullptr, restore_session));
+    if (error == ERROR_SUCCESS)
     {
         return true;
     }
-    ui::ShowError(hwnd_, util::Tr(L"RegKit couldn't be restarted."));
+    ui::ShowError(hwnd_, util::TrDetail(L"RegKit couldn't be restarted.", win32ui::FormatWin32Error(error)));
     return false;
 }
 
@@ -434,27 +443,28 @@ bool MainWindow::Impl::RestartAfterSettingsReset()
     return true;
 }
 
+// tabs agree to close before the replacement starts, it would outlive a cancelled close
 bool MainWindow::Impl::RestartAsAdmin()
 {
-    if (!PrepareSessionHandover())
+    if (!ConfirmCloseAllTabs() || !PrepareSessionHandover())
     {
         return false;
     }
-    if (win32ui::IsProcessSystem() || win32ui::IsProcessTrustedInstaller())
-    {
-        // return through the signed in shell before requesting admin access
-        return BrokerRestart(hwnd_, kRestartAdminArg, util::Tr(L"Failed to restart with administrator rights."), util::LaunchProcessAsShellUser);
-    }
-    return BeginRestart(hwnd_, nullptr, util::Tr(L"Failed to restart with administrator rights."));
+    // return through the signed in shell before requesting admin access
+    close_confirmed_ = win32ui::IsProcessSystem() || win32ui::IsProcessTrustedInstaller()
+                           ? BrokerRestart(hwnd_, kRestartAdminArg, util::Tr(L"Failed to restart with administrator rights."), win32ui::LaunchAsShellUser)
+                           : BeginRestart(hwnd_, nullptr, util::Tr(L"Failed to restart with administrator rights."));
+    return close_confirmed_;
 }
 
 bool MainWindow::Impl::RestartAsUser()
 {
-    if (!PrepareSessionHandover())
+    if (!ConfirmCloseAllTabs() || !PrepareSessionHandover())
     {
         return false;
     }
-    return BrokerRestart(hwnd_, kRestartUserArg, util::Tr(L"Failed to restart as the signed-in user."), util::LaunchProcessAsShellUser);
+    close_confirmed_ = BrokerRestart(hwnd_, kRestartUserArg, util::Tr(L"Failed to restart as the signed-in user."), win32ui::LaunchAsShellUser);
+    return close_confirmed_;
 }
 
 bool MainWindow::Impl::RestartAsSystem()
@@ -463,15 +473,14 @@ bool MainWindow::Impl::RestartAsSystem()
     {
         return false;
     }
-    if (!PrepareSessionHandover())
+    if (!ConfirmCloseAllTabs() || !PrepareSessionHandover())
     {
         return false;
     }
-    if (!win32ui::IsProcessElevated())
-    {
-        return BeginRestart(hwnd_, kRestartSystemArg, util::Tr(L"Failed to request SYSTEM restart."));
-    }
-    return BrokerRestart(hwnd_, kRestartSystemArg, util::Tr(L"Failed to restart with SYSTEM rights."), util::LaunchProcessAsSystem);
+    close_confirmed_ = win32ui::IsProcessElevated()
+                           ? BrokerRestart(hwnd_, kRestartSystemArg, util::Tr(L"Failed to restart with SYSTEM rights."), win32ui::LaunchAsSystem)
+                           : BeginRestart(hwnd_, kRestartSystemArg, util::Tr(L"Failed to request SYSTEM restart."));
+    return close_confirmed_;
 }
 
 bool MainWindow::Impl::RestartAsTrustedInstaller()
@@ -480,20 +489,19 @@ bool MainWindow::Impl::RestartAsTrustedInstaller()
     {
         return false;
     }
-    if (!PrepareSessionHandover())
+    if (!ConfirmCloseAllTabs() || !PrepareSessionHandover())
     {
         return false;
     }
-    if (!win32ui::IsProcessElevated())
-    {
-        return BeginRestart(hwnd_, kRestartTiArg, util::Tr(L"Failed to request TrustedInstaller restart."));
-    }
-    return BrokerRestart(hwnd_, kRestartTiArg, util::Tr(L"Failed to restart with TrustedInstaller rights."), util::LaunchProcessAsTrustedInstaller);
+    close_confirmed_ = win32ui::IsProcessElevated()
+                           ? BrokerRestart(hwnd_, kRestartTiArg, util::Tr(L"Failed to restart with TrustedInstaller rights."), win32ui::LaunchAsTrustedInstaller)
+                           : BeginRestart(hwnd_, kRestartTiArg, util::Tr(L"Failed to request TrustedInstaller restart."));
+    return close_confirmed_;
 }
 
 void MainWindow::Impl::ReplaceRegEdit(bool enable)
 {
-    std::wstring exe_path = util::GetModulePath();
+    std::wstring exe_path = util::ModulePath();
     if (exe_path.empty())
     {
         ui::ShowError(hwnd_, util::Tr(L"Failed to locate the executable path."));
@@ -554,7 +562,7 @@ void MainWindow::Impl::ReplaceRegEdit(bool enable)
 void MainWindow::Impl::SetEditContextMenu(bool enable)
 {
     LONG cleanup_result = ERROR_SUCCESS;
-    const LONG result = win32::SetEditMenu(util::GetModulePath(), enable, &cleanup_result);
+    const LONG result = win32::SetEditMenu(util::ModulePath(), enable, &cleanup_result);
     if (result != ERROR_SUCCESS)
     {
         std::wstring message = FormatWin32Error(result);
@@ -615,4 +623,4 @@ void MainWindow::Impl::OpenHiveFileDir()
     ui::RevealFile(hwnd_, hive_path);
 }
 
-} // namespace regkit
+}

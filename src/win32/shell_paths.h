@@ -3,24 +3,28 @@
 
 #pragma once
 
+#include <win32ui/system/paths.h>
+#include <win32ui/windows_config.h>
+
 #include <string>
-#include <string_view>
 
 namespace regkit::util
 {
 
-std::wstring GetModuleDirectory();
-std::wstring GetModulePath();
-std::wstring JoinPath(const std::wstring& left, const std::wstring& right);
-std::wstring FileName(std::wstring_view path);
-std::wstring FileBaseName(std::wstring_view path);
-std::wstring TrimTrailingSeparators(std::wstring path);
-bool IsFile(const std::wstring& path);
-bool IsDirectory(const std::wstring& path);
-bool IsMissing(const std::wstring& path);
 std::wstring GetAppDataFolder();
 std::wstring GetCacheFolder();
-bool HasFileExtension(std::wstring_view path, std::wstring_view extension);
-std::wstring EnsureFileExtension(std::wstring path, std::wstring_view extension);
 
-} // namespace regkit::util
+using win32ui::EnsureFileExtension;
+using win32ui::FileBaseName;
+using win32ui::FileName;
+using win32ui::ForEachFile;
+using win32ui::HasFileExtension;
+using win32ui::IsDirectory;
+using win32ui::IsFile;
+using win32ui::IsMissing;
+using win32ui::JoinPath;
+using win32ui::ModuleDirectory;
+using win32ui::ModulePath;
+using win32ui::TrimTrailingSeparators;
+
+}

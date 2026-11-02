@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -66,4 +66,4 @@ bool ShowSearchDialog(HWND owner, SearchDialogResult* result, const SearchSource
 void SearchDialogFields(workspace::DialogFields& fields, SearchDialogResult* result);
 bool ShowBrowseKeyDialog(HWND owner, std::wstring* selected_path);
 
-} // namespace regkit
+}

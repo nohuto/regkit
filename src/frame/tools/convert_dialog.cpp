@@ -13,8 +13,12 @@
 
 #include "resource.h"
 
+#include <win32ui/dialog/autocomplete.h>
 #include <win32ui/dialog/dialog_layout.h>
 #include <win32ui/dialog/dialog_window.h>
+#include <win32ui/dialog/file_dialog.h>
+#include <win32ui/system/paths.h>
+#include <win32ui/system/shell_open.h>
 
 #include <algorithm>
 #include <initializer_list>
@@ -66,13 +70,7 @@ std::wstring WithExtension(std::wstring path, regfile::Format format)
     {
         return path;
     }
-    const size_t dot = path.rfind(L'.');
-    const size_t slash = path.find_last_of(L"\\/");
-    if (dot != std::wstring::npos && (slash == std::wstring::npos || dot > slash))
-    {
-        path.erase(dot);
-    }
-    return path + regfile::FormatExtension(format);
+    return win32ui::ReplaceFileExtension(std::move(path), regfile::FormatExtension(format));
 }
 
 void UpdateInputControls(HWND dialog)
@@ -166,7 +164,7 @@ bool Convert(HWND dialog, State* state)
     }
     if (settings.open_in_editor)
     {
-        ui::ReportFileDialogResult(dialog, win32::OpenInTextEditor(GetWindow(dialog, GW_OWNER), settings.output_path));
+        ui::ReportFileDialogResult(dialog, win32ui::ShellOpen(GetWindow(dialog, GW_OWNER), settings.output_path.c_str(), L".txt"));
     }
     else
     {
@@ -178,9 +176,9 @@ bool Convert(HWND dialog, State* state)
 void Browse(HWND dialog, State* state, bool input)
 {
     std::wstring path = dialog_support::ReadText(dialog, input ? IDC_CONVERT_INPUT : IDC_CONVERT_OUTPUT);
-    const HRESULT hr = input ? win32::ChooseFileToOpen(dialog, regfile::kConvertFilter, &path)
-                             : win32::ChooseFileToSave(dialog, kFormatFilters[static_cast<int>(FormatAt(dialog))], path.empty() ? nullptr : path.c_str(), &path);
-    if (!ui::ReportFileDialogResult(dialog, hr))
+    const DWORD error = input ? win32ui::ChooseFileToOpen(dialog, {.filter = regfile::kConvertFilter}, &path)
+                              : win32::ChooseFileToSave(dialog, kFormatFilters[static_cast<int>(FormatAt(dialog))], path.empty() ? nullptr : path.c_str(), &path);
+    if (!ui::ReportFileDialogResult(dialog, error))
     {
         return;
     }
@@ -233,8 +231,8 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
         PopulateKeys(dialog);
         UpdateInputControls(dialog);
         HWND key = GetDlgItem(dialog, IDC_CONVERT_KEY);
-        appearance::AttachAutoComplete(key, [dialog, key](const std::wstring& text) {
-            return SourceAt(dialog) == ConvertSource::kRegistry ? appearance::SuggestKeys(text) : appearance::SuggestComboPaths(key, text);
+        win32ui::AttachAutoComplete(key, [dialog, key](const std::wstring& text) {
+            return SourceAt(dialog) == ConvertSource::kRegistry ? appearance::SuggestKeys(text) : win32ui::SuggestComboPaths(key, text);
         });
         win32ui::MatchComboHeights(GetDlgItem(dialog, IDC_CONVERT_INPUT), {GetDlgItem(dialog, IDC_CONVERT_SOURCE), GetDlgItem(dialog, IDC_CONVERT_KEY), GetDlgItem(dialog, IDC_CONVERT_FORMAT)});
         return TRUE;
@@ -281,7 +279,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     return TRUE;
 }
 
-} // namespace
+}
 
 void ShowConvertDialog(HWND owner, ConvertSettings* settings)
 {
@@ -302,4 +300,4 @@ void ConvertDialogFields(workspace::DialogFields& fields, ConvertSettings* setti
     fields.Field(L"convert_open_in_editor", &settings->open_in_editor);
 }
 
-} // namespace regkit
+}

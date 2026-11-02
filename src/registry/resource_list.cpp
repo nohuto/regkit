@@ -52,16 +52,9 @@ struct Reader
     std::wstring Bytes(size_t offset, size_t length, size_t limit = 0) const
     {
         const size_t start = std::min(offset, size);
-        return util::ToHex(std::span(data + start, std::min(length, size - start)), L' ', true, limit);
+        return win32ui::HexBytes(std::span(data + start, std::min(length, size - start)), L' ', true, limit);
     }
 };
-
-std::wstring Hex(unsigned long long value, int digits)
-{
-    wchar_t text[24] = {};
-    swprintf_s(text, L"0x%0*llX", digits, value);
-    return text;
-}
 
 std::wstring Number(unsigned long long value)
 {
@@ -77,7 +70,7 @@ std::wstring NameOrNumber(std::span<const std::pair<int, const wchar_t*>> names,
             return util::Tr(name);
         }
     }
-    return Hex(static_cast<unsigned long long>(static_cast<unsigned int>(value)), 2);
+    return win32ui::FormatHex(static_cast<unsigned long long>(static_cast<unsigned int>(value)), 2);
 }
 
 constexpr std::pair<int, const wchar_t*> kInterfaceTypes[] = {
@@ -161,9 +154,9 @@ std::wstring Flags(USHORT flags, const FlagSet& set)
     }
     if (rest)
     {
-        text.append(text.empty() ? L"" : L", ").append(Hex(rest, 0));
+        text.append(text.empty() ? L"" : L", ").append(win32ui::FormatHex(rest, 0));
     }
-    return text + L" (" + Hex(flags, 4) + L")";
+    return text + L" (" + win32ui::FormatHex(flags, 4) + L")";
 }
 
 enum Kind
@@ -212,15 +205,15 @@ Kind KindOf(BYTE type)
 
 struct Tables
 {
-    records::Table header;
-    std::array<records::Table, kKindCount> kinds;
+    win32ui::TextTable header;
+    std::array<win32ui::TextTable, kKindCount> kinds;
     const wchar_t* number_title = nullptr;
     std::wstring number;
     bool translated = false;
 
     void Add(Kind kind, std::initializer_list<const wchar_t*> columns, std::vector<std::wstring> cells)
     {
-        records::Table& table = kinds[kind];
+        win32ui::TextTable& table = kinds[kind];
         if (table.columns.empty())
         {
             table.title = util::Tr(kKindTitles[kind]);
@@ -239,12 +232,12 @@ struct Tables
         }
         table.rows.push_back(std::move(cells));
     }
-    std::vector<records::Table> Take()
+    std::vector<win32ui::TextTable> Take()
     {
-        std::vector<records::Table> tables;
+        std::vector<win32ui::TextTable> tables;
         tables.reserve(kinds.size() + 1);
         tables.push_back(std::move(header));
-        for (records::Table& table : kinds)
+        for (win32ui::TextTable& table : kinds)
         {
             if (!table.rows.empty())
             {
@@ -269,7 +262,7 @@ size_t DecodePartial(Reader& reader, size_t offset, size_t width, size_t descrip
     case kMemory:
         {
             const ULONG length = reader.At<ULONG>(u + 8);
-            out.Add(kind, {util::TrNoop(L"Start address"), util::TrNoop(L"Length"), util::TrNoop(L"Share"), util::TrNoop(L"Flags")}, {Hex(reader.At<unsigned long long>(u), 16), type == 7 ? Hex(LargeLength(flags, length), 16) : Hex(length, 8), Share(share), Flags(flags, kind == kPort ? kPortFlags : kMemoryFlags)});
+            out.Add(kind, {util::TrNoop(L"Start address"), util::TrNoop(L"Length"), util::TrNoop(L"Share"), util::TrNoop(L"Flags")}, {win32ui::FormatHex(reader.At<unsigned long long>(u), 16), type == 7 ? win32ui::FormatHex(LargeLength(flags, length), 16) : win32ui::FormatHex(length, 8), Share(share), Flags(flags, kind == kPort ? kPortFlags : kMemoryFlags)});
             break;
         }
     case kInterrupt:
@@ -281,7 +274,7 @@ size_t DecodePartial(Reader& reader, size_t offset, size_t width, size_t descrip
             {
                 flag_text.append(L", ").append(util::TrLabel(L"Messages", Number(reader.At<USHORT>(u + 2))));
             }
-            out.Add(kind, {util::TrNoop(L"Vector"), util::TrNoop(L"Level"), util::TrNoop(L"Group"), util::TrNoop(L"Affinity"), util::TrNoop(L"Flags"), util::TrNoop(L"Share")}, {Number(reader.At<ULONG>(u + 4)), raw_message ? std::wstring() : Number(reader.At<USHORT>(u)), Number(reader.At<USHORT>(raw_message ? u : u + 2)), Hex(reader.Affinity(u + 8, width), static_cast<int>(width * 2)), flag_text, Share(share)});
+            out.Add(kind, {util::TrNoop(L"Vector"), util::TrNoop(L"Level"), util::TrNoop(L"Group"), util::TrNoop(L"Affinity"), util::TrNoop(L"Flags"), util::TrNoop(L"Share")}, {Number(reader.At<ULONG>(u + 4)), raw_message ? std::wstring() : Number(reader.At<USHORT>(u)), Number(reader.At<USHORT>(raw_message ? u : u + 2)), win32ui::FormatHex(reader.Affinity(u + 8, width), static_cast<int>(width * 2)), flag_text, Share(share)});
             break;
         }
     case kDma:
@@ -302,7 +295,7 @@ size_t DecodePartial(Reader& reader, size_t offset, size_t width, size_t descrip
             return descriptor + length;
         }
     default:
-        out.Add(kind, {util::TrNoop(L"Type"), util::TrNoop(L"Share"), util::TrNoop(L"Flags"), util::TrNoop(L"Data")}, {NameOrNumber(kResourceTypes, type), Share(share), Hex(flags, 4), type == 0x84 ? Hex((static_cast<unsigned long long>(reader.At<ULONG>(u + 8)) << 32) | reader.At<ULONG>(u + 4), 16) : reader.Bytes(u, descriptor - kPartialHeader)});
+        out.Add(kind, {util::TrNoop(L"Type"), util::TrNoop(L"Share"), util::TrNoop(L"Flags"), util::TrNoop(L"Data")}, {NameOrNumber(kResourceTypes, type), Share(share), win32ui::FormatHex(flags, 4), type == 0x84 ? win32ui::FormatHex((static_cast<unsigned long long>(reader.At<ULONG>(u + 8)) << 32) | reader.At<ULONG>(u + 4), 16) : reader.Bytes(u, descriptor - kPartialHeader)});
         break;
     }
     return descriptor;
@@ -347,7 +340,7 @@ void DecodeRequirement(Reader& reader, size_t offset, size_t width, Tables& out)
     }
     if (option_bits & ~0x0B)
     {
-        option.append(option.empty() ? L"" : L", ").append(Hex(option_bits & ~0x0B, 2));
+        option.append(option.empty() ? L"" : L", ").append(win32ui::FormatHex(option_bits & ~0x0B, 2));
     }
     option = option.empty() ? std::wstring(util::Tr(kOptions[0].second)) : option;
     const BYTE type = reader.At<BYTE>(offset + 1);
@@ -360,12 +353,12 @@ void DecodeRequirement(Reader& reader, size_t offset, size_t width, Tables& out)
     case kPort:
     case kMemory:
         {
-            auto length = [&](size_t at) { return Hex(type == 7 ? LargeLength(flags, reader.At<ULONG>(at)) : reader.At<ULONG>(at), 8); };
-            out.Add(kind, {util::TrNoop(L"Option"), util::TrNoop(L"Length"), util::TrNoop(L"Alignment"), util::TrNoop(L"Minimum address"), util::TrNoop(L"Maximum address"), util::TrNoop(L"Share"), util::TrNoop(L"Flags")}, {option, length(u), length(u + 4), Hex(reader.At<unsigned long long>(u + 8), 16), Hex(reader.At<unsigned long long>(u + 16), 16), share, Flags(flags, kind == kPort ? kPortFlags : kMemoryFlags)});
+            auto length = [&](size_t at) { return win32ui::FormatHex(type == 7 ? LargeLength(flags, reader.At<ULONG>(at)) : reader.At<ULONG>(at), 8); };
+            out.Add(kind, {util::TrNoop(L"Option"), util::TrNoop(L"Length"), util::TrNoop(L"Alignment"), util::TrNoop(L"Minimum address"), util::TrNoop(L"Maximum address"), util::TrNoop(L"Share"), util::TrNoop(L"Flags")}, {option, length(u), length(u + 4), win32ui::FormatHex(reader.At<unsigned long long>(u + 8), 16), win32ui::FormatHex(reader.At<unsigned long long>(u + 16), 16), share, Flags(flags, kind == kPort ? kPortFlags : kMemoryFlags)});
             break;
         }
     case kInterrupt:
-        out.Add(kind, {util::TrNoop(L"Option"), util::TrNoop(L"Minimum vector"), util::TrNoop(L"Maximum vector"), util::TrNoop(L"Group"), util::TrNoop(L"Targeted processors"), util::TrNoop(L"Flags"), util::TrNoop(L"Share")}, {option, Number(reader.At<ULONG>(u)), Number(reader.At<ULONG>(u + 4)), Number(reader.At<USHORT>(u + 10)), Hex(reader.Affinity(u + 16, width), static_cast<int>(width * 2)), Flags(flags, kInterruptFlags), share});
+        out.Add(kind, {util::TrNoop(L"Option"), util::TrNoop(L"Minimum vector"), util::TrNoop(L"Maximum vector"), util::TrNoop(L"Group"), util::TrNoop(L"Targeted processors"), util::TrNoop(L"Flags"), util::TrNoop(L"Share")}, {option, Number(reader.At<ULONG>(u)), Number(reader.At<ULONG>(u + 4)), Number(reader.At<USHORT>(u + 10)), win32ui::FormatHex(reader.Affinity(u + 16, width), static_cast<int>(width * 2)), Flags(flags, kInterruptFlags), share});
         break;
     case kDma:
         {
@@ -378,12 +371,12 @@ void DecodeRequirement(Reader& reader, size_t offset, size_t width, Tables& out)
         out.Add(kind, {util::TrNoop(L"Option"), util::TrNoop(L"Length"), util::TrNoop(L"Minimum bus number"), util::TrNoop(L"Maximum bus number"), util::TrNoop(L"Share")}, {option, Number(reader.At<ULONG>(u)), Number(reader.At<ULONG>(u + 4)), Number(reader.At<ULONG>(u + 8)), share});
         break;
     default:
-        out.Add(kOther, {util::TrNoop(L"Option"), util::TrNoop(L"Type"), util::TrNoop(L"Share"), util::TrNoop(L"Flags"), util::TrNoop(L"Data")}, {option, NameOrNumber(kResourceTypes, type), share, Hex(flags, 4), reader.Bytes(u, 24)});
+        out.Add(kOther, {util::TrNoop(L"Option"), util::TrNoop(L"Type"), util::TrNoop(L"Share"), util::TrNoop(L"Flags"), util::TrNoop(L"Data")}, {option, NameOrNumber(kResourceTypes, type), share, win32ui::FormatHex(flags, 4), reader.Bytes(u, 24)});
         break;
     }
 }
 
-std::optional<std::vector<records::Table>> DecodeLayout(DWORD type, const BYTE* data, size_t size, size_t width, bool translated, size_t* consumed)
+std::optional<std::vector<win32ui::TextTable>> DecodeLayout(DWORD type, const BYTE* data, size_t size, size_t width, bool translated, size_t* consumed)
 {
     Reader reader{data, size};
     Tables out;
@@ -433,14 +426,14 @@ std::optional<std::vector<records::Table>> DecodeLayout(DWORD type, const BYTE* 
     return out.Take();
 }
 
-} // namespace
+}
 
 bool IsResourceType(DWORD type) noexcept
 {
     return type == REG_RESOURCE_LIST || type == REG_FULL_RESOURCE_DESCRIPTOR || type == REG_RESOURCE_REQUIREMENTS_LIST;
 }
 
-std::optional<std::vector<records::Table>> Decode(DWORD type, const BYTE* data, size_t size, bool translated)
+std::optional<std::vector<win32ui::TextTable>> Decode(DWORD type, const BYTE* data, size_t size, bool translated)
 {
     // prefer native layout, fall back if it doesnt account for the exact data size
     SYSTEM_INFO system = {};
@@ -457,4 +450,4 @@ std::optional<std::vector<records::Table>> Decode(DWORD type, const BYTE* data, 
     return other && (other_consumed == size || !first) ? other : first;
 }
 
-} // namespace regkit::resource_list
+}

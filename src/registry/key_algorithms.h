@@ -468,4 +468,4 @@ bool WriteSecurity(const Key& key, SECURITY_INFORMATION parts, const std::vector
     return false;
 }
 
-} // namespace regkit::registry_backend
+}

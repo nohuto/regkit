@@ -102,4 +102,4 @@ bool UndoStack::CanRedo() const noexcept
     return !redo_.empty();
 }
 
-} // namespace regkit::changes
+}

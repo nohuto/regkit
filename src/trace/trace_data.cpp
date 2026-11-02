@@ -22,7 +22,7 @@ bool IsChild(const std::wstring& path, const std::wstring& parent)
     return path.size() > parent.size() && path.compare(0, parent.size(), parent) == 0 && path[parent.size()] == L'\\';
 }
 
-} // namespace
+}
 
 bool IncludesKey(const Selection& selection, const std::wstring& key_lower)
 {
@@ -179,4 +179,4 @@ void Sort(Data* data)
     std::sort(data->key_paths.begin(), data->key_paths.end(), less);
     std::sort(data->display_key_paths.begin(), data->display_key_paths.end(), less);
 }
-} // namespace regkit::trace
+}

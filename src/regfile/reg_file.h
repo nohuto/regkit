@@ -5,7 +5,8 @@
 
 #include "registry/registry_value.h"
 #include "registry/virtual_registry.h"
-#include "win32/windows_config.h"
+
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -25,7 +26,6 @@ struct Key
     std::wstring path;
     std::unordered_map<std::wstring, Value> values;
     std::vector<std::wstring> removed_values;
-    // removed when the file deletes the key, recreated when a section follows that deletion
     bool removed = false;
     bool recreated = false;
 };
@@ -82,7 +82,6 @@ struct VirtualRoot
     std::shared_ptr<VirtualRegistryData> data;
 };
 
-// .reg file represented by one virtual registry per written root
 bool LoadVirtualRoots(const std::wstring& path, std::vector<VirtualRoot>* roots, std::wstring* error, const std::atomic_bool* cancel, bool* cancelled);
 
-} // namespace regkit::regfile
+}

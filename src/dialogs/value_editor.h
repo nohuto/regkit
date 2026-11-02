@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -13,22 +13,6 @@
 
 namespace regkit::editors
 {
-
-using BrowseText = bool (*)(HWND owner, std::wstring* text);
-
-struct TextRequest
-{
-    std::wstring title;
-    std::wstring label;
-    std::wstring text;
-    bool multiline = false;
-    BrowseText browse = nullptr;
-};
-
-struct TextResult
-{
-    std::wstring text;
-};
 
 struct CustomValueRequest
 {
@@ -66,9 +50,8 @@ struct BitsRequest
     bool read_only = false;
 };
 
-bool EditText(HWND owner, const TextRequest& request, TextResult* result);
 bool EditValueBits(HWND owner, const BitsRequest& request, std::vector<BYTE>* data);
 bool EditCustomValue(HWND owner, const CustomValueRequest& request, CustomValueResult* result);
 bool EditFlaggedValue(HWND owner, const FlaggedValueRequest& request, FlaggedValueResult* result);
 
-} // namespace regkit::editors
+}

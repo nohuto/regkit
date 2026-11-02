@@ -9,8 +9,9 @@
 #include "registry/value_format.h"
 #include "regfile/script_convert.h"
 #include "win32/file_text.h"
-#include "win32/system_error.h"
 #include "win32/translation.h"
+
+#include <win32ui/system/error_text.h>
 
 #include <algorithm>
 #include <cstring>
@@ -173,7 +174,7 @@ void AppendValue(std::wstring* output, const Value& value)
 
 constexpr std::wstring_view kRegFileHeader = L"Windows Registry Editor Version 5.00\r\n\r\n";
 
-} // namespace
+}
 
 Writer::Writer()
     : output_(kRegFileHeader)
@@ -263,7 +264,7 @@ LONG VisitRegistryTree(HKEY root, const std::wstring& subkey, const std::wstring
         {
             if (!top && skipped)
             {
-                skipped->push_back(Describe({Operation::Kind::kKey, current.display}, util::FormatWin32Error(static_cast<DWORD>(status))));
+                skipped->push_back(Describe({Operation::Kind::kKey, current.display}, win32ui::FormatWin32Error(static_cast<DWORD>(status))));
             }
             continue;
         }
@@ -281,7 +282,7 @@ LONG VisitRegistryTree(HKEY root, const std::wstring& subkey, const std::wstring
     return top_status;
 }
 
-} // namespace
+}
 
 void SkipNullNames(const std::wstring& display_path, std::vector<Value>* values, std::vector<std::wstring>* subkeys, std::vector<std::wstring>* skipped)
 {
@@ -334,7 +335,7 @@ namespace
 // REGEDIT4 stores hex string data as ANSI bytes
 std::vector<BYTE> AnsiToUtf16(const std::vector<BYTE>& data)
 {
-    const std::wstring text = util::NarrowToWide(std::string_view(reinterpret_cast<const char*>(data.data()), data.size()), CP_ACP);
+    const std::wstring text = win32ui::MultiByteToWide(std::string_view(reinterpret_cast<const char*>(data.data()), data.size()), CP_ACP);
     std::vector<BYTE> output(text.size() * sizeof(wchar_t));
     std::memcpy(output.data(), text.data(), output.size());
     return output;
@@ -353,15 +354,15 @@ bool ParseValueData(const std::wstring& data_text, bool ansi, Value* value)
         value->data = value_format::StringData(text);
         return true;
     }
-    unsigned long long number = 0;
     if (util::StartsWithInsensitive(data_text, L"dword:"))
     {
-        if (!util::ParseUnsignedNumber(std::wstring_view(data_text).substr(6), 16, &number) || number > 0xFFFFFFFFull)
+        const std::optional<uint64_t> number = win32ui::ParseUnsigned(std::wstring_view(data_text).substr(6), 16);
+        if (!number || *number > 0xFFFFFFFFull)
         {
             return false;
         }
         value->type = REG_DWORD;
-        value->data = value_format::UnsignedBytes(number, sizeof(DWORD));
+        value->data = value_format::UnsignedBytes(*number, sizeof(DWORD));
         return true;
     }
     if (!util::StartsWithInsensitive(data_text, L"hex"))
@@ -378,17 +379,18 @@ bool ParseValueData(const std::wstring& data_text, bool ansi, Value* value)
     const size_t close = data_text.find(L')');
     if (open != std::wstring::npos && close != std::wstring::npos && close > open && close < colon)
     {
-        if (!util::ParseUnsignedNumber(std::wstring_view(data_text).substr(open + 1, close - open - 1), 16, &number) || number > 0xFFFFFFFFull)
+        const std::optional<uint64_t> type = win32ui::ParseUnsigned(std::wstring_view(data_text).substr(open + 1, close - open - 1), 16);
+        if (!type || *type > 0xFFFFFFFFull)
         {
             return false;
         }
-        value->type = static_cast<DWORD>(number);
+        value->type = static_cast<DWORD>(*type);
     }
     else if (colon != 3)
     {
         return false;
     }
-    if (!value_format::ParseHex(std::wstring_view(data_text).substr(colon + 1), &value->data))
+    if (!win32ui::ParseHexBytes(std::wstring_view(data_text).substr(colon + 1), &value->data))
     {
         return false;
     }
@@ -399,7 +401,7 @@ bool ParseValueData(const std::wstring& data_text, bool ansi, Value* value)
     return true;
 }
 
-} // namespace
+}
 
 bool ParseOperations(std::wstring_view content, std::vector<Operation>* output, const std::atomic_bool* cancel, bool* cancelled, std::wstring* error)
 {
@@ -541,8 +543,8 @@ bool ParseOperations(std::wstring_view content, std::vector<Operation>* output, 
                 }
             }
         }
-        // RegEdit and reg export expand string LF to CRLF
-        // other exporters wrap long strings with a backslash and two spaces
+        // RegEdit and reg export expand string LF to CRLF, other exporters wrap long strings with a backslash and two
+        // spaces
         if (quoted && has_newline)
         {
             if (!logical.empty() && logical.back() == L'\\' && content.substr(start, 2) == L"  ")
@@ -636,7 +638,7 @@ bool ReadText(const std::wstring& path, std::wstring* content, std::wstring* err
 {
     // parsing peaks at 3 to 8 times file size, 32 bit processes run out above about 600 MiB
     constexpr uint64_t kMaxBytes = sizeof(void*) == 8 ? 1024ull << 20 : 256ull << 20;
-    if (util::ReadTextFile(path, content, nullptr, kMaxBytes))
+    if (util::ReadTextFile(path, content, kMaxBytes))
     {
         return true;
     }
@@ -742,4 +744,4 @@ bool LoadVirtualRoots(const std::wstring& path, std::vector<VirtualRoot>* roots,
     return true;
 }
 
-} // namespace regkit::regfile
+}

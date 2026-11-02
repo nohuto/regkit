@@ -63,7 +63,7 @@ std::vector<std::wstring> ChildNames(const VirtualRegistryKey& key, bool sorted)
     return names;
 }
 
-} // namespace
+}
 
 HKEY RegisterRoot(const std::wstring& root_name, const std::shared_ptr<VirtualRegistryData>& data)
 {
@@ -335,4 +335,4 @@ bool RenameValue(VirtualRegistryData& data, const RegistryNode& node, const std:
     return true;
 }
 
-} // namespace regkit::registry_backend::virtual_store
+}

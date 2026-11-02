@@ -18,9 +18,6 @@ constexpr int kRootKeysIconIndex = 7;
 constexpr int kRegistryIconIndex = 8;
 constexpr wchar_t kRootKeysGroupLabel[] = L"Root Keys";
 constexpr wchar_t kRealGroupLabel[] = L"REGISTRY";
-#ifndef TVS_EX_DOUBLEBUFFER
-#define TVS_EX_DOUBLEBUFFER 0x0004
-#endif
 
 using util::ToLower;
 
@@ -59,7 +56,7 @@ void SetChildState(HWND tree, HTREEITEM item, RegistryNode* node, bool has_child
     state.cChildren = has_children ? 1 : 0;
     TreeView_SetItem(tree, &state);
 }
-} // namespace
+}
 
 void RegistryTree::Create(HWND parent, HINSTANCE instance, int control_id, bool show_border, bool allow_label_edit)
 {
@@ -74,10 +71,19 @@ void RegistryTree::Create(HWND parent, HINSTANCE instance, int control_id, bool 
         style |= TVS_EDITLABELS;
     }
     hwnd_ = CreateWindowExW(0, WC_TREEVIEWW, L"", style, 0, 0, 100, 100, parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(control_id)), instance, nullptr);
-    if (hwnd_)
-    {
-        TreeView_SetExtendedStyle(hwnd_, TVS_EX_DOUBLEBUFFER, TVS_EX_DOUBLEBUFFER);
-    }
+    hooks_.load_children = [](void* context, HWND, HTREEITEM item) { static_cast<RegistryTree*>(context)->LoadChildren(item); };
+    hooks_.is_group = [](void* context, HWND, HTREEITEM item) { return static_cast<RegistryTree*>(context)->IsGroupItem(item); };
+    hooks_.expand_all = [](void* context, HWND, HTREEITEM) {
+        const auto* self = static_cast<RegistryTree*>(context);
+        if (!self->expand_all_window_)
+        {
+            return false;
+        }
+        SendMessageW(self->expand_all_window_, WM_COMMAND, self->expand_all_command_, 0);
+        return true;
+    };
+    hooks_.context = this;
+    win32ui::AttachTreeView(hwnd_, &hooks_);
 }
 
 HWND RegistryTree::hwnd() const
@@ -235,35 +241,27 @@ void RegistryTree::PopulateRoots(const std::vector<RegistryRootEntry>& roots)
     }
 }
 
-RegistryNode* RegistryTree::NodeFromItem(HTREEITEM item)
+RegistryNode* RegistryTree::NodeFromItem(HTREEITEM item) const
 {
-    if (!item)
+    LPARAM data = 0;
+    return win32ui::TreeItemData(hwnd_, item, &data) ? reinterpret_cast<RegistryNode*>(data) : nullptr;
+}
+
+void RegistryTree::LoadChildren(HTREEITEM item)
+{
+    RegistryNode* node = NodeFromItem(item);
+    if (node && !node->children_loaded)
     {
-        return nullptr;
+        node->children_loaded = AddChildren(item, node);
     }
-    TVITEMW tvi = {};
-    tvi.hItem = item;
-    tvi.mask = TVIF_PARAM;
-    if (!TreeView_GetItem(hwnd_, &tvi))
-    {
-        return nullptr;
-    }
-    return reinterpret_cast<RegistryNode*>(tvi.lParam);
 }
 
 void RegistryTree::OnItemExpanding(const NMTREEVIEWW* info)
 {
-    if (!info || info->action != TVE_EXPAND)
+    if (info && info->action == TVE_EXPAND)
     {
-        return;
+        LoadChildren(info->itemNew.hItem);
     }
-    RegistryNode* node = NodeFromItem(info->itemNew.hItem);
-    if (!node || node->children_loaded)
-    {
-        return;
-    }
-
-    node->children_loaded = AddChildren(info->itemNew.hItem, node);
 }
 
 void RegistryTree::Resync(HTREEITEM item, bool load)
@@ -482,7 +480,6 @@ bool RegistryTree::AddChildren(HTREEITEM parent, RegistryNode* node)
         nodes_.erase(stale);
     }
     SetChildState(hwnd_, parent, node, !entries.empty());
-    // only cache the load when the key read succeeded
     return enumerated;
 }
 
@@ -541,4 +538,4 @@ bool RegistryTree::HasChildren(const RegistryNode& node)
     return !virtual_children.empty();
 }
 
-} // namespace regkit
+}

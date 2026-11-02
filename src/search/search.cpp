@@ -10,21 +10,22 @@
 #include "win32/shell_paths.h"
 #include "win32/text_transform.h"
 #include "win32/translation.h"
-#include "work/session.h"
 
 #include <win32ui/handle_owner.h>
+#include <win32ui/system/date_time.h>
+#include <win32ui/system/worker.h>
 
 #include <algorithm>
 #include <condition_variable>
 #include <cstring>
 #include <cwchar>
 #include <cwctype>
+#include <exception>
 #include <functional>
 #include <iterator>
 #include <map>
 #include <mutex>
 #include <string_view>
-#include <system_error>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -162,11 +163,11 @@ Match Matcher::Find(std::wstring_view text) const
         return location;
     }
 
-    const int position = util::FindInsensitive(text, query_);
-    if (position >= 0)
+    const size_t position = win32ui::FindInsensitive(text, query_);
+    if (position != std::wstring_view::npos)
     {
         location.matched = true;
-        location.start = static_cast<size_t>(position);
+        location.start = position;
         location.length = query_.size();
     }
     return location;
@@ -298,13 +299,13 @@ int CompareResult(const Result& left, const Result& right, int column)
     case 4:
         return CompareNumeric(left.data_size, right.data_size);
     case 5:
-        return CompareNumeric((static_cast<uint64_t>(left.modified.dwHighDateTime) << 32) | left.modified.dwLowDateTime, (static_cast<uint64_t>(right.modified.dwHighDateTime) << 32) | right.modified.dwLowDateTime);
+        return CompareNumeric(win32ui::FileTimeTicks(left.modified), win32ui::FileTimeTicks(right.modified));
     default:
         return util::CompareListText(left.key_path, right.key_path);
     }
 }
 
-} // namespace
+}
 
 void SortResults(std::vector<Result>* results, int column, bool ascending, const util::SortKeys& earlier, const std::vector<Source>& sources)
 {
@@ -833,7 +834,7 @@ bool IsKeyInRange(const Criteria& criteria, const FILETIME& last_write)
     return true;
 }
 
-} // namespace
+}
 
 namespace
 {
@@ -883,7 +884,7 @@ unsigned int WorkerPolicy(const Criteria& criteria)
     }
 }
 
-} // namespace
+}
 
 bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag, const BatchCallback& publish, const ProgressCallback& progress, regex::Status* status)
 {
@@ -1554,9 +1555,11 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag, const BatchCal
     {
         try
         {
-            work::NameThread(workers.emplace_back(guarded_worker), L"SearchWorkerThread");
+            win32ui::NameThread(workers.emplace_back(guarded_worker).native_handle(), L"SearchWorkerThread");
         }
-        catch (const std::system_error&)
+        // std::system_error from CreateThread, std::bad_alloc from the state of the thread, go on with the started
+        // workers
+        catch (const std::exception&)
         {
             break;
         }
@@ -1575,4 +1578,4 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag, const BatchCal
     return true;
 }
 
-} // namespace regkit::search
+}

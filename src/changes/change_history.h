@@ -33,7 +33,6 @@ struct HistoryEntry
     RevertKind revert_kind = RevertKind::kNone;
     RegistryValue revert_value;
     bool backup_mode = false;
-    // source tab search::Source, kind -1 if unknown
     int source_kind = -1;
     std::wstring source_name;
     REGSAM source_view = 0;
@@ -52,7 +51,6 @@ using PathExists = std::function<bool(const std::wstring&)>;
 class ChangeHistory
 {
   public:
-    // returns stamped entries for the cache file
     std::vector<HistoryEntry> Append(std::vector<HistoryEntry> entries, size_t maximum);
     void Replace(std::vector<HistoryEntry> entries, size_t maximum);
     void Clear();
@@ -65,7 +63,6 @@ class ChangeHistory
     std::vector<HistoryEntry> entries_;
 };
 
-// empty document and the reason in error when a line isnt a history row
 HistoryDocument ParseHistory(const std::wstring& content, std::wstring* error = nullptr);
 std::wstring SerializeHistoryEntry(const HistoryEntry& entry);
 bool AppendHistoryFile(const std::wstring& path, const std::vector<HistoryEntry>& entries);
@@ -73,5 +70,5 @@ bool WriteHistoryFile(const std::wstring& path, const std::vector<HistoryEntry>&
 bool PrepareRevert(const HistoryEntry& entry, HistoryEntry* prepared);
 bool FindNearestExistingPath(const std::wstring& path, const PathExists& path_exists, std::wstring* nearest_path);
 
-} // namespace changes
-} // namespace regkit
+}
+}

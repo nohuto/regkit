@@ -209,5 +209,5 @@ constexpr int kToolsBitfieldFileMax = 2879;
 constexpr int kResearchItemBase = 2800;
 constexpr int kResearchItemMax = 2821;
 
-} // namespace cmd
-} // namespace regkit
+}
+}

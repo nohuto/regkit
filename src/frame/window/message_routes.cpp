@@ -4,12 +4,18 @@
 #include "frame/window_detail.h"
 #include "frame/window_impl.h"
 
-#include "regfile/registry_transfer.h"
+#include "registry/hive_files.h"
 #include "win32/text_transform.h"
 #include "win32/translation.h"
 #include "trace/trace_paths.h"
 
+#include <win32ui/focus.h>
 #include <win32ui/gdi/buffered_paint.h>
+#include <win32ui/system/single_instance.h>
+#include <win32ui/window.h>
+#include <win32ui/window_metrics.h>
+
+#include <utility>
 
 namespace regkit
 {
@@ -56,18 +62,6 @@ bool AcceptHandoffFile(HWND owner, const std::wstring& path)
     return ui::PromptKeyChoice(owner, util::Tr(L"Another RegKit instance asked this elevated window to open a .reg file.\n\nOpen it?"), path, util::Tr(L"Open .reg File"), util::Tr(L"Open"), L"", util::Tr(L"Cancel")) == IDYES;
 }
 
-bool IsSiblingRegKitWindow(HWND sender)
-{
-    DWORD sender_pid = 0;
-    if (!sender || !IsWindow(sender) || !GetWindowThreadProcessId(sender, &sender_pid) || sender_pid == 0)
-    {
-        return false;
-    }
-    const std::wstring sender_image = util::GetProcessImagePath(sender_pid);
-    const std::wstring own_image = util::GetModulePath();
-    return !sender_image.empty() && !own_image.empty() && util::EqualsInsensitive(sender_image, own_image);
-}
-
 // entries added during startup replace loaded entries for the same source
 template <typename Active>
 bool MergeAdded(std::vector<Active>* loaded, std::vector<Active>&& added)
@@ -80,7 +74,7 @@ bool MergeAdded(std::vector<Active>* loaded, std::vector<Active>&& added)
     return !added.empty();
 }
 
-} // namespace
+}
 
 LRESULT MainWindow::Impl::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam)
 {
@@ -139,8 +133,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleLifecycleMessage(UINT message, WP
             if (info)
             {
                 const UINT dpi = win32ui::DpiForWindow(hwnd_);
-                info->ptMinTrackSize.x = std::max<LONG>(info->ptMinTrackSize.x, win32ui::ScaleForDpi(400, dpi));
-                info->ptMinTrackSize.y = std::max<LONG>(info->ptMinTrackSize.y, win32ui::ScaleForDpi(200, dpi));
+                win32ui::RaiseMinTrackSize(hwnd_, info, {400, 200}, dpi, false);
                 // room above/below panels plus minimum history height
                 RECT window = {};
                 if (content_rect_.right > 0 && GetWindowRect(hwnd_, &window))
@@ -157,24 +150,23 @@ std::optional<LRESULT> MainWindow::Impl::HandleLifecycleMessage(UINT message, WP
         OnSize(LOWORD(lparam), HIWORD(lparam));
         return 0;
     case WM_DPICHANGED:
-        {
-            const RECT* suggested = reinterpret_cast<const RECT*>(lparam);
-            if (suggested)
-            {
-                SetWindowPos(hwnd_, nullptr, suggested->left, suggested->top, suggested->right - suggested->left, suggested->bottom - suggested->top, SWP_NOZORDER | SWP_NOACTIVATE);
-            }
-            RescaleColumns();
-            // resize toolbar for new DPI before UpdateUIFont runs layout
-            ReloadThemeIcons();
-            UpdateUIFont();
-            return 0;
-        }
+        win32ui::ApplySuggestedRect(hwnd_, reinterpret_cast<const RECT*>(lparam));
+        RescaleColumns();
+        // resize toolbar for new DPI before UpdateUIFont runs layout
+        ReloadThemeIcons();
+        UpdateUIFont();
+        return 0;
     case WM_DPICHANGED_AFTERPARENT:
         RescaleColumns();
         ReloadThemeIcons();
         UpdateUIFont();
         return 0;
     case WM_ACTIVATE:
+        if (const HWND last = win32ui::ActivationFocus(hwnd_, wparam, &last_focus_))
+        {
+            FocusPane(last);
+            return 0;
+        }
         if (LOWORD(wparam) == WA_ACTIVE && browse_.tree().hwnd())
         {
             if (last_focus_)
@@ -191,21 +183,13 @@ std::optional<LRESULT> MainWindow::Impl::HandleLifecycleMessage(UINT message, WP
         break;
     case WM_CLOSE:
         {
-            // commit running replace changes before save prompts
-            if (replace_result_pending_ && replace_target_.lock() != local_session_)
+            if (!std::exchange(close_confirmed_, false) && !ConfirmCloseAllTabs())
             {
-                StopReplace();
-            }
-            for (int index = static_cast<int>(tabs_.size()) - 1; index >= 0; --index)
-            {
-                if (!ConfirmCloseTab(index))
-                {
-                    restart_on_close_ = false;
-                    reset_settings_on_close_ = false;
-                    cache_clear_on_close_.reset();
-                    updates_.DropSetup();
-                    return 0;
-                }
+                restart_on_close_ = false;
+                reset_settings_on_close_ = false;
+                cache_clear_on_close_.reset();
+                updates_.DropSetup();
+                return 0;
             }
             // stop services only after all tabs agree to close
             for (TabEntry& entry : tabs_)
@@ -443,7 +427,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleSearchWorkerMessage(UINT message,
         }
     case frame::message_id::kSearchPreviewReady:
         {
-            auto owned = work::TakePayload<SearchPreviewPayload>(lparam);
+            auto owned = win32ui::TakePayload<SearchPreviewPayload>(lparam);
             if (!owned)
             {
                 return 0;
@@ -498,7 +482,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleSearchWorkerMessage(UINT message,
         }
     case frame::message_id::kSearchSortReady:
         {
-            auto owned = work::TakePayload<SearchSortPayload>(lparam);
+            auto owned = win32ui::TakePayload<SearchSortPayload>(lparam);
             if (!owned)
             {
                 return 0;
@@ -520,7 +504,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleSearchWorkerMessage(UINT message,
             return 0;
         }
     case frame::message_id::kSearchTabLoadReady:
-        ApplySearchTabLoad(work::TakePayload<SearchTabLoadPayload>(lparam));
+        ApplySearchTabLoad(win32ui::TakePayload<SearchTabLoadPayload>(lparam));
         return 0;
     case frame::message_id::kSearchProgress:
         if (SearchTab* tab = SearchTabByGeneration(static_cast<uint64_t>(wparam)))
@@ -541,10 +525,10 @@ std::optional<LRESULT> MainWindow::Impl::HandleSearchWorkerMessage(UINT message,
         }
         return 0;
     case frame::message_id::kReplaceReady:
-        ApplyReplacePayload(work::TakePayload<ReplacePayload>(lparam));
+        ApplyReplacePayload(win32ui::TakePayload<ReplacePayload>(lparam));
         return 0;
     case frame::message_id::kCompareReady:
-        ApplyComparePayload(work::TakePayload<ComparePayload>(lparam));
+        ApplyComparePayload(win32ui::TakePayload<ComparePayload>(lparam));
         return 0;
     default:
         return std::nullopt;
@@ -564,7 +548,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleLoadWorkerMessage(UINT message, W
         return 0;
     case frame::message_id::kTraceLoadReady:
         {
-            auto owned = work::TakePayload<TraceLoadPayload>(lparam);
+            auto owned = win32ui::TakePayload<TraceLoadPayload>(lparam);
             if (!owned)
             {
                 return 0;
@@ -594,7 +578,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleLoadWorkerMessage(UINT message, W
         }
     case frame::message_id::kDefaultLoadReady:
         {
-            auto owned = work::TakePayload<DefaultLoadPayload>(lparam);
+            auto owned = win32ui::TakePayload<DefaultLoadPayload>(lparam);
             if (!owned)
             {
                 return 0;
@@ -617,14 +601,14 @@ std::optional<LRESULT> MainWindow::Impl::HandleLoadWorkerMessage(UINT message, W
         RunDeferredStartup();
         return 0;
     case frame::message_id::kStartupCacheReady:
-        ApplyStartupCachePayload(work::TakePayload<StartupCachePayload>(lparam));
+        ApplyStartupCachePayload(win32ui::TakePayload<StartupCachePayload>(lparam));
         return 0;
     case frame::message_id::kShowFileErrors:
         ShowFileErrors();
         return 0;
     case frame::message_id::kUpdateCheckReady:
         {
-            updates_.Apply(work::TakePayload<frame::UpdateCheckPayload>(lparam).get());
+            updates_.Apply(win32ui::TakePayload<frame::UpdateCheckPayload>(lparam).get());
             return 0;
         }
     default:
@@ -639,7 +623,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleRegFileWorkerMessage(UINT message
     {
     case frame::message_id::kRegFileLoadReady:
         {
-            auto owned = work::TakePayload<RegFileParsePayload>(lparam);
+            auto owned = win32ui::TakePayload<RegFileParsePayload>(lparam);
             if (!owned)
             {
                 return 0;
@@ -732,7 +716,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleTraceWorkerMessage(UINT message, 
     {
     case frame::message_id::kTraceParseBatch:
         {
-            auto owned = work::TakePayload<TraceParseBatch>(lparam);
+            auto owned = win32ui::TakePayload<TraceParseBatch>(lparam);
             if (!owned)
             {
                 return 0;
@@ -837,7 +821,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleDefaultWorkerMessage(UINT message
     {
     case frame::message_id::kDefaultParseBatch:
         {
-            auto owned = work::TakePayload<DefaultParseBatch>(lparam);
+            auto owned = win32ui::TakePayload<DefaultParseBatch>(lparam);
             if (!owned)
             {
                 return 0;
@@ -945,7 +929,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleValueWorkerMessage(UINT message, 
         }
     case frame::message_id::kValuePreviewReady:
         {
-            auto owned = work::TakePayload<ValuePreviewPayload>(lparam);
+            auto owned = win32ui::TakePayload<ValuePreviewPayload>(lparam);
             if (!owned)
             {
                 return 0;
@@ -1007,7 +991,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleValueWorkerMessage(UINT message, 
         }
     case frame::message_id::kValueListReady:
         {
-            auto owned = work::TakePayload<ValueListPayload>(lparam);
+            auto owned = win32ui::TakePayload<ValueListPayload>(lparam);
             if (!owned)
             {
                 return 0;
@@ -1170,32 +1154,15 @@ std::optional<LRESULT> MainWindow::Impl::HandleExternalMessage(UINT message, WPA
         break;
     case WM_COPYDATA:
         {
-            auto* data = reinterpret_cast<const COPYDATASTRUCT*>(lparam);
-            if (!data)
+            ULONG_PTR id = 0;
+            auto target = std::make_unique<std::wstring>();
+            if (!win32ui::ReadInstanceText(wparam, lparam, kExternalMessageMaxBytes / sizeof(wchar_t) - 1, &id, target.get()) ||
+                (id != kExternalJumpCopyDataId && id != kEditRegFileCopyDataId) ||
+                (id == kEditRegFileCopyDataId && !util::HasFileExtension(*target, L".reg") && !IsHiveFile(*target)))
             {
                 return 0;
             }
-            if ((data->dwData != kExternalJumpCopyDataId && data->dwData != kEditRegFileCopyDataId) || !data->lpData ||
-                data->cbData < sizeof(wchar_t) || data->cbData > kExternalMessageMaxBytes)
-            {
-                return 0;
-            }
-            if (!IsSiblingRegKitWindow(reinterpret_cast<HWND>(wparam)))
-            {
-                return 0;
-            }
-            size_t length = data->cbData / sizeof(wchar_t);
-            const wchar_t* text = reinterpret_cast<const wchar_t*>(data->lpData);
-            auto target = std::make_unique<std::wstring>(text, text + length);
-            while (!target->empty() && target->back() == L'\0')
-            {
-                target->pop_back();
-            }
-            if (target->empty() || (data->dwData == kEditRegFileCopyDataId && !util::HasFileExtension(*target, L".reg") && !IsHiveFile(*target)))
-            {
-                return 0;
-            }
-            if (!PostMessageW(hwnd_, frame::message_id::kExternalHandoff, data->dwData, reinterpret_cast<LPARAM>(target.get())))
+            if (!PostMessageW(hwnd_, frame::message_id::kExternalHandoff, id, reinterpret_cast<LPARAM>(target.get())))
             {
                 return 0;
             }
@@ -1205,8 +1172,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleExternalMessage(UINT message, WPA
     case frame::message_id::kExternalHandoff:
         {
             const std::unique_ptr<std::wstring> target(reinterpret_cast<std::wstring*>(lparam));
-            ShowWindow(hwnd_, SW_RESTORE);
-            SetForegroundWindow(hwnd_);
+            win32ui::BringToFront(hwnd_);
             if (wparam == kEditRegFileCopyDataId)
             {
                 if (AcceptHandoffFile(hwnd_, *target))
@@ -1254,15 +1220,9 @@ std::optional<LRESULT> MainWindow::Impl::HandleAppearanceMessage(UINT message, W
     switch (message)
     {
     case WM_ERASEBKGND:
-        {
-            return 1;
-        }
     case WM_PAINT:
-        win32ui::PaintBuffered(hwnd_);
-        return 0;
     case WM_PRINTCLIENT:
-        OnPrintClient(reinterpret_cast<HDC>(wparam));
-        return 0;
+        return win32ui::HandleFillPaint(hwnd_, message, wparam, win32ui::ThemeBrush(win32ui::ThemeFill::background));
     case WM_SETTINGCHANGE:
     case WM_SYSCOLORCHANGE:
     case WM_THEMECHANGED:
@@ -1332,9 +1292,12 @@ std::optional<LRESULT> MainWindow::Impl::HandleAppearanceMessage(UINT message, W
                 }
                 SetBkMode(hdc, TRANSPARENT);
                 SetTextColor(hdc, win32ui::CurrentThemeColors().text);
+                const UINT dpi = win32ui::DpiForWindow(hwnd_);
+                const int padding = win32ui::ScaleForDpi(kHeaderTextPadding, dpi);
                 RECT text_rect = rect;
-                text_rect.left += kHeaderTextPadding;
-                text_rect.right -= kHeaderTextPadding;
+                text_rect.left += padding;
+                // close button covers the right end of the header
+                text_rect.right -= padding + win32ui::ScaleForDpi(kPanelCloseInset + kPanelCloseSize, dpi);
                 DrawTextW(hdc, text, -1, &text_rect, format);
                 if (old_font)
                 {
@@ -1423,29 +1386,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleBrowseMessage(UINT message, WPARA
             POINT screen_pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
             if (source == browse_.tree().hwnd())
             {
-                HTREEITEM item = nullptr;
-                if (screen_pt.x != -1 || screen_pt.y != -1)
-                {
-                    TVHITTESTINFO hit = {};
-                    hit.pt = screen_pt;
-                    ScreenToClient(source, &hit.pt);
-                    item = TreeView_HitTest(source, &hit);
-                }
-                else
-                {
-                    RECT rect = {};
-                    item = TreeView_GetSelection(source);
-                    if (item)
-                    {
-                        TreeView_EnsureVisible(source, item);
-                    }
-                    if (!item || !TreeView_GetItemRect(source, item, &rect, TRUE))
-                    {
-                        rect = {};
-                    }
-                    screen_pt = {rect.left, rect.bottom};
-                    ClientToScreen(source, &screen_pt);
-                }
+                const HTREEITEM item = win32ui::ContextMenuTreeItem(source, lparam, &screen_pt);
                 ShowTreeContextMenu(item, screen_pt);
                 return 0;
             }
@@ -1453,13 +1394,8 @@ std::optional<LRESULT> MainWindow::Impl::HandleBrowseMessage(UINT message, WPARA
             {
                 break;
             }
-            const int row = win32ui::ContextMenuRow(source, lparam, &screen_pt);
             // right click outside selection selects one row, empty space keeps selection
-            if (row >= 0 && !ListView_GetItemState(source, row, LVIS_SELECTED))
-            {
-                ListView_SetItemState(source, -1, 0, LVIS_SELECTED);
-                ListView_SetItemState(source, row, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-            }
+            const int row = win32ui::ContextMenuRow(source, lparam, &screen_pt, true);
             if (source == browse_.values().hwnd())
             {
                 ShowValueContextMenu(row, screen_pt);
@@ -1482,4 +1418,4 @@ std::optional<LRESULT> MainWindow::Impl::HandleBrowseMessage(UINT message, WPARA
     return std::nullopt;
 }
 
-} // namespace regkit
+}

@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
-
 #include <win32ui/gdi/fonts.h>
 #include <win32ui/gdi/gdi_cache.h>
 #include <win32ui/gdi/icon_loader.h>
+#include <win32ui/list_view/list_view.h>
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -60,7 +60,6 @@
 #include "workspace/settings.h"
 #include "workspace/tab_state.h"
 #include "registry/hive_files.h"
-#include "ui/list_view_support.h"
 
 #include <algorithm>
 #include <chrono>
@@ -115,10 +114,6 @@
 namespace regkit::window_detail
 {
 
-void SetEditMargins(HWND hwnd, int left, int right);
-
-void SetEditVerticalRect(HWND hwnd, HFONT font, int min_pad, int left_pad, int right_pad);
-
 using registry_path::ChildNode;
 
 std::wstring LeafName(const RegistryNode& node);
@@ -132,8 +127,6 @@ void UpdateLeafName(RegistryNode* node, const std::wstring& new_name);
 std::wstring FormatFileTime(const FILETIME& filetime);
 
 std::wstring FormatCommentDisplay(const std::wstring& text);
-
-uint64_t FileTimeToUint64(const FILETIME& filetime);
 
 constexpr size_t kCellTextDrawLimit = 512;
 constexpr size_t kValuePreviewLimit = 4096;
@@ -149,4 +142,4 @@ void ApplyFont(HWND hwnd, HFONT font);
 
 HTREEITEM FindChildByText(HWND tree, HTREEITEM parent, const std::wstring& text);
 
-} // namespace regkit::window_detail
+}

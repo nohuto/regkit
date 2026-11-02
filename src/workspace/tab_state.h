@@ -43,11 +43,9 @@ struct TabState
     std::vector<PersistedTab> tabs;
 };
 
-// empty state and the reason in error when a line isnt a tab record
 TabState ParseTabs(const std::wstring& content, std::wstring* error = nullptr);
 std::wstring SerializeTabs(const TabState& state);
-// false for a missing file, false with the reason for one that cant be read
 bool LoadTabs(const std::wstring& path, TabState* state, std::wstring* error = nullptr);
 bool SaveTabs(const std::wstring& path, const TabState& state);
 
-} // namespace regkit::workspace
+}

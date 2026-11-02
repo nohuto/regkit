@@ -25,10 +25,8 @@ struct KeySnapshot
     bool complete = true;
 };
 
-// exact snapshots keep security and timestamps, copies inherit destination metadata
 KeySnapshot CaptureKey(const RegistryNode& node, bool exact = true);
 bool RestoreKey(const RegistryNode& parent, const KeySnapshot& snapshot);
-// replaces existing key contents when the key cannot be deleted and recreated
 bool ReplaceKey(const RegistryNode& node, const KeySnapshot& snapshot);
 
-} // namespace regkit::changes
+}

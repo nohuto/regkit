@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -13,7 +13,6 @@ namespace regkit::win32
 inline constexpr REGSAM kDefaultRegistryView = KEY_WOW64_64KEY;
 inline constexpr REGSAM kAlternateRegistryView = KEY_WOW64_32KEY;
 
-// 64 bit Windows has a separate registry view for 32 bit programs
 inline bool HasAlternateView()
 {
     SYSTEM_INFO info = {};
@@ -30,4 +29,4 @@ inline const wchar_t* RegExeViewSwitch(REGSAM view)
     return view == kAlternateRegistryView ? L"/reg:32" : L"/reg:64";
 }
 
-} // namespace regkit::win32
+}

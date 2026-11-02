@@ -5,7 +5,6 @@
 
 #include "frame/detail/draw_detail.h"
 #include "frame/window_impl.h"
-#include "records/escaped_fields.h"
 
 #include <algorithm>
 #include <chrono>
@@ -68,7 +67,7 @@ bool IsKnownIconSetName(const std::wstring& value)
 
 static std::wstring FindAssetsIconsRoot()
 {
-    std::wstring base = util::GetModuleDirectory();
+    std::wstring base = util::ModuleDirectory();
     for (int i = 0; i < 6; ++i)
     {
         if (base.empty())
@@ -76,7 +75,7 @@ static std::wstring FindAssetsIconsRoot()
             break;
         }
         std::wstring candidate = util::JoinPath(base, L"assets\\icons");
-        if (util::IsDirectory(candidate))
+        if (util::IsDirectory(candidate.c_str()))
         {
             return candidate;
         }
@@ -101,7 +100,7 @@ static std::wstring FindAssetsIconsRoot()
                     break;
                 }
                 std::wstring candidate = util::JoinPath(base, L"assets\\icons");
-                if (util::IsDirectory(candidate))
+                if (util::IsDirectory(candidate.c_str()))
                 {
                     return candidate;
                 }
@@ -158,7 +157,7 @@ bool ReadActiveEntries(const std::wstring& path, std::vector<std::wstring>* entr
     {
         return false;
     }
-    for (const std::wstring_view raw : record_fields::Lines(content))
+    for (const std::wstring_view raw : win32ui::LineViews(content))
     {
         std::wstring line = util::TrimWhitespace(raw);
         if (line.empty() || line.front() == L'#')
@@ -174,10 +173,10 @@ bool ResolveActiveSource(const std::wstring& entry, const std::function<std::wst
 {
     *source = entry;
     label->clear();
-    if (!util::IsFile(*source))
+    if (!util::IsFile(source->c_str()))
     {
         const std::wstring bundled = resolve_bundled(entry);
-        if (bundled.empty() || !util::IsFile(bundled))
+        if (bundled.empty() || !util::IsFile(bundled.c_str()))
         {
             return false;
         }
@@ -195,4 +194,4 @@ bool ResolveActiveSource(const std::wstring& entry, const std::function<std::wst
     return true;
 }
 
-} // namespace regkit::window_detail
+}

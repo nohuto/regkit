@@ -3,10 +3,12 @@
 
 #include "frame/window_detail.h"
 #include "frame/window_impl.h"
-#include "regfile/registry_transfer.h"
+#include "registry/hive_files.h"
 #include "win32/shell_paths.h"
 #include "win32/text_transform.h"
 #include "win32/translation.h"
+
+#include <win32ui/system/shell_open.h>
 
 namespace regkit
 {
@@ -28,7 +30,7 @@ bool MainWindow::Impl::SaveRegFileTab(int tab_index)
     {
         return false;
     }
-    if (!util::WriteTextFile(entry.reg_file_path, content, true))
+    if (win32ui::WriteTextFileAtomic(entry.reg_file_path.c_str(), content, true) != ERROR_SUCCESS)
     {
         ui::ShowError(hwnd_, util::Tr(L"Failed to save registry file."));
         return false;
@@ -57,7 +59,7 @@ bool MainWindow::Impl::ExportRegFileTab(int tab_index, const std::wstring& path)
         return false;
     }
     std::wstring target = util::EnsureFileExtension(path, L".reg");
-    if (!util::WriteTextFile(target, content, true))
+    if (win32ui::WriteTextFileAtomic(target.c_str(), content, true) != ERROR_SUCCESS)
     {
         ui::ShowError(hwnd_, util::Tr(L"Failed to export registry file."));
         return false;
@@ -184,7 +186,8 @@ void MainWindow::Impl::StartRegFileParse(const std::wstring& path, const std::ws
     session->source_lower = session_key;
     HWND hwnd = hwnd_;
     RegFileParseSession* session_ptr = session.get();
-    session->work.Start(L"RegFileParseThread", [this, session_ptr, hwnd](uint64_t generation, std::atomic_bool& cancel) {
+    // runs here without a thread, the result is posted like that of a thread and finds the session registered below
+    session->work.StartOrRun(L"RegFileParseThread", [this, session_ptr, hwnd](uint64_t generation, std::atomic_bool& cancel) {
         auto payload = std::make_unique<RegFileParsePayload>();
         payload->generation = generation;
         payload->source_path = session_ptr->source_path;
@@ -203,7 +206,7 @@ void MainWindow::Impl::StartRegFileParse(const std::wstring& path, const std::ws
         payload->error = std::move(parse_error);
         payload->cancelled = cancelled;
         if (!hwnd || !IsWindow(hwnd) ||
-            !work::PostPayload(hwnd, frame::message_id::kRegFileLoadReady, 0, payload))
+            !win32ui::PostPayload(hwnd, frame::message_id::kRegFileLoadReady, 0, payload))
         {
             return;
         }
@@ -219,7 +222,7 @@ void MainWindow::Impl::OpenSavedFile(const std::wstring& path, win32::OpenAfter 
     }
     else if (open_after == win32::OpenAfter::kEditor)
     {
-        ui::ReportFileDialogResult(hwnd_, win32::OpenInTextEditor(hwnd_, path));
+        ui::ReportFileDialogResult(hwnd_, win32ui::ShellOpen(hwnd_, path.c_str(), L".txt"));
     }
 }
 
@@ -234,7 +237,7 @@ bool MainWindow::Impl::OpenRegFileTab(const std::wstring& path, bool force_new_t
     {
         return false;
     }
-    if (!util::IsFile(path))
+    if (!util::IsFile(path.c_str()))
     {
         ui::ShowError(hwnd_, util::Tr(L"Registry file not found."));
         return false;
@@ -298,4 +301,4 @@ bool MainWindow::Impl::OpenRegFileTab(const std::wstring& path, bool force_new_t
     return true;
 }
 
-} // namespace regkit
+}

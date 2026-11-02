@@ -13,32 +13,10 @@ FetchContent_Declare(win32ui
 )
 FetchContent_MakeAvailable(win32ui)
 
-add_library(regkit_compile_settings INTERFACE)
-target_compile_features(regkit_compile_settings INTERFACE cxx_std_20)
-target_compile_definitions(regkit_compile_settings INTERFACE
-    UNICODE
-    _UNICODE
-    NOMINMAX
-    WIN32_LEAN_AND_MEAN
+win32ui_app_settings(regkit_compile_settings
     _WIN32_IE=0x0600
     REGKIT_VERSION_TEXT=L"${PROJECT_VERSION}"
 )
-if (MSVC)
-    target_compile_options(regkit_compile_settings INTERFACE
-        /W4
-        /sdl
-        /guard:cf
-        /utf-8
-    )
-    target_link_options(regkit_compile_settings INTERFACE
-        /GUARD:CF
-        /DEBUG
-        $<$<CONFIG:Release>:/CETCOMPAT>
-        $<$<CONFIG:Release>:/OPT:REF>
-        $<$<CONFIG:Release>:/OPT:ICF>
-        $<$<CONFIG:Release>:/PDBALTPATH:%_PDB%>
-    )
-endif()
 
 include(cmake/RegKitTarget.cmake)
 include(cmake/VerifyTargetGraph.cmake)
@@ -126,7 +104,7 @@ if (REGKIT_LANGUAGE_FILES)
 endif()
 
 if (MSVC)
-    target_link_options(RegKit PRIVATE "/MANIFEST:NO")
+    target_link_options(RegKit PRIVATE "/MANIFEST:NO" "/DEPENDENTLOADFLAG:0x800")
 endif()
 
 regkit_verify_dependency_order(

@@ -1,7 +1,6 @@
 regkit_add_library(regkit_workspace
     dialog_state.cpp
     favorites.cpp
-    recent_items.cpp
     settings.cpp
     tab_state.cpp
     tree_state.cpp

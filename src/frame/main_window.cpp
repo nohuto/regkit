@@ -40,4 +40,4 @@ void MainWindow::QueueExternalJump(const std::wstring& target)
     impl_->QueueExternalJump(target);
 }
 
-} // namespace regkit
+}

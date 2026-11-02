@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -35,4 +35,4 @@ struct KeyHandleSnapshot
 KeyHandleSnapshot SnapshotKeyHandles(const std::atomic_bool& cancel);
 DWORD CloseKeyHandles(const std::vector<KeyHandle>& targets, size_t* closed);
 
-} // namespace regkit::win32
+}

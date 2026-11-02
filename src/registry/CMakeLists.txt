@@ -13,7 +13,6 @@ regkit_add_library(regkit_registry
 target_link_libraries(regkit_registry PRIVATE
     regkit_win32
     authz
-    crypt32
     shlwapi
     ws2_32
 )

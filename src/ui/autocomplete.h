@@ -3,24 +3,15 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/dialog/autocomplete.h>
 
-#include <windows.h>
-
-#include <functional>
 #include <string>
 #include <vector>
 
 namespace regkit::appearance
 {
 
-using AutoCompleteSuggest = std::function<std::vector<std::wstring>(const std::wstring&)>;
-
-bool AttachAutoComplete(HWND edit, AutoCompleteSuggest suggest);
-void SetAutoCompleteEnabled(bool enabled);
-void SetKeySuggest(AutoCompleteSuggest suggest);
+void SetKeySuggest(win32ui::AutoCompleteSuggest suggest);
 std::vector<std::wstring> SuggestKeys(const std::wstring& text);
-std::vector<std::wstring> SuggestComboPaths(HWND combo, const std::wstring& text);
-void ApplyAutoCompleteTheme();
 
-} // namespace regkit::appearance
+}

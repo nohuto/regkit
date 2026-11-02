@@ -65,8 +65,7 @@ void MainWindow::Impl::AttachMainList(HWND list)
 {
     if (!main_list_hooks_.cell_text)
     {
-        // dialog list colors, labels, border and grid button, row text comes from models
-        main_list_hooks_ = appearance::DialogListHooks();
+        main_list_hooks_ = win32ui::DialogListHooks();
         main_list_hooks_.context = this;
         main_list_hooks_.cell_text = [](void* context, HWND target, int row, int subitem, std::wstring* text) {
             *text = static_cast<MainWindow::Impl*>(context)->ListCellFieldText(target, row, subitem);
@@ -78,4 +77,4 @@ void MainWindow::Impl::AttachMainList(HWND list)
     win32ui::ShowListGridButton(list);
 }
 
-} // namespace regkit
+}

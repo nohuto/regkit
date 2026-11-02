@@ -1,13 +1,11 @@
 regkit_add_library(regkit_dialogs
     binary_editor.cpp
-    binary_text.cpp
     bitfield_definition.cpp
     bitfield_definition_editor.cpp
     bitfield_editor.cpp
     comment_editor.cpp
     decoder_dialog.cpp
     export_dialog.cpp
-    table_dialog.cpp
     hive_dialog.cpp
     query_dialog.cpp
     query_prompts.cpp

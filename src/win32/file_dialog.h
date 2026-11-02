@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -12,8 +12,6 @@
 namespace regkit::win32
 {
 
-using FolderPrompt = bool (*)(HWND owner, const std::wstring& path);
-
 enum class OpenAfter
 {
     kNone,
@@ -21,17 +19,7 @@ enum class OpenAfter
     kRegKit,
 };
 
-void SetMissingDesktopPrompt(FolderPrompt prompt);
-HRESULT ChooseFileToOpen(HWND owner, const wchar_t* filter, std::wstring* path);
-HRESULT ChooseFileToSave(HWND owner, const wchar_t* filter, const wchar_t* suggested_name, std::wstring* path, OpenAfter* open_after = nullptr, bool regkit = false);
-HRESULT OpenInTextEditor(HWND owner, const std::wstring& path);
-HRESULT ChooseFolder(HWND owner, std::wstring* path);
-HRESULT ChooseComputer(HWND owner, std::wstring* name);
+DWORD ChooseFileToSave(HWND owner, const wchar_t* filter, const wchar_t* suggested_name, std::wstring* path, OpenAfter* open_after = nullptr, bool regkit = false);
+std::wstring FormatDialogError(DWORD error);
 
-bool DialogCancelled(HRESULT hr);
-std::wstring FormatDialogError(HRESULT hr);
-
-HRESULT ShellOpen(HWND owner, const wchar_t* target);
-HRESULT RevealInExplorer(const std::wstring& path);
-
-} // namespace regkit::win32
+}

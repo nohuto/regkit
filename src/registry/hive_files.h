@@ -17,10 +17,9 @@ struct OfflineHiveCandidate
     std::wstring label;
 };
 
-// file system path from hivelist or a trace hive path
+bool IsHiveFile(const std::wstring& path);
 std::wstring NormalizeHiveFilePath(const std::wstring& raw_path);
-// machine hives, user hives and loose .dat files in Windows/profile folders
 void CollectOfflineHivesInFolder(const std::wstring& folder, std::vector<OfflineHiveCandidate>* out);
 std::wstring ResolveOfflineRootName(const std::wstring& path, bool is_dir, const RegistryNode* current_node);
 
-} // namespace regkit
+}

@@ -4,8 +4,8 @@
 #include "frame/window_detail.h"
 #include "frame/window_impl.h"
 
-#include "ui/autocomplete.h"
-
+#include <win32ui/dialog/autocomplete.h>
+#include <win32ui/dialog/edit.h>
 #include <win32ui/gdi/fonts.h>
 #include <win32ui/window_metrics.h>
 
@@ -18,34 +18,24 @@ void MainWindow::Impl::OnSize(int width, int height)
     LayoutControls(width, height);
 }
 
-void MainWindow::Impl::OnPrintClient(HDC mem_dc)
-{
-    RECT client = {};
-    GetClientRect(hwnd_, &client);
-    FillRect(mem_dc, &client, win32ui::ThemeBrush(win32ui::ThemeFill::background));
-}
-
 void MainWindow::Impl::ApplyThemeToChildren()
 {
     menu_bar_.ApplyTheme();
-    // themes descendants, library controls, owned tooltips and open dialogs
     win32ui::ReapplyTheme(hwnd_);
 
     if (browse_.address())
     {
-        SetEditMargins(browse_.address(), 6, 6);
-        SetEditVerticalRect(browse_.address(), ui_font_, 2, 6, 6);
+        win32ui::SetEditPadding(browse_.address(), 6, 2);
     }
     if (browse_.filter())
     {
-        SetEditMargins(browse_.filter(), 6, 6);
-        SetEditVerticalRect(browse_.filter(), ui_font_, 2, 6, 6);
+        win32ui::SetEditPadding(browse_.filter(), 6, 2);
     }
     if (tree_header_)
     {
         SetWindowTheme(tree_header_, L"", L"");
     }
-    appearance::ApplyAutoCompleteTheme();
+    win32ui::ApplyAutoCompleteTheme();
     DrawMenuBar(hwnd_);
 }
 
@@ -67,30 +57,14 @@ void MainWindow::Impl::ApplySystemTheme()
 
 void MainWindow::Impl::LoadThemePresets()
 {
-    std::vector<ThemePreset> presets;
     std::wstring load_error;
-    bool loaded = ThemePresetStore::Load(&presets, &load_error);
-    if (!loaded && !load_error.empty())
+    // file that cant be used stays as it is until the user saves presets
+    const win32ui::ThemePresetLoad load = ThemePresetStore::Load(&theme_presets_, &settings_.theme_preset, &load_error);
+    if (!load_error.empty())
     {
         ReportFileError(ThemePresetStore::Path(), load_error);
     }
-    bool updated_builtins = false;
-    if (!loaded || presets.empty())
-    {
-        presets = win32ui::BuiltInThemePresets();
-    }
-    else
-    {
-        updated_builtins = win32ui::MergeBuiltInThemePresets(&presets, settings_.theme_preset);
-    }
-    theme_presets_ = std::move(presets);
-    if (theme_presets_.empty())
-    {
-        return;
-    }
-    settings_.theme_preset = FindThemePreset(theme_presets_, settings_.theme_preset)->name;
-    // file that failed to parse stays as it is until the user saves presets
-    if ((!loaded && load_error.empty()) || updated_builtins)
+    if (load.save_needed)
     {
         SaveThemePresets();
     }
@@ -202,4 +176,4 @@ void MainWindow::Impl::ApplyUIFontToControls()
     }
 }
 
-} // namespace regkit
+}

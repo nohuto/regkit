@@ -3,6 +3,8 @@
 
 #include "records/escaped_fields.h"
 
+#include <win32ui/system/strings.h>
+
 namespace regkit::record_fields
 {
 
@@ -17,14 +19,6 @@ bool IsHigh(wchar_t character)
 bool IsLow(wchar_t character)
 {
     return character >= 0xDC00 && character <= 0xDFFF;
-}
-
-int HexValue(wchar_t character)
-{
-    return character >= L'0' && character <= L'9'   ? character - L'0'
-           : character >= L'A' && character <= L'F' ? character - L'A' + 10
-           : character >= L'a' && character <= L'f' ? character - L'a' + 10
-                                                    : -1;
 }
 
 // escape lone surrogates as \uXXXX to preserve invalid UTF-16 registry names in UTF-8 files
@@ -80,7 +74,7 @@ void AppendUnescaped(std::wstring* output, std::wstring_view text)
             int value = next == L'u' && slash + 6 <= text.size() ? 0 : -1;
             for (size_t index = slash + 2; index < slash + 6 && value >= 0; ++index)
             {
-                const int digit = HexValue(text[index]);
+                const int digit = win32ui::HexDigitValue(text[index]);
                 value = digit < 0 ? -1 : value * 16 + digit;
             }
             const bool surrogate = IsHigh(static_cast<wchar_t>(value)) || IsLow(static_cast<wchar_t>(value));
@@ -115,7 +109,7 @@ void AppendFields(std::wstring* output, const Fields& fields)
     output->push_back(L'\n');
 }
 
-} // namespace
+}
 
 std::wstring Escape(std::wstring_view text)
 {
@@ -131,24 +125,6 @@ std::wstring Unescape(std::wstring_view text)
     unescaped.reserve(text.size());
     AppendUnescaped(&unescaped, text);
     return unescaped;
-}
-
-std::vector<std::wstring_view> Lines(std::wstring_view content)
-{
-    std::vector<std::wstring_view> lines;
-    size_t start = 0;
-    while (start < content.size())
-    {
-        const size_t end = content.find_first_of(L"\r\n", start);
-        if (end == std::wstring_view::npos)
-        {
-            lines.push_back(content.substr(start));
-            break;
-        }
-        lines.push_back(content.substr(start, end - start));
-        start = end + (content[end] == L'\r' && end + 1 < content.size() && content[end + 1] == L'\n' ? 2 : 1);
-    }
-    return lines;
 }
 
 void AppendRecord(std::wstring* output, std::initializer_list<std::wstring_view> fields)
@@ -202,4 +178,4 @@ bool ParseUnsigned(std::wstring_view text, uint64_t maximum, uint64_t* value)
     return true;
 }
 
-} // namespace regkit::record_fields
+}

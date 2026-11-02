@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -44,4 +44,4 @@ constexpr ULONG_PTR kEditRegFileCopyDataId = 0x5247464F;
 constexpr DWORD kExternalMessageMaxBytes = 64u * 1024u;
 constexpr wchar_t kRegKitWindowProperty[] = L"RegKitMainWindow";
 
-} // namespace regkit::frame::message_id
+}

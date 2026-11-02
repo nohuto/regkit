@@ -6,6 +6,7 @@
 #include "win32/text_transform.h"
 
 #include <win32ui/window_metrics.h>
+#include <win32ui/window_placement.h>
 
 namespace regkit
 {
@@ -42,7 +43,7 @@ std::wstring NativePath(const RegistryNode& node)
     return node.view ? std::wstring() : registry_path::BuildNative(node);
 }
 
-} // namespace
+}
 
 void MainWindow::Impl::RefreshMatchingTreeNodes(HTREEITEM selected)
 {
@@ -62,16 +63,8 @@ void MainWindow::Impl::RefreshMatchingTreeNodes(HTREEITEM selected)
     {
         return;
     }
-    auto label_of = [&](HTREEITEM item, wchar_t* buffer, int size) -> bool {
-        TVITEMW info = {};
-        info.hItem = item;
-        info.mask = TVIF_TEXT;
-        info.pszText = buffer;
-        info.cchTextMax = size;
-        return TreeView_GetItem(tree, &info) != FALSE && buffer[0] != 0;
-    };
-    wchar_t wanted[256] = {};
-    if (!label_of(selected, wanted, static_cast<int>(_countof(wanted))))
+    const std::wstring wanted = win32ui::TreeItemText(tree, selected);
+    if (wanted.empty())
     {
         return;
     }
@@ -97,9 +90,8 @@ void MainWindow::Impl::RefreshMatchingTreeNodes(HTREEITEM selected)
             continue;
         }
         const std::wstring path = NativePath(*node);
-        wchar_t text[256] = {};
         if ((!path.empty() && (util::EqualsInsensitive(path, native) || util::EqualsInsensitive(path, kernel))) ||
-            (!kernel.empty() && label_of(item, text, static_cast<int>(_countof(text))) && util::EqualsInsensitive(text, wanted) && util::EqualsInsensitive(KernelName(*node), kernel)))
+            (!kernel.empty() && util::EqualsInsensitive(win32ui::TreeItemText(tree, item), wanted) && util::EqualsInsensitive(KernelName(*node), kernel)))
         {
             matches.emplace_back(depth, item);
         }
@@ -209,17 +201,7 @@ void MainWindow::Impl::CaptureTreeState(const RegistryTree& tree, std::wstring* 
         RegistryNode* node = tree.current_node();
         if (!node)
         {
-            HTREEITEM selected = TreeView_GetSelection(hwnd);
-            if (selected)
-            {
-                TVITEMW tvi = {};
-                tvi.hItem = selected;
-                tvi.mask = TVIF_PARAM;
-                if (TreeView_GetItem(hwnd, &tvi))
-                {
-                    node = reinterpret_cast<RegistryNode*>(tvi.lParam);
-                }
-            }
+            node = tree.NodeFromItem(TreeView_GetSelection(hwnd));
         }
         if (node)
         {
@@ -310,15 +292,9 @@ void MainWindow::Impl::ApplySavedWindowPlacement()
     const int min_height = 480;
     const int width = std::max(settings_.window_width, min_width);
     const int height = std::max(settings_.window_height, min_height);
-
-    RECT work = {};
-    if (!SystemParametersInfoW(SPI_GETWORKAREA, 0, &work, 0))
-    {
-        work = {};
-    }
-    RECT target = {settings_.window_x + work.left, settings_.window_y + work.top, settings_.window_x + work.left + width, settings_.window_y + work.top + height};
-    win32ui::ClampToWorkArea(&target);
-    SetWindowPos(hwnd_, nullptr, target.left, target.top, target.right - target.left, target.bottom - target.top, SWP_NOZORDER | SWP_NOACTIVATE);
+    // saved in workspace coordinates, as GetWindowPlacement reports them
+    const RECT saved = {settings_.window_x, settings_.window_y, settings_.window_x + width, settings_.window_y + height};
+    win32ui::RestoreNormalRect(hwnd_, &saved, 0, {});
 }
 
 HTREEITEM MainWindow::Impl::FindTreeItem(const std::wstring& path)
@@ -431,4 +407,4 @@ bool MainWindow::Impl::CaptureLocalTreeState(workspace::TreeState* state, bool s
     return true;
 }
 
-} // namespace regkit
+}

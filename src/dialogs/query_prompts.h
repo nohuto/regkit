@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -16,4 +16,4 @@ namespace regkit::query_prompts
 bool ShowDataTypes(HWND owner, std::vector<DWORD>* types);
 bool ShowRegistryKey(HWND owner, std::wstring* selected_path);
 
-} // namespace regkit::query_prompts
+}

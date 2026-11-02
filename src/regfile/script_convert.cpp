@@ -7,9 +7,10 @@
 #include "registry/value_format.h"
 #include "win32/file_text.h"
 #include "win32/registry_view.h"
-#include "win32/system_error.h"
 #include "win32/text_transform.h"
 #include "win32/translation.h"
+
+#include <win32ui/system/error_text.h>
 
 #include <algorithm>
 
@@ -95,7 +96,7 @@ bool ReadRegistry(const std::wstring& key_path, bool recursive, std::vector<Oper
     const LONG status = ReadRegistryOperations(registry_path::RootFromName(path.substr(0, split)), subkey, path, win32::kDefaultRegistryView, recursive, operations, skipped, skipped);
     if (status != ERROR_SUCCESS)
     {
-        *error = util::FormatWin32Error(static_cast<DWORD>(status)) + L"\n" + path;
+        *error = win32ui::FormatWin32Error(static_cast<DWORD>(status)) + L"\n" + path;
         return false;
     }
     return true;
@@ -137,7 +138,7 @@ std::wstring RenderOperations(Format format, const std::vector<Operation>& opera
 bool SaveRendered(const std::wstring& path, Format format, const std::wstring& text)
 {
     const bool ascii = std::all_of(text.begin(), text.end(), [](wchar_t character) { return character < 0x80; });
-    return util::WriteTextFile(path, text, format == Format::kReg || (format == Format::kPowerShell && !ascii));
+    return win32ui::WriteTextFileAtomic(path.c_str(), text, format == Format::kReg || (format == Format::kPowerShell && !ascii)) == ERROR_SUCCESS;
 }
 
 bool NormalizeKeyPath(std::wstring_view text, std::wstring* path)
@@ -190,4 +191,4 @@ std::wstring Describe(const Operation& operation, std::wstring_view reason)
     return registry_path::DisplayName(text) + L" (" + std::wstring(reason) + L")";
 }
 
-} // namespace regkit::regfile
+}

@@ -218,7 +218,7 @@ class RegistrySecurityInformation : public ISecurityInformation, public IEffecti
     LONG references_ = 1;
 };
 
-} // namespace
+}
 
 bool ShowRegistryPermissions(HWND owner, const RegistryNode& node)
 {
@@ -255,4 +255,4 @@ bool ShowRegistryPermissions(HWND owner, const RegistryNode& node)
     return ok;
 }
 
-} // namespace regkit
+}

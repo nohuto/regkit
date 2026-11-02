@@ -8,8 +8,9 @@
 #include "registry/key_algorithms.h"
 #include "win32/file_text.h"
 #include "win32/shell_paths.h"
-#include "win32/system_error.h"
 #include "win32/text_transform.h"
+
+#include <win32ui/system/error_text.h>
 
 #include <algorithm>
 
@@ -24,8 +25,8 @@ constexpr std::wstring_view kHeader = L"#regkit-favorites-2";
 bool LoadFromFile(const std::wstring& path, std::vector<std::wstring>* favorites)
 {
     std::wstring content;
-    const bool loaded = !path.empty() && util::ReadTextFile(path, &content, nullptr, util::kMaxStateFileBytes);
-    const std::vector<std::wstring_view> lines = record_fields::Lines(content);
+    const bool loaded = !path.empty() && util::ReadTextFile(path, &content, util::kMaxStateFileBytes);
+    const std::vector<std::wstring_view> lines = win32ui::LineViews(content);
     if (lines.empty() || lines.front() != kHeader)
     {
         *favorites = util::SplitLines(content);
@@ -50,7 +51,7 @@ bool SaveToFile(const std::wstring& path, const std::vector<std::wstring>& favor
     {
         content.append(record_fields::Escape(favorite)).push_back(L'\n');
     }
-    return !path.empty() && util::WriteTextFile(path, content, false);
+    return !path.empty() && win32ui::WriteTextFileAtomic(path.c_str(), content) == ERROR_SUCCESS;
 }
 
 size_t MergeUnique(std::vector<std::wstring>* favorites, const std::vector<std::wstring>& additions)
@@ -69,7 +70,7 @@ size_t MergeUnique(std::vector<std::wstring>* favorites, const std::vector<std::
     return favorites->size() - before;
 }
 
-} // namespace
+}
 
 std::wstring FavoritesStore::FavoritesPath()
 {
@@ -80,7 +81,7 @@ std::wstring FavoritesStore::FavoritesPath()
 bool FavoritesStore::Load(std::vector<std::wstring>* favorites)
 {
     const std::wstring path = FavoritesPath();
-    return LoadFromFile(path, favorites) || (!path.empty() && util::IsMissing(path));
+    return LoadFromFile(path, favorites) || (!path.empty() && util::IsMissing(path.c_str()));
 }
 
 bool FavoritesStore::Save(const std::vector<std::wstring>& favorites)
@@ -183,7 +184,7 @@ bool FavoritesStore::LoadRegEdit(std::vector<NamedFavorite>* favorites, std::wst
     {
         if (error)
         {
-            *error = util::FormatWin32Error(result);
+            *error = win32ui::FormatWin32Error(result);
         }
         return false;
     }
@@ -197,7 +198,7 @@ bool FavoritesStore::LoadRegEdit(std::vector<NamedFavorite>* favorites, std::wst
         value.resize(wcsnlen_s(value.c_str(), value.size()));
         if (entry.type == REG_EXPAND_SZ)
         {
-            std::wstring expanded = util::ExpandEnvironmentStringsDynamic(value);
+            std::wstring expanded = win32ui::ExpandEnvironment(value.c_str());
             if (!expanded.empty())
             {
                 value = std::move(expanded);
@@ -211,4 +212,4 @@ bool FavoritesStore::LoadRegEdit(std::vector<NamedFavorite>* favorites, std::wst
     return true;
 }
 
-} // namespace regkit::workspace
+}

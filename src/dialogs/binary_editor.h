@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -28,4 +28,4 @@ struct BinaryResult
 
 bool EditBinary(HWND owner, const BinaryRequest& request, BinaryResult* result);
 
-} // namespace regkit::editors
+}

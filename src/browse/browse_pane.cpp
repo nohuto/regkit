@@ -6,17 +6,12 @@
 #include "registry/registry_path.h"
 #include "win32/text_transform.h"
 
+#include <win32ui/list_view/list_view.h>
+
 #include <algorithm>
 
 namespace regkit::browse
 {
-
-namespace
-{
-
-constexpr DWORD kTypeSelectTimeoutMs = 1000;
-
-} // namespace
 
 bool Pane::Create(const CreateRequest& request)
 {
@@ -238,153 +233,9 @@ bool Pane::SelectValue(const std::wstring& name)
         {
             continue;
         }
-        ListView_SetItemState(values_.hwnd(), -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
-        ListView_SetItemState(values_.hwnd(), static_cast<int>(index), LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-        ListView_EnsureVisible(values_.hwnd(), static_cast<int>(index), FALSE);
-        return true;
+        return win32ui::SelectOnlyListRow(values_.hwnd(), static_cast<int>(index));
     }
     return false;
 }
 
-void Pane::UpdateTypeBuffer(wchar_t ch, DWORD now, std::wstring* buffer, DWORD* tick)
-{
-    if (!buffer || !tick)
-    {
-        return;
-    }
-    if (now - *tick > kTypeSelectTimeoutMs)
-    {
-        buffer->clear();
-    }
-    *tick = now;
-    if (ch == L'\b')
-    {
-        if (!buffer->empty())
-        {
-            buffer->pop_back();
-        }
-    }
-    else
-    {
-        buffer->push_back(ch);
-    }
 }
-
-void Pane::TypeSelectTree(wchar_t ch, DWORD now)
-{
-    if (!tree_->hwnd())
-    {
-        return;
-    }
-    UpdateTypeBuffer(ch, now, &tree_type_buffer_, &tree_type_tick_);
-    if (tree_type_buffer_.empty())
-    {
-        return;
-    }
-    const HTREEITEM selected = TreeView_GetSelection(tree_->hwnd());
-    if (!selected)
-    {
-        return;
-    }
-
-    auto load_children = [&](HTREEITEM item) {
-        RegistryNode* node = tree_->NodeFromItem(item);
-        if (!node || node->children_loaded)
-        {
-            return;
-        }
-        NMTREEVIEWW info = {};
-        info.action = TVE_EXPAND;
-        info.itemNew.hItem = item;
-        tree_->OnItemExpanding(&info);
-    };
-    auto children = [&](HTREEITEM parent) {
-        std::vector<HTREEITEM> items;
-        HTREEITEM item = parent ? TreeView_GetChild(tree_->hwnd(), parent) : TreeView_GetRoot(tree_->hwnd());
-        for (; item; item = TreeView_GetNextSibling(tree_->hwnd(), item))
-        {
-            items.push_back(item);
-            if (!tree_->IsGroupItem(item))
-            {
-                continue;
-            }
-            for (HTREEITEM sub = TreeView_GetChild(tree_->hwnd(), item); sub;
-                 sub = TreeView_GetNextSibling(tree_->hwnd(), sub))
-            {
-                items.push_back(sub);
-            }
-        }
-        return items;
-    };
-    auto text = [&](HTREEITEM item) {
-        wchar_t buffer[256] = {};
-        TVITEMW value = {};
-        value.hItem = item;
-        value.mask = TVIF_TEXT;
-        value.pszText = buffer;
-        value.cchTextMax = static_cast<int>(_countof(buffer));
-        return TreeView_GetItem(tree_->hwnd(), &value) ? std::wstring(buffer) : std::wstring();
-    };
-    auto find = [&](const std::vector<HTREEITEM>& items) -> HTREEITEM {
-        if (items.empty())
-        {
-            return nullptr;
-        }
-        size_t start = 0;
-        const auto selected_item = std::find(items.begin(), items.end(), selected);
-        if (selected_item != items.end())
-        {
-            start = static_cast<size_t>(selected_item - items.begin());
-        }
-        for (int exact = 1; exact >= 0; --exact)
-        {
-            for (size_t offset = 0; offset < items.size(); ++offset)
-            {
-                const HTREEITEM item = items[(start + offset) % items.size()];
-                const std::wstring item_text = text(item);
-                const bool matched = exact ? util::EqualsInsensitive(item_text, tree_type_buffer_)
-                                           : util::StartsWithInsensitive(item_text, tree_type_buffer_);
-                if (matched)
-                {
-                    return item;
-                }
-            }
-        }
-        return nullptr;
-    };
-
-    HTREEITEM target = nullptr;
-    if (tree_type_select_descend_)
-    {
-        load_children(selected);
-        target = find(children(selected));
-    }
-    const HTREEITEM parent = TreeView_GetParent(tree_->hwnd(), selected);
-    if (!target)
-    {
-        if (parent)
-        {
-            load_children(parent);
-        }
-        target = find(children(parent));
-    }
-    if (!target && !tree_type_select_descend_)
-    {
-        load_children(selected);
-        target = find(children(selected));
-    }
-    if (target)
-    {
-        tree_type_select_descend_ = false;
-        TreeView_SelectItem(tree_->hwnd(), target);
-        TreeView_EnsureVisible(tree_->hwnd(), target);
-    }
-}
-
-void Pane::set_tree_type_select_descend(bool descend) noexcept
-{
-    tree_type_buffer_.clear();
-    tree_type_select_descend_ = descend;
-}
-
-} // namespace regkit::browse

@@ -7,7 +7,8 @@
 #include "win32/translation.h"
 #include "trace/trace_paths.h"
 
-#include <win32ui/process_token.h>
+#include <win32ui/system/error_text.h>
+#include <win32ui/system/process_token.h>
 
 namespace regkit
 {
@@ -198,7 +199,7 @@ void MainWindow::Impl::UpdateStatus()
     if (path_text.empty() && value_list_error_ != ERROR_SUCCESS && browse_.current_node())
     {
         // reason replaces path until the key is read or left
-        path_text = std::wstring(util::Tr(L"The contents of this key couldn't be read.")) + L" " + util::FormatWin32Error(static_cast<DWORD>(value_list_error_));
+        path_text = std::wstring(util::Tr(L"The contents of this key couldn't be read.")) + L" " + win32ui::FormatWin32Error(static_cast<DWORD>(value_list_error_));
     }
     if (path_text.empty() && browse_.current_node())
     {
@@ -232,8 +233,7 @@ void MainWindow::Impl::UpdateStatus()
     swprintf_s(buffer, util::Tr(L"Selected: %d"), selected);
     std::wstring selected_text = buffer;
 
-    // path fills remaining space, mode part exists only when needed
-    // counts fit five digits and grow for longer values
+    // path fills remaining space, mode part exists only when needed, counts fit five digits and grow for longer values
     std::vector<win32ui::StatusPart> parts = {{L"", 0, true}};
     if (!mode_text.empty())
     {
@@ -913,7 +913,7 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options)
     bool trace_enabled = want_trace;
     bool registry_enabled = want_registry && !criteria.start_nodes.empty();
 
-    run->session.Start(L"SearchThread", [hwnd = hwnd_, run = run.get(), generation, criteria, traces, exclude_paths, scope_lower, scope_recursive, trace_enabled, registry_enabled, matcher](uint64_t, std::atomic_bool& cancel) mutable {
+    const uint64_t thread = run->session.Start(L"SearchThread", [hwnd = hwnd_, run = run.get(), generation, criteria, traces, exclude_paths, scope_lower, scope_recursive, trace_enabled, registry_enabled, matcher](uint64_t, std::atomic_bool& cancel) mutable {
         auto should_stop = [&]() { return cancel.load(); };
 
         auto publish_batch = [&](search::ResultBatch&& rows) -> bool {
@@ -1132,6 +1132,12 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options)
             run->posted.store(false);
         }
     });
+    // like a failed search, the tab stops searching
+    if (!thread)
+    {
+        CancelSearch(&started);
+        ui::ShowStartError(hwnd_);
+    }
 }
 
 namespace
@@ -1143,17 +1149,6 @@ enum class DataReplace
     kChanged,
     kRejected
 };
-
-std::wstring PaddedHex(uint64_t value, size_t width)
-{
-    static constexpr wchar_t kDigits[] = L"0123456789ABCDEF";
-    std::wstring text(width * 2, L'0');
-    for (size_t index = 0; index < width * 2; ++index)
-    {
-        text[width * 2 - 1 - index] = kDigits[(value >> (index * 4)) & 0xF];
-    }
-    return text;
-}
 
 bool ParseHexBytesStrict(const std::wstring& text, std::vector<BYTE>* out)
 {
@@ -1269,8 +1264,8 @@ DataReplace ReplaceValueData(const search::Replacer& matcher, DWORD type, const 
             }
             const uint64_t number = value_format::ReadUnsigned(data, width, big_endian);
             const std::wstring decimal = std::to_wstring(number);
-            const std::wstring bare_hex = PaddedHex(number, width);
-            const std::wstring prefixed_hex = L"0x" + bare_hex;
+            const std::wstring prefixed_hex = win32ui::FormatHex(number, static_cast<int>(width * 2));
+            const std::wstring bare_hex = prefixed_hex.substr(2);
             struct NumberForm
             {
                 const std::wstring* text;
@@ -1299,23 +1294,19 @@ DataReplace ReplaceValueData(const search::Replacer& matcher, DWORD type, const 
                 {
                     continue;
                 }
-                uint64_t parsed = 0;
-                if (!util::ParseUnsignedNumber(updated, form.base, &parsed))
+                const std::optional<uint64_t> parsed = win32ui::ParseUnsigned(updated, form.base, true);
+                if (!parsed || (width == sizeof(DWORD) && *parsed > MAXDWORD))
                 {
                     return DataReplace::kRejected;
                 }
-                if (width == sizeof(DWORD) && parsed > MAXDWORD)
-                {
-                    return DataReplace::kRejected;
-                }
-                *out = value_format::UnsignedBytes(parsed, width, big_endian);
+                *out = value_format::UnsignedBytes(*parsed, width, big_endian);
                 return DataReplace::kChanged;
             }
             return DataReplace::kUnchanged;
         }
     default:
         {
-            const std::wstring text = util::ToHex(data);
+            const std::wstring text = win32ui::HexBytes(data);
             std::wstring updated;
             const DataReplace applied = ApplyReplace(matcher, text, &updated);
             if (applied != DataReplace::kChanged)
@@ -1333,7 +1324,7 @@ DataReplace ReplaceValueData(const search::Replacer& matcher, DWORD type, const 
     }
 }
 
-} // namespace
+}
 
 void MainWindow::Impl::StartReplace(const ReplaceDialogResult& options)
 {
@@ -1380,9 +1371,7 @@ void MainWindow::Impl::StartReplace(const ReplaceDialogResult& options)
     }
 
     const HWND hwnd = hwnd_;
-    replace_result_pending_ = true;
-    replace_target_ = session_;
-    replace_session_.Start(
+    const uint64_t started = replace_session_.Start(
         L"ReplaceThread",
         [this, start, options, matcher, hwnd, session = std::weak_ptr<RegistrySession>(session_), source = HistorySource()](uint64_t generation, std::atomic_bool& cancel) mutable {
             auto payload = std::make_unique<ReplacePayload>();
@@ -1568,10 +1557,18 @@ void MainWindow::Impl::StartReplace(const ReplaceDialogResult& options)
             payload->cancelled = cancel.load();
             if (hwnd && IsWindow(hwnd))
             {
-                work::PostPayload(hwnd, frame::message_id::kReplaceReady, static_cast<WPARAM>(generation), payload);
+                win32ui::PostPayload(hwnd, frame::message_id::kReplaceReady, static_cast<WPARAM>(generation), payload);
             }
         }
     );
+    if (!started)
+    {
+        ui::ShowStartError(hwnd_);
+        return;
+    }
+    // result arrives as a message, after these are set
+    replace_result_pending_ = true;
+    replace_target_ = session_;
 }
 
 void MainWindow::Impl::ApplyReplacePayload(std::unique_ptr<ReplacePayload> owned)
@@ -1729,4 +1726,4 @@ void MainWindow::Impl::CloseSearchTab(int tab_index)
     UpdateStatus();
 }
 
-} // namespace regkit
+}

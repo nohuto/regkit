@@ -32,7 +32,6 @@ struct CompareDialogSelection
     std::wstring file_path;
     std::wstring key_path;
     bool recursive = true;
-    // already parsed .reg file from the dialog
     std::shared_ptr<const regfile::Document> document;
 };
 
@@ -52,4 +51,4 @@ struct CompareDialogResult
 bool ShowCompareDialog(HWND owner, const CompareDialogDefaults& defaults, CompareDialogResult* out);
 void CompareDialogFields(workspace::DialogFields& fields, CompareDialogDefaults* data);
 
-} // namespace regkit::command_detail
+}

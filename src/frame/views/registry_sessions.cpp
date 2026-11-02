@@ -5,8 +5,14 @@
 #include "frame/window_impl.h"
 
 #include "win32/file_dialog.h"
+
+#include <win32ui/dialog/file_dialog.h>
 #include "win32/text_transform.h"
 #include "win32/translation.h"
+
+#include <win32ui/dialog/text_prompt.h>
+#include <win32ui/system/error_text.h>
+#include <win32ui/window.h>
 
 namespace regkit
 {
@@ -51,7 +57,7 @@ bool SaveHiveAtomically(HKEY root, const std::wstring& path, std::wstring* error
     return true;
 }
 
-} // namespace
+}
 
 MainWindow::Impl::RegistrySession::~RegistrySession()
 {
@@ -284,15 +290,13 @@ void MainWindow::Impl::CaptureRegistryTabState(int index, bool tree_state)
         return;
     }
     entry.value_top_index = ListView_GetTopIndex(list);
-    int item = ListView_GetNextItem(list, -1, LVNI_SELECTED);
-    while (item >= 0)
+    for (const int item : win32ui::SelectedListItems(list))
     {
         const ListRow* row = browse_.values().RowAt(item);
         if (row && row->kind == rowkind::kValue)
         {
             entry.selected_values.push_back(row->extra);
         }
-        item = ListView_GetNextItem(list, item, LVNI_SELECTED);
     }
 }
 
@@ -386,7 +390,6 @@ void MainWindow::Impl::RestoreValueSelection(const TabEntry& entry)
         pending_value_selection_.empty() && pending_value_top_index_ == 0 ? std::wstring() : entry.selected_path;
 }
 
-// creates tab tree on first display, true if roots still need loading
 bool MainWindow::Impl::ActivateTabTree(int index)
 {
     TabEntry& entry = tabs_[static_cast<size_t>(index)];
@@ -414,8 +417,7 @@ bool MainWindow::Impl::ActivateTabTree(int index)
     }
     FlushTreeRedraw();
     RECT rect = {};
-    GetWindowRect(previous.hwnd(), &rect);
-    MapWindowPoints(nullptr, hwnd_, reinterpret_cast<POINT*>(&rect), 2);
+    win32ui::ChildRect(hwnd_, previous.hwnd(), &rect);
     const bool focused = GetFocus() == previous.hwnd();
     browse_.SetActiveTree(entry.tree);
     SetWindowPos(entry.tree->hwnd(), nullptr, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER | SWP_NOACTIVATE);
@@ -671,23 +673,18 @@ bool MainWindow::Impl::SwitchToLocalRegistry()
 bool MainWindow::Impl::SwitchToRemoteRegistry()
 {
     std::wstring machine;
-    const HRESULT picked = win32::ChooseComputer(hwnd_, &machine);
-    if (win32::DialogCancelled(picked))
+    const DWORD picked = win32ui::ChooseComputer(hwnd_, &machine);
+    if (picked == ERROR_CANCELLED)
     {
         return false;
     }
-    if (FAILED(picked))
+    if (picked != ERROR_SUCCESS)
     {
-        editors::TextRequest request;
-        request.title = util::Tr(L"Connect to Remote Registry");
-        request.label = util::Tr(L"Computer name (e.g. \\\\MACHINE):");
-        request.text = session_->remote_machine;
-        editors::TextResult text_result;
-        if (!editors::EditText(hwnd_, request, &text_result))
+        machine = session_->remote_machine;
+        if (win32ui::PromptText(hwnd_, {.title = util::Tr(L"Connect to Remote Registry"), .label = util::Tr(L"Computer name (e.g. \\\\MACHINE):")}, &machine) != 0)
         {
             return false;
         }
-        machine = std::move(text_result.text);
     }
     return ConnectRemoteRegistry(machine, true);
 }
@@ -809,20 +806,20 @@ bool MainWindow::Impl::SwitchToOfflineRegistry()
     const int choice =
         ui::PromptChoice(hwnd_, util::Tr(L"Load the offline registry from a single hive file, or from a folder of hives?"), util::Tr(L"Offline Registry"), util::Tr(L"Hive File"), util::Tr(L"Folder"), util::Tr(L"Cancel"), {90, 70, 70}, 470);
     std::wstring hive_path;
-    HRESULT hr = S_OK;
+    DWORD error = ERROR_SUCCESS;
     if (choice == IDYES)
     {
-        hr = win32::ChooseFileToOpen(hwnd_, kOfflineHiveFilter, &hive_path);
+        error = win32ui::ChooseFileToOpen(hwnd_, {.filter = kOfflineHiveFilter}, &hive_path);
     }
     else if (choice == IDNO)
     {
-        hr = win32::ChooseFolder(hwnd_, &hive_path);
+        error = win32ui::ChooseFolder(hwnd_, &hive_path);
     }
     else
     {
         return false;
     }
-    if (!ui::ReportFileDialogResult(hwnd_, hr))
+    if (!ui::ReportFileDialogResult(hwnd_, error))
     {
         return false;
     }
@@ -848,7 +845,7 @@ bool MainWindow::Impl::LoadOfflineRegistryFromPath(const std::wstring& path, boo
         return false;
     }
 
-    bool is_dir = util::IsDirectory(selection_path);
+    bool is_dir = util::IsDirectory(selection_path.c_str());
     std::vector<OfflineHiveCandidate> candidates;
     if (is_dir)
     {
@@ -1226,4 +1223,4 @@ bool MainWindow::Impl::NavigateToResolvedExternalJump(const std::wstring& key_pa
     return true;
 }
 
-} // namespace regkit
+}

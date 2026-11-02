@@ -5,7 +5,10 @@
 #include "frame/window_impl.h"
 #include "win32/text_transform.h"
 
-#include <win32ui/process_token.h>
+#include <win32ui/dialog/edit.h>
+#include <win32ui/focus.h>
+#include <win32ui/system/process_token.h>
+#include <win32ui/window.h>
 #include <win32ui/window_metrics.h>
 
 namespace regkit
@@ -17,19 +20,7 @@ MainWindow::Impl::~Impl() = default;
 bool MainWindow::Impl::Create(HINSTANCE instance)
 {
     instance_ = instance;
-
-    WNDCLASSEXW wc = {};
-    wc.cbSize = sizeof(wc);
-    wc.lpfnWndProc = MainWindow::Impl::WndProc;
-    wc.hInstance = instance;
-    wc.lpszClassName = kMainWindowClassName;
-    wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
-    wc.hIcon = LoadIconW(instance, MAKEINTRESOURCEW(IDI_APPICON));
-    wc.hIconSm =
-        static_cast<HICON>(LoadImageW(instance, MAKEINTRESOURCEW(IDI_APPICON), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR));
-    wc.hbrBackground = nullptr;
-
-    RegisterClassExW(&wc);
+    win32ui::RegisterWindowClass(instance, kMainWindowClassName, MainWindow::Impl::WndProc, IDI_APPICON);
 
     std::wstring title = L"RegKit V";
     title.append(REGKIT_VERSION_TEXT);
@@ -45,7 +36,7 @@ bool MainWindow::Impl::Create(HINSTANCE instance)
     {
         title.append(L" - [").append(util::Tr(L"Administrator")).append(L"]");
     }
-    hwnd_ = CreateWindowExW(0, wc.lpszClassName, title.c_str(), WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, 1200, 800, nullptr, nullptr, instance, this);
+    hwnd_ = CreateWindowExW(0, kMainWindowClassName, title.c_str(), WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, 1200, 800, nullptr, nullptr, instance, this);
     if (hwnd_)
     {
         SetPropW(hwnd_, kRegKitWindowProperty, reinterpret_cast<HANDLE>(static_cast<INT_PTR>(1)));
@@ -151,36 +142,8 @@ void MainWindow::Impl::FocusAddressBarForExternalJump(bool defer_if_needed)
 
 void MainWindow::Impl::CyclePaneFocus(bool forward)
 {
-    HWND panes[] = {toolbar_, browse_.address(), tab_, browse_.filter(), browse_.tree().hwnd(), tree_splitter_, browse_.values().hwnd(), search_results_list_, history_splitter_, history_list_};
-    HWND visible[_countof(panes)] = {};
-    int count = 0;
-    for (HWND pane : panes)
-    {
-        // panes without layout space have no usable content
-        RECT area = {};
-        if (pane && IsWindowVisible(pane) && IsWindowEnabled(pane) && GetClientRect(pane, &area) && !IsRectEmpty(&area))
-        {
-            visible[count++] = pane;
-        }
-    }
-    if (count == 0)
-    {
-        return;
-    }
-    HWND focus = GetFocus();
-    int current = -1;
-    for (int i = 0; i < count; ++i)
-    {
-        if (visible[i] == focus || IsChild(visible[i], focus))
-        {
-            current = i;
-            break;
-        }
-    }
-    const int next = current < 0 ? (forward ? 0 : count - 1) : (current + (forward ? 1 : count - 1)) % count;
-    // keyboard moves focus, panes show it
-    SendMessageW(hwnd_, WM_CHANGEUISTATE, MAKEWPARAM(UIS_CLEAR, UISF_HIDEFOCUS), 0);
-    FocusPane(visible[next]);
+    const HWND panes[] = {toolbar_, browse_.address(), tab_, browse_.filter(), browse_.tree().hwnd(), tree_splitter_, browse_.values().hwnd(), search_results_list_, history_splitter_, history_list_};
+    FocusPane(win32ui::CyclePane(hwnd_, panes, forward));
 }
 
 void MainWindow::Impl::FocusPane(HWND pane)
@@ -202,59 +165,6 @@ void MainWindow::Impl::FocusPane(HWND pane)
     SelectListRowAtIndex(pane, 0);
 }
 
-namespace
-{
-
-bool IsTextInput(HWND hwnd)
-{
-    if (!hwnd)
-    {
-        return false;
-    }
-    wchar_t cls[64] = {};
-    GetClassNameW(hwnd, cls, static_cast<int>(_countof(cls)));
-    if (util::EqualsInsensitive(cls, L"Edit"))
-    {
-        return true;
-    }
-    if (util::EqualsInsensitive(cls, L"RichEdit20W") || util::EqualsInsensitive(cls, L"RichEdit20A"))
-    {
-        return true;
-    }
-    if (util::EqualsInsensitive(cls, L"ComboBox") || util::EqualsInsensitive(cls, L"ComboBoxEx32"))
-    {
-        return true;
-    }
-    HWND parent = GetParent(hwnd);
-    if (parent)
-    {
-        GetClassNameW(parent, cls, static_cast<int>(_countof(cls)));
-        if (util::EqualsInsensitive(cls, L"ComboBox") || util::EqualsInsensitive(cls, L"ComboBoxEx32"))
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-// text box keys take priority over menu shortcuts
-bool KeepForTextInput(const MSG& msg)
-{
-    if ((msg.message != WM_KEYDOWN && msg.message != WM_SYSKEYDOWN) || !IsTextInput(GetFocus()))
-    {
-        return false;
-    }
-    if (msg.wParam == VK_DELETE || msg.wParam == VK_BACK || msg.wParam == VK_F2)
-    {
-        return true;
-    }
-    const bool ctrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-    const bool alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-    return ctrl && !alt && (msg.wParam == 'C' || msg.wParam == 'V' || msg.wParam == 'X' || msg.wParam == 'Z' || msg.wParam == 'Y');
-}
-
-} // namespace
-
 bool MainWindow::Impl::TranslateAccelerator(const MSG& msg)
 {
     if (IsWindow(key_handles_window_) && IsDialogMessageW(key_handles_window_, const_cast<MSG*>(&msg)))
@@ -272,7 +182,7 @@ bool MainWindow::Impl::TranslateAccelerator(const MSG& msg)
         const bool shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
         const bool alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
         HWND focus = GetFocus();
-        const bool focus_edit = IsTextInput(focus);
+        const bool focus_edit = win32ui::IsTextInput(focus);
         if (!ctrl && !shift && !alt && msg.wParam == VK_F7 && (HIWORD(msg.lParam) & KF_REPEAT) != 0)
         {
             return true;
@@ -334,14 +244,15 @@ bool MainWindow::Impl::TranslateAccelerator(const MSG& msg)
                 return true;
             }
             // Backspace edits active search text
-            if (msg.wParam == VK_BACK && !focus_edit && !win32ui::ListTypeSearchActive(focus))
+            if (msg.wParam == VK_BACK && !focus_edit && !win32ui::ListTypeSearchActive(focus) && !win32ui::TreeTypeSearchActive(focus))
             {
                 HandleMenuCommand(cmd::kNavBack);
                 return true;
             }
         }
     }
-    return win32ui::TranslateShortcuts(hwnd_, shortcuts_, const_cast<MSG*>(&msg), KeepForTextInput);
+    // text box keys take priority over menu shortcuts
+    return win32ui::TranslateShortcuts(hwnd_, shortcuts_, const_cast<MSG*>(&msg), win32ui::TextInputOwnsKey);
 }
 
 LRESULT CALLBACK MainWindow::Impl::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
@@ -365,19 +276,19 @@ LRESULT CALLBACK MainWindow::Impl::WndProc(HWND hwnd, UINT message, WPARAM wpara
 LRESULT CALLBACK MainWindow::Impl::AddressEditProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR, DWORD_PTR ref_data)
 {
     auto* self = reinterpret_cast<MainWindow::Impl*>(ref_data);
+    const auto can_paste = [hwnd] { return (GetWindowLongPtrW(hwnd, GWL_STYLE) & ES_READONLY) == 0 && IsClipboardFormatAvailable(CF_UNICODETEXT); };
+    const auto paste_and_go = [hwnd] {
+        SendMessageW(hwnd, EM_SETSEL, 0, -1);
+        SendMessageW(hwnd, WM_PASTE, 0, 0);
+        SendMessageW(hwnd, WM_KEYDOWN, VK_RETURN, 0);
+    };
     if (message == WM_CONTEXTMENU)
     {
-        POINT pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
-        if (pt.x == -1 && pt.y == -1)
+        constexpr UINT kPasteAndGo = 1;
+        const win32ui::EditMenuCommand command = {kPasteAndGo, util::Tr(L"Paste and &Go"), L"Ctrl+Shift+V", can_paste()};
+        if (win32ui::ShowEditContextMenu(hwnd, lparam, &command) == kPasteAndGo)
         {
-            RECT rect = {};
-            GetWindowRect(hwnd, &rect);
-            pt.x = rect.left + 8;
-            pt.y = rect.top + (rect.bottom - rect.top) / 2;
-        }
-        if (self)
-        {
-            self->ShowAddressContextMenu(hwnd, pt);
+            paste_and_go();
         }
         return 0;
     }
@@ -388,11 +299,9 @@ LRESULT CALLBACK MainWindow::Impl::AddressEditProc(HWND hwnd, UINT message, WPAR
     if (message == WM_KEYDOWN && wparam == 'V' && (GetKeyState(VK_CONTROL) & 0x8000) != 0 &&
         (GetKeyState(VK_SHIFT) & 0x8000) != 0)
     {
-        if ((GetWindowLongPtrW(hwnd, GWL_STYLE) & ES_READONLY) == 0 && IsClipboardFormatAvailable(CF_UNICODETEXT))
+        if (can_paste())
         {
-            SendMessageW(hwnd, EM_SETSEL, 0, -1);
-            SendMessageW(hwnd, WM_PASTE, 0, 0);
-            SendMessageW(hwnd, WM_KEYDOWN, VK_RETURN, 0);
+            paste_and_go();
         }
         return 0;
     }
@@ -403,27 +312,6 @@ LRESULT CALLBACK MainWindow::Impl::AddressEditProc(HWND hwnd, UINT message, WPAR
             SendMessageW(self->hwnd_, frame::message_id::kAddressEnter, 0, 0);
         }
         return 0;
-    }
-    if (message == WM_CHAR && wparam == VK_RETURN)
-    {
-        return 0;
-    }
-    if (message == WM_SETFOCUS)
-    {
-        LRESULT result = DefSubclassProc(hwnd, message, wparam, lparam);
-        SendMessageW(hwnd, EM_SETSEL, 0, -1);
-        SendMessageW(hwnd, EM_SCROLLCARET, 0, 0);
-        return result;
-    }
-    if (message == WM_LBUTTONDOWN)
-    {
-        if (GetFocus() != hwnd)
-        {
-            LRESULT result = DefSubclassProc(hwnd, message, wparam, lparam);
-            SendMessageW(hwnd, EM_SETSEL, 0, -1);
-            SendMessageW(hwnd, EM_SCROLLCARET, 0, 0);
-            return result;
-        }
     }
     return DefSubclassProc(hwnd, message, wparam, lparam);
 }
@@ -448,10 +336,6 @@ LRESULT CALLBACK MainWindow::Impl::FilterEditProc(HWND hwnd, UINT message, WPARA
         return 0;
     }
     if (message == WM_CHAR && wparam == VK_ESCAPE)
-    {
-        return 0;
-    }
-    if (message == WM_CHAR && wparam == VK_RETURN)
     {
         return 0;
     }
@@ -510,6 +394,25 @@ LRESULT CALLBACK MainWindow::Impl::ListViewProc(HWND hwnd, UINT message, WPARAM 
     return DefSubclassProc(hwnd, message, wparam, lparam);
 }
 
+LRESULT CALLBACK MainWindow::Impl::CloseButtonProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR, DWORD_PTR ref_data)
+{
+    // owner drawn buttons track no hot state of their own
+    auto* self = reinterpret_cast<MainWindow::Impl*>(ref_data);
+    if (message == WM_MOUSEMOVE && self->hot_close_button_ != hwnd)
+    {
+        self->hot_close_button_ = hwnd;
+        TRACKMOUSEEVENT track = {sizeof(track), TME_LEAVE, hwnd, 0};
+        TrackMouseEvent(&track);
+        InvalidateRect(hwnd, nullptr, FALSE);
+    }
+    else if (message == WM_MOUSELEAVE && self->hot_close_button_ == hwnd)
+    {
+        self->hot_close_button_ = nullptr;
+        InvalidateRect(hwnd, nullptr, FALSE);
+    }
+    return DefSubclassProc(hwnd, message, wparam, lparam);
+}
+
 LRESULT CALLBACK MainWindow::Impl::TreeViewProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR, DWORD_PTR ref_data)
 {
     auto* self = reinterpret_cast<MainWindow::Impl*>(ref_data);
@@ -544,36 +447,7 @@ LRESULT CALLBACK MainWindow::Impl::TreeViewProc(HWND hwnd, UINT message, WPARAM 
     {
         self->last_focus_ = hwnd;
     }
-    if (message == WM_KEYDOWN && self && hwnd == self->browse_.tree().hwnd())
-    {
-        switch (wparam)
-        {
-        case VK_RIGHT:
-            self->browse_.set_tree_type_select_descend(true);
-            break;
-        case VK_LEFT:
-        case VK_UP:
-        case VK_DOWN:
-        case VK_HOME:
-        case VK_END:
-        case VK_PRIOR:
-        case VK_NEXT:
-            self->browse_.set_tree_type_select_descend(false);
-            break;
-        default:
-            break;
-        }
-    }
-    if (message == WM_CHAR && self && hwnd == self->browse_.tree().hwnd())
-    {
-        wchar_t ch = static_cast<wchar_t>(wparam);
-        if (ch == L'\b' || (iswprint(ch) && ch != L'\r' && ch != L'\n' && ch != L'\t'))
-        {
-            self->HandleTypeToSelectTree(ch);
-            return 0;
-        }
-    }
     return DefSubclassProc(hwnd, message, wparam, lparam);
 }
 
-} // namespace regkit
+}

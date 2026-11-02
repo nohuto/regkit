@@ -166,7 +166,7 @@ bool BatchData(const Value& value, std::wstring* type, std::wstring* text, std::
             break;
         }
     case REG_BINARY:
-        *text = util::ToHex(value.data, L'\0');
+        *text = win32ui::HexBytes(value.data, L'\0');
         break;
     default:
         return false;
@@ -377,7 +377,7 @@ bool IsWord(std::wstring_view text, std::wstring_view word)
     return util::StartsWithInsensitive(text, word) && (text.size() == word.size() || text[word.size()] == L' ' || text[word.size()] == L'\t');
 }
 
-} // namespace
+}
 
 bool ParseBatch(std::wstring_view content, std::vector<Operation>* output, std::wstring* error)
 {
@@ -588,4 +588,4 @@ std::wstring RenderBatch(const std::vector<Operation>& operations, bool admin_ch
            (admin_check && NeedsAdmin(operations) ? L"net session >nul 2>&1 || (echo Run this script as administrator & exit /b 1)\r\n" : L"") + body;
 }
 
-} // namespace regkit::regfile
+}

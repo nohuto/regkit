@@ -7,7 +7,8 @@
 #include "win32/text_transform.h"
 #include "win32/translation.h"
 
-#include <win32ui/handle_owner.h>
+#include <win32ui/system/paths.h>
+#include <win32ui/system/registry_value.h>
 
 #include <shlobj.h>
 #include <shlwapi.h>
@@ -49,7 +50,7 @@ const TypeLabel* FindTypeLabel(DWORD type)
     return nullptr;
 }
 
-} // namespace
+}
 
 std::span<const TypeLabel> TypeLabels()
 {
@@ -139,7 +140,7 @@ std::wstring Data(DWORD type, const BYTE* data, DWORD size)
     default:
         break;
     }
-    return util::ToHex({data, size});
+    return win32ui::HexBytes({data, size});
 }
 
 namespace
@@ -151,22 +152,19 @@ bool IsTrustedResourcePath(const wchar_t* full)
         std::vector<std::wstring> list;
         for (const KNOWNFOLDERID& folder : {FOLDERID_Windows, FOLDERID_ProgramFiles, FOLDERID_ProgramFilesX86})
         {
-            win32ui::UniqueCoTask<PWSTR> root;
-            if (SUCCEEDED(SHGetKnownFolderPath(folder, 0, nullptr, root.put())))
+            if (std::wstring root = win32ui::KnownFolderPath(folder); !root.empty())
             {
-                list.emplace_back(root.get());
+                list.push_back(std::move(root));
             }
         }
-        wchar_t native[MAX_PATH] = {};
-        DWORD size = sizeof(native);
-        if (RegGetValueW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion", L"ProgramW6432Dir", RRF_RT_REG_SZ | RRF_SUBKEY_WOW6464KEY, nullptr, native, &size) == ERROR_SUCCESS)
+        if (std::wstring native; win32ui::ReadRegistryString(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion", L"ProgramW6432Dir", &native, RRF_SUBKEY_WOW6464KEY) == ERROR_SUCCESS)
         {
-            list.emplace_back(native);
+            list.push_back(std::move(native));
         }
         return list;
     }();
     return std::any_of(roots.begin(), roots.end(), [&](const std::wstring& root) {
-        return _wcsnicmp(full, root.c_str(), root.size()) == 0 && full[root.size()] == L'\\';
+        return util::StartsWithInsensitive(full, root) && full[root.size()] == L'\\';
     });
 }
 
@@ -175,9 +173,7 @@ std::wstring TrustedIndirectString(const std::wstring& value)
     const bool package = value.size() > 1 && value[1] == L'{';
     const size_t start = package ? 2 : 1;
     const size_t end = package ? value.find(L'?') : value.find_last_of(L',');
-    std::wstring source = util::ExpandEnvironmentStringsDynamic(
-        value.substr(start, end == std::wstring::npos ? std::wstring::npos : end - start)
-    );
+    std::wstring source = win32ui::ExpandEnvironment(value.substr(start, end == std::wstring::npos ? std::wstring::npos : end - start).c_str());
     if (package && (source.size() < 2 || source[1] != L':'))
     {
         return value;
@@ -209,7 +205,7 @@ std::wstring TrustedIndirectString(const std::wstring& value)
     return value.substr(0, start) + full + (end == std::wstring::npos ? std::wstring() : value.substr(end));
 }
 
-} // namespace
+}
 
 std::wstring DisplayData(DWORD type, const BYTE* data, DWORD size, bool resolve_indirect)
 {
@@ -248,7 +244,7 @@ std::wstring DisplayData(DWORD type, const BYTE* data, DWORD size, bool resolve_
     }
     if (base_type == REG_EXPAND_SZ)
     {
-        std::wstring expanded = util::ExpandEnvironmentStringsDynamic(value);
+        std::wstring expanded = win32ui::ExpandEnvironment(value.c_str());
         if (!expanded.empty() && expanded != value)
         {
             return expanded;
@@ -279,45 +275,6 @@ std::vector<BYTE> UnsignedBytes(uint64_t value, size_t width, bool big_endian)
         bytes[big_endian ? width - 1 - index : index] = static_cast<BYTE>(value >> (8 * index));
     }
     return bytes;
-}
-
-bool ParseHex(std::wstring_view text, std::vector<BYTE>* output)
-{
-    if (!output)
-    {
-        return false;
-    }
-    output->clear();
-    int high = -1;
-    for (size_t index = 0; index < text.size(); ++index)
-    {
-        const wchar_t character = text[index];
-        const int value = util::HexDigitValue(character);
-        if (value < 0)
-        {
-            if (character == L' ' || character == L'\t' || character == L'\r' || character == L'\n' ||
-                character == L',' || character == L';' || character == L'-')
-            {
-                continue;
-            }
-            if ((character == L'x' || character == L'X') && high == 0 && index > 0 && text[index - 1] == L'0')
-            {
-                high = -1;
-                continue;
-            }
-            return false;
-        }
-        if (high < 0)
-        {
-            high = value;
-        }
-        else
-        {
-            output->push_back(static_cast<BYTE>((high << 4) | value));
-            high = -1;
-        }
-    }
-    return high < 0;
 }
 
 std::vector<BYTE> StringData(std::wstring_view text)
@@ -395,29 +352,14 @@ std::wstring MultiStringText(const std::vector<BYTE>& data)
 std::vector<BYTE> MultiStringData(std::wstring_view lines)
 {
     std::vector<std::wstring> items;
-    size_t start = 0;
-    while (start <= lines.size())
+    for (const std::wstring_view line : win32ui::LineViews(lines))
     {
-        size_t end = lines.find_first_of(L"\r\n", start);
-        if (end == std::wstring_view::npos)
+        if (!line.empty())
         {
-            end = lines.size();
-        }
-        if (end > start)
-        {
-            items.emplace_back(lines.substr(start, end - start));
-        }
-        if (end == lines.size())
-        {
-            break;
-        }
-        start = end + 1;
-        if (lines[end] == L'\r' && start < lines.size() && lines[start] == L'\n')
-        {
-            ++start;
+            items.emplace_back(line);
         }
     }
     return MultiStringData(items);
 }
 
-} // namespace regkit::value_format
+}

@@ -3,7 +3,6 @@
 
 #include "dialogs/decoder_dialog.h"
 
-#include "dialogs/binary_text.h"
 #include "registry/registry_path.h"
 #include "registry/value_decoder.h"
 #include "registry/value_format.h"
@@ -15,10 +14,14 @@
 #include "win32/text_transform.h"
 #include "win32/translation.h"
 
+#include <win32ui/dialog/combo_box.h>
 #include <win32ui/dialog/dialog_layout.h>
 #include <win32ui/dialog/dialog_window.h>
 #include <win32ui/dialog/message_dialog.h>
+#include <win32ui/gdi/fonts.h>
 #include <win32ui/list_view/list_view.h>
+#include <win32ui/theme/theme.h>
+#include <win32ui/window.h>
 
 #include <algorithm>
 #include <span>
@@ -45,33 +48,26 @@ struct State
     std::vector<DecoderEntry> decoders;
     TransformId transform = TransformId::kNone;
     std::wstring output;
-    HFONT mono_font = nullptr;
+    win32ui::UniqueFont mono_font;
 };
 
 const std::vector<BYTE>& Bytes(const State& state)
 {
-    // no transform uses original bytes without copying
     return state.transform == TransformId::kNone ? state.request->data : state.transformed;
 }
 
-void FillCombo(HWND dialog, int control, const std::vector<TransformEntry>& entries, int selected)
+template <typename Entry>
+void FillCombo(HWND dialog, int control, const std::vector<Entry>& entries, int selected)
 {
-    SendDlgItemMessageW(dialog, control, CB_RESETCONTENT, 0, 0);
-    for (const TransformEntry& entry : entries)
+    std::vector<std::wstring> names;
+    names.reserve(entries.size());
+    for (const Entry& entry : entries)
     {
-        SendDlgItemMessageW(dialog, control, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(entry.name));
+        names.emplace_back(entry.name);
     }
-    SendDlgItemMessageW(dialog, control, CB_SETCURSEL, static_cast<WPARAM>(selected), 0);
-}
-
-void FillCombo(HWND dialog, int control, const std::vector<DecoderEntry>& entries, int selected)
-{
-    SendDlgItemMessageW(dialog, control, CB_RESETCONTENT, 0, 0);
-    for (const DecoderEntry& entry : entries)
-    {
-        SendDlgItemMessageW(dialog, control, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(entry.name));
-    }
-    SendDlgItemMessageW(dialog, control, CB_SETCURSEL, static_cast<WPARAM>(selected), 0);
+    const HWND combo = GetDlgItem(dialog, control);
+    win32ui::SetComboItems(combo, names);
+    win32ui::SetComboIndex(combo, selected);
 }
 
 int IndexOfDecoder(const std::vector<DecoderEntry>& entries, DecoderId id)
@@ -91,25 +87,24 @@ void ShowOutput(HWND dialog, State* state, std::wstring text, const std::vector<
     state->output = std::move(text);
     SetDlgItemTextW(dialog, IDC_EDIT, fields ? L"" : state->output.c_str());
     const HWND list = GetDlgItem(dialog, IDC_DECODE_FIELDS);
-    SendMessageW(list, WM_SETREDRAW, FALSE, 0);
-    ListView_DeleteAllItems(list);
-    for (size_t i = 0; fields && i < fields->size(); ++i)
     {
-        LVITEMW item = {LVIF_TEXT, static_cast<int>(i)};
-        item.pszText = const_cast<wchar_t*>((*fields)[i].name.c_str());
-        ListView_InsertItem(list, &item);
-        ListView_SetItemText(list, static_cast<int>(i), 1, const_cast<wchar_t*>((*fields)[i].value.c_str()));
+        const win32ui::RedrawScope redraw(list, 0);
+        win32ui::TextRows rows;
+        for (size_t i = 0; fields && i < fields->size(); ++i)
+        {
+            rows.push_back({(*fields)[i].name, (*fields)[i].value});
+        }
+        win32ui::SetListRows(list, rows);
+        // keep user hidden columns hidden
+        if (ListView_GetColumnWidth(list, 0) > 0)
+        {
+            win32ui::FitListColumn(list, 0);
+        }
+        if (ListView_GetColumnWidth(list, 1) > 0)
+        {
+            ListView_SetColumnWidth(list, 1, LVSCW_AUTOSIZE_USEHEADER);
+        }
     }
-    // keep user hidden columns hidden
-    if (ListView_GetColumnWidth(list, 0) > 0)
-    {
-        win32ui::FitListColumn(list, 0);
-    }
-    if (ListView_GetColumnWidth(list, 1) > 0)
-    {
-        ListView_SetColumnWidth(list, 1, LVSCW_AUTOSIZE_USEHEADER);
-    }
-    SendMessageW(list, WM_SETREDRAW, TRUE, 0);
     ShowWindow(list, fields ? SW_SHOW : SW_HIDE);
     ShowWindow(GetDlgItem(dialog, IDC_EDIT), fields ? SW_HIDE : SW_SHOW);
 }
@@ -142,8 +137,8 @@ void RunDecoder(HWND dialog, State* state)
     // cap formatted preview so large registry values stay responsive
     const size_t shown = std::min(bytes.size(), kRawBytePreviewLimit);
     const std::span<const BYTE> span(bytes.data(), shown);
-    text.append(L"\r\n").append(util::ToHex(span, L' ', true));
-    text.append(L"\r\n\r\n").append(binary_text::Preview(span, 1, false));
+    text.append(L"\r\n").append(win32ui::HexBytes(span, L' ', true));
+    text.append(L"\r\n\r\n").append(win32ui::HexDump(span, 1, false));
     if (shown != bytes.size())
     {
         text.append(L"\r\n\r\n").append(util::TrLabel(L"Bytes shown", std::to_wstring(shown)));
@@ -204,7 +199,10 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     auto* state = reinterpret_cast<State*>(GetWindowLongPtrW(dialog, DWLP_USER));
     if (message == WM_SETFONT && state)
     {
-        dialog_support::FollowDialogFont(dialog, reinterpret_cast<HFONT>(wparam), &state->mono_font, {IDC_EDIT});
+        if (state->mono_font)
+        {
+            win32ui::SetMonoFont(dialog, {IDC_EDIT}, reinterpret_cast<HFONT>(wparam), &state->mono_font);
+        }
         return FALSE;
     }
     if (message == WM_INITDIALOG)
@@ -217,8 +215,8 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
         FillCombo(dialog, IDC_DECODE_ENCODING, state->transforms, 0);
         // type/size summary was set after fitting template text
         win32ui::FitDialogText(dialog);
-        state->mono_font = dialog_support::ApplyMonoFont(dialog, {IDC_EDIT});
-        dialog_support::SetupListView(GetDlgItem(dialog, IDC_DECODE_FIELDS), nullptr, 0, {{util::Tr(L"Property"), 140}, {util::Tr(L"Value"), 200}});
+        win32ui::SetMonoFont(dialog, {IDC_EDIT}, nullptr, &state->mono_font);
+        win32ui::SetupDialogList(GetDlgItem(dialog, IDC_DECODE_FIELDS), nullptr, 0, {{util::Tr(L"Property"), 140}, {util::Tr(L"Value"), 200}});
         win32ui::AnchorDialogControls(dialog, {
                                                   {IDC_VALUE_NAME, win32ui::kAnchorLeft | win32ui::kAnchorTop | win32ui::kAnchorRight},
                                                   {IDC_VALUE_BYTES, win32ui::kAnchorTop | win32ui::kAnchorRight},
@@ -230,14 +228,6 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
                                                   {IDCANCEL, win32ui::kAnchorRight | win32ui::kAnchorBottom},
                                               });
         RebuildDecoders(dialog, state);
-        return TRUE;
-    }
-    if (message == WM_DESTROY)
-    {
-        if (state)
-        {
-            dialog_support::ReleaseFont(&state->mono_font);
-        }
         return TRUE;
     }
     if (message != WM_COMMAND || !state)
@@ -272,7 +262,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     }
 }
 
-} // namespace
+}
 
 void ShowValueDecoder(HWND owner, const DecodeRequest& request)
 {
@@ -281,4 +271,4 @@ void ShowValueDecoder(HWND owner, const DecodeRequest& request)
     win32ui::RunProcDialog(owner, MAKEINTRESOURCEW(IDD_DECODE_VALUE), DialogProc, reinterpret_cast<LPARAM>(&state));
 }
 
-} // namespace regkit::editors
+}

@@ -4,13 +4,13 @@
 #include "dialogs/value_editor.h"
 #include "win32/text_transform.h"
 
-#include "dialogs/binary_text.h"
 #include "dialogs/bitfield_editor.h"
 #include "ui/dialog_layout.h"
 #include "ui/dialog_support.h"
 
 #include <win32ui/dialog/dialog_window.h>
-#include <win32ui/dialog/single_line_edit.h>
+#include <win32ui/dialog/edit.h>
+#include <win32ui/gdi/fonts.h>
 
 #include <algorithm>
 #include <cerrno>
@@ -38,13 +38,6 @@ bool IsMultilineEdit(HWND dialog, int id)
     HWND edit = GetDlgItem(dialog, id);
     return edit && (GetWindowLongPtrW(edit, GWL_STYLE) & ES_MULTILINE) != 0;
 }
-struct TextDialogState
-{
-    const wchar_t* title = nullptr;
-    const wchar_t* label = nullptr;
-    std::wstring text;
-    BrowseText browse = nullptr;
-};
 
 struct BinaryGroupState
 {
@@ -67,7 +60,7 @@ struct TraceValueDialogState
     int qword_base = 16;
     BinaryGroupState binary;
     BinaryGroupState none;
-    HFONT mono_font = nullptr;
+    win32ui::UniqueFont mono_font;
 };
 
 struct ExtendedValueDialogState
@@ -331,14 +324,14 @@ void UpdateBinaryPreviewEx(HWND dlg, BinaryGroupState* state, const BinaryGroupI
     {
         return;
     }
-    std::wstring text = util::DialogText(dlg, ids.edit_id);
+    std::wstring text = util::DialogItemText(dlg, ids.edit_id);
     std::vector<BYTE> parsed;
-    if (!value_format::ParseHex(text, &parsed))
+    if (!win32ui::ParseHexBytes(text, &parsed))
     {
         SetDlgItemTextW(dlg, ids.preview_id, util::Tr(L"Invalid hex input."));
         return;
     }
-    std::wstring preview = binary_text::Preview(parsed, state->group_bytes, state->unicode);
+    std::wstring preview = win32ui::HexDump(parsed, state->group_bytes, state->unicode);
     SetDlgItemTextW(dlg, ids.preview_id, preview.c_str());
 }
 
@@ -403,27 +396,21 @@ std::wstring FormatNumberValue(unsigned long long value, int base)
 
 unsigned long long ReadNumberWithFallback(HWND dlg, int edit_id, int base, unsigned long long fallback)
 {
-    std::wstring text = util::DialogText(dlg, edit_id);
-    unsigned long long parsed = 0;
-    if (util::ParseUnsignedNumber(text, base, &parsed))
-    {
-        return parsed;
-    }
     // keep base switching usable when current text is incomplete
-    return fallback;
+    return win32ui::ParseUnsigned(util::DialogItemText(dlg, edit_id), base, true).value_or(fallback);
 }
 
 void RunBitfieldEditor(HWND dlg, const std::wstring& value_name, int edit_id, int base, unsigned bit_count, bool read_only)
 {
-    unsigned long long value = 0;
-    if (!util::ParseUnsignedNumber(util::DialogText(dlg, edit_id), base, &value))
+    const std::optional<uint64_t> value = win32ui::ParseUnsigned(util::DialogItemText(dlg, edit_id), base, true);
+    if (!value)
     {
         ui::ShowError(dlg, util::Tr(L"Enter a valid number before editing its bits."));
         return;
     }
     BitfieldRequest request;
     request.value_name = value_name;
-    request.value = value;
+    request.value = *value;
     request.bit_count = bit_count;
     request.read_only = read_only;
     BitfieldResult result;
@@ -577,15 +564,15 @@ void PopulateTraceValueEditors(HWND dlg, TraceValueDialogState* state)
         );
         break;
     case REG_NONE:
-        SetDlgItemTextW(dlg, IDC_REG_NONE_EDIT, util::ToHexLines(data).c_str());
+        SetDlgItemTextW(dlg, IDC_REG_NONE_EDIT, win32ui::HexByteLines(data).c_str());
         UpdateBinaryPreviewEx(dlg, &state->none, kNoneIds);
         break;
     default:
-        SetDlgItemTextW(dlg, IDC_REG_BINARY_EDIT, util::ToHexLines(data).c_str());
+        SetDlgItemTextW(dlg, IDC_REG_BINARY_EDIT, win32ui::HexByteLines(data).c_str());
         UpdateBinaryPreviewEx(dlg, &state->binary, kBinaryIds);
         break;
     }
-    state->shown_text = util::DialogText(dlg, TraceEditorId(state->type));
+    state->shown_text = util::DialogItemText(dlg, TraceEditorId(state->type));
     state->shown_dword_base = state->dword_base;
     state->shown_qword_base = state->qword_base;
 }
@@ -593,7 +580,7 @@ void PopulateTraceValueEditors(HWND dlg, TraceValueDialogState* state)
 bool TraceEditorUntouched(HWND dlg, const TraceValueDialogState& state, DWORD type)
 {
     return type == state.type && state.dword_base == state.shown_dword_base && state.qword_base == state.shown_qword_base &&
-           util::DialogText(dlg, TraceEditorId(type)) == state.shown_text;
+           util::DialogItemText(dlg, TraceEditorId(type)) == state.shown_text;
 }
 
 int TraceEditorId(DWORD type)
@@ -633,91 +620,88 @@ bool SerializeTraceEditor(HWND dlg, TraceValueDialogState* state, DWORD type, st
     {
     case REG_SZ:
         {
-            std::wstring text = util::DialogText(dlg, IDC_REG_SZ_EDIT);
+            std::wstring text = util::DialogItemText(dlg, IDC_REG_SZ_EDIT);
             data = value_format::StringData(text);
             break;
         }
     case REG_EXPAND_SZ:
         {
-            std::wstring text = util::DialogText(dlg, IDC_REG_EXPAND_EDIT);
+            std::wstring text = util::DialogItemText(dlg, IDC_REG_EXPAND_EDIT);
             data = value_format::StringData(text);
             break;
         }
     case REG_LINK:
         {
-            std::wstring text = util::DialogText(dlg, IDC_REG_SZ_EDIT);
+            std::wstring text = util::DialogItemText(dlg, IDC_REG_SZ_EDIT);
             data = value_format::StringData(text);
             break;
         }
     case REG_MULTI_SZ:
         {
-            std::wstring text = util::DialogText(dlg, IDC_REG_MULTI_EDIT);
+            std::wstring text = util::DialogItemText(dlg, IDC_REG_MULTI_EDIT);
             data = value_format::MultiStringData(text);
             break;
         }
     case REG_DWORD:
         {
-            std::wstring text = util::DialogText(dlg, IDC_REG_DWORD_EDIT);
-            unsigned long long value = 0;
-            if (!util::ParseUnsignedNumber(text, state->dword_base, &value) || value > std::numeric_limits<DWORD>::max())
+            const std::optional<uint64_t> value = win32ui::ParseUnsigned(util::DialogItemText(dlg, IDC_REG_DWORD_EDIT), state->dword_base, true);
+            if (!value || *value > std::numeric_limits<DWORD>::max())
             {
                 ok = false;
             }
             else
             {
                 data.resize(sizeof(DWORD));
-                DWORD v32 = static_cast<DWORD>(value);
+                DWORD v32 = static_cast<DWORD>(*value);
                 memcpy(data.data(), &v32, sizeof(DWORD));
             }
             break;
         }
     case REG_DWORD_BIG_ENDIAN:
         {
-            std::wstring text = util::DialogText(dlg, IDC_REG_DWORD_EDIT);
-            unsigned long long value = 0;
-            if (!util::ParseUnsignedNumber(text, state->dword_base, &value) || value > std::numeric_limits<DWORD>::max())
+            const std::optional<uint64_t> value = win32ui::ParseUnsigned(util::DialogItemText(dlg, IDC_REG_DWORD_EDIT), state->dword_base, true);
+            if (!value || *value > std::numeric_limits<DWORD>::max())
             {
                 ok = false;
             }
             else
             {
-                data = value_format::UnsignedBytes(value, sizeof(DWORD), true);
+                data = value_format::UnsignedBytes(*value, sizeof(DWORD), true);
             }
             break;
         }
     case REG_QWORD:
         {
-            std::wstring text = util::DialogText(dlg, IDC_REG_QWORD_EDIT);
-            unsigned long long value = 0;
-            if (!util::ParseUnsignedNumber(text, state->qword_base, &value))
+            const std::optional<uint64_t> value = win32ui::ParseUnsigned(util::DialogItemText(dlg, IDC_REG_QWORD_EDIT), state->qword_base, true);
+            if (!value)
             {
                 ok = false;
             }
             else
             {
                 data.resize(sizeof(unsigned long long));
-                memcpy(data.data(), &value, sizeof(unsigned long long));
+                memcpy(data.data(), &*value, sizeof(unsigned long long));
             }
             break;
         }
     case REG_BINARY:
         {
-            std::wstring text = util::DialogText(dlg, IDC_REG_BINARY_EDIT);
-            ok = value_format::ParseHex(text, &data);
+            std::wstring text = util::DialogItemText(dlg, IDC_REG_BINARY_EDIT);
+            ok = win32ui::ParseHexBytes(text, &data);
             break;
         }
     case REG_RESOURCE_LIST:
     case REG_FULL_RESOURCE_DESCRIPTOR:
     case REG_RESOURCE_REQUIREMENTS_LIST:
         {
-            std::wstring text = util::DialogText(dlg, IDC_REG_BINARY_EDIT);
-            ok = value_format::ParseHex(text, &data);
+            std::wstring text = util::DialogItemText(dlg, IDC_REG_BINARY_EDIT);
+            ok = win32ui::ParseHexBytes(text, &data);
             break;
         }
     case REG_NONE:
         {
-            std::wstring text = util::DialogText(dlg, IDC_REG_NONE_EDIT);
-            ok = value_format::ParseHex(text, &data);
+            std::wstring text = util::DialogItemText(dlg, IDC_REG_NONE_EDIT);
+            ok = win32ui::ParseHexBytes(text, &data);
             break;
         }
     default:
@@ -824,7 +808,10 @@ INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM
                                                    {IDOK, win32ui::kAnchorRight | win32ui::kAnchorBottom},
                                                    {IDCANCEL, win32ui::kAnchorRight | win32ui::kAnchorBottom},
                                                });
-            state->mono_font = dialog_support::ApplyMonoFont(dlg, {IDC_REG_BINARY_EDIT, IDC_REG_BINARY_PREVIEW, IDC_REG_NONE_EDIT, IDC_REG_NONE_PREVIEW});
+            if (state)
+            {
+                win32ui::SetMonoFont(dlg, {IDC_REG_BINARY_EDIT, IDC_REG_BINARY_PREVIEW, IDC_REG_NONE_EDIT, IDC_REG_NONE_PREVIEW}, nullptr, &state->mono_font);
+            }
             UpdateBinaryPreviewEx(dlg, state ? &state->binary : nullptr, kBinaryIds);
             UpdateBinaryPreviewEx(dlg, state ? &state->none : nullptr, kNoneIds);
             return TRUE;
@@ -832,17 +819,12 @@ INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM
     case WM_SETFONT:
         if (state)
         {
-            dialog_support::FollowDialogFont(dlg, reinterpret_cast<HFONT>(wparam), &state->mono_font, {IDC_REG_BINARY_EDIT, IDC_REG_BINARY_PREVIEW, IDC_REG_NONE_EDIT, IDC_REG_NONE_PREVIEW});
+            if (state->mono_font)
+            {
+                win32ui::SetMonoFont(dlg, {IDC_REG_BINARY_EDIT, IDC_REG_BINARY_PREVIEW, IDC_REG_NONE_EDIT, IDC_REG_NONE_PREVIEW}, reinterpret_cast<HFONT>(wparam), &state->mono_font);
+            }
         }
         return FALSE;
-    case WM_DESTROY:
-        {
-            if (state)
-            {
-                dialog_support::ReleaseFont(&state->mono_font);
-            }
-            return TRUE;
-        }
     case WM_COMMAND:
         {
             if (!state)
@@ -860,7 +842,7 @@ INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM
                     return TRUE;
                 }
                 const bool untouched = TraceEditorUntouched(dlg, *state, previous);
-                const bool empty_editor = !untouched && util::DialogText(dlg, TraceEditorId(previous)).empty();
+                const bool empty_editor = !untouched && util::DialogItemText(dlg, TraceEditorId(previous)).empty();
                 std::vector<BYTE> current = state->data;
                 if (!untouched && !empty_editor && !SerializeTraceEditor(dlg, state, previous, &current))
                 {
@@ -1039,90 +1021,6 @@ INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM
     return FALSE;
 }
 
-INT_PTR CALLBACK TextDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-    TextDialogState* state = reinterpret_cast<TextDialogState*>(GetWindowLongPtrW(dlg, DWLP_USER));
-
-    switch (msg)
-    {
-    case WM_INITDIALOG:
-        {
-            state = reinterpret_cast<TextDialogState*>(lparam);
-            SetWindowLongPtrW(dlg, DWLP_USER, reinterpret_cast<LONG_PTR>(state));
-            if (state && state->title && *state->title)
-            {
-                SetWindowTextW(dlg, state->title);
-            }
-            if (state->label)
-            {
-                SetDlgItemTextW(dlg, IDC_LABEL, state->label);
-            }
-            SetDlgItemTextW(dlg, IDC_EDIT, state->text.c_str());
-            SendDlgItemMessageW(dlg, IDC_EDIT, EM_SETSEL, 0, -1);
-            ShowWindow(GetDlgItem(dlg, IDC_TEXT_BROWSE), state->browse ? SW_SHOW : SW_HIDE);
-            win32ui::FitDialogText(dlg);
-            if (IsMultilineEdit(dlg, IDC_EDIT))
-            {
-                win32ui::AllowLineBreaks(GetDlgItem(dlg, IDC_EDIT));
-                win32ui::AnchorDialogControls(dlg, {
-                                                       {IDC_LABEL, win32ui::kAnchorLeft | win32ui::kAnchorTop | win32ui::kAnchorRight},
-                                                       {IDC_EDIT, win32ui::kAnchorLeft | win32ui::kAnchorTop | win32ui::kAnchorRight | win32ui::kAnchorBottom},
-                                                       {IDC_TEXT_BROWSE, win32ui::kAnchorLeft | win32ui::kAnchorBottom},
-                                                       {IDOK, win32ui::kAnchorRight | win32ui::kAnchorBottom},
-                                                       {IDCANCEL, win32ui::kAnchorRight | win32ui::kAnchorBottom},
-                                                   });
-            }
-            return TRUE;
-        }
-    case WM_COMMAND:
-        {
-            switch (LOWORD(wparam))
-            {
-            case IDC_TEXT_BROWSE:
-                {
-                    if (!state || !state->browse)
-                    {
-                        return TRUE;
-                    }
-                    std::wstring selected;
-                    if (!state->browse(dlg, &selected) || selected.empty())
-                    {
-                        return TRUE;
-                    }
-                    std::wstring text = dialog_support::ReadText(dlg, IDC_EDIT);
-                    if (!text.empty() && text.back() != L'\n' && text.back() != L'\r')
-                    {
-                        text.append(L"\r\n");
-                    }
-                    text.append(selected);
-                    SetDlgItemTextW(dlg, IDC_EDIT, text.c_str());
-                    SendDlgItemMessageW(dlg, IDC_EDIT, EM_SETSEL, text.size(), text.size());
-                    SetFocus(GetDlgItem(dlg, IDC_EDIT));
-                    return TRUE;
-                }
-            case IDOK:
-                {
-                    if (state)
-                    {
-                        state->text = dialog_support::ReadText(dlg, IDC_EDIT);
-                    }
-                    win32ui::EndDialogWindow(dlg, IDOK);
-                    return TRUE;
-                }
-            case IDCANCEL:
-                win32ui::EndDialogWindow(dlg, IDCANCEL);
-                return TRUE;
-            default:
-                break;
-            }
-            break;
-        }
-    default:
-        break;
-    }
-    return FALSE;
-}
-
 INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lparam)
 {
     auto* state = reinterpret_cast<ExtendedValueDialogState*>(GetWindowLongPtrW(dlg, DWLP_USER));
@@ -1135,8 +1033,7 @@ INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPAR
             if (state)
             {
                 SetDlgItemTextW(dlg, IDC_EDIT, state->initial_text.c_str());
-                // compare OK with current control contents
-                state->initial_text = util::DialogText(dlg, IDC_EDIT);
+                state->initial_text = util::DialogItemText(dlg, IDC_EDIT);
                 ConfigureReadOnlyNameField(dlg, state->value_name);
             }
 
@@ -1236,7 +1133,7 @@ INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPAR
 
             if (id == IDOK)
             {
-                std::wstring base_text = util::DialogText(dlg, IDC_EDIT);
+                std::wstring base_text = util::DialogItemText(dlg, IDC_EDIT);
                 const bool is_number = state->base_type == REG_DWORD || state->base_type == REG_DWORD_BIG_ENDIAN ||
                                        state->base_type == REG_QWORD;
                 const bool unchanged =
@@ -1262,12 +1159,13 @@ INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPAR
                     case REG_DWORD_BIG_ENDIAN:
                     case REG_QWORD:
                         {
-                            unsigned long long value = 0;
-                            if (!util::ParseUnsignedNumber(base_text, state->number_base, &value))
+                            const std::optional<uint64_t> parsed = win32ui::ParseUnsigned(base_text, state->number_base, true);
+                            if (!parsed)
                             {
                                 ui::ShowError(dlg, util::Tr(L"Invalid number."));
                                 return TRUE;
                             }
+                            const unsigned long long value = *parsed;
                             if ((state->base_type == REG_DWORD || state->base_type == REG_DWORD_BIG_ENDIAN) &&
                                 value > std::numeric_limits<DWORD>::max())
                             {
@@ -1331,27 +1229,6 @@ std::wstring RegDataToString(const std::vector<BYTE>& data)
     return text;
 }
 
-} // namespace
-
-bool EditText(HWND owner, const TextRequest& request, TextResult* result)
-{
-    if (!result)
-    {
-        return false;
-    }
-    TextDialogState state;
-    state.title = request.title.c_str();
-    state.label = request.label.c_str();
-    state.text = request.text;
-    state.browse = request.browse;
-    const int dialog_id = request.multiline ? IDD_MULTI_TEXT : IDD_INPUT;
-    const INT_PTR dialog_result = win32ui::RunProcDialog(owner, MAKEINTRESOURCEW(dialog_id), TextDialogProc, reinterpret_cast<LPARAM>(&state));
-    if (dialog_result != IDOK)
-    {
-        return false;
-    }
-    result->text = std::move(state.text);
-    return true;
 }
 
 bool EditValueBits(HWND owner, const BitsRequest& request, std::vector<BYTE>* data)
@@ -1508,4 +1385,4 @@ bool EditFlaggedValue(HWND owner, const FlaggedValueRequest& request, FlaggedVal
     return true;
 }
 
-} // namespace regkit::editors
+}

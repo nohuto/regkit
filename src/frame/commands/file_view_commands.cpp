@@ -6,6 +6,10 @@
 #include "win32/registry_view.h"
 #include "win32/translation.h"
 
+#include <win32ui/dialog/text_prompt.h>
+#include <win32ui/dialog/font_picker.h>
+#include <win32ui/system/shell_open.h>
+
 namespace regkit
 {
 using namespace command_detail;
@@ -29,7 +33,7 @@ size_t CountKeys(const RegistryNode& node, size_t limit)
     return count;
 }
 
-} // namespace
+}
 
 void MainWindow::Impl::RestoreHiveFile(const std::wstring& path)
 {
@@ -697,8 +701,9 @@ bool MainWindow::Impl::HandleViewCommand(int command_id)
         return true;
     case cmd::kViewFont:
         {
-            FontDialogResult result = {};
-            if (ShowFontDialog(hwnd_, win32ui::MessageFontLogFont(0), !settings_.use_custom_font, custom_font_, &result))
+            const LOGFONTW default_font = win32ui::MessageFontLogFont(0);
+            win32ui::FontChoice result;
+            if (win32ui::ChooseUiFont(hwnd_, settings_.use_custom_font ? custom_font_ : default_font, default_font, &result) == ERROR_SUCCESS)
             {
                 settings_.use_custom_font = !result.use_default;
                 custom_font_ = result.font;
@@ -744,7 +749,7 @@ bool MainWindow::Impl::HandleTraceDefaultCommand(int command_id)
         ClearTrace();
         return true;
     case cmd::kTraceClearRecent:
-        recent_trace_paths_.Replace({});
+        recent_trace_paths_.Assign({});
         SaveSettings();
         return true;
     case cmd::kDefaultLoadCustom:
@@ -754,7 +759,7 @@ bool MainWindow::Impl::HandleTraceDefaultCommand(int command_id)
         ClearDefaults();
         return true;
     case cmd::kDefaultClearRecent:
-        recent_default_paths_.Replace({});
+        recent_default_paths_.Assign({});
         SaveSettings();
         return true;
     case cmd::kDefaultResetEnable:
@@ -770,17 +775,12 @@ bool MainWindow::Impl::HandleTraceDefaultCommand(int command_id)
                 active.push_back(defaults.source_path);
             }
             std::wstring content = JoinLines(active);
-            editors::TextRequest request;
-            request.title = util::Tr(L"Edit Active Defaults");
-            request.label = util::Tr(L"One default path per line.");
-            request.text = content;
-            request.multiline = true;
-            editors::TextResult result;
-            if (editors::EditText(hwnd_, request, &result))
+            if (win32ui::PromptText(hwnd_, {.title = util::Tr(L"Edit Active Defaults"), .label = util::Tr(L"One default path per line."), .multiline = true}, &content) == 0)
             {
-                content = std::move(result.text);
                 std::vector<std::wstring> lines = SplitLines(content);
                 default_load_session_.Cancel();
+                // parse still running would make its line count as added
+                StopDefaultParseSessions();
                 active_defaults_.clear();
                 for (const auto& line : lines)
                 {
@@ -801,18 +801,12 @@ bool MainWindow::Impl::HandleTraceDefaultCommand(int command_id)
                 active.push_back(trace.source_path);
             }
             std::wstring content = JoinLines(active);
-            editors::TextRequest request;
-            request.title = util::Tr(L"Edit Active Traces");
-            request.label = util::Tr(L"One trace path per line.");
-            request.text = content;
-            request.multiline = true;
-            editors::TextResult result;
-            if (editors::EditText(hwnd_, request, &result))
+            if (win32ui::PromptText(hwnd_, {.title = util::Tr(L"Edit Active Traces"), .label = util::Tr(L"One trace path per line."), .multiline = true}, &content) == 0)
             {
-                content = std::move(result.text);
                 std::vector<std::wstring> lines = SplitLines(content);
                 LoadTraceSettings();
                 trace_load_session_.Cancel();
+                StopTraceParseSessions();
                 active_traces_.clear();
                 for (const auto& line : lines)
                 {
@@ -827,23 +821,15 @@ bool MainWindow::Impl::HandleTraceDefaultCommand(int command_id)
             return true;
         }
     case cmd::kTraceGuide:
-        win32::ShellOpen(hwnd_, L"https://noverse.dev/docs/regkit/guides/wpr-wpa/");
+        ui::ReportFileDialogResult(hwnd_, win32ui::ShellOpen(hwnd_, L"https://noverse.dev/docs/regkit/guides/wpr-wpa/"));
         return true;
     case cmd::kDefaultEditRecent:
         {
             std::wstring content = JoinLines(recent_default_paths_.items());
-            editors::TextRequest request;
-            request.title = util::Tr(L"Edit Recent Defaults");
-            request.label = util::Tr(L"One default path per line.");
-            request.text = content;
-            request.multiline = true;
-            editors::TextResult result;
-            if (editors::EditText(hwnd_, request, &result))
+            if (win32ui::PromptText(hwnd_, {.title = util::Tr(L"Edit Recent Defaults"), .label = util::Tr(L"One default path per line."), .multiline = true}, &content) == 0)
             {
-                content = std::move(result.text);
                 std::vector<std::wstring> updated = SplitLines(content);
-                recent_default_paths_.Replace(std::move(updated));
-                NormalizeRecentDefaultList();
+                recent_default_paths_.Assign(std::move(updated));
                 SaveSettings();
             }
             return true;
@@ -851,18 +837,10 @@ bool MainWindow::Impl::HandleTraceDefaultCommand(int command_id)
     case cmd::kTraceEditRecent:
         {
             std::wstring content = JoinLines(recent_trace_paths_.items());
-            editors::TextRequest request;
-            request.title = util::Tr(L"Edit Recent Traces");
-            request.label = util::Tr(L"One trace path per line.");
-            request.text = content;
-            request.multiline = true;
-            editors::TextResult result;
-            if (editors::EditText(hwnd_, request, &result))
+            if (win32ui::PromptText(hwnd_, {.title = util::Tr(L"Edit Recent Traces"), .label = util::Tr(L"One trace path per line."), .multiline = true}, &content) == 0)
             {
-                content = std::move(result.text);
                 std::vector<std::wstring> updated = SplitLines(content);
-                recent_trace_paths_.Replace(std::move(updated));
-                NormalizeRecentTraceList();
+                recent_trace_paths_.Assign(std::move(updated));
                 SaveSettings();
             }
             return true;
@@ -872,4 +850,4 @@ bool MainWindow::Impl::HandleTraceDefaultCommand(int command_id)
     }
 }
 
-} // namespace regkit
+}

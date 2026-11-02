@@ -1,30 +1,34 @@
 // Copyright (C) 2026 nohuto
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-#include "win32/windows_config.h"
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
 #include <algorithm>
-#include <commctrl.h>
 #include <cwctype>
-#include <shellapi.h>
-#include <shlobj.h>
 #include <optional>
 #include <string>
-#include <uxtheme.h>
 #include <vector>
 
-#include <win32ui/accessible_name.h>
 #include <win32ui/dialog/dialog_window.h>
 #include <win32ui/handle_owner.h>
-#include <win32ui/process_token.h>
-#include <win32ui/system_api.h>
+#include <win32ui/list_view/list_view.h>
+#include <win32ui/system/app_runtime.h>
+#include <win32ui/system/error_text.h>
+#include <win32ui/system/paths.h>
+#include <win32ui/system/process_launch.h>
+#include <win32ui/system/process_token.h>
+#include <win32ui/system/registry_value.h>
+#include <win32ui/system/single_instance.h>
+#include <win32ui/text/text.h>
+#include <win32ui/window.h>
 
 #include "cli/reg_command.h"
 #include "frame/main_window.h"
 #include "frame/window/message_ids.h"
 #include "regfile/registry_transfer.h"
+#include "registry/hive_files.h"
 #include "registry/registry_path.h"
 #include "registry/registry_store.h"
 #include "resource.h"
@@ -34,11 +38,9 @@
 #include "ui/theme.h"
 #include "win32/file_text.h"
 #include "win32/process_rights.h"
-#include "win32/registry_native.h"
 #include "win32/restart.h"
 #include "win32/shell_integration.h"
 #include "win32/shell_paths.h"
-#include "win32/system_error.h"
 #include "win32/text_transform.h"
 #include "win32/translation.h"
 #include "workspace/settings.h"
@@ -65,23 +67,6 @@ constexpr wchar_t kSettingArg[] = L"--setting";
 
 constexpr const wchar_t* kRegEditNames[] = {L"regedit.exe", L"regedit", L"regedt32.exe", L"regedt32"};
 
-std::vector<std::wstring> GetCommandLineArgs()
-{
-    int argc = 0;
-    LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-    std::vector<std::wstring> args;
-    if (!argv)
-    {
-        return args;
-    }
-    for (int i = 1; i < argc; ++i)
-    {
-        args.emplace_back(argv[i]);
-    }
-    LocalFree(argv);
-    return args;
-}
-
 void ApplyDataDirOverride(const std::vector<std::wstring>& args)
 {
     const std::wstring dir = win32::RestartDataDir(args);
@@ -89,7 +74,7 @@ void ApplyDataDirOverride(const std::vector<std::wstring>& args)
     {
         return;
     }
-    SHCreateDirectoryExW(nullptr, dir.c_str(), nullptr);
+    win32ui::EnsureDirectory(dir.c_str());
     const std::wstring probe = util::JoinPath(dir, L"session" + util::RandomFileSuffix(L".probe"));
     const win32ui::UniqueHandle handle(
         CreateFileW(probe.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_OPEN_REPARSE_POINT, nullptr)
@@ -250,7 +235,8 @@ LaunchArgs ParseLaunchArgs(const std::vector<std::wstring>& args)
     std::wstring last_key;
     // RegEdit opens its last key unless deleted
     if (launch.jump_target.empty() && intercepted_regedit &&
-        util::ReadRegistryString(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Applets\\RegEdit", L"LastKey", &last_key) == ERROR_SUCCESS)
+        win32ui::ReadRegistryString(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Applets\\RegEdit", L"LastKey", &last_key, RRF_NOEXPAND) ==
+            ERROR_SUCCESS)
     {
         const size_t root_end = last_key.find(L'\\');
         if (!LooksLikeRegistryPath(last_key) && root_end != std::wstring::npos)
@@ -263,73 +249,6 @@ LaunchArgs ParseLaunchArgs(const std::vector<std::wstring>& args)
         }
     }
     return launch;
-}
-
-bool IsOwnRegKitWindow(HWND hwnd)
-{
-    // accept only this executable running in the same sign in session
-    DWORD process_id = 0;
-    if (!GetWindowThreadProcessId(hwnd, &process_id) || process_id == 0 || process_id == GetCurrentProcessId())
-    {
-        return false;
-    }
-    DWORD our_session = 0;
-    DWORD their_session = 0;
-    if (!ProcessIdToSessionId(GetCurrentProcessId(), &our_session) ||
-        !ProcessIdToSessionId(process_id, &their_session) || our_session != their_session)
-    {
-        return false;
-    }
-    const std::wstring theirs = util::GetProcessImagePath(process_id);
-    if (theirs.empty())
-    {
-        return false;
-    }
-    const std::wstring ours = util::GetModulePath();
-    return !ours.empty() && util::EqualsInsensitive(theirs, ours);
-}
-
-BOOL CALLBACK FindRegKitWindowProc(HWND hwnd, LPARAM lparam)
-{
-    if (!GetPropW(hwnd, kRegKitWindowProperty))
-    {
-        return TRUE;
-    }
-    if (!IsOwnRegKitWindow(hwnd))
-    {
-        return TRUE;
-    }
-    auto* found = reinterpret_cast<HWND*>(lparam);
-    *found = hwnd;
-    return FALSE;
-}
-
-HWND FindRunningRegKitWindow()
-{
-    HWND found = nullptr;
-    EnumWindows(FindRegKitWindowProc, reinterpret_cast<LPARAM>(&found));
-    return found;
-}
-
-bool SendTextToRegKit(HWND window, HWND sender, ULONG_PTR message_id, const std::wstring& text)
-{
-    if (!window || !sender || text.empty())
-    {
-        return false;
-    }
-    DWORD window_pid = 0;
-    if (GetWindowThreadProcessId(window, &window_pid))
-    {
-        AllowSetForegroundWindow(window_pid);
-    }
-    COPYDATASTRUCT data = {};
-    data.dwData = message_id;
-    data.cbData = static_cast<DWORD>((text.size() + 1) * sizeof(wchar_t));
-    data.lpData = const_cast<wchar_t*>(text.c_str());
-    DWORD_PTR accepted = 0;
-    // stop waiting if existing instance is frozen
-    return SendMessageTimeoutW(window, WM_COPYDATA, reinterpret_cast<WPARAM>(sender), reinterpret_cast<LPARAM>(&data), SMTO_ABORTIFHUNG, 1500, &accepted) != 0 &&
-           accepted != 0;
 }
 
 workspace::Settings LoadStartupSettings()
@@ -348,11 +267,12 @@ void ApplyStartupTheme(const workspace::Settings& settings)
     win32ui::ThemeMode mode = win32ui::ThemeMode::system;
     win32ui::ParseThemeMode(settings.theme_mode, &mode);
     std::vector<ThemePreset> presets;
-    if (mode == win32ui::ThemeMode::custom && (!ThemePresetStore::Load(&presets) || presets.empty()))
+    std::wstring active = settings.theme_preset;
+    if (mode == win32ui::ThemeMode::custom)
     {
-        presets = win32ui::BuiltInThemePresets();
+        ThemePresetStore::Load(&presets, &active);
     }
-    const ThemePreset* preset = mode == win32ui::ThemeMode::custom ? FindThemePreset(presets, settings.theme_preset) : nullptr;
+    const ThemePreset* preset = mode == win32ui::ThemeMode::custom ? FindThemePreset(presets, active) : nullptr;
     win32ui::SetThemeMode(mode, preset ? &preset->colors : nullptr);
 }
 
@@ -360,20 +280,27 @@ struct RestartTarget
 {
     const wchar_t* arg;
     bool (*is_current)();
-    bool (*launch)(const std::wstring&, const std::wstring&, DWORD*, bool*);
+    DWORD (*launch)(const std::wstring&, const std::wstring&, DWORD*);
     const wchar_t* request_failure;
     const wchar_t* launch_failure;
     const wchar_t* title;
 };
 
-constexpr RestartTarget kSystemTarget = {kRestartSystemArg, win32ui::IsProcessSystem, util::LaunchProcessAsSystem, L"Failed to request SYSTEM restart.", L"Failed to restart with SYSTEM rights.", L"Restart as SYSTEM"};
+constexpr RestartTarget kSystemTarget = {
+    kRestartSystemArg,
+    win32ui::IsProcessSystem,
+    win32ui::LaunchAsSystem,
+    util::TrNoop(L"Failed to request SYSTEM restart."),
+    util::TrNoop(L"Failed to restart with SYSTEM rights."),
+    util::TrNoop(L"Restart as SYSTEM")
+};
 constexpr RestartTarget kTrustedInstallerTarget = {
     kRestartTiArg,
     win32ui::IsProcessTrustedInstaller,
-    util::LaunchProcessAsTrustedInstaller,
-    L"Failed to request TrustedInstaller restart.",
-    L"Failed to restart with TrustedInstaller rights.",
-    L"Restart as TrustedInstaller"
+    win32ui::LaunchAsTrustedInstaller,
+    util::TrNoop(L"Failed to request TrustedInstaller restart."),
+    util::TrNoop(L"Failed to restart with TrustedInstaller rights."),
+    util::TrNoop(L"Restart as TrustedInstaller")
 };
 
 void ShowStartupError(const std::wstring& message)
@@ -384,49 +311,57 @@ void ShowStartupError(const std::wstring& message)
     }
 }
 
-bool RestartAs(const RestartTarget& target, DWORD parent_pid, const std::vector<std::wstring>& original_args, int* exit_code)
+std::wstring WithErrorDetail(const wchar_t* message, DWORD error)
+{
+    const std::wstring detail = win32ui::FormatWin32Error(error);
+    return detail.empty() ? util::Tr(message) : util::TrDetail(message, detail);
+}
+
+bool RestartAs(const RestartTarget& target, const win32::RestartParent& parent, const std::vector<std::wstring>& original_args, int* exit_code)
 {
     if (target.is_current())
     {
         return false;
     }
-    const std::wstring exe_path = util::GetModulePath();
+    const std::wstring exe_path = util::ModulePath();
     if (exe_path.empty())
     {
         ShowStartupError(util::Tr(L"Failed to locate the executable path."));
         return false;
     }
     // keep user arguments while replacing old internal restart flags
-    const std::wstring arguments = win32::RestartArguments(target.arg, parent_pid, original_args);
+    const std::wstring arguments = win32::RestartArguments(target.arg, parent, original_args);
     *exit_code = 0;
     if (!win32ui::IsProcessElevated())
     {
-        if (SUCCEEDED(win32::LaunchElevated(nullptr, exe_path, arguments)))
+        const DWORD error = win32ui::LaunchElevated(nullptr, exe_path, arguments);
+        if (error == ERROR_SUCCESS)
         {
             return true;
         }
-        ShowStartupError(util::Tr(target.request_failure));
+        if (error != ERROR_CANCELLED)
+        {
+            ShowStartupError(WithErrorDetail(target.request_failure, error));
+        }
         return false;
     }
     if (!ui::ConfirmPrivilegedRestart(nullptr, util::Tr(target.title)))
     {
         return false;
     }
-    DWORD error = 0;
-    bool impersonation_lost = false;
-    const bool launched = target.launch(L"\"" + exe_path + L"\" " + arguments, L"", &error, &impersonation_lost);
-    if (impersonation_lost)
+    DWORD restore_error = ERROR_SUCCESS;
+    const DWORD error = target.launch(exe_path, arguments, &restore_error);
+    if (restore_error != ERROR_SUCCESS)
     {
         ShowStartupError(util::Tr(L"RegKit couldn't restore its own security context and must close now."));
-        *exit_code = launched ? 0 : 1;
+        *exit_code = error == ERROR_SUCCESS ? 0 : 1;
         return true;
     }
-    if (!launched)
+    if (error != ERROR_SUCCESS)
     {
-        const std::wstring detail = util::FormatWin32Error(error);
-        ShowStartupError(detail.empty() ? util::Tr(target.launch_failure) : util::TrDetail(target.launch_failure, detail));
+        ShowStartupError(WithErrorDetail(target.launch_failure, error));
     }
-    return launched;
+    return error == ERROR_SUCCESS;
 }
 
 std::optional<int> RunShellIntegrationCommand(const std::vector<std::wstring>& args)
@@ -438,7 +373,7 @@ std::optional<int> RunShellIntegrationCommand(const std::vector<std::wstring>& a
     {
         return std::nullopt;
     }
-    const std::wstring exe_path = util::GetModulePath();
+    const std::wstring exe_path = util::ModulePath();
     if (exe_path.empty())
     {
         return 1;
@@ -486,7 +421,7 @@ std::optional<int> RunSettingCommand(const std::vector<std::wstring>& args)
     const std::wstring path = util::JoinPath(folder, L"settings.ini");
     workspace::Settings settings;
     std::wstring error;
-    // an unreadable settings file stays as it is
+    // unreadable settings file stays as it is
     if (!workspace::LoadSettings(path, &settings, &error) && !error.empty())
     {
         return 1;
@@ -514,35 +449,25 @@ int MergeRegFiles(const std::vector<std::wstring>& reg_files)
     return 0;
 }
 
-bool HandOffToRunningInstance(HINSTANCE instance, const std::wstring& jump_target, const std::vector<std::wstring>& edit_files)
+// instance a restart replaces is closing and never a target
+bool HandOffToRunningInstance(const std::wstring& jump_target, const std::vector<std::wstring>& edit_files, const win32::RestartParent& replaced, DWORD wait_ms)
 {
-    HWND existing = FindRunningRegKitWindow();
+    const HWND existing = win32ui::FindInstanceWindow(kRegKitWindowProperty, wait_ms, replaced.pid, replaced.created);
     if (!existing)
     {
         return false;
     }
-    bool handed_off = true;
-    if (!jump_target.empty() || !edit_files.empty())
+    // stop waiting when the existing instance is frozen
+    constexpr DWORD kSendTimeoutMs = 1500;
+    bool handed_off = jump_target.empty() || win32ui::SendInstanceText(existing, kExternalJumpCopyDataId, jump_target, kSendTimeoutMs) == ERROR_SUCCESS;
+    for (const auto& path : edit_files)
     {
-        HWND sender = CreateWindowExW(0, L"STATIC", L"", 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, instance, nullptr);
-        handed_off = sender != nullptr;
-        if (!jump_target.empty())
-        {
-            handed_off = SendTextToRegKit(existing, sender, kExternalJumpCopyDataId, jump_target) && handed_off;
-        }
-        for (const auto& path : edit_files)
-        {
-            handed_off = SendTextToRegKit(existing, sender, kEditRegFileCopyDataId, path) && handed_off;
-        }
-        if (sender)
-        {
-            DestroyWindow(sender);
-        }
+        // other instance has its own current directory
+        handed_off = win32ui::SendInstanceText(existing, kEditRegFileCopyDataId, win32ui::FullPath(path), kSendTimeoutMs) == ERROR_SUCCESS && handed_off;
     }
     if (handed_off)
     {
-        ShowWindow(existing, SW_RESTORE);
-        SetForegroundWindow(existing);
+        win32ui::BringToFront(existing);
     }
     return handed_off;
 }
@@ -566,22 +491,10 @@ int RunMessageLoop(MainWindow& window)
     return static_cast<int>(msg.wParam);
 }
 
-void ApplySafeDllSearchPolicy()
-{
-    // resolve at runtime because older Windows versions may not export it
-    const auto set_directories = win32ui::ImportProc<BOOL(WINAPI*)(DWORD)>(L"kernel32.dll", "SetDefaultDllDirectories");
-    if (set_directories)
-    {
-        set_directories(LOAD_LIBRARY_SEARCH_SYSTEM32 | LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_SEARCH_USER_DIRS);
-    }
-    // exclude current directory from legacy DLL search
-    SetDllDirectoryW(L"");
-}
-
 int Run(HINSTANCE instance, int cmd_show)
 {
-    ApplySafeDllSearchPolicy();
-    const auto args = GetCommandLineArgs();
+    win32ui::HardenProcess();
+    const auto args = win32ui::CommandLineArgs();
     if (const std::optional<int> exit_code = RunShellIntegrationCommand(args))
     {
         return *exit_code;
@@ -591,20 +504,14 @@ int Run(HINSTANCE instance, int cmd_show)
         return *exit_code;
     }
 
-    win32ui::ComInit com;
-    if (!com.ok())
+    const win32ui::GuiRuntime runtime;
+    if (!runtime.com_ok())
     {
         ShowStartupError(L"COM initialization failed.");
         return 1;
     }
-
-    INITCOMMONCONTROLSEX icc = {};
-    icc.dwSize = sizeof(icc);
-    icc.dwICC = ICC_WIN95_CLASSES | ICC_STANDARD_CLASSES | ICC_BAR_CLASSES | ICC_TAB_CLASSES | ICC_DATE_CLASSES |
-                ICC_COOL_CLASSES | ICC_PROGRESS_CLASS;
-    InitCommonControlsEx(&icc);
-    BufferedPaintInit();
     win32ui::RegisterDialogClass(instance, L"RegKit.Dialog", appearance::DialogThemeHooks(), IDI_APPICON);
+    win32ui::SetListGridIcons(IDI_ICON_DARK_GRID, IDI_ICON_LIGHT_GRID);
 
     ApplyDataDirOverride(args);
     int cli_exit = 0;
@@ -613,7 +520,10 @@ int Run(HINSTANCE instance, int cmd_show)
         return cli_exit;
     }
     const workspace::Settings startup_settings = LoadStartupSettings();
-    util::LoadLanguage(startup_settings.language);
+    if (util::LoadLanguage(startup_settings.language))
+    {
+        win32ui::SetTextHook(win32ui::Translate);
+    }
     ApplyStartupTheme(startup_settings);
     LaunchArgs launch = ParseLaunchArgs(args);
     if (!launch.error.empty())
@@ -628,8 +538,7 @@ int Run(HINSTANCE instance, int cmd_show)
         return 1;
     }
     const bool stay_as_user = HasCommandLineArg(args, kRestartUserArg);
-    const DWORD restart_parent_pid = win32::RestartParentPid(args);
-    const DWORD handoff_pid = restart_parent_pid != 0 ? restart_parent_pid : GetCurrentProcessId();
+    const win32::RestartParent restart_parent = win32::RestartParentOf(args);
     const RestartTarget* restart_target =
         HasCommandLineArg(args, kRestartTiArg)       ? &kTrustedInstallerTarget
         : HasCommandLineArg(args, kRestartSystemArg) ? &kSystemTarget
@@ -640,7 +549,7 @@ int Run(HINSTANCE instance, int cmd_show)
     int restart_exit = 0;
     if (restart_target)
     {
-        if (RestartAs(*restart_target, handoff_pid, args, &restart_exit))
+        if (RestartAs(*restart_target, restart_parent, args, &restart_exit))
         {
             return restart_exit;
         }
@@ -648,12 +557,20 @@ int Run(HINSTANCE instance, int cmd_show)
     else if ((HasCommandLineArg(args, kRestartAdminArg) || (!stay_as_user && startup_settings.always_run_as_admin)) &&
              !win32ui::IsProcessElevated())
     {
-        const std::wstring exe_path = util::GetModulePath();
-        if (!exe_path.empty() && SUCCEEDED(win32::LaunchElevated(nullptr, exe_path, win32::RestartArguments(nullptr, handoff_pid, args))))
+        const std::wstring exe_path = util::ModulePath();
+        if (exe_path.empty())
+        {
+            ShowStartupError(util::Tr(L"Failed to locate the executable path."));
+        }
+        else if (const DWORD error = win32ui::LaunchElevated(nullptr, exe_path, win32::RestartArguments(nullptr, restart_parent, args));
+                 error == ERROR_SUCCESS)
         {
             return 0;
         }
-        ShowStartupError(util::Tr(L"Administrator restart was cancelled."));
+        else
+        {
+            ShowStartupError(error == ERROR_CANCELLED ? util::Tr(L"Administrator restart was cancelled.") : WithErrorDetail(util::TrNoop(L"Failed to restart with administrator rights."), error));
+        }
     }
 
     if (!launch.edit_reg && !launch.reg_files.empty())
@@ -661,7 +578,11 @@ int Run(HINSTANCE instance, int cmd_show)
         return MergeRegFiles(launch.reg_files);
     }
 
-    win32::WaitForParentExit(restart_parent_pid);
+    // without its creation time the id may name another process by now
+    if (restart_parent.created != 0)
+    {
+        win32ui::WaitForProcessExit(restart_parent.pid, restart_parent.created, 30000);
+    }
 
     std::vector<std::wstring>& edit_files = launch.hive_files;
     if (launch.edit_reg)
@@ -673,8 +594,9 @@ int Run(HINSTANCE instance, int cmd_show)
     {
         instance_mutex.reset(CreateMutexW(nullptr, TRUE, L"RegKit.SingleInstance"));
         const DWORD mutex_error = GetLastError();
+        // first instance started at the same time holds the mutex before its window exists
         if ((mutex_error == ERROR_ALREADY_EXISTS || mutex_error == ERROR_ACCESS_DENIED) &&
-            HandOffToRunningInstance(instance, launch.jump_target, edit_files))
+            HandOffToRunningInstance(launch.jump_target, edit_files, restart_parent, restart_parent.pid == 0 ? 3000 : 0))
         {
             return 0;
         }
@@ -695,15 +617,11 @@ int Run(HINSTANCE instance, int cmd_show)
         window.OpenFile(path);
     }
     window.Show(cmd_show);
-    const int exit_code = RunMessageLoop(window);
-    // release before COM shuts down at scope exit
-    win32ui::ReleaseAccessibility();
-    BufferedPaintUnInit();
-    return exit_code;
+    return RunMessageLoop(window);
 }
 
-} // namespace
-} // namespace regkit
+}
+}
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int cmd_show)
 {

@@ -4,8 +4,9 @@
 #include "frame/commands/command_detail.h"
 #include "frame/window_impl.h"
 #include "win32/shell_paths.h"
-#include "win32/system_error.h"
 #include "win32/translation.h"
+
+#include <win32ui/system/error_text.h>
 
 #include <array>
 
@@ -48,7 +49,7 @@ bool ResolveRemoteNode(const std::wstring& machine, HKEY hklm, HKEY hku, const s
     return RegistryStore::QueryKeyInfo(*node, &info);
 }
 
-} // namespace
+}
 
 void MainWindow::Impl::StartCompareRegistries()
 {
@@ -115,8 +116,8 @@ void MainWindow::Impl::StartCompareRegistries()
             return;
         }
     }
-    // worker owns a separate .reg registration because the source tab may close
-    // task releases it even if the worker throws or never starts
+    // worker owns a separate .reg registration because the source tab may close, the task releases it even if the
+    // worker throws or never starts
     std::shared_ptr<std::vector<HKEY>> owned_roots(new std::vector<HKEY>(), [](std::vector<HKEY>* roots) {
         for (HKEY root : *roots)
         {
@@ -149,10 +150,8 @@ void MainWindow::Impl::StartCompareRegistries()
     };
     std::vector<search::Source> sources = {source_ref(selection.left), source_ref(selection.right)};
 
-    // keep message until compare result arrives
-    SetStatusMessage(util::Tr(L"Compare Registries..."), 0);
     // session keeps remote/offline tab handles open while worker reads
-    compare_session_.Start(
+    const uint64_t started = compare_session_.Start(
         L"CompareThread",
         [hwnd = hwnd_, sides, owned_roots, filter = selection.filter, sources, keep = session_, sid = util::GetCurrentUserSidString(), contexts = RegistryPathContexts()](
             uint64_t generation,
@@ -215,7 +214,7 @@ void MainWindow::Impl::StartCompareRegistries()
                     const LONG connected = RegConnectRegistryW(machine.c_str(), HKEY_LOCAL_MACHINE, &hklm);
                     if (connected != ERROR_SUCCESS)
                     {
-                        *error = util::FormatWin32Error(connected);
+                        *error = win32ui::FormatWin32Error(connected);
                         return false;
                     }
                     HKEY hku = nullptr;
@@ -245,8 +244,7 @@ void MainWindow::Impl::StartCompareRegistries()
             std::wstring left_error;
             std::wstring right_error;
             bool right_ok = false;
-            // read both sides concurrently, registry reads scale with reader count
-            std::jthread right_reader([&]() noexcept {
+            const auto read_right = [&]() noexcept {
                 try
                 {
                     right_ok = build_snapshot(sides[1], &right_snapshot, &right_error);
@@ -254,9 +252,26 @@ void MainWindow::Impl::StartCompareRegistries()
                 catch (...)
                 {
                 }
-            });
+            };
+            // read both sides concurrently, registry reads scale with reader count
+            std::jthread right_reader;
+            try
+            {
+                right_reader = std::jthread(read_right);
+            }
+            catch (const std::exception&)
+            {
+                // no second thread, the right side is read after the left one
+            }
             const bool left_ok = build_snapshot(sides[0], &left_snapshot, &left_error);
-            right_reader.join();
+            if (right_reader.joinable())
+            {
+                right_reader.join();
+            }
+            else
+            {
+                read_right();
+            }
             if (cancel.load())
             {
                 return;
@@ -282,10 +297,17 @@ void MainWindow::Impl::StartCompareRegistries()
             right_snapshot = {};
             if (!cancel.load())
             {
-                work::PostPayload(hwnd, frame::message_id::kCompareReady, static_cast<WPARAM>(generation), payload);
+                win32ui::PostPayload(hwnd, frame::message_id::kCompareReady, static_cast<WPARAM>(generation), payload);
             }
         }
     );
+    if (!started)
+    {
+        ui::ShowStartError(hwnd_);
+        return;
+    }
+    // keep message until compare result arrives
+    SetStatusMessage(util::Tr(L"Compare Registries..."), 0);
 }
 
 void MainWindow::Impl::ApplyComparePayload(std::unique_ptr<ComparePayload> payload)
@@ -493,4 +515,4 @@ void MainWindow::Impl::OpenSourceEntry(const search::Source& source, const std::
     }
 }
 
-} // namespace regkit
+}

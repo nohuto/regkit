@@ -9,13 +9,12 @@
 #include "win32/registry_native.h"
 #include "win32/registry_view.h"
 #include "win32/shell_paths.h"
-#include "win32/system_error.h"
 #include "win32/text_transform.h"
 #include "win32/translation.h"
 
 #include <win32ui/handle_owner.h>
+#include <win32ui/system/error_text.h>
 
-#include <cstring>
 #include <cwchar>
 #include <string>
 #include <vector>
@@ -83,7 +82,7 @@ bool RunRegCommand(const std::wstring& args, std::wstring* error)
     {
         if (error)
         {
-            *error = util::FormatWin32Error(create_error);
+            *error = win32ui::FormatWin32Error(create_error);
         }
         return false;
     }
@@ -101,39 +100,24 @@ bool RunRegCommand(const std::wstring& args, std::wstring* error)
     GetExitCodeProcess(process_handle.get(), &code);
     if (code != 0 && error)
     {
-        const std::wstring detail = util::TrimWhitespace(util::NarrowToWide(output, CP_OEMCP));
+        const std::wstring detail = util::TrimWhitespace(win32ui::MultiByteToWide(output, CP_OEMCP));
         *error = detail.empty() ? util::TrDetail(L"reg.exe exited with an error.", std::to_wstring(code)) : detail;
     }
     return code == 0;
 }
 
-std::wstring SanitizeFileName(const std::wstring& name)
-{
-    std::wstring out;
-    out.reserve(name.size());
-    for (wchar_t ch : name)
-    {
-        out.push_back(ch < 32 || wcschr(L"<>:\"/\\|?*", ch) ? L'_' : ch);
-    }
-    while (!out.empty() && (out.back() == L' ' || out.back() == L'.'))
-    {
-        out.pop_back();
-    }
-    out.erase(0, out.find_first_not_of(L' '));
-    return out.empty() ? L"RegistryExport" : out;
 }
-
-} // namespace
 
 std::wstring ExportFileName(const std::wstring& name, const wchar_t* extension)
 {
-    return util::EnsureFileExtension(SanitizeFileName(name), extension);
+    const std::wstring safe = win32ui::SafeFileName(name);
+    return util::EnsureFileExtension(safe.empty() ? L"RegistryExport" : safe, extension);
 }
 
 std::wstring DefaultExportPath(const std::wstring& key_path, const wchar_t* extension)
 {
     const std::wstring file_name = ExportFileName(registry_path::Leaf(key_path), extension);
-    const std::wstring documents = util::GetShellUserDocuments();
+    const std::wstring documents = win32ui::ShellUserDocuments();
     return documents.empty() ? file_name : util::JoinPath(documents, file_name);
 }
 
@@ -176,16 +160,20 @@ bool ImportRegFileFromPath(const std::wstring& path, std::wstring* error, REGSAM
             const size_t next = text.find(L'\n', line);
             line = next == std::wstring::npos ? text.size() : next + 1;
         }
-        wchar_t temp_dir[MAX_PATH + 1] = {};
-        const DWORD length = GetTempPathW(_countof(temp_dir), temp_dir);
-        const std::wstring temp = util::JoinPath(std::wstring(temp_dir, length), L"regkit-import" + util::RandomFileSuffix(L".reg"));
         if (changed)
         {
-            if (!length || length >= _countof(temp_dir) || !util::WriteTextFile(temp, text, true))
+            std::wstring temp;
+            DWORD code = win32ui::TempDirectory(&temp);
+            if (code == ERROR_SUCCESS)
+            {
+                temp = util::JoinPath(temp, L"regkit-import" + util::RandomFileSuffix(L".reg"));
+                code = win32ui::WriteTextFileAtomic(temp.c_str(), text, true);
+            }
+            if (code != ERROR_SUCCESS)
             {
                 if (error)
                 {
-                    *error = util::FormatWin32Error(GetLastError());
+                    *error = win32ui::FormatWin32Error(code);
                 }
                 DeleteFileW(temp.c_str());
                 return false;
@@ -199,15 +187,6 @@ bool ImportRegFileFromPath(const std::wstring& path, std::wstring* error, REGSAM
         DeleteFileW(mapped.c_str());
     }
     return imported;
-}
-
-bool IsHiveFile(const std::wstring& path)
-{
-    win32ui::UniqueHandle file(CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
-    char signature[4] = {};
-    DWORD read = 0;
-    return file.get() != INVALID_HANDLE_VALUE && ReadFile(file.get(), signature, sizeof(signature), &read, nullptr) && read == sizeof(signature) &&
-           std::memcmp(signature, "regf", sizeof(signature)) == 0;
 }
 
 LONG SaveKeyToHive(HKEY root, const std::wstring& subkey, REGSAM view, const std::wstring& path)
@@ -273,7 +252,7 @@ std::wstring HiveTransferError(LONG status, const std::wstring& path)
     {
         return util::Tr(L"Hive files need the backup and restore privileges. Run RegKit elevated.");
     }
-    return util::FormatWin32Error(static_cast<DWORD>(status)) + L"\n" + path;
+    return win32ui::FormatWin32Error(static_cast<DWORD>(status)) + L"\n" + path;
 }
 
 bool IsMountedHive(HKEY root, const std::wstring& subkey)
@@ -288,4 +267,4 @@ bool IsMountedHive(HKEY root, const std::wstring& subkey)
     return RegGetValueW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\hivelist", native.c_str(), RRF_RT_ANY, nullptr, nullptr, nullptr) == ERROR_SUCCESS;
 }
 
-} // namespace regkit
+}

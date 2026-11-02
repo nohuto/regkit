@@ -4,11 +4,12 @@
 #include "frame/window_detail.h"
 #include "frame/window_impl.h"
 
-#include "ui/autocomplete.h"
 #include "win32/translation.h"
 
+#include <win32ui/dialog/autocomplete.h>
 #include <win32ui/gdi/fonts.h>
-#include <win32ui/process_token.h>
+#include <win32ui/system/process_token.h>
+#include <win32ui/window_placement.h>
 
 namespace regkit
 {
@@ -39,28 +40,18 @@ bool DeleteCacheFiles(const std::wstring& folder, const wchar_t* pattern_name)
     {
         return false;
     }
-    const std::wstring pattern = util::JoinPath(folder, pattern_name);
-    WIN32_FIND_DATAW data = {};
-    HANDLE find = FindFirstFileW(pattern.c_str(), &data);
-    if (find == INVALID_HANDLE_VALUE)
-    {
-        const DWORD error = GetLastError();
-        return error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND;
-    }
     bool deleted = true;
-    do
-    {
+    const DWORD error = util::ForEachFile(util::JoinPath(folder, pattern_name).c_str(), [&](const WIN32_FIND_DATAW& data) {
         if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
         {
             deleted = DeleteCacheFile(util::JoinPath(folder, data.cFileName)) && deleted;
         }
-    } while (FindNextFileW(find, &data) != 0);
-    const DWORD error = GetLastError();
-    FindClose(find);
-    return deleted && error == ERROR_NO_MORE_FILES;
+        return true;
+    });
+    return deleted && (error == ERROR_SUCCESS || error == ERROR_PATH_NOT_FOUND);
 }
 
-} // namespace
+}
 using namespace window_detail;
 
 void MainWindow::Impl::AppendHistoryEntry(const std::wstring& action, const std::wstring& old_data, const std::wstring& new_data)
@@ -930,27 +921,13 @@ bool MainWindow::Impl::SaveTabState(const std::wstring& path, int kinds)
     }
     for (const wchar_t* pattern_name : {L"search_*.tsv", L"compare_*.tsv"})
     {
-        std::wstring pattern = util::JoinPath(folder, pattern_name);
-        WIN32_FIND_DATAW data = {};
-        HANDLE find = FindFirstFileW(pattern.c_str(), &data);
-        if (find == INVALID_HANDLE_VALUE)
-        {
-            continue;
-        }
-        do
-        {
-            if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        util::ForEachFile(util::JoinPath(folder, pattern_name).c_str(), [&](const WIN32_FIND_DATAW& data) {
+            if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && referenced_files.find(data.cFileName) == referenced_files.end())
             {
-                continue;
+                DeleteFileW(util::JoinPath(folder, data.cFileName).c_str());
             }
-            if (referenced_files.find(data.cFileName) != referenced_files.end())
-            {
-                continue;
-            }
-            std::wstring stale = util::JoinPath(folder, data.cFileName);
-            DeleteFileW(stale.c_str());
-        } while (FindNextFileW(find, &data) != 0);
-        FindClose(find);
+            return true;
+        });
     }
     return saved_all;
 }
@@ -982,7 +959,7 @@ bool MainWindow::Impl::SaveComments() const
     // startup has not merged the file yet, append instead of replacing it
     const std::wstring path = CommentsPath();
     changes::ValueComments merged;
-    if (!merged.Load(path) && !util::IsMissing(path))
+    if (!merged.Load(path) && !util::IsMissing(path.c_str()))
     {
         return false;
     }
@@ -994,7 +971,7 @@ bool MainWindow::Impl::ImportCommentsFromFile(const std::wstring& path, size_t* 
 {
     std::wstring content;
     std::vector<changes::CommentRule> rules;
-    if (!util::ReadTextFile(path, &content, nullptr, util::kMaxCommentFileBytes) ||
+    if (!util::ReadTextFile(path, &content, util::kMaxCommentFileBytes) ||
         !changes::ParseComments(content, &rules, error))
     {
         return false;
@@ -1038,6 +1015,8 @@ void MainWindow::Impl::RefreshValueListComments()
 bool MainWindow::Impl::ApplyValueComments(std::vector<ListRow>* rows) const
 {
     const std::wstring path = CommentKeyPath(*browse_.current_node());
+    // without key comments a key row needs no lookup, it built five strings per row (20000 subkeys: 15-39 ms)
+    const bool key_rules = value_comments_.HasKeyRules() || default_comments_.HasKeyRules();
     bool changed = false;
     for (auto& row : *rows)
     {
@@ -1048,7 +1027,7 @@ bool MainWindow::Impl::ApplyValueComments(std::vector<ListRow>* rows) const
                 FormatCommentDisplay(changes::ResolveComment(value_comments_, default_comments_, {path, row.extra, row.value_type, row.value_data_size})
                                          .text);
         }
-        else if (row.kind == rowkind::kKey && !row.extra.empty())
+        else if (row.kind == rowkind::kKey && !row.extra.empty() && key_rules)
         {
             display = FormatCommentDisplay(
                 changes::ResolveComment(value_comments_, default_comments_, {registry_path::JoinSubkey(path, row.extra), {}, 0, 0, true})
@@ -1221,7 +1200,7 @@ void MainWindow::Impl::LoadSettings()
         return;
     }
     util::SetCurrentUserFollowsShell(settings_.hkcu_follows_shell_user);
-    appearance::SetAutoCompleteEnabled(settings_.autocomplete);
+    win32ui::SetAutoCompleteEnabled(settings_.autocomplete);
     window_placement_loaded_ = settings_.window_placement_present;
     theme_mode_ = win32ui::ThemeMode::system;
     win32ui::ParseThemeMode(settings_.theme_mode, &theme_mode_);
@@ -1239,8 +1218,8 @@ void MainWindow::Impl::LoadSettings()
     }
     custom_font_.lfWeight = settings_.font_weight;
     custom_font_.lfItalic = settings_.font_italic ? TRUE : FALSE;
-    recent_trace_paths_.Replace(std::move(settings_.recent_traces));
-    recent_default_paths_.Replace(std::move(settings_.recent_defaults));
+    recent_trace_paths_.Assign(std::move(settings_.recent_traces));
+    recent_default_paths_.Assign(std::move(settings_.recent_defaults));
     browse_.columns().saved_widths = std::move(settings_.value_column_widths);
     browse_.columns().saved_visible = std::move(settings_.value_column_visible);
     browse_.columns().saved = !browse_.columns().saved_widths.empty() || !browse_.columns().saved_visible.empty();
@@ -1250,18 +1229,15 @@ workspace::Settings MainWindow::Impl::CurrentSettings() const
 {
     workspace::Settings settings = settings_;
     settings.save_tabs = settings.save_tab_kinds != 0;
-    WINDOWPLACEMENT placement = {sizeof(placement)};
-    if (hwnd_ && IsWindow(hwnd_) && GetWindowPlacement(hwnd_, &placement))
+    RECT normal = {};
+    bool maximized = false;
+    if (IsWindow(hwnd_) && win32ui::CaptureNormalRect(hwnd_, &normal, &maximized))
     {
-        const RECT& normal = placement.rcNormalPosition;
-        if (normal.right > normal.left && normal.bottom > normal.top)
-        {
-            settings.window_x = normal.left;
-            settings.window_y = normal.top;
-            settings.window_width = normal.right - normal.left;
-            settings.window_height = normal.bottom - normal.top;
-        }
-        settings.window_maximized = placement.showCmd == SW_SHOWMAXIMIZED;
+        settings.window_x = normal.left;
+        settings.window_y = normal.top;
+        settings.window_width = normal.right - normal.left;
+        settings.window_height = normal.bottom - normal.top;
+        settings.window_maximized = maximized;
     }
     settings.theme_mode = win32ui::ThemeModeName(theme_mode_);
     settings.font_face = custom_font_.lfFaceName;
@@ -1322,4 +1298,4 @@ void MainWindow::Impl::StopTreeStateWorker()
     }
 }
 
-} // namespace regkit
+}

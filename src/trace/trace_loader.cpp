@@ -22,7 +22,7 @@ bool Read(const std::wstring& path, std::vector<BYTE>* bytes, std::wstring* erro
     {
         return false;
     }
-    if (!util::ReadFileBytes(path, bytes, kMaxTraceFileBytes))
+    if (win32ui::ReadFileBytes(path.c_str(), bytes, kMaxTraceFileBytes) != ERROR_SUCCESS || bytes->empty())
     {
         if (error)
         {
@@ -33,7 +33,7 @@ bool Read(const std::wstring& path, std::vector<BYTE>* bytes, std::wstring* erro
     return true;
 }
 
-} // namespace
+}
 
 bool LoadEntries(const std::wstring& path, const Normalizers& normalizers, const EntryCallback& callback, std::wstring* error, const std::atomic_bool* cancel)
 {
@@ -57,4 +57,4 @@ bool Load(const std::wstring& label, const std::wstring& path, const Normalizers
     return Parse(label, path, buffer, normalizers, data, error, cancel);
 }
 
-} // namespace regkit::trace
+}

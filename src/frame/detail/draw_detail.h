@@ -3,11 +3,12 @@
 
 #pragma once
 
-#include "win32/windows_config.h"
-
 #include <win32ui/gdi/fonts.h>
 #include <win32ui/gdi/gdi_cache.h>
 #include <win32ui/gdi/icon_loader.h>
+#include <win32ui/system/error_text.h>
+#include <win32ui/system/worker.h>
+#include <win32ui/windows_config.h>
 
 #include <windows.h>
 
@@ -42,7 +43,6 @@
 #include "frame/commands/command_ids.h"
 #include "browse/value_table.h"
 #include "dialogs/trace_dialog.h"
-#include "work/session.h"
 #include "frame/window/message_dispatch.h"
 #include "frame/window/message_ids.h"
 #include "regfile/reg_file.h"
@@ -60,7 +60,6 @@
 #include "win32/registry_native.h"
 #include "win32/restart.h"
 #include "win32/shell_paths.h"
-#include "win32/system_error.h"
 #include "win32/text_transform.h"
 #include "workspace/settings.h"
 #include "workspace/tab_state.h"
@@ -115,12 +114,12 @@ constexpr UINT_PTR kAddressSubclassId = 1;
 constexpr UINT_PTR kListViewSubclassId = 4;
 constexpr UINT_PTR kTreeViewSubclassId = 5;
 constexpr UINT_PTR kFilterSubclassId = 8;
+constexpr UINT_PTR kCloseButtonSubclassId = 9;
 constexpr wchar_t kMainWindowClassName[] = L"RegEdit_RegEdit";
 using frame::message_id::kRegKitWindowProperty;
-using ui::ListViewItemSelected;
-using util::FormatWin32Error;
 using util::ToLower;
 using util::TrimWhitespace;
+using win32ui::FormatWin32Error;
 
 constexpr int kFolderIconIndex = 0;
 constexpr int kSymlinkIconIndex = 1;
@@ -152,7 +151,7 @@ constexpr int kValueColDate = 6;
 constexpr int kValueColDetails = 7;
 constexpr int kValueColComment = 8;
 
-struct TraceParseBatch : work::MoveOnly
+struct TraceParseBatch : win32ui::PostedPayload
 {
     uint64_t generation = 0;
     std::wstring source_lower;
@@ -163,7 +162,7 @@ struct TraceParseBatch : work::MoveOnly
     bool cancelled = false;
 };
 
-struct DefaultParseBatch : work::MoveOnly
+struct DefaultParseBatch : win32ui::PostedPayload
 {
     uint64_t generation = 0;
     std::wstring source_lower;
@@ -174,7 +173,7 @@ struct DefaultParseBatch : work::MoveOnly
     bool cancelled = false;
 };
 
-struct ValueListPayload : work::MoveOnly
+struct ValueListPayload : win32ui::PostedPayload
 {
     uint64_t generation = 0;
     std::vector<ListRow> rows;
@@ -183,8 +182,6 @@ struct ValueListPayload : work::MoveOnly
     LONG error = ERROR_SUCCESS; // reason key values could not be listed
 };
 
-bool GetChildRectInParent(HWND parent, HWND child, RECT* rect);
-
 constexpr int kCellTextPadding = 6;
 constexpr int kLabelTextInset = 2;
 constexpr int kPanelHeaderHeight = 22;
@@ -192,8 +189,6 @@ constexpr int kPanelCloseSize = 16;
 constexpr int kPanelCloseInset = 2;
 constexpr int kPanelBorderOverlap = 1;
 
-void DrawSearchMatchOverlay(HDC hdc, const RECT& cell, std::wstring_view text, int start, int length);
-
 int SearchMatchSubItem(const search::Result& result);
 
-} // namespace regkit::window_detail
+}

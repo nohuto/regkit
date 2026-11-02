@@ -6,6 +6,7 @@
 #include "win32/translation.h"
 
 #include <win32ui/dialog/message_dialog.h>
+#include <win32ui/dialog/text_prompt.h>
 
 namespace regkit
 {
@@ -49,15 +50,8 @@ bool MainWindow::Impl::HandleFavoritesCommand(int command_id)
                 RefreshFavoritesCache();
             }
             std::wstring content = JoinLines(favorites_cache_);
-            editors::TextRequest request;
-            request.title = util::Tr(L"Edit Favorites");
-            request.label = util::Tr(L"Each line should include one key.");
-            request.text = content;
-            request.multiline = true;
-            editors::TextResult result;
-            if (editors::EditText(hwnd_, request, &result))
+            if (win32ui::PromptText(hwnd_, {.title = util::Tr(L"Edit Favorites"), .label = util::Tr(L"Each line should include one key."), .multiline = true}, &content) == 0)
             {
-                content = std::move(result.text);
                 std::vector<std::wstring> updated = SplitLines(content);
                 if (!FavoritesStore::Save(updated))
                 {
@@ -701,4 +695,4 @@ void MainWindow::Impl::CopyKeyPathAs(int command_id, const RegistryNode& node, c
     }
 }
 
-} // namespace regkit
+}

@@ -5,9 +5,11 @@
 
 #include "frame/window_detail.h"
 
+#include <win32ui/dialog/autocomplete.h>
 #include <win32ui/dialog/combo_box.h>
 #include <win32ui/dialog/dialog_layout.h>
 #include <win32ui/dialog/dialog_window.h>
+#include <win32ui/dialog/file_dialog.h>
 
 #include <commctrl.h>
 #include <shellapi.h>
@@ -80,17 +82,7 @@ std::vector<std::wstring> ExtractRegFileKeys(const regfile::Document& data)
 
 void SetComboSelection(HWND combo, const std::wstring& value)
 {
-    if (!combo)
-    {
-        return;
-    }
-    const LRESULT index = value.empty() ? CB_ERR : SendMessageW(combo, CB_FINDSTRINGEXACT, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(value.c_str()));
-    if (index != CB_ERR)
-    {
-        SendMessageW(combo, CB_SETCURSEL, index, 0);
-        return;
-    }
-    if (SendMessageW(combo, CB_GETCOUNT, 0, 0) > 0)
+    if (!win32ui::SelectComboText(combo, value.c_str()) && combo && SendMessageW(combo, CB_GETCOUNT, 0, 0) > 0)
     {
         SendMessageW(combo, CB_SETCURSEL, 0, 0);
     }
@@ -110,7 +102,7 @@ void ToggleCompareControls(HWND dlg, bool left, CompareSourceType type)
 
 void PopulateFileKeys(HWND dlg, bool left)
 {
-    std::wstring file_path = util::DialogText(dlg, left ? IDC_COMPARE_LEFT_FILE : IDC_COMPARE_RIGHT_FILE);
+    std::wstring file_path = util::DialogItemText(dlg, left ? IDC_COMPARE_LEFT_FILE : IDC_COMPARE_RIGHT_FILE);
     if (file_path.empty())
     {
         return;
@@ -179,13 +171,13 @@ INT_PTR CALLBACK CompareDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lpa
             {
                 HWND combo = GetDlgItem(dlg, left ? IDC_COMPARE_LEFT_KEY : IDC_COMPARE_RIGHT_KEY);
                 HWND source = GetDlgItem(dlg, left ? IDC_COMPARE_LEFT_SOURCE : IDC_COMPARE_RIGHT_SOURCE);
-                appearance::AttachAutoComplete(combo, [combo, source](const std::wstring& text) -> std::vector<std::wstring> {
+                win32ui::AttachAutoComplete(combo, [combo, source](const std::wstring& text) -> std::vector<std::wstring> {
                     switch (CompareSourceFromIndex(static_cast<int>(SendMessageW(source, CB_GETCURSEL, 0, 0))))
                     {
                     case CompareSourceType::kRegistry:
                         return appearance::SuggestKeys(text);
                     case CompareSourceType::kRegFile:
-                        return appearance::SuggestComboPaths(combo, text);
+                        return win32ui::SuggestComboPaths(combo, text);
                     default:
                         return {};
                     }
@@ -238,7 +230,7 @@ INT_PTR CALLBACK CompareDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lpa
                 std::wstring path;
                 if (browse_type == CompareSourceType::kNetwork)
                 {
-                    if (FAILED(win32::ChooseComputer(dlg, &path)) || path.empty())
+                    if (!ui::ReportFileDialogResult(dlg, win32ui::ChooseComputer(dlg, &path)))
                     {
                         return TRUE;
                     }
@@ -298,7 +290,7 @@ INT_PTR CALLBACK CompareDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lpa
                         if (out->type == CompareSourceType::kNetwork)
                         {
                             out->file_path = TrimWhitespace(
-                                util::DialogText(dlg, left ? IDC_COMPARE_LEFT_FILE : IDC_COMPARE_RIGHT_FILE)
+                                util::DialogItemText(dlg, left ? IDC_COMPARE_LEFT_FILE : IDC_COMPARE_RIGHT_FILE)
                             );
                             if (out->file_path.empty())
                             {
@@ -309,7 +301,7 @@ INT_PTR CALLBACK CompareDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lpa
                         return true;
                     }
                     out->file_path =
-                        TrimWhitespace(util::DialogText(dlg, left ? IDC_COMPARE_LEFT_FILE : IDC_COMPARE_RIGHT_FILE));
+                        TrimWhitespace(util::DialogItemText(dlg, left ? IDC_COMPARE_LEFT_FILE : IDC_COMPARE_RIGHT_FILE));
                     if (out->file_path.empty())
                     {
                         ui::ShowError(dlg, out->type == CompareSourceType::kOfflineHive ? util::Tr(L"Hive file path is required.") : util::Tr(L"Registry file path is required."));
@@ -393,7 +385,7 @@ INT_PTR CALLBACK CompareDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM lpa
     }
     return FALSE;
 }
-} // namespace
+}
 
 bool ShowCompareDialog(HWND owner, const CompareDialogDefaults& defaults, CompareDialogResult* out)
 {
@@ -426,4 +418,4 @@ void CompareDialogFields(workspace::DialogFields& fields, CompareDialogDefaults*
     fields.Field(L"compare_filter", &data->filter, search::compare::RowFilter::kAll);
 }
 
-} // namespace regkit::command_detail
+}
