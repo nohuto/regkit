@@ -182,8 +182,7 @@ std::wstring SelectedControlSet(OffregApi* api, ORHKEY root)
     return control_set;
 }
 
-// Windows creates volatile CurrentControlSet links at boot, offline map through Select\Current unless a real
-// CurrentControlSet key exists
+// CurrentControlSet is a link made at boot, offline hives use Select\Current unless a real key exists
 std::wstring ResolveControlSet(OffregApi* api, ORHKEY root, const std::wstring& subkey)
 {
     constexpr std::wstring_view kLink = L"CurrentControlSet";

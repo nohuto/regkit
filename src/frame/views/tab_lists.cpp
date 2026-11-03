@@ -54,6 +54,20 @@ std::wstring CompareRowIdentity(const search::compare::Row& row)
     return key;
 }
 
+template <typename SearchTab>
+std::wstring SearchRowIdentity(const SearchTab& tab, int row)
+{
+    if (row < 0)
+    {
+        return std::wstring();
+    }
+    if (tab.is_compare)
+    {
+        return static_cast<size_t>(row) < tab.compare_rows.size() ? CompareRowIdentity(tab.compare_rows[static_cast<size_t>(row)]) : std::wstring();
+    }
+    return static_cast<size_t>(row) < tab.results.size() ? SearchResultIdentity(tab.results[static_cast<size_t>(row)]) : std::wstring();
+}
+
 std::wstring HistoryEntryIdentity(const HistoryEntry& entry)
 {
     std::wstring key = std::to_wstring(entry.timestamp);
@@ -225,19 +239,8 @@ void MainWindow::Impl::SortSearchTabResults(SearchTab* tab, bool keep_order)
     }
     const int shown_index = SearchIndexFromTab(TabCtrl_GetCurSel(tab_));
     const bool shown = shown_index >= 0 && static_cast<size_t>(shown_index) < search_tabs_.size() && &search_tabs_[static_cast<size_t>(shown_index)] == tab;
-    auto key_at = [tab](int row) {
-        if (row < 0)
-        {
-            return std::wstring();
-        }
-        if (tab->is_compare)
-        {
-            return static_cast<size_t>(row) < tab->compare_rows.size() ? CompareRowIdentity(tab->compare_rows[static_cast<size_t>(row)]) : std::wstring();
-        }
-        return static_cast<size_t>(row) < tab->results.size() ? SearchResultIdentity(tab->results[static_cast<size_t>(row)]) : std::wstring();
-    };
-    // rows that arrived since the last refresh join the list first, the sort can move a selected row past the shown
-    // ones
+    const auto key_at = [tab](int row) { return SearchRowIdentity(*tab, row); };
+    // rows that arrived meanwhile join first, the sort can move a selected row past the shown ones
     const auto show_all_rows = [this, tab] {
         const size_t count = tab->is_compare ? tab->compare_rows.size() : tab->results.size();
         if (static_cast<size_t>(ListView_GetItemCount(search_results_list_)) != count)
@@ -279,6 +282,20 @@ void MainWindow::Impl::SortSearchTabResults(SearchTab* tab, bool keep_order)
     {
         // trimmed rows leave
         show_all_rows();
+        RestoreKeyedSelection(search_results_list_, selection, key_at);
+        RedrawWindow(search_results_list_, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE);
+    }
+}
+
+void MainWindow::Impl::ApplySortedSearchRows(SearchTab* tab, std::vector<search::Result> rows, bool shown)
+{
+    // selection taken now, it may have changed while the sort ran
+    const auto key_at = [tab](int row) { return SearchRowIdentity(*tab, row); };
+    const StableListSelection selection = shown ? CaptureKeyedSelection(search_results_list_, key_at) : StableListSelection();
+    tab->results = std::move(rows);
+    if (shown)
+    {
+        UpdateSearchResultsView();
         RestoreKeyedSelection(search_results_list_, selection, key_at);
         RedrawWindow(search_results_list_, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE);
     }
@@ -330,15 +347,8 @@ void MainWindow::Impl::RemoveSelectedHistoryItems()
         return;
     }
     auto& entries = change_history_.entries();
-    std::vector<int> selected;
-    for (int index = ListView_GetNextItem(history_list_, -1, LVNI_SELECTED); index >= 0;
-         index = ListView_GetNextItem(history_list_, index, LVNI_SELECTED))
-    {
-        if (static_cast<size_t>(index) < entries.size())
-        {
-            selected.push_back(index);
-        }
-    }
+    std::vector<int> selected = win32ui::SelectedListItems(history_list_);
+    std::erase_if(selected, [&](int index) { return static_cast<size_t>(index) >= entries.size(); });
     if (selected.empty())
     {
         return;

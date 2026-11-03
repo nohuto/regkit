@@ -319,7 +319,7 @@ bool MainWindow::Impl::ResolvePathInRoots(const std::vector<RegistryRootEntry>& 
         node->view = root_entry.view;
         node->root_name = root_entry.path_name;
         node->subkey = subkey(registry_path::RawName(tail));
-        // U+2400 displays embedded NUL but is also valid in names, prefer existing literal names over missing NUL names
+        // U+2400 shows an embedded NUL but is valid in names, an existing literal name wins
         if (tail.find(L'\x2400') != std::wstring_view::npos && !RegistryStore::KeyExists(*node))
         {
             RegistryNode literal = *node;

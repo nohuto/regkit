@@ -14,6 +14,7 @@
 #include <win32ui/menu/popup_menu.h>
 #include <win32ui/system/date_time.h>
 #include <win32ui/system/recent_list.h>
+#include <win32ui/system/strings.h>
 #include <win32ui/theme/theme.h>
 
 #include <algorithm>
@@ -101,7 +102,7 @@ std::vector<std::wstring> LoadSearchHistory(HWND owner)
     return items;
 }
 
-void SaveSearchHistory(const std::vector<std::wstring>& items)
+void SaveSearchHistory(HWND owner, const std::vector<std::wstring>& items)
 {
     std::wstring content;
     for (const auto& item : items)
@@ -109,9 +110,9 @@ void SaveSearchHistory(const std::vector<std::wstring>& items)
         content.append(item).append(L"\n");
     }
     const std::wstring path = SearchHistoryPath();
-    if (!path.empty() && !content.empty())
+    if (!content.empty())
     {
-        win32ui::WriteTextFileAtomic(path.c_str(), content);
+        ui::ReportSaveFailure(owner, path, path.empty() ? ERROR_PATH_NOT_FOUND : win32ui::WriteTextFileAtomic(path.c_str(), content));
     }
 }
 
@@ -152,9 +153,8 @@ void UpdateScopeComboText(SearchDialogState* state)
     {
         text = util::Tr(L"Multiple keys");
     }
-    SendMessageW(Item(state, IDC_FIND_SCOPE_ROOTS), CB_RESETCONTENT, 0, 0);
-    SendMessageW(Item(state, IDC_FIND_SCOPE_ROOTS), CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(text.c_str()));
-    SendMessageW(Item(state, IDC_FIND_SCOPE_ROOTS), CB_SETCURSEL, 0, 0);
+    win32ui::SetComboItems(Item(state, IDC_FIND_SCOPE_ROOTS), {text});
+    win32ui::SetComboIndex(Item(state, IDC_FIND_SCOPE_ROOTS), 0);
 }
 
 void ShowRootSelectionMenu(HWND owner, SearchDialogState* state)
@@ -188,10 +188,12 @@ void ShowRootSelectionMenu(HWND owner, SearchDialogState* state)
     }
 }
 
+// typed numbers, surrounding spaces and a 0x prefix allowed
 bool ParseUint64(const std::wstring& text, uint64_t* out)
 {
-    *out = 0;
-    return record_fields::ParseUnsigned(text, UINT64_MAX, out);
+    const std::optional<uint64_t> value = win32ui::ParseUnsigned(text, 10, true);
+    *out = value.value_or(0);
+    return value.has_value();
 }
 
 bool GetDateTimeValue(HWND control, FILETIME* out)
@@ -585,10 +587,8 @@ bool ReadSearchResult(HWND hwnd, SearchDialogState* state, SearchDialogResult* o
     result.open_in_new_tab = IsChecked(Item(state, IDC_FIND_RESULT_TAB));
     if (IsChecked(Item(state, IDC_FIND_LIMIT)))
     {
-        wchar_t limit_text[32] = {};
-        GetWindowTextW(Item(state, IDC_FIND_LIMIT_EDIT), limit_text, static_cast<int>(_countof(limit_text)));
         uint64_t limit = 0;
-        if (!ParseUint64(limit_text, &limit) || limit == 0)
+        if (!ParseUint64(util::WindowText(Item(state, IDC_FIND_LIMIT_EDIT)), &limit) || limit == 0)
         {
             ui::ShowWarning(hwnd, util::Tr(L"Enter a valid result limit."));
             return false;
@@ -755,7 +755,7 @@ INT_PTR CALLBACK SearchDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
                         return TRUE;
                     }
                     state->history.Add(result.criteria.query);
-                    SaveSearchHistory(state->history.items());
+                    SaveSearchHistory(hwnd, state->history.items());
 
                     *state->out = std::move(result);
                     win32ui::EndDialogWindow(hwnd, IDOK);

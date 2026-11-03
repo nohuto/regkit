@@ -1,7 +1,6 @@
 regkit_add_library(regkit_ui
     autocomplete.cpp
     dialog_layout.cpp
-    dialog_support.cpp
     feedback.cpp
     presets.cpp
 )

@@ -52,7 +52,7 @@ bool MainWindow::Impl::HandleToolsCommand(int command_id)
             ConvertDialogFields(store, &settings);
             if (state != before)
             {
-                workspace::SaveDialogState(state);
+                ui::ReportSaveFailure(hwnd_, workspace::DialogStatePath(), workspace::SaveDialogState(state));
             }
         }
         return true;
@@ -92,13 +92,13 @@ bool MainWindow::Impl::HandleToolsCommand(int command_id)
             {
                 return true;
             }
-            std::vector<ListRow> selected_rows = SelectedListRows(browse_.values());
-            if (selected_rows.size() != 1 || selected_rows.front().kind != rowkind::kValue)
+            const std::vector<const ListRow*> selected_rows = SelectedListRows(browse_.values());
+            if (selected_rows.size() != 1 || selected_rows.front()->kind != rowkind::kValue)
             {
                 return true;
             }
             RegistryValue entry;
-            if (!RegistryStore::QueryValue(*node, selected_rows.front().extra, &entry))
+            if (!RegistryStore::QueryValue(*node, selected_rows.front()->extra, &entry))
             {
                 ui::ShowError(hwnd_, util::Tr(L"Failed to read value."));
                 return true;

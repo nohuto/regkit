@@ -36,7 +36,7 @@ using TraceDialogReadyCallback = void (*)(HWND hwnd, void* context);
 
 bool ShowTraceDialog(HWND owner, const TraceDialogOptions& options, trace::Selection* selection, TraceDialogReadyCallback on_ready = nullptr, void* context = nullptr);
 
-void TraceDialogPostEntries(HWND dialog, std::vector<KeyValueDialogEntry>* entries);
+void TraceDialogPostEntries(HWND dialog, std::vector<KeyValueDialogEntry> entries);
 void TraceDialogPostDone(HWND dialog, bool done);
 
 }

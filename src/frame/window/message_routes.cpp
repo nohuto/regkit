@@ -11,6 +11,7 @@
 
 #include <win32ui/focus.h>
 #include <win32ui/gdi/buffered_paint.h>
+#include <win32ui/system/paths.h>
 #include <win32ui/system/single_instance.h>
 #include <win32ui/window.h>
 #include <win32ui/window_metrics.h>
@@ -25,16 +26,10 @@ using namespace window_detail;
 namespace
 {
 
-bool IsLocalFixedPath(const std::wstring& path)
+struct HandoffPayload : win32ui::PostedPayload
 {
-    if (path.size() < 3 || path[1] != L':' || !iswalpha(path[0]) || (path[2] != L'\\' && path[2] != L'/'))
-    {
-        return false;
-    }
-    const std::wstring root = path.substr(0, 3);
-    const UINT drive_type = GetDriveTypeW(root.c_str());
-    return drive_type == DRIVE_FIXED || drive_type == DRIVE_RAMDISK;
-}
+    std::wstring target;
+};
 
 bool AcceptHandoffFile(HWND owner, const std::wstring& path)
 {
@@ -42,7 +37,7 @@ bool AcceptHandoffFile(HWND owner, const std::wstring& path)
     {
         return true;
     }
-    bool local = IsLocalFixedPath(path);
+    bool local = win32ui::OnFixedDrive(path);
     DWORD attributes = FILE_ATTRIBUTE_DIRECTORY;
     for (std::wstring component = path; local && component.size() > 3; component.resize(component.find_last_of(L"\\/")))
     {
@@ -115,6 +110,9 @@ std::optional<LRESULT> MainWindow::Impl::HandleLifecycleMessage(UINT message, WP
         OnDestroy();
         PostQuitMessage(0);
         return 0;
+    case WM_NCDESTROY:
+        ReleaseDrawingResources();
+        return std::nullopt;
     case WM_NCPAINT:
         {
             LRESULT result = DefWindowProcW(hwnd_, message, wparam, lparam);
@@ -139,7 +137,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleLifecycleMessage(UINT message, WP
                 if (content_rect_.right > 0 && GetWindowRect(hwnd_, &window))
                 {
                     const int panels = TextRowHeight(kPanelHeaderHeight) +
-                                       (settings_.show_history && !settings_.simple_mode && !IsSearchTabSelected() ? win32ui::ScaleForDpi(kMinHistoryHeight + kHistoryGap + kHistorySplitterHeight, dpi) : 0);
+                                       (settings_.show_history && !settings_.simple_mode && !IsSearchTabSelected() ? win32ui::Scale(kMinHistoryHeight + kHistoryGap + kHistorySplitterHeight, dpi) : 0);
                     const int chrome = (window.bottom - window.top) - (content_rect_.bottom - content_rect_.top);
                     info->ptMinTrackSize.y = std::max<LONG>(info->ptMinTrackSize.y, chrome + panels);
                 }
@@ -151,13 +149,11 @@ std::optional<LRESULT> MainWindow::Impl::HandleLifecycleMessage(UINT message, WP
         return 0;
     case WM_DPICHANGED:
         win32ui::ApplySuggestedRect(hwnd_, reinterpret_cast<const RECT*>(lparam));
-        RescaleColumns();
-        // resize toolbar for new DPI before UpdateUIFont runs layout
+        // toolbar first, UpdateUIFont runs the layout, list columns follow in RefreshListView
         ReloadThemeIcons();
         UpdateUIFont();
         return 0;
     case WM_DPICHANGED_AFTERPARENT:
-        RescaleColumns();
         ReloadThemeIcons();
         UpdateUIFont();
         return 0;
@@ -496,11 +492,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleSearchWorkerMessage(UINT message,
             {
                 return 0;
             }
-            tab.results = std::move(owned->rows);
-            if (SearchIndexFromTab(TabCtrl_GetCurSel(tab_)) == owned->tab_index)
-            {
-                UpdateSearchResultsView();
-            }
+            ApplySortedSearchRows(&tab, std::move(owned->rows), SearchIndexFromTab(TabCtrl_GetCurSel(tab_)) == owned->tab_index);
             return 0;
         }
     case frame::message_id::kSearchTabLoadReady:
@@ -716,7 +708,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleTraceWorkerMessage(UINT message, 
     {
     case frame::message_id::kTraceParseBatch:
         {
-            auto owned = win32ui::TakePayload<TraceParseBatch>(lparam);
+            auto owned = win32ui::TakePayload<ParseBatch>(lparam);
             if (!owned)
             {
                 return 0;
@@ -736,8 +728,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleTraceWorkerMessage(UINT message, 
                 owned->affected_keys.find(TracePathLowerForNode(*browse_.current_node())) != owned->affected_keys.end();
             if (session->dialog && IsWindow(session->dialog) && !owned->entries.empty())
             {
-                auto dialog_entries = std::make_unique<std::vector<KeyValueDialogEntry>>(std::move(owned->entries));
-                TraceDialogPostEntries(session->dialog, dialog_entries.release());
+                TraceDialogPostEntries(session->dialog, std::move(owned->entries));
             }
             if (session->added_to_active && touches_current && browse_.current_node())
             {
@@ -821,7 +812,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleDefaultWorkerMessage(UINT message
     {
     case frame::message_id::kDefaultParseBatch:
         {
-            auto owned = win32ui::TakePayload<DefaultParseBatch>(lparam);
+            auto owned = win32ui::TakePayload<ParseBatch>(lparam);
             if (!owned)
             {
                 return 0;
@@ -849,8 +840,7 @@ std::optional<LRESULT> MainWindow::Impl::HandleDefaultWorkerMessage(UINT message
             }
             if (session->dialog && IsWindow(session->dialog) && !owned->entries.empty())
             {
-                auto dialog_entries = std::make_unique<std::vector<KeyValueDialogEntry>>(std::move(owned->entries));
-                TraceDialogPostEntries(session->dialog, dialog_entries.release());
+                TraceDialogPostEntries(session->dialog, std::move(owned->entries));
             }
             if (session->added_to_active && touches_current && browse_.current_node())
             {
@@ -1155,42 +1145,39 @@ std::optional<LRESULT> MainWindow::Impl::HandleExternalMessage(UINT message, WPA
     case WM_COPYDATA:
         {
             ULONG_PTR id = 0;
-            auto target = std::make_unique<std::wstring>();
-            if (!win32ui::ReadInstanceText(wparam, lparam, kExternalMessageMaxBytes / sizeof(wchar_t) - 1, &id, target.get()) ||
+            auto payload = std::make_unique<HandoffPayload>();
+            const std::wstring& target = payload->target;
+            if (!win32ui::ReadInstanceText(wparam, lparam, kExternalMessageMaxBytes / sizeof(wchar_t) - 1, &id, &payload->target) ||
                 (id != kExternalJumpCopyDataId && id != kEditRegFileCopyDataId) ||
-                (id == kEditRegFileCopyDataId && !util::HasFileExtension(*target, L".reg") && !IsHiveFile(*target)))
+                (id == kEditRegFileCopyDataId && !util::HasFileExtension(target, L".reg") && !IsHiveFile(target)))
             {
                 return 0;
             }
-            if (!PostMessageW(hwnd_, frame::message_id::kExternalHandoff, id, reinterpret_cast<LPARAM>(target.get())))
-            {
-                return 0;
-            }
-            target.release();
-            return TRUE;
+            return win32ui::PostPayload(hwnd_, frame::message_id::kExternalHandoff, id, payload) ? TRUE : 0;
         }
     case frame::message_id::kExternalHandoff:
         {
-            const std::unique_ptr<std::wstring> target(reinterpret_cast<std::wstring*>(lparam));
+            const std::unique_ptr<HandoffPayload> payload = win32ui::TakePayload<HandoffPayload>(lparam);
+            const std::wstring& target = payload->target;
             win32ui::BringToFront(hwnd_);
             if (wparam == kEditRegFileCopyDataId)
             {
-                if (AcceptHandoffFile(hwnd_, *target))
+                if (AcceptHandoffFile(hwnd_, target))
                 {
-                    OpenFile(*target);
+                    OpenFile(target);
                 }
                 return 0;
             }
             if (deferred_startup_complete_)
             {
-                if (!NavigateToExternalJump(*target))
+                if (!NavigateToExternalJump(target))
                 {
-                    ui::ShowWarning(hwnd_, util::TrDetail(L"Registry path not found.", *target));
+                    ui::ShowWarning(hwnd_, util::TrDetail(L"Registry path not found.", target));
                 }
             }
             else
             {
-                QueueExternalJump(*target);
+                QueueExternalJump(target);
             }
             FocusAddressBarForExternalJump(true);
             return 0;
@@ -1293,11 +1280,11 @@ std::optional<LRESULT> MainWindow::Impl::HandleAppearanceMessage(UINT message, W
                 SetBkMode(hdc, TRANSPARENT);
                 SetTextColor(hdc, win32ui::CurrentThemeColors().text);
                 const UINT dpi = win32ui::DpiForWindow(hwnd_);
-                const int padding = win32ui::ScaleForDpi(kHeaderTextPadding, dpi);
+                const int padding = win32ui::Scale(kHeaderTextPadding, dpi);
                 RECT text_rect = rect;
                 text_rect.left += padding;
                 // close button covers the right end of the header
-                text_rect.right -= padding + win32ui::ScaleForDpi(kPanelCloseInset + kPanelCloseSize, dpi);
+                text_rect.right -= padding + win32ui::Scale(kPanelCloseInset + kPanelCloseSize, dpi);
                 DrawTextW(hdc, text, -1, &text_rect, format);
                 if (old_font)
                 {

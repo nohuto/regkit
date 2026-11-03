@@ -233,7 +233,7 @@ void MainWindow::Impl::UpdateStatus()
     swprintf_s(buffer, util::Tr(L"Selected: %d"), selected);
     std::wstring selected_text = buffer;
 
-    // path fills remaining space, mode part exists only when needed, counts fit five digits and grow for longer values
+    // path takes the rest, the mode part only when needed, counts fit five digits and grow
     std::vector<win32ui::StatusPart> parts = {{L"", 0, true}};
     if (!mode_text.empty())
     {
@@ -782,6 +782,12 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options)
     search::Criteria criteria = options.criteria;
     criteria.matcher = matcher;
     criteria.start_nodes = start_nodes;
+    auto hold = std::make_shared<SourceHold>();
+    hold->sessions.push_back(session_);
+    for (search::StartNode& start : criteria.start_nodes)
+    {
+        start.node.root = hold->Hold(start.node.root);
+    }
     // dialog keeps unticked filters for next time
     if (!options.use_exclude)
     {
@@ -913,7 +919,7 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options)
     bool trace_enabled = want_trace;
     bool registry_enabled = want_registry && !criteria.start_nodes.empty();
 
-    const uint64_t thread = run->session.Start(L"SearchThread", [hwnd = hwnd_, run = run.get(), generation, criteria, traces, exclude_paths, scope_lower, scope_recursive, trace_enabled, registry_enabled, matcher](uint64_t, std::atomic_bool& cancel) mutable {
+    const uint64_t thread = run->session.Start(L"SearchThread", [hwnd = hwnd_, run = run.get(), generation, criteria, traces, exclude_paths, scope_lower, scope_recursive, trace_enabled, registry_enabled, matcher, hold](uint64_t, std::atomic_bool& cancel) mutable {
         auto should_stop = [&]() { return cancel.load(); };
 
         auto publish_batch = [&](search::ResultBatch&& rows) -> bool {
@@ -1432,7 +1438,8 @@ void MainWindow::Impl::StartReplace(const ReplaceDialogResult& options)
                         {
                             continue;
                         }
-                        const std::wstring unique = MakeUniqueValueName(node, replaced_name).value_or(L"");
+                        // a case-only change collides with the name itself, RenameValue handles it
+                        const std::wstring unique = util::EqualsInsensitive(replaced_name, current_name) ? replaced_name : MakeUniqueValueName(node, replaced_name).value_or(L"");
                         bool both_names_left = false;
                         if (unique.empty() || !RegistryStore::RenameValue(node, current_name, unique, &both_names_left))
                         {

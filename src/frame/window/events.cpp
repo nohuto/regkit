@@ -36,7 +36,7 @@ bool MainWindow::Impl::Create(HINSTANCE instance)
     {
         title.append(L" - [").append(util::Tr(L"Administrator")).append(L"]");
     }
-    hwnd_ = CreateWindowExW(0, kMainWindowClassName, title.c_str(), WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, 1200, 800, nullptr, nullptr, instance, this);
+    hwnd_ = CreateWindowExW(0, kMainWindowClassName, title.c_str(), WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, instance, this);
     if (hwnd_)
     {
         SetPropW(hwnd_, kRegKitWindowProperty, reinterpret_cast<HANDLE>(static_cast<INT_PTR>(1)));

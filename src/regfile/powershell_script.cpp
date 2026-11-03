@@ -210,7 +210,7 @@ std::vector<Token> Tokenize(std::wstring_view text)
             const bool literal = IsSingleQuote(at(index + 1));
             const size_t body = text.find(L'\n', index) + 1;
             size_t close = body;
-            while (true)
+            while (!((literal ? IsSingleQuote(at(close)) : IsDoubleQuote(at(close))) && at(close + 1) == L'@'))
             {
                 close = text.find(L'\n', close);
                 if (close == std::wstring_view::npos)
@@ -218,10 +218,6 @@ std::vector<Token> Tokenize(std::wstring_view text)
                     fail(util::Tr(L"Unterminated here-string."));
                 }
                 ++close;
-                if ((literal ? IsSingleQuote(at(close)) : IsDoubleQuote(at(close))) && at(close + 1) == L'@')
-                {
-                    break;
-                }
             }
             size_t end = close - 1;
             end -= end > body && text[end - 1] == L'\r';
@@ -910,6 +906,11 @@ class Interpreter
             {
                 Fail(util::Tr(L"Invalid RegKit.Native call."));
             }
+            // a value write follows neither kind of test
+            if (condition_ != Condition::kNone)
+            {
+                Fail(util::Tr(L"Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."));
+            }
             Operation operation{Operation::Kind::kValue, arguments[0].text};
             operation.value.name = Text(arguments[1]);
             operation.value.type = static_cast<DWORD>(arguments[2].number);
@@ -932,6 +933,13 @@ class Interpreter
             const std::vector<Item> arguments = CallArguments();
             const std::wstring sub = arguments.empty() ? std::wstring() : Text(arguments[0]);
             const std::wstring path = sub.empty() ? item.text : item.text + L"\\" + sub;
+            // same rule as for the cmdlets, only a change of the tested key itself may follow its test
+            const bool allowed = condition_ == Condition::kMissing ? member == L"createsubkey" : member == L"deletevalue" || member == L"deletesubkeytree";
+            const bool changes = member != L"opensubkey" && member != L"close" && member != L"dispose" && member != L"flush";
+            if (condition_ != Condition::kNone && changes && (!allowed || !util::EqualsInsensitive(member == L"deletevalue" ? item.text : path, tested_)))
+            {
+                Fail(util::Tr(L"Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."));
+            }
             if (member == L"createsubkey" || member == L"opensubkey")
             {
                 if (member == L"createsubkey")
@@ -952,7 +960,8 @@ class Interpreter
                 output_->push_back(std::move(operation));
                 item = {};
             }
-            else if (member == L"deletesubkeytree" || member == L"deletesubkey")
+            // DeleteSubKey refuses a key with subkeys, a removed key here takes them along
+            else if (member == L"deletesubkeytree")
             {
                 output_->push_back({Operation::Kind::kRemoveKey, path});
                 item = {};

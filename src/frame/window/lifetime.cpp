@@ -122,7 +122,7 @@ bool MainWindow::Impl::OnCreate()
         0,
         WC_LISTVIEWW,
         L"",
-        WS_CHILD | WS_CLIPSIBLINGS | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA,
+        WS_CHILD | WS_CLIPSIBLINGS | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA | LVS_SHAREIMAGELISTS,
         0,
         0,
         0,
@@ -526,6 +526,10 @@ void MainWindow::Impl::OnDestroy()
         tab.session.reset();
     }
     session_ = local_session_;
+}
+
+void MainWindow::Impl::ReleaseDrawingResources()
+{
     if (ui_font_ && ui_font_owned_)
     {
         DeleteObject(ui_font_);
@@ -556,17 +560,13 @@ void MainWindow::Impl::DiscardWorkerMessages()
         return;
     }
     MSG message = {};
-    const UINT payload_messages[] = {frame::message_id::kTraceLoadReady, frame::message_id::kDefaultLoadReady, frame::message_id::kStartupCacheReady, frame::message_id::kRegFileLoadReady, frame::message_id::kTraceParseBatch, frame::message_id::kDefaultParseBatch, frame::message_id::kValueListReady, frame::message_id::kReplaceReady, frame::message_id::kCompareReady, frame::message_id::kValuePreviewReady, frame::message_id::kSearchPreviewReady, frame::message_id::kSearchSortReady, frame::message_id::kSearchTabLoadReady, frame::message_id::kUpdateCheckReady};
+    const UINT payload_messages[] = {frame::message_id::kTraceLoadReady, frame::message_id::kDefaultLoadReady, frame::message_id::kStartupCacheReady, frame::message_id::kRegFileLoadReady, frame::message_id::kTraceParseBatch, frame::message_id::kDefaultParseBatch, frame::message_id::kValueListReady, frame::message_id::kReplaceReady, frame::message_id::kCompareReady, frame::message_id::kValuePreviewReady, frame::message_id::kSearchPreviewReady, frame::message_id::kSearchSortReady, frame::message_id::kSearchTabLoadReady, frame::message_id::kUpdateCheckReady, frame::message_id::kExternalHandoff};
     for (const UINT id : payload_messages)
     {
         while (PeekMessageW(&message, hwnd_, id, id, PM_REMOVE))
         {
             win32ui::TakePayload<win32ui::PostedPayload>(message.lParam).reset();
         }
-    }
-    while (PeekMessageW(&message, hwnd_, frame::message_id::kExternalHandoff, frame::message_id::kExternalHandoff, PM_REMOVE))
-    {
-        delete reinterpret_cast<std::wstring*>(message.lParam);
     }
 }
 

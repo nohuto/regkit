@@ -59,40 +59,40 @@ void MainWindow::Impl::BuildImageLists()
 void MainWindow::Impl::CreateValueColumns()
 {
     browse_.columns().Reset({
-        {util::Tr(L"Name"), 260, LVCFMT_LEFT},
-        {util::Tr(L"Type"), 120, LVCFMT_LEFT},
-        {util::Tr(L"Data"), 160, LVCFMT_LEFT},
-        {util::Tr(L"Default"), 200, LVCFMT_LEFT},
-        {util::Tr(L"Read on boot"), 110, LVCFMT_LEFT},
-        {util::Tr(L"Size"), 70, LVCFMT_RIGHT},
-        {util::Tr(L"Date Modified"), 140, LVCFMT_LEFT},
-        {util::Tr(L"Details"), 160, LVCFMT_LEFT},
-        {util::Tr(L"Comment"), 220, LVCFMT_LEFT},
+        {.title = util::Tr(L"Name"), .width_dip = 260},
+        {.title = util::Tr(L"Type"), .width_dip = 120},
+        {.title = util::Tr(L"Data"), .width_dip = 160},
+        {.title = util::Tr(L"Default"), .width_dip = 200},
+        {.title = util::Tr(L"Read on boot"), .width_dip = 110},
+        {.title = util::Tr(L"Size"), .width_dip = 70, .format = LVCFMT_RIGHT},
+        {.title = util::Tr(L"Date Modified"), .width_dip = 140},
+        {.title = util::Tr(L"Details"), .width_dip = 160},
+        {.title = util::Tr(L"Comment"), .width_dip = 220},
     });
     if (browse_.columns().saved)
     {
         auto patch_widths = [&](std::vector<int>& widths) {
             if (widths.size() == browse_.columns().items.size() - 1)
             {
-                widths.insert(widths.begin() + kValueColDefault, browse_.columns().items[kValueColDefault].width);
+                widths.insert(widths.begin() + kValueColDefault, browse_.columns().items[kValueColDefault].default_width_dip);
             }
             else if (widths.size() == browse_.columns().items.size() - 2)
             {
-                widths.insert(widths.begin() + kValueColDefault, browse_.columns().items[kValueColDefault].width);
-                widths.push_back(browse_.columns().items[kValueColComment].width);
+                widths.insert(widths.begin() + kValueColDefault, browse_.columns().items[kValueColDefault].default_width_dip);
+                widths.push_back(browse_.columns().items[kValueColComment].default_width_dip);
             }
             else if (widths.size() == browse_.columns().items.size() - 3)
             {
-                widths.insert(widths.begin() + kValueColDefault, browse_.columns().items[kValueColDefault].width);
-                widths.push_back(browse_.columns().items[kValueColDetails].width);
-                widths.push_back(browse_.columns().items[kValueColComment].width);
+                widths.insert(widths.begin() + kValueColDefault, browse_.columns().items[kValueColDefault].default_width_dip);
+                widths.push_back(browse_.columns().items[kValueColDetails].default_width_dip);
+                widths.push_back(browse_.columns().items[kValueColComment].default_width_dip);
             }
             else if (widths.size() == browse_.columns().items.size() - 4)
             {
-                widths.insert(widths.begin() + kValueColDefault, browse_.columns().items[kValueColDefault].width);
-                widths.insert(widths.begin() + kValueColReadOnBoot, browse_.columns().items[kValueColReadOnBoot].width);
-                widths.push_back(browse_.columns().items[kValueColDetails].width);
-                widths.push_back(browse_.columns().items[kValueColComment].width);
+                widths.insert(widths.begin() + kValueColDefault, browse_.columns().items[kValueColDefault].default_width_dip);
+                widths.insert(widths.begin() + kValueColReadOnBoot, browse_.columns().items[kValueColReadOnBoot].default_width_dip);
+                widths.push_back(browse_.columns().items[kValueColDetails].default_width_dip);
+                widths.push_back(browse_.columns().items[kValueColComment].default_width_dip);
             }
         };
         auto patch_visible = [&](std::vector<bool>& visible) {
@@ -125,11 +125,11 @@ void MainWindow::Impl::CreateValueColumns()
         {
             if (i < browse_.columns().saved_widths.size() && browse_.columns().saved_widths[i] > 0)
             {
-                browse_.columns().widths[i] = browse_.columns().saved_widths[i];
+                browse_.columns().items[i].width_dip = browse_.columns().saved_widths[i];
             }
             if (i < browse_.columns().saved_visible.size())
             {
-                browse_.columns().visible[i] = browse_.columns().saved_visible[i];
+                browse_.columns().items[i].visible = browse_.columns().saved_visible[i];
             }
         }
     }
@@ -139,10 +139,10 @@ void MainWindow::Impl::CreateValueColumns()
 void MainWindow::Impl::CreateHistoryColumns()
 {
     history_columns_.Reset({
-        {util::Tr(L"Time"), 140, LVCFMT_LEFT},
-        {util::Tr(L"Action"), 280, LVCFMT_LEFT},
-        {util::Tr(L"Old Data"), 220, LVCFMT_LEFT},
-        {util::Tr(L"New Data"), 220, LVCFMT_LEFT},
+        {.title = util::Tr(L"Time"), .width_dip = 140},
+        {.title = util::Tr(L"Action"), .width_dip = 280},
+        {.title = util::Tr(L"Old Data"), .width_dip = 220},
+        {.title = util::Tr(L"New Data"), .width_dip = 220},
     });
     ApplyHistoryColumns();
 }
@@ -150,18 +150,12 @@ void MainWindow::Impl::CreateHistoryColumns()
 namespace
 {
 
-// hidden and unavailable columns keep subitems at width 0, unavailable columns also stay out of the header menu
+// hidden and unavailable columns stay at width 0, unavailable ones also leave the header menu
 void ApplyListColumns(HWND list, const ui::ColumnSet& set, const std::function<bool(size_t)>& unavailable = nullptr)
 {
-    std::vector<win32ui::ListColumn> columns(set.items.size());
-    for (size_t i = 0; i < set.items.size(); ++i)
+    std::vector<win32ui::ListColumn> columns = set.items;
+    for (size_t i = 0; i < columns.size(); ++i)
     {
-        // saved widths use DIPs, 0 restores factory width used by Reset columns
-        columns[i].title = set.items[i].title;
-        columns[i].format = set.items[i].fmt;
-        columns[i].width_dip = i < set.widths.size() && set.widths[i] > 0 ? set.widths[i] : set.items[i].width;
-        columns[i].default_width_dip = set.items[i].width;
-        columns[i].visible = i >= set.visible.size() || set.visible[i];
         columns[i].available = !unavailable || !unavailable(i);
     }
     const win32ui::RedrawScope list_redraw(list, RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
@@ -199,20 +193,20 @@ void MainWindow::Impl::CreateSearchColumns()
         return;
     }
     search_columns_.Reset({
-        {util::Tr(L"Path"), 320, LVCFMT_LEFT},
-        {util::Tr(L"Value"), 180, LVCFMT_LEFT},
-        {util::Tr(L"Type"), 110, LVCFMT_LEFT},
-        {util::Tr(L"Data"), 360, LVCFMT_LEFT},
-        {util::Tr(L"Size"), 80, LVCFMT_RIGHT},
-        {util::Tr(L"Date Modified"), 150, LVCFMT_LEFT},
-        {util::Tr(L"Source"), 190, LVCFMT_LEFT},
+        {.title = util::Tr(L"Path"), .width_dip = 320},
+        {.title = util::Tr(L"Value"), .width_dip = 180},
+        {.title = util::Tr(L"Type"), .width_dip = 110},
+        {.title = util::Tr(L"Data"), .width_dip = 360},
+        {.title = util::Tr(L"Size"), .width_dip = 80, .format = LVCFMT_RIGHT},
+        {.title = util::Tr(L"Date Modified"), .width_dip = 150},
+        {.title = util::Tr(L"Source"), .width_dip = 190},
     });
     compare_columns_.Reset({
-        {util::Tr(L"Path"), 320, LVCFMT_LEFT},
-        {util::Tr(L"Value"), 180, LVCFMT_LEFT},
-        {util::Tr(L"First Entry"), 320, LVCFMT_LEFT},
-        {util::Tr(L"Second Entry"), 320, LVCFMT_LEFT},
-        {util::Tr(L"Result"), 90, LVCFMT_LEFT},
+        {.title = util::Tr(L"Path"), .width_dip = 320},
+        {.title = util::Tr(L"Value"), .width_dip = 180},
+        {.title = util::Tr(L"First Entry"), .width_dip = 320},
+        {.title = util::Tr(L"Second Entry"), .width_dip = 320},
+        {.title = util::Tr(L"Result"), .width_dip = 90},
     });
     compare_column_titles_ = {compare_columns_.items[2].title, compare_columns_.items[3].title};
     ApplySearchColumns(false);
@@ -390,13 +384,13 @@ void MainWindow::Impl::UpdateValueListForNode(RegistryNode* node)
     bool show_simulated_keys = settings_.show_simulated_keys && !is_reg_file;
     constexpr size_t kDateColumn = static_cast<size_t>(kValueColDate);
     bool include_dates = browse_.columns().SortsBy(static_cast<int>(kDateColumn));
-    if (kDateColumn < browse_.columns().visible.size() && browse_.columns().visible[kDateColumn])
+    if (kDateColumn < browse_.columns().items.size() && browse_.columns().items[kDateColumn].visible)
     {
         include_dates = true;
     }
     constexpr size_t kDetailsColumn = static_cast<size_t>(kValueColDetails);
     bool include_details = browse_.columns().SortsBy(static_cast<int>(kDetailsColumn));
-    if (kDetailsColumn < browse_.columns().visible.size() && browse_.columns().visible[kDetailsColumn])
+    if (kDetailsColumn < browse_.columns().items.size() && browse_.columns().items[kDetailsColumn].visible)
     {
         include_details = true;
     }

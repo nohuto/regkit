@@ -54,61 +54,36 @@
 namespace regkit::window_detail
 {
 
-bool IsIconSetName(const std::wstring& value, const wchar_t* name)
-{
-    return util::EqualsInsensitive(value, name);
-}
-
 bool IsKnownIconSetName(const std::wstring& value)
 {
-    return IsIconSetName(value, kIconSetClassic) || IsIconSetName(value, kIconSetPhosphor) ||
-           IsIconSetName(value, kIconSetCustom);
+    return util::EqualsInsensitive(value, kIconSetClassic) || util::EqualsInsensitive(value, kIconSetPhosphor) ||
+           util::EqualsInsensitive(value, kIconSetCustom);
 }
 
-static std::wstring FindAssetsIconsRoot()
+// assets\icons in the folder or one of its parents
+static std::wstring FindIconsBelow(std::wstring base, int levels)
 {
-    std::wstring base = util::ModuleDirectory();
-    for (int i = 0; i < 6; ++i)
+    for (int i = 0; i < levels && !base.empty(); ++i)
     {
-        if (base.empty())
-        {
-            break;
-        }
         std::wstring candidate = util::JoinPath(base, L"assets\\icons");
         if (util::IsDirectory(candidate.c_str()))
         {
             return candidate;
         }
-        base = registry_path::Parent(base);
-    }
-    DWORD len = GetCurrentDirectoryW(0, nullptr);
-    if (len > 0)
-    {
-        std::wstring cwd(len, L'\0');
-        DWORD written = GetCurrentDirectoryW(len, cwd.data());
-        if (written != 0)
+        std::wstring parent = win32ui::ParentDirectory(base);
+        if (parent == base)
         {
-            if (written < cwd.size() && cwd[written] == L'\0')
-            {
-                cwd.resize(written);
-            }
-            base = cwd;
-            for (int i = 0; i < 3; ++i)
-            {
-                if (base.empty())
-                {
-                    break;
-                }
-                std::wstring candidate = util::JoinPath(base, L"assets\\icons");
-                if (util::IsDirectory(candidate.c_str()))
-                {
-                    return candidate;
-                }
-                base = registry_path::Parent(base);
-            }
+            break;
         }
+        base = std::move(parent);
     }
     return L"";
+}
+
+static std::wstring FindAssetsIconsRoot()
+{
+    std::wstring found = FindIconsBelow(util::ModuleDirectory(), 6);
+    return found.empty() ? FindIconsBelow(win32ui::FullPath(L"."), 3) : found;
 }
 
 std::wstring AssetsIconsRoot()

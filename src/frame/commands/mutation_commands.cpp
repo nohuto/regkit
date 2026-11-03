@@ -385,18 +385,24 @@ bool MainWindow::Impl::HandleCreateCommand(int command_id)
                 op.new_value.data = data;
                 PushUndo(std::move(op));
 
-                value_list_generation_.fetch_add(1);
-                value_list_loading_ = false;
-
-                const DWORD data_size = static_cast<DWORD>(data.size());
-                ListRow row = MakeValueListRow(value_name, type, data.data(), data_size);
-                browse_.values().AppendRow(std::move(row), true);
-                ++current_value_count_;
-                UpdateStatus();
-
-                appended_value_name_ = value_name;
+                // a running load misses the new value and cancelling it hides the rest, a new load has both
                 ScheduleValueListRename(rowkind::kValue, value_name);
-                StartPendingValueListRename();
+                if (value_list_loading_)
+                {
+                    UpdateValueListForNode(browse_.current_node());
+                    appended_value_name_ = value_name;
+                }
+                else
+                {
+                    value_list_generation_.fetch_add(1);
+                    const DWORD data_size = static_cast<DWORD>(data.size());
+                    ListRow row = MakeValueListRow(value_name, type, data.data(), data_size);
+                    browse_.values().AppendRow(std::move(row), true);
+                    ++current_value_count_;
+                    UpdateStatus();
+                    appended_value_name_ = value_name;
+                    StartPendingValueListRename();
+                }
             }
             return true;
         }
@@ -415,13 +421,13 @@ bool MainWindow::Impl::HandleModifyCommand(int command_id)
             {
                 return true;
             }
-            std::vector<ListRow> rows = SelectedListRows(browse_.values());
-            if (rows.size() != 1 || rows.front().kind != rowkind::kValue)
+            const std::vector<const ListRow*> rows = SelectedListRows(browse_.values());
+            if (rows.size() != 1 || rows.front()->kind != rowkind::kValue)
             {
                 return true;
             }
             RegistryValue entry;
-            if (!GetValueEntry(*browse_.current_node(), rows.front().extra, &entry))
+            if (!GetValueEntry(*browse_.current_node(), rows.front()->extra, &entry))
             {
                 ui::ShowError(hwnd_, util::Tr(L"Failed to read value."));
                 return true;
@@ -474,12 +480,14 @@ bool MainWindow::Impl::HandleModifyCommand(int command_id)
             {
                 return true;
             }
-            std::vector<ListRow> selected_rows = SelectedListRows(browse_.values());
-            if (selected_rows.size() != 1 || selected_rows.front().kind != rowkind::kValue)
+            const std::vector<const ListRow*> selected_rows = SelectedListRows(browse_.values());
+            if (selected_rows.size() != 1 || selected_rows.front()->kind != rowkind::kValue)
             {
                 return true;
             }
-            const ListRow* row = &selected_rows.front();
+            // the editor runs a modal loop
+            const ListRow selected = *selected_rows.front();
+            const ListRow* row = &selected;
             RegistryValue entry;
             if (!GetValueEntry(*browse_.current_node(), row->extra, &entry))
             {
@@ -651,27 +659,27 @@ std::vector<changes::CommentTarget> MainWindow::Impl::CommentTargets()
     {
         return targets;
     }
-    std::vector<ListRow> selected_rows = SelectedListRows(browse_.values());
+    const std::vector<const ListRow*> selected_rows = SelectedListRows(browse_.values());
     const std::wstring path = CommentKeyPath(*browse_.current_node());
     if (GetFocus() == browse_.tree().hwnd() || selected_rows.empty())
     {
         targets.push_back({path, {}, 0, 0, true});
     }
-    else if (selected_rows.size() == 1 && selected_rows.front().kind == rowkind::kKey &&
-             !selected_rows.front().extra.empty())
+    else if (selected_rows.size() == 1 && selected_rows.front()->kind == rowkind::kKey &&
+             !selected_rows.front()->extra.empty())
     {
-        targets.push_back({registry_path::JoinSubkey(path, selected_rows.front().extra), {}, 0, 0, true});
+        targets.push_back({registry_path::JoinSubkey(path, selected_rows.front()->extra), {}, 0, 0, true});
     }
     else
     {
         // simulated SymbolicLinkValue rows support comments like real values
-        for (const ListRow& row : selected_rows)
+        for (const ListRow* row : selected_rows)
         {
-            if (row.kind != rowkind::kValue)
+            if (row->kind != rowkind::kValue)
             {
                 return {};
             }
-            targets.push_back({path, row.extra, row.value_type, row.value_data_size});
+            targets.push_back({path, row->extra, row->value_type, row->value_data_size});
         }
     }
     return targets;
@@ -692,13 +700,13 @@ bool MainWindow::Impl::HandleRenameCommand(int command_id)
                 return true;
             }
             HWND focus = GetFocus();
-            std::vector<ListRow> selected_rows = SelectedListRows(browse_.values());
+            const std::vector<const ListRow*> selected_rows = SelectedListRows(browse_.values());
             if (focus == browse_.values().hwnd() && selected_rows.size() > 1)
             {
                 return true;
             }
 
-            const ListRow* row = selected_rows.empty() ? nullptr : &selected_rows.front();
+            const ListRow* row = selected_rows.empty() ? nullptr : selected_rows.front();
             if (focus == browse_.tree().hwnd() || (!row && browse_.current_node()))
             {
                 if (browse_.current_node()->subkey.empty())
@@ -776,12 +784,12 @@ bool MainWindow::Impl::HandleResetDefaultCommand(int command_id)
     {
         return true;
     }
-    std::vector<ListRow> rows = SelectedListRows(browse_.values());
-    if (rows.size() != 1 || rows.front().kind != rowkind::kValue)
+    const std::vector<const ListRow*> rows = SelectedListRows(browse_.values());
+    if (rows.size() != 1 || rows.front()->kind != rowkind::kValue)
     {
         return true;
     }
-    const std::wstring name = rows.front().extra;
+    const std::wstring name = rows.front()->extra;
     const std::vector<DefaultValueChoice> choices = CollectDefaultChoices(name);
     size_t index = 0;
     if (command_id != cmd::kEditResetDefault)
@@ -930,12 +938,12 @@ bool MainWindow::Impl::HandleDeleteCommand(int command_id)
                 return true;
             }
 
-            std::vector<ListRow> selected_rows = SelectedListRows(browse_.values());
+            std::vector<const ListRow*> selected_rows = SelectedListRows(browse_.values());
             if (focus == browse_.values().hwnd() && selected_rows.size() > 1)
             {
                 const bool all_values =
-                    std::all_of(selected_rows.begin(), selected_rows.end(), [](const ListRow& selected) {
-                        return selected.kind == rowkind::kValue && !selected.simulated;
+                    std::all_of(selected_rows.begin(), selected_rows.end(), [](const ListRow* selected) {
+                        return selected->kind == rowkind::kValue && !selected->simulated;
                     });
                 if (!all_values)
                 {
@@ -943,7 +951,7 @@ bool MainWindow::Impl::HandleDeleteCommand(int command_id)
                     return true;
                 }
                 // unset defaults and trace only rows have nothing to delete
-                std::erase_if(selected_rows, [](const ListRow& selected) { return selected.missing; });
+                std::erase_if(selected_rows, [](const ListRow* selected) { return selected->missing; });
                 if (selected_rows.empty())
                 {
                     return true;
@@ -951,10 +959,10 @@ bool MainWindow::Impl::HandleDeleteCommand(int command_id)
 
                 std::vector<RegistryValue> entries;
                 entries.reserve(selected_rows.size());
-                for (const auto& selected : selected_rows)
+                for (const ListRow* selected : selected_rows)
                 {
                     RegistryValue entry;
-                    if (!GetValueEntry(*browse_.current_node(), selected.extra, &entry))
+                    if (!GetValueEntry(*browse_.current_node(), selected->extra, &entry))
                     {
                         ui::ShowError(hwnd_, util::Tr(L"Failed to read all selected values."));
                         return true;
@@ -1007,7 +1015,9 @@ bool MainWindow::Impl::HandleDeleteCommand(int command_id)
                 return true;
             }
 
-            const ListRow* row = selected_rows.empty() ? nullptr : &selected_rows.front();
+            // the confirmation runs a modal loop
+            const ListRow selected = selected_rows.empty() ? ListRow{} : *selected_rows.front();
+            const ListRow* row = selected_rows.empty() ? nullptr : &selected;
             if (row && row->kind == rowkind::kKey)
             {
                 if (!ui::ConfirmDelete(hwnd_, util::Tr(L"Delete Key"), row->name))

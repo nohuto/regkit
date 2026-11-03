@@ -70,9 +70,13 @@ void MainWindow::Impl::LoadThemePresets()
     }
 }
 
-void MainWindow::Impl::SaveThemePresets() const
+void MainWindow::Impl::SaveThemePresets()
 {
-    ThemePresetStore::Save(theme_presets_, nullptr);
+    std::wstring error;
+    if (!ThemePresetStore::Save(theme_presets_, &error))
+    {
+        ReportFileError(ThemePresetStore::Path(), L"", error.c_str());
+    }
 }
 
 bool MainWindow::Impl::ApplyThemePresetByName(const std::wstring& name, bool persist)
@@ -128,13 +132,14 @@ void MainWindow::Impl::UpdateUIFont()
         next_font = CreateUIFont();
         next_owned = false;
     }
-    if (ui_font_ && ui_font_owned_)
-    {
-        DeleteObject(ui_font_);
-    }
+    const HFONT old_font = ui_font_owned_ ? ui_font_ : nullptr;
     ui_font_ = next_font;
     ui_font_owned_ = next_owned;
     ApplyUIFontToControls();
+    if (old_font)
+    {
+        DeleteObject(old_font);
+    }
 }
 
 void MainWindow::Impl::ApplyUIFontToControls()

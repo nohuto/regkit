@@ -5,38 +5,25 @@
 
 #include <win32ui/windows_config.h>
 
-#include <windows.h>
+#include <win32ui/list_view/list_view.h>
 
-#include <commctrl.h>
-
-#include <string>
+#include <utility>
 #include <vector>
 
 namespace regkit::ui
 {
 
-struct ColumnInfo
-{
-    std::wstring title;
-    int width = 0;
-    int fmt = LVCFMT_LEFT;
-};
-
 struct ColumnSet
 {
-    std::vector<ColumnInfo> items;
-    std::vector<int> widths;
-    std::vector<bool> visible;
+    std::vector<win32ui::ListColumn> items;
 
-    void Reset(std::vector<ColumnInfo> columns)
+    void Reset(std::vector<win32ui::ListColumn> columns)
     {
-        items = std::move(columns);
-        widths.clear();
-        for (const ColumnInfo& column : items)
+        for (win32ui::ListColumn& column : columns)
         {
-            widths.push_back(column.width);
+            column.default_width_dip = column.width_dip;
         }
-        visible.assign(items.size(), true);
+        items = std::move(columns);
     }
 };
 

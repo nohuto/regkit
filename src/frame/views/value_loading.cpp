@@ -598,9 +598,39 @@ void MainWindow::Impl::StartSearchPreviewWorker()
     });
 }
 
-std::vector<std::vector<RegistryRootEntry>> MainWindow::Impl::SearchSourceRoots(const SearchTab& tab)
+MainWindow::Impl::SourceHold::~SourceHold()
 {
-    std::vector<std::vector<RegistryRootEntry>> roots(tab.sources.size());
+    for (HKEY root : virtual_roots)
+    {
+        RegistryStore::UnregisterVirtualRoot(root);
+    }
+}
+
+HKEY MainWindow::Impl::SourceHold::Hold(HKEY root)
+{
+    if (!RegistryStore::IsVirtualRoot(root))
+    {
+        return root;
+    }
+    virtual_roots.reserve(virtual_roots.size() + 1);
+    const HKEY own = RegistryStore::DuplicateVirtualRoot(root);
+    if (own)
+    {
+        virtual_roots.push_back(own);
+    }
+    return own;
+}
+
+// one entry per source, the last one holds the shown roots for rows without a source
+std::vector<std::vector<RegistryRootEntry>> MainWindow::Impl::SearchSourceRoots(const SearchTab& tab, SourceHold* hold)
+{
+    std::vector<std::vector<RegistryRootEntry>> roots(tab.sources.size() + 1);
+    roots.back() = browse_.roots();
+    hold->sessions.push_back(session_);
+    for (RegistryRootEntry& root : roots.back())
+    {
+        root.root = hold->Hold(root.root);
+    }
     for (size_t i = 0; i < tab.sources.size(); ++i)
     {
         const search::Source& source = tab.sources[i];
@@ -622,12 +652,13 @@ std::vector<std::vector<RegistryRootEntry>> MainWindow::Impl::SearchSourceRoots(
             {
                 if (root.root)
                 {
-                    roots[i].push_back({root.root, root.name, root.name});
+                    roots[i].push_back({hold->Hold(root.root), root.name, root.name});
                 }
             }
         }
         else if (entry.session)
         {
+            hold->sessions.push_back(entry.session);
             roots[i] = entry.session->roots;
         }
     }
@@ -648,7 +679,8 @@ void MainWindow::Impl::QueueSearchPreviews(int first, int last)
     }
     auto task = std::make_unique<SearchPreviewTask>();
     const size_t count = tab.results.size();
-    const auto source_roots = SearchSourceRoots(tab);
+    task->hold = std::make_shared<SourceHold>();
+    const auto source_roots = SearchSourceRoots(tab, task->hold.get());
     for (int i = first; i <= last && static_cast<size_t>(i) < count; ++i)
     {
         search::Result& row = tab.results[static_cast<size_t>(i)];
@@ -657,7 +689,7 @@ void MainWindow::Impl::QueueSearchPreviews(int first, int last)
             continue;
         }
         SearchPreviewRequest request;
-        if (!ResolvePathInRoots(row.source < source_roots.size() ? source_roots[row.source] : browse_.roots(), row.key_path, &request.node))
+        if (!ResolvePathInRoots(source_roots[std::min<size_t>(row.source, source_roots.size() - 1)], row.key_path, &request.node))
         {
             row.data_text.clear();
             row.data_state = search::DataState::kLoaded;
@@ -753,14 +785,15 @@ void MainWindow::Impl::QueueSearchSort(SearchTab* tab, const util::SortKeys& ear
     auto task = std::make_unique<SearchSortTask>();
     task->rows = tab->results;
     task->nodes.resize(task->rows.size());
-    const auto source_roots = SearchSourceRoots(*tab);
+    task->hold = std::make_shared<SourceHold>();
+    const auto source_roots = SearchSourceRoots(*tab, task->hold.get());
     for (size_t i = 0; i < task->rows.size(); ++i)
     {
         if (task->rows[i].data_state == search::DataState::kNotLoaded)
         {
             RegistryNode node;
             const uint16_t source = task->rows[i].source;
-            if (ResolvePathInRoots(source < source_roots.size() ? source_roots[source] : browse_.roots(), task->rows[i].key_path, &node))
+            if (ResolvePathInRoots(source_roots[std::min<size_t>(source, source_roots.size() - 1)], task->rows[i].key_path, &node))
             {
                 task->nodes[i] = std::move(node);
             }
@@ -788,7 +821,7 @@ void MainWindow::Impl::StartSearchTabLoadWorker()
     {
         return;
     }
-    // newer task is the load of another tab, this one still posts, or its tab would keep load_pending and never load
+    // a newer task loads another tab, this one still posts or its tab keeps load_pending forever
     search_tab_loader_.Start(L"SearchTabLoadThread", [](std::unique_ptr<SearchTabLoadTask> task, const std::atomic_bool&) {
         if (!task)
         {

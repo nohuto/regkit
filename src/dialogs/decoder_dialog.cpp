@@ -7,7 +7,6 @@
 #include "registry/value_decoder.h"
 #include "registry/value_format.h"
 #include "ui/dialog_layout.h"
-#include "ui/dialog_support.h"
 #include "ui/feedback.h"
 
 #include "resource.h"
@@ -17,7 +16,6 @@
 #include <win32ui/dialog/combo_box.h>
 #include <win32ui/dialog/dialog_layout.h>
 #include <win32ui/dialog/dialog_window.h>
-#include <win32ui/dialog/message_dialog.h>
 #include <win32ui/gdi/fonts.h>
 #include <win32ui/list_view/list_view.h>
 #include <win32ui/theme/theme.h>
@@ -252,7 +250,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     {
     case IDOK:
         // keep decoder open after copying so other interpretations can be tried
-        win32ui::CopyTextToClipboard(dialog, state->output);
+        ui::CopyText(dialog, state->output);
         return TRUE;
     case IDCANCEL:
         win32ui::EndDialogWindow(dialog, IDCANCEL);

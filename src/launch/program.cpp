@@ -92,8 +92,7 @@ bool HasCommandLineArg(const std::vector<std::wstring>& args, const wchar_t* arg
 
 bool IsRegEditLaunchArg(const std::wstring& arg)
 {
-    const bool drive_absolute =
-        arg.size() >= 3 && iswalpha(arg[0]) && arg[1] == L':' && (arg[2] == L'\\' || arg[2] == L'/');
+    const bool drive_absolute = win32ui::IsDriveAbsolute(arg);
     const bool unc_absolute =
         arg.size() >= 3 && ((arg[0] == L'\\' && arg[1] == L'\\') || (arg[0] == L'/' && arg[1] == L'/'));
     const std::wstring name = util::FileName(arg);
@@ -427,7 +426,7 @@ std::optional<int> RunSettingCommand(const std::vector<std::wstring>& args)
         return 1;
     }
     const workspace::Settings changed = workspace::ParseSettings(lines, settings, &error);
-    return error.empty() && workspace::SaveSettings(path, changed) ? 0 : 1;
+    return error.empty() && workspace::SaveSettings(path, changed) == ERROR_SUCCESS ? 0 : 1;
 }
 
 int MergeRegFiles(const std::vector<std::wstring>& reg_files)

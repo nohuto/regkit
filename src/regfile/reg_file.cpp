@@ -543,8 +543,7 @@ bool ParseOperations(std::wstring_view content, std::vector<Operation>* output, 
                 }
             }
         }
-        // RegEdit and reg export expand string LF to CRLF, other exporters wrap long strings with a backslash and two
-        // spaces
+        // RegEdit writes string LF as CRLF, other exporters wrap long strings with a backslash and two spaces
         if (quoted && has_newline)
         {
             if (!logical.empty() && logical.back() == L'\\' && content.substr(start, 2) == L"  ")
@@ -638,16 +637,16 @@ bool ReadText(const std::wstring& path, std::wstring* content, std::wstring* err
 {
     // parsing peaks at 3 to 8 times file size, 32 bit processes run out above about 600 MiB
     constexpr uint64_t kMaxBytes = sizeof(void*) == 8 ? 1024ull << 20 : 256ull << 20;
-    if (util::ReadTextFile(path, content, kMaxBytes))
+    const DWORD code = win32ui::ReadTextFile(path.c_str(), content, kMaxBytes);
+    if (code == ERROR_SUCCESS && !content->empty())
     {
         return true;
     }
-    WIN32_FILE_ATTRIBUTE_DATA attributes = {};
-    const bool large = GetFileAttributesExW(path.c_str(), GetFileExInfoStandard, &attributes) &&
-                       (static_cast<uint64_t>(attributes.nFileSizeHigh) << 32 | attributes.nFileSizeLow) > kMaxBytes;
     if (error)
     {
-        *error = util::TrDetail(large ? L"The file is larger than RegKit can load." : L"The file couldn't be read or is empty.", path);
+        *error = code == ERROR_FILE_TOO_LARGE ? util::TrDetail(L"The file is larger than RegKit can load.", path)
+                 : code == ERROR_SUCCESS      ? util::TrDetail(L"The file has no registry changes.", path)
+                                              : util::TrDetail(L"Failed to read registry file.", win32ui::FileReadErrorText(code) + L"\r\n" + path);
     }
     return false;
 }

@@ -20,7 +20,6 @@ inline constexpr uint64_t kMaxHistoryFileBytes = 64ull * 1024ull * 1024ull;
 
 using win32ui::RandomFileSuffix;
 
-bool ReadTextFile(const std::wstring& path, std::wstring* output, uint64_t max_bytes = 64ull * 1024ull * 1024ull);
 bool ReadStateFile(const std::wstring& path, std::wstring* output, std::wstring* error = nullptr, uint64_t max_bytes = kMaxStateFileBytes);
 std::wstring BadLineReason(size_t line);
 

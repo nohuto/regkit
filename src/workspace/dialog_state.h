@@ -3,6 +3,10 @@
 
 #pragma once
 
+#include <win32ui/windows_config.h>
+
+#include <windows.h>
+
 #include <cstdint>
 #include <map>
 #include <string>
@@ -15,7 +19,7 @@ using DialogState = std::map<std::wstring, std::wstring, std::less<>>;
 
 std::wstring DialogStatePath();
 DialogState LoadDialogState(std::wstring* error = nullptr);
-void SaveDialogState(const DialogState& state);
+DWORD SaveDialogState(const DialogState& state);
 
 class DialogFields
 {

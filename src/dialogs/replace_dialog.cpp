@@ -6,7 +6,6 @@
 #include "dialogs/query_dialog.h"
 #include "resource.h"
 #include "ui/autocomplete.h"
-#include "ui/dialog_support.h"
 #include "ui/feedback.h"
 #include "win32/translation.h"
 #include "workspace/dialog_state.h"
@@ -15,14 +14,13 @@
 #include <win32ui/dialog/dialog_window.h>
 #include <win32ui/dialog/tooltip.h>
 #include <win32ui/theme/theme.h>
+#include <win32ui/window.h>
 
 namespace regkit
 {
 
 namespace
 {
-
-namespace dialog_support = editors::dialog_support;
 
 struct State
 {
@@ -58,14 +56,14 @@ void UpdateValueDataOptions(HWND dialog)
 bool Accept(HWND dialog, State* state)
 {
     ReplaceDialogResult result;
-    result.find_text = dialog_support::ReadText(dialog, IDC_REPLACE_FIND);
+    result.find_text = win32ui::DialogItemText(dialog, IDC_REPLACE_FIND);
     if (result.find_text.empty())
     {
         ui::ShowWarning(dialog, util::Tr(L"Enter text to find."));
         return false;
     }
-    result.replace_text = dialog_support::ReadText(dialog, IDC_REPLACE_WITH);
-    result.start_key = dialog_support::ReadText(dialog, IDC_REPLACE_KEY);
+    result.replace_text = win32ui::DialogItemText(dialog, IDC_REPLACE_WITH);
+    result.start_key = win32ui::DialogItemText(dialog, IDC_REPLACE_KEY);
     for (const auto& check : kChecks)
     {
         result.*check.field = IsDlgButtonChecked(dialog, check.id) == BST_CHECKED;

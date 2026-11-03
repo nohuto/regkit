@@ -77,6 +77,7 @@ constexpr IntField kPlacementFields[] = {
     {L"window_y", &Settings::window_y},
     {L"window_width", &Settings::window_width},
     {L"window_height", &Settings::window_height},
+    {L"window_dpi", &Settings::window_dpi},
 };
 
 constexpr TextField kTextFields[] = {
@@ -282,6 +283,7 @@ Settings DefaultOptions(const Settings& settings)
     reset.window_y = settings.window_y;
     reset.window_width = settings.window_width;
     reset.window_height = settings.window_height;
+    reset.window_dpi = settings.window_dpi;
     reset.window_maximized = settings.window_maximized;
     reset.tree_width = settings.tree_width;
     reset.history_height = settings.history_height;
@@ -319,9 +321,9 @@ bool LoadSettings(const std::wstring& path, Settings* settings, std::wstring* er
     return false;
 }
 
-bool SaveSettings(const std::wstring& path, const Settings& settings)
+DWORD SaveSettings(const std::wstring& path, const Settings& settings)
 {
-    return !path.empty() && win32ui::WriteTextFileAtomic(path.c_str(), SerializeSettings(settings)) == ERROR_SUCCESS;
+    return path.empty() ? ERROR_PATH_NOT_FOUND : win32ui::WriteTextFileAtomic(path.c_str(), SerializeSettings(settings));
 }
 
 }

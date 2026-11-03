@@ -6,7 +6,6 @@
 
 #include "dialogs/bitfield_editor.h"
 #include "ui/dialog_layout.h"
-#include "ui/dialog_support.h"
 
 #include <win32ui/dialog/dialog_window.h>
 #include <win32ui/dialog/edit.h>
@@ -128,7 +127,8 @@ int TypeToComboIndex(DWORD type)
 {
     const auto types = value_format::TypeLabels();
     const auto found = std::find_if(types.begin(), types.end(), [&](const value_format::TypeLabel& label) { return label.type == type; });
-    return found == types.end() ? 0 : static_cast<int>(found - types.begin());
+    // no selection keeps an unlisted type until the user picks one
+    return found == types.end() ? -1 : static_cast<int>(found - types.begin());
 }
 
 DWORD ComboIndexToType(int index)
@@ -463,6 +463,11 @@ bool ConvertValueData(DWORD from, const std::vector<BYTE>& data, DWORD to, std::
     if (is_number(src) && is_number(dst))
     {
         const size_t src_size = src == REG_QWORD ? sizeof(unsigned long long) : sizeof(DWORD);
+        // malformed sizes have no number to keep
+        if (data.size() != src_size)
+        {
+            return false;
+        }
         const unsigned long long value = src == REG_DWORD_BIG_ENDIAN ? value_format::ReadUnsigned(data, src_size, true)
                                                                      : value_format::ReadUnsigned(data, src_size);
         // reject narrowing conversions that would truncate the value

@@ -6,7 +6,6 @@
 #include "win32/text_transform.h"
 #include "win32/translation.h"
 
-#include <win32ui/dialog/message_dialog.h>
 #include <win32ui/system/shell_open.h>
 
 namespace regkit
@@ -237,16 +236,16 @@ void MainWindow::Impl::ShowValueContextMenu(int index, POINT screen_pt)
     }
     else if (row && row->kind == rowkind::kValue)
     {
-        std::vector<ListRow> selected_rows = SelectedListRows(browse_.values());
+        const std::vector<const ListRow*> selected_rows = SelectedListRows(browse_.values());
         const bool all_values = !selected_rows.empty() &&
-                                std::all_of(selected_rows.begin(), selected_rows.end(), [](const ListRow& selected) {
-                                    return selected.kind == rowkind::kValue && !selected.simulated;
+                                std::all_of(selected_rows.begin(), selected_rows.end(), [](const ListRow* selected) {
+                                    return selected->kind == rowkind::kValue && !selected->simulated;
                                 });
         const bool single_value = all_values && selected_rows.size() == 1;
-        const bool has_data = std::any_of(selected_rows.begin(), selected_rows.end(), [](const ListRow& selected) {
-            return !selected.missing;
+        const bool has_data = std::any_of(selected_rows.begin(), selected_rows.end(), [](const ListRow* selected) {
+            return !selected->missing;
         });
-        bool can_rename = !settings_.read_only && single_value && has_data && !selected_rows.front().extra.empty();
+        bool can_rename = !settings_.read_only && single_value && has_data && !selected_rows.front()->extra.empty();
         bool can_delete = !settings_.read_only && all_values && has_data;
         bool can_comment = !CommentTargets().empty();
         bool can_export = !row->simulated && browse_.current_node() && !browse_.current_node()->simulated && has_data;
@@ -393,7 +392,7 @@ void MainWindow::Impl::ShowHistoryContextMenu(int index, POINT screen_pt)
     {
         const std::wstring combined =
             entry->time_text + L" | " + entry->action + L" | " + entry->old_data + L" | " + entry->new_data;
-        win32ui::CopyTextToClipboard(hwnd_, combined);
+        ui::CopyText(hwnd_, combined);
     }
     else if (command == cmd::kHistoryRemove)
     {
@@ -647,14 +646,14 @@ void MainWindow::Impl::ShowSearchResultContextMenu(int index, POINT screen_pt)
             }
             if (!name.empty())
             {
-                win32ui::CopyTextToClipboard(hwnd_, name);
+                ui::CopyText(hwnd_, name);
             }
             return;
         }
     case kSearchCopyKeyPath:
         if (!key_path.empty())
         {
-            win32ui::CopyTextToClipboard(hwnd_, key_path);
+            ui::CopyText(hwnd_, key_path);
         }
         return;
     case cmd::kEditCopyKeyPathAbbrev:

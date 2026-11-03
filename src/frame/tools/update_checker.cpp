@@ -472,7 +472,7 @@ bool UpdateChecker::StartSetup()
     });
     if (!watcher)
     {
-        // nothing would report the exit of setup, keep the window usable (setup_running_ stays for its WM_ENDSESSION)
+        // nothing reports the setup exit, the window stays usable, setup_running_ stays for WM_ENDSESSION
         CloseHandle(process);
         return false;
     }

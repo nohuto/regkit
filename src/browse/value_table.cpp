@@ -10,15 +10,12 @@
 #include "win32/text_transform.h"
 
 #include <win32ui/list_view/list_view.h>
-#include <win32ui/window_metrics.h>
 
 namespace regkit
 {
 
 namespace
 {
-
-constexpr int kValueTooltipMaxWidthDip = 900;
 
 void AppendSearchField(std::wstring* out, const std::wstring& text)
 {
@@ -61,7 +58,7 @@ void ValueList::Create(HWND parent, HINSTANCE instance, int control_id)
         0,
         WC_LISTVIEWW,
         L"",
-        WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA | LVS_EDITLABELS,
+        WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA | LVS_EDITLABELS | LVS_SHAREIMAGELISTS,
         0,
         0,
         100,
@@ -71,7 +68,6 @@ void ValueList::Create(HWND parent, HINSTANCE instance, int control_id)
         instance,
         nullptr
     );
-    SendMessageW(ListView_GetToolTips(hwnd_), TTM_SETMAXTIPWIDTH, 0, win32ui::Scale(kValueTooltipMaxWidthDip, win32ui::WindowDpi(hwnd_)));
 }
 
 HWND ValueList::hwnd() const

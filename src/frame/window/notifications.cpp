@@ -778,6 +778,8 @@ LRESULT MainWindow::Impl::HandleSearchListCustomDraw(NMLVCUSTOMDRAW* draw)
             {
                 return CDRF_DODEFAULT;
             }
+            const UINT dpi = win32ui::WindowDpi(search_results_list_);
+            const int padding = win32ui::Scale(kCellTextPadding, dpi);
             RECT cell = {};
             if (draw->iSubItem == 0)
             {
@@ -788,7 +790,7 @@ LRESULT MainWindow::Impl::HandleSearchListCustomDraw(NMLVCUSTOMDRAW* draw)
                     return CDRF_DODEFAULT;
                 }
                 cell.right = row.left + ListView_GetColumnWidth(search_results_list_, 0);
-                cell.left += kLabelTextInset;
+                cell.left += win32ui::Scale(kLabelTextInset, dpi);
             }
             else
             {
@@ -798,9 +800,9 @@ LRESULT MainWindow::Impl::HandleSearchListCustomDraw(NMLVCUSTOMDRAW* draw)
                 {
                     return CDRF_DODEFAULT;
                 }
-                cell.left += kCellTextPadding;
+                cell.left += padding;
             }
-            cell.right -= kCellTextPadding;
+            cell.right -= padding;
             if (cell.left >= cell.right)
             {
                 return CDRF_DODEFAULT;

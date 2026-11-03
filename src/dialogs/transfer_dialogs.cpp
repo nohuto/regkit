@@ -52,7 +52,7 @@ bool ResolveExportKey(const std::wstring& key_path, REGSAM view, RegistryNode* n
 
 bool WriteRegFile(const std::wstring& path, regfile::Writer&& writer, std::wstring* error)
 {
-    if (win32ui::WriteTextFileAtomic(path.c_str(), std::move(writer).Finish(), true) == ERROR_SUCCESS)
+    if (win32ui::WriteTextFileAtomic(path.c_str(), std::move(writer).Finish(), win32ui::TextEncoding::utf16) == ERROR_SUCCESS)
     {
         return true;
     }

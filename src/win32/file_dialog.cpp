@@ -7,6 +7,7 @@
 
 #include <win32ui/dialog/file_dialog.h>
 #include <win32ui/system/error_text.h>
+#include <win32ui/system/strings.h>
 
 #include <cwchar>
 #include <span>
@@ -53,9 +54,7 @@ std::wstring FormatDialogError(DWORD error)
     {
         return win32ui::FormatWin32Error(error);
     }
-    wchar_t code[32] = {};
-    swprintf_s(code, L"0x%08X", static_cast<unsigned>(error));
-    return util::TrDetail(L"The file dialog failed.", code);
+    return util::TrDetail(L"The file dialog failed.", win32ui::FormatWin32Error(error) + L" (" + win32ui::FormatHex(error, 8) + L")");
 }
 
 }

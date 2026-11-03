@@ -134,21 +134,17 @@ inline const ListRow* SelectedValueRow(const ValueList& list, int* out_index)
     return list.RowAt(index);
 }
 
-inline std::vector<ListRow> SelectedListRows(const ValueList& list)
+// valid until the list rows change, a modal loop can reload them
+inline std::vector<const ListRow*> SelectedListRows(const ValueList& list)
 {
-    std::vector<ListRow> rows;
-    if (!list.hwnd())
+    const std::vector<int> indices = win32ui::SelectedListItems(list.hwnd());
+    std::vector<const ListRow*> rows;
+    rows.reserve(indices.size());
+    for (const int index : indices)
     {
-        return rows;
-    }
-    rows.reserve(static_cast<size_t>(ListView_GetSelectedCount(list.hwnd())));
-    int index = -1;
-    while ((index = ListView_GetNextItem(list.hwnd(), index, LVNI_SELECTED)) >= 0)
-    {
-        const ListRow* row = list.RowAt(index);
-        if (row)
+        if (const ListRow* row = list.RowAt(index))
         {
-            rows.push_back(*row);
+            rows.push_back(row);
         }
     }
     return rows;

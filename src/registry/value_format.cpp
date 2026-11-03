@@ -9,6 +9,7 @@
 
 #include <win32ui/system/paths.h>
 #include <win32ui/system/registry_value.h>
+#include <win32ui/system/strings.h>
 
 #include <shlobj.h>
 #include <shlwapi.h>
@@ -70,9 +71,7 @@ std::wstring TypeName(DWORD type)
     {
         return label->name;
     }
-    wchar_t buffer[64] = {};
-    swprintf_s(buffer, L"%s (0x%X)", label ? label->name : L"REG_UNKNOWN", type);
-    return buffer;
+    return std::wstring(label ? label->name : L"REG_UNKNOWN") + L" (" + win32ui::FormatHex(type) + L")";
 }
 
 std::wstring ByteCount(size_t size)
@@ -185,7 +184,7 @@ std::wstring TrustedIndirectString(const std::wstring& value)
         const UINT length = GetSystemDirectoryW(system, MAX_PATH);
         source.insert(0, std::wstring(system, length < MAX_PATH ? length : 0) + L'\\');
     }
-    if (source.size() < 3 || !iswalpha(source[0]) || source[1] != L':' || (source[2] != L'\\' && source[2] != L'/'))
+    if (!win32ui::IsDriveAbsolute(source))
     {
         return {};
     }
@@ -195,10 +194,7 @@ std::wstring TrustedIndirectString(const std::wstring& value)
     {
         return {};
     }
-    const wchar_t drive[] = {full[0], L':', L'\\', L'\0'};
-    const UINT drive_type = GetDriveTypeW(drive);
-    if ((drive_type != DRIVE_FIXED && drive_type != DRIVE_RAMDISK) ||
-        (util::IsProcessPrivileged() && !IsTrustedResourcePath(full)))
+    if (!win32ui::OnFixedDrive(full) || (util::IsProcessPrivileged() && !IsTrustedResourcePath(full)))
     {
         return {};
     }

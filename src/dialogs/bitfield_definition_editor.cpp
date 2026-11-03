@@ -4,7 +4,6 @@
 #include "dialogs/bitfield_definition_editor.h"
 
 #include "ui/dialog_layout.h"
-#include "ui/dialog_support.h"
 #include "ui/feedback.h"
 #include "win32/file_dialog.h"
 #include "win32/translation.h"
@@ -16,7 +15,6 @@
 #include <win32ui/dialog/dialog_window.h>
 #include <win32ui/dialog/edit.h>
 #include <win32ui/dialog/file_dialog.h>
-#include <win32ui/dialog/message_dialog.h>
 #include <win32ui/list_view/sort.h>
 #include <win32ui/menu/popup_menu.h>
 #include <win32ui/theme/theme.h>
@@ -309,10 +307,10 @@ INT_PTR CALLBACK StateDialogProc(HWND dialog, UINT message, WPARAM wparam, LPARA
         return FALSE;
     }
     State result;
-    const std::optional<uint64_t> parsed = win32ui::ParseUnsigned(dialog_support::ReadText(dialog, IDC_STATE_VALUE), 10, true);
+    const std::optional<uint64_t> parsed = win32ui::ParseUnsigned(win32ui::DialogItemText(dialog, IDC_STATE_VALUE), 10, true);
     const unsigned long long value = parsed.value_or(0);
-    result.name = dialog_support::ReadText(dialog, IDC_STATE_NAME);
-    result.meaning = win32ui::PlainLineBreaks(dialog_support::ReadText(dialog, IDC_STATE_MEANING));
+    result.name = win32ui::DialogItemText(dialog, IDC_STATE_NAME);
+    result.meaning = win32ui::PlainLineBreaks(win32ui::DialogItemText(dialog, IDC_STATE_MEANING));
     const wchar_t* error = nullptr;
     if (!parsed)
     {
@@ -435,7 +433,7 @@ bool BitsRowMenu(void*, HWND list, int row, POINT screen)
     }
     else if (chosen == kBitsMenuCopyMask && has_bit)
     {
-        win32ui::CopyTextToClipboard(dialog, win32ui::FormatHex(1ull << bit, static_cast<int>(state->parent->bit_width / 4)));
+        ui::CopyText(dialog, win32ui::FormatHex(1ull << bit, static_cast<int>(state->parent->bit_width / 4)));
     }
     return true;
 }
@@ -523,8 +521,8 @@ INT_PTR CALLBACK FieldDialogProc(HWND dialog, UINT message, WPARAM wparam, LPARA
     case IDOK:
         {
             Field result;
-            result.name = dialog_support::ReadText(dialog, IDC_FIELD_NAME);
-            result.meaning = win32ui::PlainLineBreaks(dialog_support::ReadText(dialog, IDC_FIELD_MEANING));
+            result.name = win32ui::DialogItemText(dialog, IDC_FIELD_NAME);
+            result.meaning = win32ui::PlainLineBreaks(win32ui::DialogItemText(dialog, IDC_FIELD_MEANING));
             if (result.name.empty())
             {
                 ui::ShowError(dialog, util::Tr(L"Enter a field name."));
@@ -622,7 +620,7 @@ void SelectWidth(HWND dialog, unsigned width)
 
 bool ReadOffset(HWND dialog, unsigned* offset)
 {
-    const std::wstring text = dialog_support::ReadText(dialog, IDC_DEF_OFFSET);
+    const std::wstring text = win32ui::DialogItemText(dialog, IDC_DEF_OFFSET);
     const std::optional<uint64_t> value = text.empty() ? std::optional<uint64_t>(0) : win32ui::ParseUnsigned(text);
     if (!value)
     {
@@ -647,44 +645,15 @@ void ShowDefinition(HWND dialog, Editor* state)
 
 void RefreshDefinitionCombo(HWND dialog, Editor* state)
 {
-    const HWND combo = GetDlgItem(dialog, IDC_DEF_SELECT);
-    const std::wstring filter = state->filtering ? dialog_support::ReadText(dialog, IDC_DEF_SELECT) : std::wstring();
-    const DWORD selection = state->filtering ? static_cast<DWORD>(SendMessageW(combo, CB_GETEDITSEL, 0, 0)) : 0;
+    std::vector<std::wstring> labels;
+    labels.reserve(state->file.definitions.size());
+    for (const Definition& definition : state->file.definitions)
+    {
+        labels.push_back(bitfield::DisplayName(definition));
+    }
     // block edit notifications caused by rebuilding the combo
     state->updating_combo = true;
-    const win32ui::RedrawScope redraw(combo, RDW_INVALIDATE | RDW_ERASE);
-    SendMessageW(combo, CB_RESETCONTENT, 0, 0);
-    bool shown = false;
-    for (size_t i = 0; i < state->file.definitions.size(); ++i)
-    {
-        const std::wstring label = bitfield::DisplayName(state->file.definitions[i]);
-        if (static_cast<int>(i) != state->selected && !dialog_support::Matches(label, filter))
-        {
-            continue;
-        }
-        const int index =
-            static_cast<int>(SendMessageW(combo, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(label.c_str())));
-        SendMessageW(combo, CB_SETITEMDATA, static_cast<WPARAM>(index), static_cast<LPARAM>(i));
-        if (static_cast<int>(i) == state->selected && !state->filtering)
-        {
-            SendMessageW(combo, CB_SETCURSEL, static_cast<WPARAM>(index), 0);
-            shown = true;
-        }
-    }
-    if (!shown && !state->filtering)
-    {
-        SendMessageW(combo, CB_SETCURSEL, static_cast<WPARAM>(-1), 0);
-    }
-    if (!state->filtering)
-    {
-        SendMessageW(combo, CB_SETEDITSEL, 0, MAKELPARAM(-1, 0));
-    }
-    if (state->filtering)
-    {
-        SetWindowTextW(combo, filter.c_str());
-        SendMessageW(combo, CB_SETEDITSEL, 0, static_cast<LPARAM>(selection));
-    }
-    win32ui::FitDroppedWidth(combo);
+    win32ui::FilterComboItems(GetDlgItem(dialog, IDC_DEF_SELECT), labels, state->selected, state->filtering);
     EnableWindow(GetDlgItem(dialog, IDC_DEF_REMOVE_DEF), !state->single && state->file.definitions.size() > 1);
     state->updating_combo = false;
 }
@@ -692,9 +661,9 @@ void RefreshDefinitionCombo(HWND dialog, Editor* state)
 bool CollectDefinition(HWND dialog, Editor* state, Definition* out)
 {
     Definition draft = state->definition();
-    draft.value_name = dialog_support::ReadText(dialog, IDC_DEF_VALUE_NAME);
-    draft.key_paths = util::SplitLines(dialog_support::ReadText(dialog, IDC_DEF_KEY_PATHS));
-    draft.comment = win32ui::PlainLineBreaks(dialog_support::ReadText(dialog, IDC_DEF_COMMENT));
+    draft.value_name = win32ui::DialogItemText(dialog, IDC_DEF_VALUE_NAME);
+    draft.key_paths = util::SplitLines(win32ui::DialogItemText(dialog, IDC_DEF_KEY_PATHS));
+    draft.comment = win32ui::PlainLineBreaks(win32ui::DialogItemText(dialog, IDC_DEF_COMMENT));
     draft.bit_width = SelectedWidth(dialog);
     if (!ReadOffset(dialog, &draft.byte_offset))
     {
@@ -936,7 +905,7 @@ void RemoveDefinition(HWND dialog, Editor* state)
 void RenameFromCombo(HWND dialog, Editor* state)
 {
     // reuse filter text as a new name when editing ends
-    std::wstring text = dialog_support::ReadText(dialog, IDC_DEF_SELECT);
+    std::wstring text = win32ui::DialogItemText(dialog, IDC_DEF_SELECT);
     state->filtering = false;
     if (text.empty() || text == state->definition().name)
     {

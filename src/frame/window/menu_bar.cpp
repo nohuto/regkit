@@ -546,7 +546,7 @@ bool MainWindow::Impl::CommandEnabled(int command, CommandState* state)
     auto cache = [&]() -> const CacheAvailability& {
         if (!state->cache)
         {
-            state->cache = InspectCacheFiles(CacheFolderPath());
+            state->cache = InspectCacheFiles(util::GetCacheFolder());
         }
         return *state->cache;
     };
@@ -1002,12 +1002,12 @@ std::vector<MainWindow::Impl::DefaultValueChoice> MainWindow::Impl::SelectedValu
     {
         return {};
     }
-    std::vector<ListRow> rows = SelectedListRows(browse_.values());
-    if (rows.size() != 1 || rows.front().kind != rowkind::kValue || rows.front().simulated)
+    const std::vector<const ListRow*> rows = SelectedListRows(browse_.values());
+    if (rows.size() != 1 || rows.front()->kind != rowkind::kValue || rows.front()->simulated)
     {
         return {};
     }
-    return CollectDefaultChoices(rows.front().extra);
+    return CollectDefaultChoices(rows.front()->extra);
 }
 
 HMENU MainWindow::Impl::BuildResetDefaultMenu(const std::vector<DefaultValueChoice>& choices) const

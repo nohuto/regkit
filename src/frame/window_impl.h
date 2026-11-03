@@ -113,6 +113,19 @@ class MainWindow::Impl
         std::vector<RegistryRootEntry> roots;
         changes::UndoStack undo;
     };
+    // keeps the sessions and .reg roots of a background reader alive until it ends
+    struct SourceHold
+    {
+        SourceHold() = default;
+        SourceHold(const SourceHold&) = delete;
+        SourceHold& operator=(const SourceHold&) = delete;
+        ~SourceHold();
+        // root to read with, its own registration for a .reg root
+        HKEY Hold(HKEY root);
+
+        std::vector<std::shared_ptr<RegistrySession>> sessions;
+        std::vector<HKEY> virtual_roots;
+    };
     enum class CacheKind
     {
         kAll,
@@ -207,12 +220,14 @@ class MainWindow::Impl
     bool OnCreate();
     void RunDeferredStartup();
     void OnDestroy();
+    // after the child controls are destroyed, they hold the font and image lists until then
+    void ReleaseDrawingResources();
     void DiscardWorkerMessages();
     void OnSize(int width, int height);
     void ApplyThemeToChildren();
     void ApplySystemTheme();
     void LoadThemePresets();
-    void SaveThemePresets() const;
+    void SaveThemePresets();
     void UpdateThemePresets(const std::vector<ThemePreset>& presets, const std::wstring& active_name, bool apply_now);
     bool ApplyThemePresetByName(const std::wstring& name, bool persist);
     void ShowThemePresetsDialog();
@@ -236,7 +251,6 @@ class MainWindow::Impl
     void ApplyValueColumns();
     void ApplyHistoryColumns();
     void ApplySearchColumns(bool compare);
-    void RescaleColumns();
     void RefreshCompareColumnTitles();
     bool IsCompareResultColumnAvailable() const;
     void UpdateValueListForNode(RegistryNode* node);
@@ -248,6 +262,7 @@ class MainWindow::Impl
     void QueueValuePreviews(int first, int last);
     void QueueSearchPreviews(int first, int last);
     void QueueSearchSort(SearchTab* tab, const util::SortKeys& earlier);
+    void ApplySortedSearchRows(SearchTab* tab, std::vector<search::Result> rows, bool shown);
     void StartSearchSortWorker();
     void StartSearchTabLoadWorker();
     void ApplySearchTabLoad(std::unique_ptr<SearchTabLoadPayload> owned);
@@ -488,7 +503,6 @@ class MainWindow::Impl
     int FindSourceTab(const search::Source& source) const;
     bool AppendHistoryCache(const std::vector<HistoryEntry>& entries);
     bool HistoryStaysInMemory() const;
-    std::wstring CacheFolderPath() const;
     std::wstring HistoryCachePath() const;
     std::wstring TabsCachePath() const;
     std::wstring SearchTabCachePath(const std::wstring& file) const;
@@ -615,7 +629,7 @@ class MainWindow::Impl
     std::wstring MakeUniqueKeyName(const RegistryNode& node, const std::wstring& base) const;
     bool ResolvePathToNode(const std::wstring& path, RegistryNode* node) const;
     static bool ResolvePathInRoots(const std::vector<RegistryRootEntry>& roots, const std::wstring& path, RegistryNode* node);
-    std::vector<std::vector<RegistryRootEntry>> SearchSourceRoots(const SearchTab& tab);
+    std::vector<std::vector<RegistryRootEntry>> SearchSourceRoots(const SearchTab& tab, SourceHold* hold);
     bool KeyPathExists(const std::wstring& path, RegistryNode* node) const;
 
     HINSTANCE instance_ = nullptr;
@@ -964,6 +978,7 @@ class MainWindow::Impl
         uint64_t generation = 0;
         int tab_index = -1;
         std::vector<SearchPreviewRequest> requests;
+        std::shared_ptr<SourceHold> hold;
         HWND hwnd = nullptr;
     };
     struct SearchPreviewItem
@@ -992,6 +1007,7 @@ class MainWindow::Impl
         std::vector<search::Source> sources;
         std::vector<search::Result> rows;
         std::vector<RegistryNode> nodes;
+        std::shared_ptr<SourceHold> hold;
         HWND hwnd = nullptr;
     };
     struct SearchSortPayload : win32ui::PostedPayload

@@ -139,9 +139,7 @@ Match Matcher::Find(std::wstring_view text) const
 
     if (match_whole_)
     {
-        const bool matched = match_case_
-                                 ? text == query_
-                                 : CompareStringOrdinal(text.data(), static_cast<int>(text.size()), query_.c_str(), static_cast<int>(query_.size()), TRUE) == CSTR_EQUAL;
+        const bool matched = match_case_ ? text == query_ : util::EqualsInsensitive(text, query_);
         if (matched)
         {
             location.matched = true;
@@ -1557,8 +1555,7 @@ bool Run(const Criteria& criteria, std::atomic_bool* cancel_flag, const BatchCal
         {
             win32ui::NameThread(workers.emplace_back(guarded_worker).native_handle(), L"SearchWorkerThread");
         }
-        // std::system_error from CreateThread, std::bad_alloc from the state of the thread, go on with the started
-        // workers
+        // std::system_error or std::bad_alloc from a thread start, the started workers go on
         catch (const std::exception&)
         {
             break;

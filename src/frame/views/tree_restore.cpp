@@ -280,21 +280,24 @@ void MainWindow::Impl::RestoreTreeState(workspace::TreeState state)
 
 void MainWindow::Impl::ApplySavedWindowPlacement()
 {
-    if (!window_placement_loaded_ || !hwnd_)
+    if (!hwnd_)
     {
         return;
     }
-    if (settings_.window_width <= 0 || settings_.window_height <= 0)
+    const UINT dpi = win32ui::DpiForWindow(hwnd_);
+    if (!window_placement_loaded_ || settings_.window_width <= 0 || settings_.window_height <= 0)
     {
+        // first start keeps the default position
+        SetWindowPos(hwnd_, nullptr, 0, 0, win32ui::Scale(1200, dpi), win32ui::Scale(800, dpi), SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
         return;
     }
-    const int min_width = 640;
-    const int min_height = 480;
-    const int width = std::max(settings_.window_width, min_width);
-    const int height = std::max(settings_.window_height, min_height);
+    // files without window_dpi were saved at the current DPI
+    const UINT saved_dpi = settings_.window_dpi > 0 ? static_cast<UINT>(settings_.window_dpi) : dpi;
+    const int width = std::max(settings_.window_width, win32ui::Scale(640, saved_dpi));
+    const int height = std::max(settings_.window_height, win32ui::Scale(480, saved_dpi));
     // saved in workspace coordinates, as GetWindowPlacement reports them
     const RECT saved = {settings_.window_x, settings_.window_y, settings_.window_x + width, settings_.window_y + height};
-    win32ui::RestoreNormalRect(hwnd_, &saved, 0, {});
+    win32ui::RestoreNormalRect(hwnd_, &saved, saved_dpi, {});
 }
 
 HTREEITEM MainWindow::Impl::FindTreeItem(const std::wstring& path)

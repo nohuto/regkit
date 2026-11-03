@@ -8,7 +8,6 @@
 
 #include "dialogs/bitfield_definition_editor.h"
 #include "ui/dialog_layout.h"
-#include "ui/dialog_support.h"
 #include "ui/feedback.h"
 #include "win32/file_dialog.h"
 #include "win32/translation.h"
@@ -19,7 +18,6 @@
 #include <win32ui/dialog/combo_box.h>
 #include <win32ui/dialog/dialog_window.h>
 #include <win32ui/dialog/file_dialog.h>
-#include <win32ui/dialog/message_dialog.h>
 #include <win32ui/list_view/sort.h>
 #include <win32ui/menu/popup_menu.h>
 #include <win32ui/theme/theme.h>
@@ -291,34 +289,14 @@ void FillList(HWND dialog, Editor* editor)
 
 void RefreshCombo(HWND dialog, Editor* editor)
 {
-    const HWND combo = GetDlgItem(dialog, IDC_BITFIELD_DEFINITION);
-    const std::wstring filter =
-        editor->filtering ? dialog_support::ReadText(dialog, IDC_BITFIELD_DEFINITION) : std::wstring();
-    const DWORD selection = editor->filtering ? static_cast<DWORD>(SendMessageW(combo, CB_GETEDITSEL, 0, 0)) : 0;
-    editor->updating_combo = true;
-    const win32ui::RedrawScope redraw(combo, RDW_INVALIDATE | RDW_ERASE);
-    SendMessageW(combo, CB_RESETCONTENT, 0, 0);
+    std::vector<std::wstring> labels;
+    labels.reserve(editor->choices.size());
     for (size_t i = 0; i < editor->choices.size(); ++i)
     {
-        const std::wstring label = i == 0 ? std::wstring(util::Tr(L"(none)")) : bitfield::DisplayName(editor->choices[i]);
-        if (static_cast<int>(i) != editor->choice && !dialog_support::Matches(label, filter))
-        {
-            continue;
-        }
-        const int index =
-            static_cast<int>(SendMessageW(combo, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(label.c_str())));
-        SendMessageW(combo, CB_SETITEMDATA, static_cast<WPARAM>(index), static_cast<LPARAM>(i));
-        if (static_cast<int>(i) == editor->choice && !editor->filtering)
-        {
-            SendMessageW(combo, CB_SETCURSEL, static_cast<WPARAM>(index), 0);
-        }
+        labels.push_back(i == 0 ? std::wstring(util::Tr(L"(none)")) : bitfield::DisplayName(editor->choices[i]));
     }
-    if (editor->filtering)
-    {
-        SetWindowTextW(combo, filter.c_str());
-        SendMessageW(combo, CB_SETEDITSEL, 0, static_cast<LPARAM>(selection));
-    }
-    win32ui::FitDroppedWidth(combo);
+    editor->updating_combo = true;
+    win32ui::FilterComboItems(GetDlgItem(dialog, IDC_BITFIELD_DEFINITION), labels, editor->choice, editor->filtering);
     editor->updating_combo = false;
 }
 
@@ -697,7 +675,7 @@ bool BitRowMenu(void*, HWND list, int row, POINT screen)
         RemoveRowField(dialog, editor, bit);
         return true;
     case kMenuCopyMask:
-        win32ui::CopyTextToClipboard(dialog, MaskText(editor->width, 1ull << bit));
+        ui::CopyText(dialog, MaskText(editor->width, 1ull << bit));
         return true;
     default:
         break;

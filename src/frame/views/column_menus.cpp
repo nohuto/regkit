@@ -34,31 +34,21 @@ void MainWindow::Impl::OnListColumnsChanged(HWND list)
         return;
     }
     const std::vector<win32ui::ListColumn> columns = win32ui::ListColumns(list);
-    for (size_t i = 0; i < columns.size() && i < set->widths.size() && i < set->visible.size(); ++i)
+    for (size_t i = 0; i < columns.size() && i < set->items.size(); ++i)
     {
         // unavailable columns retain user visibility choices for other views
         if (!columns[i].available)
         {
             continue;
         }
-        set->visible[i] = columns[i].visible;
+        set->items[i].visible = columns[i].visible;
         // saved widths use DIPs, hidden columns report their last visible width
-        set->widths[i] = columns[i].width_dip > 0 ? columns[i].width_dip : set->widths[i];
+        set->items[i].width_dip = columns[i].width_dip > 0 ? columns[i].width_dip : set->items[i].width_dip;
     }
     if (list == browse_.values().hwnd())
     {
         SaveSettings();
     }
-}
-
-void MainWindow::Impl::RescaleColumns()
-{
-    // widths use DIPs, lists scale them to the new DPI
-    ApplyValueColumns();
-    ApplyHistoryColumns();
-    ApplySearchColumns(compare_columns_active_);
-    // compare titles describe current sources, next search tab resets them
-    search_results_view_tab_index_ = -1;
 }
 
 void MainWindow::Impl::AttachMainList(HWND list)

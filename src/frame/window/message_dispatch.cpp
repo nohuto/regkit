@@ -49,6 +49,7 @@ MessageArea ClassifyMessage(UINT message) noexcept
         return MessageArea::kExternal;
     case WM_CREATE:
     case WM_DESTROY:
+    case WM_NCDESTROY:
     case WM_NCPAINT:
     case WM_NCACTIVATE:
     case WM_GETMINMAXINFO:

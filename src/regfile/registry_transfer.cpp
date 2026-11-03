@@ -133,11 +133,11 @@ bool ImportRegFileFromPath(const std::wstring& path, std::wstring* error, REGSAM
     if (!current_user_sid.empty())
     {
         // unmapped imports would write to a different hive than displayed
-        if (!util::ReadTextFile(path, &text))
+        if (const DWORD code = win32ui::ReadTextFile(path.c_str(), &text, 64ull << 20); code != ERROR_SUCCESS)
         {
             if (error)
             {
-                *error = util::Tr(L"Failed to read registry file.");
+                *error = util::TrDetail(L"Failed to read registry file.", win32ui::FileReadErrorText(code));
             }
             return false;
         }
@@ -167,7 +167,7 @@ bool ImportRegFileFromPath(const std::wstring& path, std::wstring* error, REGSAM
             if (code == ERROR_SUCCESS)
             {
                 temp = util::JoinPath(temp, L"regkit-import" + util::RandomFileSuffix(L".reg"));
-                code = win32ui::WriteTextFileAtomic(temp.c_str(), text, true);
+                code = win32ui::WriteTextFileAtomic(temp.c_str(), text, win32ui::TextEncoding::utf16);
             }
             if (code != ERROR_SUCCESS)
             {

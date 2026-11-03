@@ -5,7 +5,6 @@
 
 #include "ui/autocomplete.h"
 #include "ui/dialog_layout.h"
-#include "ui/dialog_support.h"
 #include "win32/translation.h"
 
 #include "resource.h"
@@ -13,6 +12,8 @@
 #include <win32ui/dialog/autocomplete.h>
 #include <win32ui/dialog/dialog_window.h>
 #include <win32ui/dialog/edit.h>
+#include <win32ui/system/strings.h>
+#include <win32ui/window.h>
 
 #include <utility>
 
@@ -42,7 +43,7 @@ CommentScope ReadScope(HWND dialog)
     scope.same_size = Checked(dialog, IDC_COMMENT_SIZE);
     scope.in_key = Checked(dialog, IDC_COMMENT_KEY);
     scope.include_subkeys = scope.in_key && Checked(dialog, IDC_COMMENT_SUBKEYS);
-    scope.key_path = dialog_support::ReadText(dialog, IDC_COMMENT_KEY_PATH);
+    scope.key_path = win32ui::DialogItemText(dialog, IDC_COMMENT_KEY_PATH);
     return scope;
 }
 
@@ -60,16 +61,7 @@ void UpdateControls(HWND dialog)
 void InitControls(HWND dialog, const State* state)
 {
     const CommentRequest& request = *state->request;
-    std::wstring text;
-    for (const wchar_t ch : request.text)
-    {
-        if (ch == L'\n' && (text.empty() || text.back() != L'\r'))
-        {
-            text.push_back(L'\r');
-        }
-        text.push_back(ch);
-    }
-    SetDlgItemTextW(dialog, IDC_EDIT, text.c_str());
+    SetDlgItemTextW(dialog, IDC_EDIT, win32ui::EditLineBreaks(request.text).c_str());
     CheckRadioButton(dialog, IDC_COMMENT_VALUE, IDC_COMMENT_RULE, request.scope.rule ? IDC_COMMENT_RULE : IDC_COMMENT_VALUE);
     if (request.multiple)
     {
@@ -136,8 +128,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     {
     case IDOK:
     case IDC_COMMENT_RESTORE:
-        state->value.text = dialog_support::ReadText(dialog, IDC_EDIT);
-        std::erase(state->value.text, L'\r');
+        state->value.text = win32ui::PlainLineBreaks(win32ui::DialogItemText(dialog, IDC_EDIT));
         state->value.scope = ReadScope(dialog);
         state->value.restore_default = LOWORD(wparam) == IDC_COMMENT_RESTORE;
         state->accepted = true;

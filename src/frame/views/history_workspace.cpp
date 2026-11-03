@@ -328,14 +328,9 @@ bool MainWindow::Impl::AppendHistoryCache(const std::vector<HistoryEntry>& entri
     return false;
 }
 
-std::wstring MainWindow::Impl::CacheFolderPath() const
-{
-    return util::GetCacheFolder();
-}
-
 std::wstring MainWindow::Impl::HistoryCachePath() const
 {
-    std::wstring folder = CacheFolderPath();
+    std::wstring folder = util::GetCacheFolder();
     if (folder.empty())
     {
         return L"";
@@ -345,7 +340,7 @@ std::wstring MainWindow::Impl::HistoryCachePath() const
 
 std::wstring MainWindow::Impl::TabsCachePath() const
 {
-    std::wstring folder = CacheFolderPath();
+    std::wstring folder = util::GetCacheFolder();
     if (folder.empty())
     {
         return L"";
@@ -355,7 +350,7 @@ std::wstring MainWindow::Impl::TabsCachePath() const
 
 std::wstring MainWindow::Impl::SessionCachePath() const
 {
-    std::wstring folder = CacheFolderPath();
+    std::wstring folder = util::GetCacheFolder();
     if (folder.empty())
     {
         return L"";
@@ -365,7 +360,7 @@ std::wstring MainWindow::Impl::SessionCachePath() const
 
 std::wstring MainWindow::Impl::SearchTabCachePath(const std::wstring& file) const
 {
-    std::wstring folder = CacheFolderPath();
+    std::wstring folder = util::GetCacheFolder();
     if (folder.empty())
     {
         return L"";
@@ -483,7 +478,7 @@ bool MainWindow::Impl::ClearTabsCache()
     {
         cleared = DeleteCacheFile(path) && cleared;
     }
-    std::wstring folder = CacheFolderPath();
+    std::wstring folder = util::GetCacheFolder();
     if (folder.empty())
     {
         return false;
@@ -500,7 +495,7 @@ bool MainWindow::Impl::ClearCache(CacheKind kind, bool resume_tree_worker)
     bool cleared = true;
     const bool all = kind == CacheKind::kAll;
     bool restart_tree_worker = false;
-    const std::wstring folder = CacheFolderPath();
+    const std::wstring folder = util::GetCacheFolder();
     if (folder.empty())
     {
         return false;
@@ -741,7 +736,7 @@ bool MainWindow::Impl::SaveTabState(const std::wstring& path, int kinds)
     {
         CaptureRegistryTabState(index, true);
     }
-    std::wstring folder = CacheFolderPath();
+    std::wstring folder = util::GetCacheFolder();
     if (folder.empty())
     {
         return false;
@@ -971,8 +966,15 @@ bool MainWindow::Impl::ImportCommentsFromFile(const std::wstring& path, size_t* 
 {
     std::wstring content;
     std::vector<changes::CommentRule> rules;
-    if (!util::ReadTextFile(path, &content, util::kMaxCommentFileBytes) ||
-        !changes::ParseComments(content, &rules, error))
+    if (const DWORD code = win32ui::ReadTextFile(path.c_str(), &content, util::kMaxCommentFileBytes); code != ERROR_SUCCESS)
+    {
+        if (error)
+        {
+            *error = win32ui::FileReadErrorText(code);
+        }
+        return false;
+    }
+    if (!changes::ParseComments(content, &rules, error))
     {
         return false;
     }
@@ -1015,7 +1017,7 @@ void MainWindow::Impl::RefreshValueListComments()
 bool MainWindow::Impl::ApplyValueComments(std::vector<ListRow>* rows) const
 {
     const std::wstring path = CommentKeyPath(*browse_.current_node());
-    // without key comments a key row needs no lookup, it built five strings per row (20000 subkeys: 15-39 ms)
+    // without key comments key rows skip the lookup (five strings per row, 20000 keys 15-39 ms)
     const bool key_rules = value_comments_.HasKeyRules() || default_comments_.HasKeyRules();
     bool changed = false;
     for (auto& row : *rows)
@@ -1237,6 +1239,7 @@ workspace::Settings MainWindow::Impl::CurrentSettings() const
         settings.window_y = normal.top;
         settings.window_width = normal.right - normal.left;
         settings.window_height = normal.bottom - normal.top;
+        settings.window_dpi = static_cast<int>(win32ui::DpiForWindow(hwnd_));
         settings.window_maximized = maximized;
     }
     settings.theme_mode = win32ui::ThemeModeName(theme_mode_);
@@ -1246,16 +1249,20 @@ workspace::Settings MainWindow::Impl::CurrentSettings() const
     settings.font_italic = custom_font_.lfItalic != FALSE;
     settings.recent_traces = recent_trace_paths_.items();
     settings.recent_defaults = recent_default_paths_.items();
-    settings.value_column_widths = browse_.columns().widths;
-    settings.value_column_visible = browse_.columns().visible;
-    settings.value_column_widths.resize(browse_.columns().items.size(), 0);
-    settings.value_column_visible.resize(browse_.columns().items.size(), true);
+    settings.value_column_widths.clear();
+    settings.value_column_visible.clear();
+    for (const win32ui::ListColumn& column : browse_.columns().items)
+    {
+        settings.value_column_widths.push_back(column.width_dip);
+        settings.value_column_visible.push_back(column.visible);
+    }
     return settings;
 }
 
 void MainWindow::Impl::SaveSettings() const
 {
-    workspace::SaveSettings(SettingsPath(), CurrentSettings());
+    const std::wstring path = SettingsPath();
+    ui::ReportSaveFailure(hwnd_, path, workspace::SaveSettings(path, CurrentSettings()));
 }
 std::wstring MainWindow::Impl::SettingsPath() const
 {
@@ -1269,7 +1276,7 @@ std::wstring MainWindow::Impl::SettingsPath() const
 
 std::wstring MainWindow::Impl::TreeStatePath() const
 {
-    std::wstring folder = CacheFolderPath();
+    std::wstring folder = util::GetCacheFolder();
     if (folder.empty())
     {
         return L"";

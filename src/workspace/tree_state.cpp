@@ -49,7 +49,7 @@ TreeState ParseTreeState(const std::wstring& content, std::wstring* error)
     for (const std::wstring_view line : win32ui::LineViews(content))
     {
         ++line_number;
-        if (line.empty())
+        if (util::IsBlank(line))
         {
             continue;
         }

@@ -138,7 +138,7 @@ std::wstring RenderOperations(Format format, const std::vector<Operation>& opera
 bool SaveRendered(const std::wstring& path, Format format, const std::wstring& text)
 {
     const bool ascii = std::all_of(text.begin(), text.end(), [](wchar_t character) { return character < 0x80; });
-    return win32ui::WriteTextFileAtomic(path.c_str(), text, format == Format::kReg || (format == Format::kPowerShell && !ascii)) == ERROR_SUCCESS;
+    return win32ui::WriteTextFileAtomic(path.c_str(), text, format == Format::kReg || (format == Format::kPowerShell && !ascii) ? win32ui::TextEncoding::utf16 : win32ui::TextEncoding::utf8) == ERROR_SUCCESS;
 }
 
 bool NormalizeKeyPath(std::wstring_view text, std::wstring* path)

@@ -6,7 +6,6 @@
 #include "registry/registry_path.h"
 #include "resource.h"
 #include "ui/dialog_layout.h"
-#include "ui/dialog_support.h"
 #include "ui/feedback.h"
 #include "win32/key_handle_snapshot.h"
 #include "win32/process_rights.h"
@@ -15,7 +14,7 @@
 
 #include <win32ui/dialog/dialog_layout.h>
 #include <win32ui/dialog/dialog_window.h>
-#include <win32ui/dialog/message_dialog.h>
+#include <win32ui/list_view/list_view.h>
 #include <win32ui/list_view/sort.h>
 #include <win32ui/menu/popup_menu.h>
 #include <win32ui/status_bar/status_bar.h>
@@ -37,8 +36,6 @@ namespace regkit
 
 namespace
 {
-
-namespace support = editors::dialog_support;
 
 constexpr UINT kSnapshotReady = WM_APP + 1;
 constexpr size_t kNoRow = static_cast<size_t>(-1);
@@ -76,7 +73,7 @@ struct Row
     win32::KeyHandle handle;
 };
 
-struct Payload
+struct Payload : win32ui::PostedPayload
 {
     uint64_t generation = 0;
     std::vector<Row> rows;
@@ -212,8 +209,7 @@ int CompareRows(const Row& left, const Row& right, int column)
 std::vector<const Row*> SelectedRows(const State* state)
 {
     std::vector<const Row*> rows;
-    for (int item = ListView_GetNextItem(state->list, -1, LVNI_SELECTED); item >= 0;
-         item = ListView_GetNextItem(state->list, item, LVNI_SELECTED))
+    for (const int item : win32ui::SelectedListItems(state->list))
     {
         if (static_cast<size_t>(item) < state->shown.size())
         {
@@ -340,7 +336,7 @@ void ShowRows(HWND dialog, State* state)
     std::iota(state->order.begin(), state->order.end(), size_t{0});
     state->shown.clear();
     state->filter.clear();
-    FilterRows(state, support::ReadText(dialog, IDC_KH_FILTER));
+    FilterRows(state, win32ui::DialogItemText(dialog, IDC_KH_FILTER));
     SortRows(state, state->sort_column, false);
     ListView_SetItemState(state->list, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
     ListView_SetSelectionMark(state->list, -1);
@@ -354,7 +350,7 @@ void ShowRows(HWND dialog, State* state)
 
 void ApplyFilter(HWND dialog, State* state)
 {
-    std::wstring filter = support::ReadText(dialog, IDC_KH_FILTER);
+    std::wstring filter = win32ui::DialogItemText(dialog, IDC_KH_FILTER);
     ChangeView(state, [&] { FilterRows(state, std::move(filter)); });
     // keep focus visible if it passes the filter, else show the first match
     const int focused = ListView_GetNextItem(state->list, -1, LVNI_FOCUSED);
@@ -392,10 +388,7 @@ void Refresh(HWND dialog, State* state)
         payload->rows = BuildRows(std::move(snapshot.handles));
         payload->inaccessible = snapshot.inaccessible_processes;
         payload->error = snapshot.error;
-        if (PostMessageW(dialog, kSnapshotReady, 0, reinterpret_cast<LPARAM>(payload.get())))
-        {
-            payload.release();
-        }
+        win32ui::PostPayload(dialog, kSnapshotReady, 0, payload);
     });
     // no thread for the scan, F5 tries again
     if (!started)
@@ -415,7 +408,7 @@ void Copy(HWND dialog, const State* state, int column)
     }
     if (!text.empty())
     {
-        win32ui::CopyTextToClipboard(dialog, text);
+        ui::CopyText(dialog, text);
     }
 }
 
@@ -596,7 +589,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
         }
     case kSnapshotReady:
         {
-            std::unique_ptr<Payload> payload(reinterpret_cast<Payload*>(lparam));
+            const std::unique_ptr<Payload> payload = win32ui::TakePayload<Payload>(lparam);
             if (state && state->session.IsCurrent(payload->generation))
             {
                 state->rows = std::move(payload->rows);
@@ -644,7 +637,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
             MSG pending = {};
             while (PeekMessageW(&pending, dialog, kSnapshotReady, kSnapshotReady, PM_REMOVE))
             {
-                delete reinterpret_cast<Payload*>(pending.lParam);
+                win32ui::TakePayload<Payload>(pending.lParam).reset();
             }
         }
         return TRUE;

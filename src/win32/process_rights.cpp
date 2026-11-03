@@ -129,17 +129,8 @@ LONG StartRemoteRegistryService(const std::wstring& machine, bool enable)
         return static_cast<LONG>(GetLastError());
     }
     SERVICE_STATUS_PROCESS status = {};
-    LONG result = ERROR_SUCCESS;
-    const bool accepted = StartServiceW(service.get(), 0, nullptr) != FALSE;
-    if ((!accepted && GetLastError() != ERROR_SERVICE_ALREADY_RUNNING) || !win32ui::QueryServiceProcess(service.get(), &status) ||
-        !win32ui::WaitWhileServicePending(service.get(), SERVICE_START_PENDING, &status))
-    {
-        result = static_cast<LONG>(GetLastError());
-    }
-    else if (status.dwCurrentState != SERVICE_RUNNING)
-    {
-        result = ERROR_SERVICE_NOT_ACTIVE;
-    }
+    const bool accepted = win32ui::QueryServiceProcess(service.get(), &status) && status.dwCurrentState == SERVICE_STOPPED;
+    const LONG result = win32ui::StartServiceAndWait(service.get(), &status) ? ERROR_SUCCESS : static_cast<LONG>(GetLastError());
     // stop failed service starts and restore disabled state if previously disabled
     if (result != ERROR_SUCCESS && accepted)
     {

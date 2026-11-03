@@ -3,15 +3,17 @@
 
 #include "dialogs/export_dialog.h"
 
-#include "ui/dialog_support.h"
 #include "ui/feedback.h"
 #include "win32/file_dialog.h"
 #include "win32/shell_paths.h"
+#include "win32/text_transform.h"
 #include "win32/translation.h"
 
 #include "resource.h"
 
+#include <win32ui/dialog/combo_box.h>
 #include <win32ui/dialog/dialog_window.h>
+#include <win32ui/window.h>
 
 #include <algorithm>
 #include <utility>
@@ -31,7 +33,7 @@ void ApplyFormat(HWND dialog, bool hive)
     {
         CheckRadioButton(dialog, IDC_EXPORT_RANGE_BRANCH, IDC_EXPORT_RANGE_KEY, IDC_EXPORT_RANGE_BRANCH);
     }
-    std::wstring path = dialog_support::ReadText(dialog, IDC_EXPORT_PATH);
+    std::wstring path = win32ui::DialogItemText(dialog, IDC_EXPORT_PATH);
     const std::wstring_view from = hive ? L".reg" : L".hiv";
     if (path.size() > from.size() && util::EqualsInsensitive(std::wstring_view(path).substr(path.size() - from.size()), from))
     {
@@ -62,17 +64,17 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
         SetDlgItemTextW(dialog, IDC_EXPORT_PATH, state->value.path.c_str());
         CheckDlgButton(dialog, IDC_EXPORT_RANGE_BRANCH, state->value.include_subkeys ? BST_CHECKED : BST_UNCHECKED);
         CheckDlgButton(dialog, IDC_EXPORT_RANGE_KEY, state->value.include_subkeys ? BST_UNCHECKED : BST_CHECKED);
-        for (const wchar_t* item : {util::Tr(L"Don't open"), util::Tr(L"In text editor"), util::Tr(L"In RegKit")})
-        {
-            SendDlgItemMessageW(dialog, IDC_EXPORT_OPEN_AFTER, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(item));
-        }
-        SendDlgItemMessageW(dialog, IDC_EXPORT_OPEN_AFTER, CB_SETCURSEL, static_cast<WPARAM>(state->value.open_after), 0);
-        SendDlgItemMessageW(dialog, IDC_EXPORT_FORMAT, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(util::Tr(L"Registry File (.reg)")));
+        const HWND open_after = GetDlgItem(dialog, IDC_EXPORT_OPEN_AFTER);
+        win32ui::SetComboItems(open_after, {util::Tr(L"Don't open"), util::Tr(L"In text editor"), util::Tr(L"In RegKit")});
+        win32ui::SetComboIndex(open_after, static_cast<int>(state->value.open_after));
+        const HWND format = GetDlgItem(dialog, IDC_EXPORT_FORMAT);
+        std::vector<std::wstring> formats = {util::Tr(L"Registry File (.reg)")};
         if (state->value.allow_hive)
         {
-            SendDlgItemMessageW(dialog, IDC_EXPORT_FORMAT, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(util::Tr(L"Registry Hive File")));
+            formats.push_back(util::Tr(L"Registry Hive File"));
         }
-        SendDlgItemMessageW(dialog, IDC_EXPORT_FORMAT, CB_SETCURSEL, 0, 0);
+        win32ui::SetComboItems(format, formats);
+        win32ui::SetComboIndex(format, 0);
         EnableWindow(GetDlgItem(dialog, IDC_EXPORT_FORMAT), state->value.allow_hive);
         return TRUE;
     }
@@ -88,7 +90,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     }
     if (id == IDC_EXPORT_BROWSE && HIWORD(wparam) == BN_CLICKED)
     {
-        std::wstring path = dialog_support::ReadText(dialog, IDC_EXPORT_PATH);
+        std::wstring path = win32ui::DialogItemText(dialog, IDC_EXPORT_PATH);
         if (ui::ReportFileDialogResult(dialog, win32::ChooseFileToSave(dialog, HiveSelected(dialog) ? ui::kHiveFileFilter : ui::kRegFileFilter, path.empty() ? nullptr : path.c_str(), &path)))
         {
             state->confirmed_path = path;
@@ -99,7 +101,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     if (id == IDOK)
     {
         state->value.hive = HiveSelected(dialog);
-        state->value.path = dialog_support::ReadText(dialog, IDC_EXPORT_PATH);
+        state->value.path = win32ui::DialogItemText(dialog, IDC_EXPORT_PATH);
         if (!state->value.hive)
         {
             state->value.path = util::EnsureFileExtension(state->value.path, L".reg");

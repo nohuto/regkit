@@ -30,7 +30,7 @@ DialogState LoadDialogState(std::wstring* error)
     {
         ++line_number;
         const size_t separator = line.find(L'=');
-        if (separator == std::wstring_view::npos && !line.empty())
+        if (separator == std::wstring_view::npos && !util::IsBlank(line))
         {
             if (error)
             {
@@ -46,7 +46,7 @@ DialogState LoadDialogState(std::wstring* error)
     return state;
 }
 
-void SaveDialogState(const DialogState& state)
+DWORD SaveDialogState(const DialogState& state)
 {
     std::wstring content;
     for (const auto& [key, value] : state)
@@ -54,10 +54,7 @@ void SaveDialogState(const DialogState& state)
         content.append(key).append(L"=").append(value).append(L"\n");
     }
     const std::wstring path = DialogStatePath();
-    if (!path.empty())
-    {
-        win32ui::WriteTextFileAtomic(path.c_str(), content);
-    }
+    return path.empty() ? ERROR_PATH_NOT_FOUND : win32ui::WriteTextFileAtomic(path.c_str(), content);
 }
 
 void DialogFields::Field(std::wstring_view key, std::wstring* value)

@@ -4,6 +4,7 @@
 #include "dialogs/trace_dialog.h"
 
 #include <win32ui/dialog/dialog_window.h>
+#include <win32ui/system/worker.h>
 #include <win32ui/tree_view/tree_view.h>
 
 #include <algorithm>
@@ -45,6 +46,11 @@ constexpr UINT kDialogDoneMessage = WM_APP + 2;
 constexpr UINT kDialogProcessEntriesMessage = WM_APP + 3;
 
 using util::ToLower;
+
+struct EntriesPayload : win32ui::PostedPayload
+{
+    std::vector<KeyValueDialogEntry> entries;
+};
 
 struct TraceNodeData
 {
@@ -449,7 +455,7 @@ INT_PTR CALLBACK TraceDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
             MSG pending = {};
             while (PeekMessageW(&pending, hwnd, kDialogAddEntriesMessage, kDialogAddEntriesMessage, PM_REMOVE))
             {
-                delete reinterpret_cast<std::vector<KeyValueDialogEntry>*>(pending.lParam);
+                win32ui::TakePayload<EntriesPayload>(pending.lParam).reset();
             }
             if (HIMAGELIST checks = TreeView_SetImageList(state->tree, nullptr, TVSIL_STATE))
             {
@@ -509,13 +515,7 @@ INT_PTR CALLBACK TraceDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
         }
     case kDialogAddEntriesMessage:
         {
-            std::unique_ptr<std::vector<KeyValueDialogEntry>> owned(
-                reinterpret_cast<std::vector<KeyValueDialogEntry>*>(lparam)
-            );
-            if (owned)
-            {
-                QueueEntries(hwnd, state, std::move(*owned));
-            }
+            QueueEntries(hwnd, state, std::move(win32ui::TakePayload<EntriesPayload>(lparam)->entries));
             return TRUE;
         }
     case kDialogDoneMessage:
@@ -543,17 +543,11 @@ bool ShowTraceDialog(HWND owner, const TraceDialogOptions& options, trace::Selec
     state.on_ready_context = context;
     return selection && win32ui::RunProcDialog(owner, MAKEINTRESOURCEW(IDD_TRACE_SELECT), TraceDialogProc, reinterpret_cast<LPARAM>(&state)) == IDOK;
 }
-void TraceDialogPostEntries(HWND dialog, std::vector<KeyValueDialogEntry>* entries)
+void TraceDialogPostEntries(HWND dialog, std::vector<KeyValueDialogEntry> entries)
 {
-    if (!dialog || !entries)
-    {
-        delete entries;
-        return;
-    }
-    if (!PostMessageW(dialog, kDialogAddEntriesMessage, 0, reinterpret_cast<LPARAM>(entries)))
-    {
-        delete entries;
-    }
+    auto payload = std::make_unique<EntriesPayload>();
+    payload->entries = std::move(entries);
+    win32ui::PostPayload(dialog, kDialogAddEntriesMessage, 0, payload);
 }
 
 void TraceDialogPostDone(HWND dialog, bool done)

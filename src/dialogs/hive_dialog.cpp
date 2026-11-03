@@ -4,7 +4,6 @@
 #include "dialogs/hive_dialog.h"
 
 #include "ui/autocomplete.h"
-#include "ui/dialog_support.h"
 #include "ui/feedback.h"
 #include "win32/translation.h"
 
@@ -14,6 +13,7 @@
 #include <win32ui/dialog/dialog_window.h>
 #include <win32ui/dialog/file_dialog.h>
 #include <win32ui/system/paths.h>
+#include <win32ui/window.h>
 
 #include <utility>
 
@@ -55,11 +55,11 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     const int id = LOWORD(wparam);
     if (id == IDC_LOAD_HIVE_BROWSE && HIWORD(wparam) == BN_CLICKED)
     {
-        std::wstring path = dialog_support::ReadText(dialog, IDC_LOAD_HIVE_PATH);
+        std::wstring path = win32ui::DialogItemText(dialog, IDC_LOAD_HIVE_PATH);
         if (ChooseFile(dialog, &path))
         {
             SetDlgItemTextW(dialog, IDC_LOAD_HIVE_PATH, path.c_str());
-            if (dialog_support::ReadText(dialog, IDC_LOAD_HIVE_NAME).empty())
+            if (win32ui::DialogItemText(dialog, IDC_LOAD_HIVE_NAME).empty())
             {
                 SetDlgItemTextW(dialog, IDC_LOAD_HIVE_NAME, win32ui::FileBaseName(path).c_str());
             }
@@ -68,13 +68,13 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     }
     if (id == IDOK)
     {
-        state->value.file = dialog_support::ReadText(dialog, IDC_LOAD_HIVE_PATH);
+        state->value.file = win32ui::DialogItemText(dialog, IDC_LOAD_HIVE_PATH);
         if (state->value.file.empty())
         {
             ui::ShowError(dialog, util::Tr(L"Select a hive file."));
             return TRUE;
         }
-        state->value.key_name = dialog_support::ReadText(dialog, IDC_LOAD_HIVE_NAME);
+        state->value.key_name = win32ui::DialogItemText(dialog, IDC_LOAD_HIVE_NAME);
         if (state->value.key_name.empty())
         {
             ui::ShowError(dialog, util::Tr(L"Enter a key name for the loaded hive."));
@@ -153,8 +153,8 @@ INT_PTR CALLBACK SymbolicLinkDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARA
             {
                 if (state)
                 {
-                    state->name = dialog_support::ReadText(dlg, IDC_SYMLINK_NAME);
-                    state->target = dialog_support::ReadText(dlg, IDC_SYMLINK_TARGET);
+                    state->name = win32ui::DialogItemText(dlg, IDC_SYMLINK_NAME);
+                    state->target = win32ui::DialogItemText(dlg, IDC_SYMLINK_TARGET);
                     if (state->name.empty() || state->target.empty())
                     {
                         ui::ShowWarning(dlg, util::Tr(L"Enter a link name and a target key."));

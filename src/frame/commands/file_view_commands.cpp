@@ -265,14 +265,8 @@ bool MainWindow::Impl::HandleFileCommand(int command_id)
             {
                 std::vector<std::wstring> selected_values;
                 std::vector<std::wstring> selected_keys;
-                int index = -1;
-                while ((index = ListView_GetNextItem(browse_.values().hwnd(), index, LVNI_SELECTED)) >= 0)
+                for (const ListRow* row : SelectedListRows(browse_.values()))
                 {
-                    const ListRow* row = browse_.values().RowAt(index);
-                    if (!row)
-                    {
-                        continue;
-                    }
                     if (row->kind == rowkind::kValue)
                     {
                         selected_values.push_back(row->extra);

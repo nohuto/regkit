@@ -12,6 +12,7 @@
 #include <commctrl.h>
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace regkit
@@ -21,6 +22,9 @@ namespace ui
 
 void ShowError(HWND owner, const std::wstring& message);
 void ShowStartError(HWND owner);
+void CopyText(HWND owner, std::wstring_view text);
+// background saves run often, the first failure of each file per session is shown
+void ReportSaveFailure(HWND owner, const std::wstring& path, DWORD error);
 void ShowWarning(HWND owner, const std::wstring& message);
 void ShowInfo(HWND owner, const std::wstring& message);
 void RevealFile(HWND owner, const std::wstring& path);

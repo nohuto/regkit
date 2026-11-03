@@ -5,7 +5,6 @@
 #include "frame/window_impl.h"
 #include "win32/translation.h"
 
-#include <win32ui/dialog/message_dialog.h>
 #include <win32ui/dialog/text_prompt.h>
 
 namespace regkit
@@ -193,20 +192,20 @@ bool MainWindow::Impl::HandleClipboardCommand(int command_id)
             }
             if (!name.empty())
             {
-                win32ui::CopyTextToClipboard(hwnd_, name);
+                ui::CopyText(hwnd_, name);
             }
             return true;
         }
     case cmd::kEditCopyValueName:
         {
-            std::vector<ListRow> selected_rows = SelectedListRows(browse_.values());
-            if (selected_rows.size() != 1 || selected_rows.front().kind != rowkind::kValue)
+            const std::vector<const ListRow*> selected_rows = SelectedListRows(browse_.values());
+            if (selected_rows.size() != 1 || selected_rows.front()->kind != rowkind::kValue)
             {
                 return true;
             }
-            const ListRow* row = &selected_rows.front();
+            const ListRow* row = selected_rows.front();
             std::wstring name = row->extra.empty() ? L"(Default)" : row->extra;
-            win32ui::CopyTextToClipboard(hwnd_, name);
+            ui::CopyText(hwnd_, name);
             return true;
         }
     case cmd::kEditCopyValueData:
@@ -232,7 +231,7 @@ bool MainWindow::Impl::HandleClipboardCommand(int command_id)
             }
             std::wstring data =
                 value_format::DisplayData(entry.type, entry.data.data(), static_cast<DWORD>(entry.data.size()));
-            win32ui::CopyTextToClipboard(hwnd_, data);
+            ui::CopyText(hwnd_, data);
             return true;
         }
     case cmd::kEditCopyKeyPath:
@@ -304,7 +303,7 @@ bool MainWindow::Impl::HandleClipboardCommand(int command_id)
                 clipboard_.kind = capture_key(node) ? ClipboardItem::Kind::kKey : ClipboardItem::Kind::kNone;
                 clipboard_.source_parent = parent;
                 clipboard_.name = LeafName(node);
-                win32ui::CopyTextToClipboard(hwnd_, registry_path::Build(node));
+                ui::CopyText(hwnd_, registry_path::Build(node));
                 return true;
             }
             if (focus == browse_.values().hwnd() || focus == search_results_list_ || focus == history_list_)
@@ -316,7 +315,7 @@ bool MainWindow::Impl::HandleClipboardCommand(int command_id)
                     std::wstring text = win32ui::SelectedRowsText(list);
                     if (!text.empty())
                     {
-                        win32ui::CopyTextToClipboard(hwnd_, text);
+                        ui::CopyText(hwnd_, text);
                     }
                     if (list == browse_.values().hwnd())
                     {
@@ -340,7 +339,7 @@ bool MainWindow::Impl::HandleClipboardCommand(int command_id)
                 return true;
             }
             const bool key_row = row && row->kind == rowkind::kKey;
-            win32ui::CopyTextToClipboard(hwnd_, row && row->kind == rowkind::kValue ? row->name : registry_path::Build(key_row ? ChildNode(*browse_.current_node(), row->extra) : *browse_.current_node()));
+            ui::CopyText(hwnd_, row && row->kind == rowkind::kValue ? row->name : registry_path::Build(key_row ? ChildNode(*browse_.current_node(), row->extra) : *browse_.current_node()));
             return true;
         }
     default:
@@ -411,7 +410,7 @@ bool MainWindow::Impl::HandleEditToolsCommand(int command_id)
             {
                 workspace::DialogFields store(&state, true);
                 SearchDialogFields(store, &options);
-                workspace::SaveDialogState(state);
+                ui::ReportSaveFailure(hwnd_, workspace::DialogStatePath(), workspace::SaveDialogState(state));
                 StartSearch(options);
             }
             return true;
@@ -525,7 +524,7 @@ bool MainWindow::Impl::HandleChangeHistoryCommand(int command_id)
             {
                 workspace::DialogFields store(&state, true);
                 ReplaceDialogFields(store, &options);
-                workspace::SaveDialogState(state);
+                ui::ReportSaveFailure(hwnd_, workspace::DialogStatePath(), workspace::SaveDialogState(state));
                 StartReplace(options);
             }
             return true;
@@ -691,7 +690,7 @@ void MainWindow::Impl::CopyKeyPathAs(int command_id, const RegistryNode& node, c
     }
     if (!text.empty())
     {
-        win32ui::CopyTextToClipboard(hwnd_, text);
+        ui::CopyText(hwnd_, text);
     }
 }
 

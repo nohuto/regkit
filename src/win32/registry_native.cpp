@@ -6,6 +6,7 @@
 #include "win32/process_rights.h"
 
 #include <win32ui/handle_owner.h>
+#include <win32ui/system/date_time.h>
 #include <win32ui/system/error_text.h>
 #include <win32ui/system_api.h>
 
@@ -234,7 +235,7 @@ LONG CreateRegistryKey(HKEY parent, const std::wstring& name, REGSAM access, DWO
 
 LONG RenameRegistryKey(HKEY parent, const std::wstring& old_name, const std::wstring& new_name)
 {
-    // NtRenameKey renames the link itself, RegRenameKey follows targets and truncates names at embedded NULs
+    // NtRenameKey renames the link itself, RegRenameKey follows it and cuts names at NULs
     static const auto rename_key = win32ui::ImportProc<NtRenameKeyFn>(L"ntdll.dll", "NtRenameKey");
     win32ui::UniqueHKey key;
     LONG result = OpenRegistryPath(parent, old_name, KEY_WRITE, true, &key);
@@ -338,8 +339,7 @@ LONG SetKeyLastWriteTime(HKEY key, const FILETIME& time)
 {
     static const auto set_information = win32ui::ImportProc<NtSetInformationKeyFn>(L"ntdll.dll", "NtSetInformationKey");
     LARGE_INTEGER value = {};
-    value.LowPart = time.dwLowDateTime;
-    value.HighPart = static_cast<LONG>(time.dwHighDateTime);
+    value.QuadPart = static_cast<LONGLONG>(win32ui::FileTimeTicks(time));
     return set_information ? win32ui::Win32FromNtStatus(set_information(RootHandle(key), kKeyWriteTimeInformation, &value, sizeof(value))) : ERROR_CALL_NOT_IMPLEMENTED;
 }
 

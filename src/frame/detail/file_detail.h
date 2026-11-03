@@ -65,8 +65,6 @@ constexpr wchar_t kIconSetPhosphor[] = L"phosphor";
 constexpr wchar_t kIconSetClassic[] = L"classic";
 constexpr wchar_t kIconSetCustom[] = L"custom";
 
-bool IsIconSetName(const std::wstring& value, const wchar_t* name);
-
 bool IsKnownIconSetName(const std::wstring& value);
 
 std::wstring AssetsIconsRoot();

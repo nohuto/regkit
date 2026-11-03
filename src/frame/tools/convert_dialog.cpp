@@ -4,7 +4,6 @@
 #include "frame/tools/convert_dialog.h"
 
 #include "ui/autocomplete.h"
-#include "ui/dialog_support.h"
 #include "ui/feedback.h"
 #include "win32/file_dialog.h"
 #include "win32/text_transform.h"
@@ -14,11 +13,13 @@
 #include "resource.h"
 
 #include <win32ui/dialog/autocomplete.h>
+#include <win32ui/dialog/combo_box.h>
 #include <win32ui/dialog/dialog_layout.h>
 #include <win32ui/dialog/dialog_window.h>
 #include <win32ui/dialog/file_dialog.h>
 #include <win32ui/system/paths.h>
 #include <win32ui/system/shell_open.h>
+#include <win32ui/window.h>
 
 #include <algorithm>
 #include <initializer_list>
@@ -28,8 +29,6 @@ namespace regkit
 {
 namespace
 {
-
-namespace dialog_support = editors::dialog_support;
 
 constexpr const wchar_t* kFormatFilters[] = {
     L"Registry Files (*.reg)\0*.reg\0",
@@ -83,9 +82,9 @@ void UpdateInputControls(HWND dialog)
 void PopulateKeys(HWND dialog)
 {
     HWND combo = GetDlgItem(dialog, IDC_CONVERT_KEY);
-    const std::wstring current = dialog_support::ReadText(dialog, IDC_CONVERT_KEY);
+    const std::wstring current = win32ui::DialogItemText(dialog, IDC_CONVERT_KEY);
     SendMessageW(combo, CB_RESETCONTENT, 0, 0);
-    const std::wstring path = dialog_support::ReadText(dialog, IDC_CONVERT_INPUT);
+    const std::wstring path = win32ui::DialogItemText(dialog, IDC_CONVERT_INPUT);
     std::vector<regfile::Operation> operations;
     std::wstring error;
     if (SourceAt(dialog) != ConvertSource::kRegistry && !path.empty() &&
@@ -109,11 +108,11 @@ bool Convert(HWND dialog, State* state)
 {
     ConvertSettings& settings = *state->settings;
     settings.source = SourceAt(dialog);
-    settings.input_path = util::TrimWhitespace(dialog_support::ReadText(dialog, IDC_CONVERT_INPUT));
-    settings.key_path = util::TrimWhitespace(dialog_support::ReadText(dialog, IDC_CONVERT_KEY));
+    settings.input_path = util::TrimWhitespace(win32ui::DialogItemText(dialog, IDC_CONVERT_INPUT));
+    settings.key_path = util::TrimWhitespace(win32ui::DialogItemText(dialog, IDC_CONVERT_KEY));
     settings.recursive = IsDlgButtonChecked(dialog, IDC_CONVERT_RECURSIVE) == BST_CHECKED;
     settings.format = FormatAt(dialog);
-    settings.output_path = WithExtension(util::TrimWhitespace(dialog_support::ReadText(dialog, IDC_CONVERT_OUTPUT)), settings.format);
+    settings.output_path = WithExtension(util::TrimWhitespace(win32ui::DialogItemText(dialog, IDC_CONVERT_OUTPUT)), settings.format);
     settings.admin_check = IsDlgButtonChecked(dialog, IDC_CONVERT_ADMIN) == BST_CHECKED;
     settings.open_in_editor = IsDlgButtonChecked(dialog, IDC_CONVERT_OPEN) == BST_CHECKED;
     SetDlgItemTextW(dialog, IDC_CONVERT_OUTPUT, settings.output_path.c_str());
@@ -175,7 +174,7 @@ bool Convert(HWND dialog, State* state)
 
 void Browse(HWND dialog, State* state, bool input)
 {
-    std::wstring path = dialog_support::ReadText(dialog, input ? IDC_CONVERT_INPUT : IDC_CONVERT_OUTPUT);
+    std::wstring path = win32ui::DialogItemText(dialog, input ? IDC_CONVERT_INPUT : IDC_CONVERT_OUTPUT);
     const DWORD error = input ? win32ui::ChooseFileToOpen(dialog, {.filter = regfile::kConvertFilter}, &path)
                               : win32::ChooseFileToSave(dialog, kFormatFilters[static_cast<int>(FormatAt(dialog))], path.empty() ? nullptr : path.c_str(), &path);
     if (!ui::ReportFileDialogResult(dialog, error))
@@ -205,11 +204,8 @@ void Browse(HWND dialog, State* state, bool input)
 
 void Fill(HWND dialog, int id, std::initializer_list<const wchar_t*> items, int selected)
 {
-    for (const wchar_t* item : items)
-    {
-        SendDlgItemMessageW(dialog, id, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(item));
-    }
-    SendDlgItemMessageW(dialog, id, CB_SETCURSEL, selected, 0);
+    win32ui::SetComboItems(GetDlgItem(dialog, id), std::vector<std::wstring>(items.begin(), items.end()));
+    win32ui::SetComboIndex(GetDlgItem(dialog, id), selected);
 }
 
 INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lparam)
@@ -255,7 +251,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
     }
     else if (code == CBN_SELCHANGE && id == IDC_CONVERT_FORMAT)
     {
-        SetDlgItemTextW(dialog, IDC_CONVERT_OUTPUT, WithExtension(dialog_support::ReadText(dialog, IDC_CONVERT_OUTPUT), FormatAt(dialog)).c_str());
+        SetDlgItemTextW(dialog, IDC_CONVERT_OUTPUT, WithExtension(win32ui::DialogItemText(dialog, IDC_CONVERT_OUTPUT), FormatAt(dialog)).c_str());
     }
     else if (code == BN_CLICKED && (id == IDC_CONVERT_INPUT_BROWSE || id == IDC_CONVERT_OUTPUT_BROWSE))
     {

@@ -69,8 +69,8 @@ void MainWindow::Impl::StartTraceParseThread(TraceParseSession* session)
     session->work.StartOrRun(L"TraceParseThread", [this, session, hwnd, source, source_lower](uint64_t generation, std::atomic_bool& cancel) {
         constexpr size_t kBatchSize = 256;
         constexpr DWORD kBatchMs = 50;
-        auto post_batch = [&](std::vector<KeyValueDialogEntry>* entries, bool done, const std::wstring& error, bool cancelled) {
-            auto payload = std::make_unique<TraceParseBatch>();
+        auto post_batch = [&](std::vector<KeyValueDialogEntry>* entries, bool done, const std::wstring& error) {
+            auto payload = std::make_unique<ParseBatch>();
             payload->generation = generation;
             payload->source_lower = source_lower;
             if (entries)
@@ -80,12 +80,7 @@ void MainWindow::Impl::StartTraceParseThread(TraceParseSession* session)
             }
             payload->done = done;
             payload->error = error;
-            payload->cancelled = cancelled;
-            if (!hwnd || !IsWindow(hwnd) ||
-                !win32ui::PostPayload(hwnd, frame::message_id::kTraceParseBatch, 0, payload))
-            {
-                return;
-            }
+            win32ui::PostPayload(hwnd, frame::message_id::kTraceParseBatch, 0, payload);
         };
 
         std::vector<KeyValueDialogEntry> entries;
@@ -105,7 +100,7 @@ void MainWindow::Impl::StartTraceParseThread(TraceParseSession* session)
                 const uint64_t now = GetTickCount64();
                 if (entries.size() >= kBatchSize || now - last_post >= kBatchMs)
                 {
-                    post_batch(&entries, false, L"", false);
+                    post_batch(&entries, false, L"");
                     entries.clear();
                     last_post = now;
                 }
@@ -116,16 +111,16 @@ void MainWindow::Impl::StartTraceParseThread(TraceParseSession* session)
         );
         if (!parsed)
         {
-            post_batch(nullptr, true, cancel.load() ? L"" : parse_error, cancel.load());
+            post_batch(nullptr, true, cancel.load() ? L"" : parse_error);
             return;
         }
         if (!entries.empty())
         {
-            post_batch(&entries, false, L"", false);
+            post_batch(&entries, false, L"");
             entries.clear();
         }
         trace::Sort(session->data.get());
-        post_batch(nullptr, true, L"", false);
+        post_batch(nullptr, true, L"");
     });
 }
 
@@ -142,8 +137,8 @@ void MainWindow::Impl::StartDefaultParseThread(DefaultParseSession* session)
     session->work.StartOrRun(L"DefaultParseThread", [this, session, hwnd, source, source_lower](uint64_t generation, std::atomic_bool& cancel) {
         constexpr size_t kBatchSize = 256;
         constexpr DWORD kBatchMs = 50;
-        auto post_batch = [&](std::vector<KeyValueDialogEntry>* entries, bool done, const std::wstring& error, bool cancelled) {
-            auto payload = std::make_unique<DefaultParseBatch>();
+        auto post_batch = [&](std::vector<KeyValueDialogEntry>* entries, bool done, const std::wstring& error) {
+            auto payload = std::make_unique<ParseBatch>();
             payload->generation = generation;
             payload->source_lower = source_lower;
             if (entries)
@@ -153,12 +148,7 @@ void MainWindow::Impl::StartDefaultParseThread(DefaultParseSession* session)
             }
             payload->done = done;
             payload->error = error;
-            payload->cancelled = cancelled;
-            if (!hwnd || !IsWindow(hwnd) ||
-                !win32ui::PostPayload(hwnd, frame::message_id::kDefaultParseBatch, 0, payload))
-            {
-                return;
-            }
+            win32ui::PostPayload(hwnd, frame::message_id::kDefaultParseBatch, 0, payload);
         };
 
         std::vector<defaults::Entry> parsed_entries;
@@ -172,7 +162,7 @@ void MainWindow::Impl::StartDefaultParseThread(DefaultParseSession* session)
                 &cancel
             ))
         {
-            post_batch(nullptr, true, cancel.load() ? L"" : parse_error, cancel.load());
+            post_batch(nullptr, true, cancel.load() ? L"" : parse_error);
             return;
         }
 
@@ -183,7 +173,7 @@ void MainWindow::Impl::StartDefaultParseThread(DefaultParseSession* session)
             const uint64_t now = GetTickCount64();
             if (entries.size() >= kBatchSize || now - last_post >= kBatchMs)
             {
-                post_batch(&entries, false, L"", false);
+                post_batch(&entries, false, L"");
                 entries.clear();
                 last_post = now;
             }
@@ -193,7 +183,7 @@ void MainWindow::Impl::StartDefaultParseThread(DefaultParseSession* session)
         {
             if (cancel.load())
             {
-                post_batch(nullptr, true, L"", true);
+                post_batch(nullptr, true, L"");
                 return;
             }
             KeyValueDialogEntry entry;
@@ -214,9 +204,9 @@ void MainWindow::Impl::StartDefaultParseThread(DefaultParseSession* session)
 
         if (!entries.empty())
         {
-            post_batch(&entries, false, L"", false);
+            post_batch(&entries, false, L"");
         }
-        post_batch(nullptr, true, L"", false);
+        post_batch(nullptr, true, L"");
     });
 }
 

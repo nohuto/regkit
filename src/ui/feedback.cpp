@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cwchar>
+#include <unordered_set>
 #include <vector>
 
 #include "win32/file_dialog.h"
@@ -27,7 +28,7 @@ namespace
 {
 constexpr wchar_t kAppTitle[] = L"RegKit";
 
-// up to three buttons in IDYES, IDNO, IDCANCEL order, omit empty labels, first is default, width is outer width in DIPs
+// buttons IDYES, IDNO, IDCANCEL, empty labels omitted, the first is default, width in DIPs
 int ShowChoiceDialog(HWND owner, const std::wstring& title, const std::wstring& message, const std::wstring& yes_label, const std::wstring& no_label, const std::wstring& cancel_label, PCWSTR icon_id, int width, ChoiceButtonWidths button_widths = {}, const std::wstring& detail = std::wstring())
 {
     win32ui::MessageSpec spec;
@@ -73,6 +74,25 @@ void ShowError(HWND owner, const std::wstring& message)
 void ShowStartError(HWND owner)
 {
     ShowError(owner, util::TrDetail(L"The background task couldn't be started.", win32ui::FormatWin32Error(ERROR_NOT_ENOUGH_MEMORY)));
+}
+
+void ReportSaveFailure(HWND owner, const std::wstring& path, DWORD error)
+{
+    static std::unordered_set<std::wstring> reported;
+    // an unresolved data folder gives an empty path, reported once like a file
+    if (error == ERROR_SUCCESS || !reported.insert(util::ToLower(path)).second)
+    {
+        return;
+    }
+    ShowError(owner, util::TrDetail(L"RegKit couldn't save this file.", path.empty() ? win32ui::FormatWin32Error(error) : path + L"\n" + win32ui::FormatWin32Error(error)));
+}
+
+void CopyText(HWND owner, std::wstring_view text)
+{
+    if (!win32ui::CopyTextToClipboard(owner, text))
+    {
+        ShowError(owner, util::TrDetail(L"The text couldn't be copied to the clipboard.", win32ui::FormatWin32Error(GetLastError())));
+    }
 }
 
 void ShowWarning(HWND owner, const std::wstring& message)

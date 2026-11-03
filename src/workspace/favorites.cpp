@@ -25,7 +25,7 @@ constexpr std::wstring_view kHeader = L"#regkit-favorites-2";
 bool LoadFromFile(const std::wstring& path, std::vector<std::wstring>* favorites)
 {
     std::wstring content;
-    const bool loaded = !path.empty() && util::ReadTextFile(path, &content, util::kMaxStateFileBytes);
+    const bool loaded = !path.empty() && win32ui::ReadTextFile(path.c_str(), &content, util::kMaxStateFileBytes) == ERROR_SUCCESS;
     const std::vector<std::wstring_view> lines = win32ui::LineViews(content);
     if (lines.empty() || lines.front() != kHeader)
     {

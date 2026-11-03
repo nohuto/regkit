@@ -54,6 +54,7 @@ struct Settings
     int window_y = 0;
     int window_width = 0;
     int window_height = 0;
+    int window_dpi = 0;
     bool window_maximized = false;
     int tree_width = 260;
     int history_height = 160;
@@ -79,6 +80,6 @@ Settings ParseSettings(const std::wstring& content, Settings settings = {}, std:
 std::wstring SerializeSettings(const Settings& settings);
 Settings DefaultOptions(const Settings& settings);
 bool LoadSettings(const std::wstring& path, Settings* settings, std::wstring* error = nullptr);
-bool SaveSettings(const std::wstring& path, const Settings& settings);
+DWORD SaveSettings(const std::wstring& path, const Settings& settings);
 
 }

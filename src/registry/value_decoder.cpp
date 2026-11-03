@@ -9,6 +9,7 @@
 
 #include <win32ui/handle_owner.h>
 #include <win32ui/system/date_time.h>
+#include <win32ui/system/process_token.h>
 
 #include <objbase.h>
 #include <sddl.h>
@@ -366,20 +367,10 @@ Decoded DecodeSid(const BYTE* data, size_t size)
     decoded.fields.push_back({L"SID", text.get()});
     decoded.fields.push_back({util::Tr(L"Length"), std::to_wstring(GetLengthSid(sid))});
 
-    DWORD name_size = 0;
-    DWORD domain_size = 0;
-    SID_NAME_USE use = SidTypeUnknown;
-    LookupAccountSidW(nullptr, sid, nullptr, &name_size, nullptr, &domain_size, &use);
-    if (name_size != 0 && domain_size != 0)
+    // the SID text itself when no account maps to it
+    if (const std::wstring account = win32ui::AccountName(text.get()); account != text.get())
     {
-        std::wstring name(name_size, L'\0');
-        std::wstring domain(domain_size, L'\0');
-        if (LookupAccountSidW(nullptr, sid, name.data(), &name_size, domain.data(), &domain_size, &use))
-        {
-            name.resize(name_size);
-            domain.resize(domain_size);
-            decoded.fields.push_back({util::Tr(L"Account"), domain.empty() ? name : domain + L"\\" + name});
-        }
+        decoded.fields.push_back({util::Tr(L"Account"), account});
     }
     return decoded;
 }

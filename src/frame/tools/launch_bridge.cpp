@@ -17,6 +17,7 @@
 #include <win32ui/system/error_text.h>
 #include <win32ui/system/process_launch.h>
 #include <win32ui/system/process_token.h>
+#include <win32ui/system/strings.h>
 
 namespace regkit
 {
@@ -43,6 +44,12 @@ std::wstring IntegrityLevelName(BYTE* descriptor)
         return util::Tr(L"Not set (medium)");
     }
     const PSID sid = &ace->SidStart;
+    // offline hives can hold a malformed label, IsValidSid alone accepts one without subauthorities
+    constexpr DWORD kSidOffset = offsetof(SYSTEM_MANDATORY_LABEL_ACE, SidStart);
+    if (ace->Header.AceSize < kSidOffset + SECURITY_SID_SIZE(0) || !IsValidSid(sid) || GetLengthSid(sid) > ace->Header.AceSize - kSidOffset || *GetSidSubAuthorityCount(sid) == 0)
+    {
+        return util::Tr(L"Not set (medium)");
+    }
     const DWORD rid = *GetSidSubAuthority(sid, *GetSidSubAuthorityCount(sid) - 1u);
     static constexpr std::pair<DWORD, const wchar_t*> kLevels[] = {
         {SECURITY_MANDATORY_UNTRUSTED_RID, util::TrNoop(L"Untrusted")},
@@ -59,9 +66,7 @@ std::wstring IntegrityLevelName(BYTE* descriptor)
             return util::Tr(name);
         }
     }
-    wchar_t text[16] = {};
-    swprintf_s(text, L"0x%lX", rid);
-    return text;
+    return win32ui::FormatHex(rid);
 }
 
 constexpr std::pair<ULONG, const wchar_t*> kControlFlags[] = {
@@ -429,9 +434,9 @@ bool MainWindow::Impl::RestartAfterSettingsReset()
         ui::ShowError(hwnd_, util::Tr(L"Failed to find the settings file."));
         return false;
     }
-    if (!workspace::SaveSettings(path, workspace::DefaultOptions(CurrentSettings())))
+    if (const DWORD error = workspace::SaveSettings(path, workspace::DefaultOptions(CurrentSettings())); error != ERROR_SUCCESS)
     {
-        ui::ShowError(hwnd_, util::Tr(L"The settings file couldn't be reset."));
+        ui::ShowError(hwnd_, util::TrDetail(L"The settings file couldn't be reset.", win32ui::FormatWin32Error(error)));
         return false;
     }
     if (!LaunchRestart(true))

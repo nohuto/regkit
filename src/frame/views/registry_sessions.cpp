@@ -12,6 +12,7 @@
 
 #include <win32ui/dialog/text_prompt.h>
 #include <win32ui/system/error_text.h>
+#include <win32ui/system/process_token.h>
 #include <win32ui/window.h>
 
 namespace regkit
@@ -188,13 +189,8 @@ std::wstring MainWindow::Impl::TreeRootLabel() const
     {
         return StripMachinePrefix(session_->remote_machine);
     }
-    wchar_t buffer[MAX_COMPUTERNAME_LENGTH + 1] = {};
-    DWORD size = static_cast<DWORD>(_countof(buffer));
-    if (GetComputerNameW(buffer, &size) && size > 0)
-    {
-        return std::wstring(buffer, size);
-    }
-    return L"Computer";
+    const std::wstring& name = win32ui::ComputerName();
+    return name.empty() ? std::wstring(L"Computer") : name;
 }
 
 int MainWindow::Impl::TreeRootIcon() const

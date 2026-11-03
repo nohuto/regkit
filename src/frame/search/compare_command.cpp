@@ -90,7 +90,7 @@ void MainWindow::Impl::StartCompareRegistries()
     CompareDialogDefaults used{selection.left, selection.right, selection.filter};
     workspace::DialogFields store(&state, true);
     CompareDialogFields(store, &used);
-    workspace::SaveDialogState(state);
+    ui::ReportSaveFailure(hwnd_, workspace::DialogStatePath(), workspace::SaveDialogState(state));
 
     // resolve paths and visible tab keys here, worker only reads
     struct Side
@@ -116,21 +116,14 @@ void MainWindow::Impl::StartCompareRegistries()
             return;
         }
     }
-    // worker owns a separate .reg registration because the source tab may close, the task releases it even if the
-    // worker throws or never starts
-    std::shared_ptr<std::vector<HKEY>> owned_roots(new std::vector<HKEY>(), [](std::vector<HKEY>* roots) {
-        for (HKEY root : *roots)
-        {
-            RegistryStore::UnregisterVirtualRoot(root);
-        }
-        delete roots;
-    });
+    // the task releases its hold even if the worker throws or never starts
+    auto hold = std::make_shared<SourceHold>();
+    hold->sessions.push_back(session_);
     for (Side& side : sides)
     {
-        if (side.source.type == CompareSourceType::kRegistry && RegistryStore::IsVirtualRoot(side.node.root))
+        if (side.source.type == CompareSourceType::kRegistry)
         {
-            side.node.root = RegistryStore::DuplicateVirtualRoot(side.node.root);
-            owned_roots->push_back(side.node.root);
+            side.node.root = hold->Hold(side.node.root);
         }
     }
 
@@ -150,10 +143,9 @@ void MainWindow::Impl::StartCompareRegistries()
     };
     std::vector<search::Source> sources = {source_ref(selection.left), source_ref(selection.right)};
 
-    // session keeps remote/offline tab handles open while worker reads
     const uint64_t started = compare_session_.Start(
         L"CompareThread",
-        [hwnd = hwnd_, sides, owned_roots, filter = selection.filter, sources, keep = session_, sid = util::GetCurrentUserSidString(), contexts = RegistryPathContexts()](
+        [hwnd = hwnd_, sides, hold, filter = selection.filter, sources, sid = util::GetCurrentUserSidString(), contexts = RegistryPathContexts()](
             uint64_t generation,
             std::atomic_bool& cancel
         ) {

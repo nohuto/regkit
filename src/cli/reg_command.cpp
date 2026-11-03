@@ -72,8 +72,7 @@ struct KeyRef
     std::wstring machine;
 };
 
-// [\\machine\]ROOT\subkey, remote roots expose HKLM and HKU only, reg.exe save, restore, load, unload and flags accept
-// local keys only
+// [\\machine\]ROOT\subkey, remote roots are HKLM and HKU, save, restore, load, unload and flags take local keys only
 bool ParseKey(const std::wstring& text, KeyRef* key, bool local_only = false)
 {
     std::wstring_view view = text;
@@ -231,17 +230,16 @@ void SelectValue(const Options& options, std::vector<RegistryValue>* values)
     }
 }
 
-// * and ? wildcards match reg query /f
-bool WildcardMatch(std::wstring_view text, std::wstring_view pattern, bool case_sensitive)
+// * and ? wildcards match reg query /f, case-insensitive callers fold both sides first
+bool WildcardMatch(std::wstring_view text, std::wstring_view pattern)
 {
-    auto same = [case_sensitive](wchar_t a, wchar_t b) { return case_sensitive ? a == b : towupper(a) == towupper(b); };
     size_t t = 0;
     size_t p = 0;
     size_t star = std::wstring_view::npos;
     size_t resume = 0;
     while (t < text.size())
     {
-        if (p < pattern.size() && (pattern[p] == L'?' || same(pattern[p], text[t])))
+        if (p < pattern.size() && (pattern[p] == L'?' || pattern[p] == text[t]))
         {
             ++t;
             ++p;
@@ -271,6 +269,8 @@ bool WildcardMatch(std::wstring_view text, std::wstring_view pattern, bool case_
 struct Query
 {
     const Options& options;
+    // "*find*", folded unless case sensitive
+    std::wstring pattern = L"*" + (options.case_sensitive ? options.find : util::ToLower(options.find)) + L"*";
     std::vector<DWORD> types;
     bool search_keys = false;
     bool search_names = false;
@@ -287,7 +287,8 @@ struct Query
         {
             return options.case_sensitive ? text == options.find : util::EqualsInsensitive(text, options.find);
         }
-        return WildcardMatch(text, L"*" + options.find + L"*", options.case_sensitive);
+        // folds beyond ASCII like the /e path
+        return WildcardMatch(options.case_sensitive ? text : util::ToLower(text), pattern);
     }
     bool Matches(const RegistryValue& value) const
     {
@@ -675,7 +676,7 @@ int ExportKeyToFile(const KeyRef& key, const std::wstring& path, REGSAM view)
         PrintError(status == ERROR_FILE_NOT_FOUND ? L"The key doesn't exist: " + key.display : win32ui::FormatWin32Error(static_cast<DWORD>(status)));
         return kFailed;
     }
-    if (win32ui::WriteTextFileAtomic(path.c_str(), std::move(writer).Finish(), true) != ERROR_SUCCESS)
+    if (win32ui::WriteTextFileAtomic(path.c_str(), std::move(writer).Finish(), win32ui::TextEncoding::utf16) != ERROR_SUCCESS)
     {
         PrintError(L"Failed to write " + path);
         return kFailed;

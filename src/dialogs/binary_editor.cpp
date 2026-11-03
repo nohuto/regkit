@@ -7,7 +7,6 @@
 #include "registry/registry_path.h"
 #include "registry/value_format.h"
 #include "ui/dialog_layout.h"
-#include "ui/dialog_support.h"
 #include "ui/feedback.h"
 
 #include "resource.h"
@@ -16,6 +15,7 @@
 
 #include <win32ui/dialog/dialog_window.h>
 #include <win32ui/gdi/fonts.h>
+#include <win32ui/window.h>
 
 #include <initializer_list>
 #include <utility>
@@ -58,7 +58,7 @@ void UpdatePreview(HWND dialog, State* state)
     {
         return;
     }
-    state->text = dialog_support::ReadText(dialog, IDC_EDIT);
+    state->text = win32ui::DialogItemText(dialog, IDC_EDIT);
     std::vector<BYTE> bytes;
     if (!win32ui::ParseHexBytes(state->text, &bytes))
     {
@@ -149,7 +149,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
         {
             // pass unsaved hex edits into the bit editor and copy its result back
             std::vector<BYTE> bytes;
-            if (!win32ui::ParseHexBytes(dialog_support::ReadText(dialog, IDC_EDIT), &bytes) || bytes.empty())
+            if (!win32ui::ParseHexBytes(win32ui::DialogItemText(dialog, IDC_EDIT), &bytes) || bytes.empty())
             {
                 ui::ShowError(dialog, util::Tr(L"Invalid hex input."));
                 return TRUE;
@@ -194,7 +194,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
         return TRUE;
     case IDOK:
         {
-            std::wstring text = dialog_support::ReadText(dialog, IDC_EDIT);
+            std::wstring text = win32ui::DialogItemText(dialog, IDC_EDIT);
             std::vector<BYTE> parsed;
             if (!win32ui::ParseHexBytes(text, &parsed))
             {

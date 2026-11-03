@@ -8,6 +8,8 @@
 #include "win32/process_rights.h"
 #include "win32/text_transform.h"
 
+#include <win32ui/system/process_token.h>
+
 #include <algorithm>
 #include <cstring>
 #include <cwctype>
@@ -87,15 +89,10 @@ std::wstring CleanKeyText(const std::wstring& text, const std::wstring& sid)
         }
     }
     path = registry_path::Clean(path);
-    wchar_t machine[MAX_COMPUTERNAME_LENGTH + 1] = {};
-    DWORD machine_length = static_cast<DWORD>(_countof(machine));
-    if (!path.empty() && GetComputerNameW(machine, &machine_length) && machine_length > 0)
+    if (const std::wstring& machine = win32ui::ComputerName();
+        !machine.empty() && path.size() > machine.size() && path[machine.size()] == L'\\' && util::StartsWithInsensitive(path, machine))
     {
-        const std::wstring prefix = std::wstring(machine, machine_length) + L"\\";
-        if (util::StartsWithInsensitive(path, prefix))
-        {
-            path.erase(0, prefix.size());
-        }
+        path.erase(0, machine.size() + 1);
     }
     return path;
 }

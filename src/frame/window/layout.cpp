@@ -6,8 +6,6 @@
 
 #include "registry/key_algorithms.h"
 
-#include "ui/dialog_support.h"
-
 #include <win32ui/dialog/dialog_metrics.h>
 #include <win32ui/dialog/edit.h>
 #include <win32ui/gdi/fonts.h>
@@ -24,7 +22,7 @@ using namespace window_detail;
 int MainWindow::Impl::TextRowHeight(int nominal, int padding) const
 {
     const UINT dpi = win32ui::DpiForWindow(hwnd_);
-    return std::max(win32ui::ScaleForDpi(nominal, dpi), static_cast<int>(win32ui::FontMetrics(ui_font_).tmHeight) + win32ui::ScaleForDpi(padding, dpi));
+    return std::max(win32ui::Scale(nominal, dpi), static_cast<int>(win32ui::FontMetrics(ui_font_).tmHeight) + win32ui::Scale(padding, dpi));
 }
 
 void MainWindow::Impl::LayoutContent(bool dragging)
@@ -34,8 +32,8 @@ void MainWindow::Impl::LayoutContent(bool dragging)
     const bool show_history = settings_.show_history && !settings_.simple_mode && !show_search;
     const UINT dpi = win32ui::DpiForWindow(hwnd_);
     const int header_height = TextRowHeight(kPanelHeaderHeight);
-    const int close_size = win32ui::ScaleForDpi(kPanelCloseSize, dpi);
-    const int close_inset = win32ui::ScaleForDpi(kPanelCloseInset, dpi);
+    const int close_size = win32ui::Scale(kPanelCloseSize, dpi);
+    const int close_inset = win32ui::Scale(kPanelCloseInset, dpi);
     const int left = content_rect_.left;
     const int right = content_rect_.right;
     const int width = right - left;
@@ -62,14 +60,14 @@ void MainWindow::Impl::LayoutContent(bool dragging)
     history_shown_height_ = 0;
     if (show_history)
     {
-        const int minimum = win32ui::ScaleForDpi(kMinHistoryHeight, dpi);
-        const int history_height = ClampValue(win32ui::ScaleForDpi(settings_.history_height, dpi), minimum, std::max(minimum, bottom - top - win32ui::ScaleForDpi(kHistoryMaxPadding, dpi)));
+        const int minimum = win32ui::Scale(kMinHistoryHeight, dpi);
+        const int history_height = ClampValue(win32ui::Scale(settings_.history_height, dpi), minimum, std::max(minimum, bottom - top - win32ui::Scale(kHistoryMaxPadding, dpi)));
         const int history_top = bottom - history_height;
-        const int bar_height = win32ui::ScaleForDpi(kHistorySplitterHeight, dpi);
+        const int bar_height = win32ui::Scale(kHistorySplitterHeight, dpi);
         place(history_label_, left, history_top, width, header_height);
         place(history_close_btn_, right - close_inset - close_size, history_top + (header_height - close_size) / 2, close_size, close_size);
         place(history_list_, left, history_top + header_height - kPanelBorderOverlap, width, history_height - header_height + kPanelBorderOverlap);
-        history_bar_top = history_top - win32ui::ScaleForDpi(kHistoryGap, dpi) - bar_height;
+        history_bar_top = history_top - win32ui::Scale(kHistoryGap, dpi) - bar_height;
         place(history_splitter_, left, history_bar_top, width, bar_height);
         history_shown_height_ = history_height;
     }
@@ -79,9 +77,9 @@ void MainWindow::Impl::LayoutContent(bool dragging)
     tree_shown_width_ = 0;
     if (show_tree)
     {
-        const int minimum = win32ui::ScaleForDpi(kMinTreeWidth, dpi);
-        const int bar_width = win32ui::ScaleForDpi(kSplitterWidth, dpi);
-        const int tree_width = ClampValue(win32ui::ScaleForDpi(settings_.tree_width, dpi), minimum, std::max(minimum, width - win32ui::ScaleForDpi(kMinValueListWidth, dpi) - bar_width));
+        const int minimum = win32ui::Scale(kMinTreeWidth, dpi);
+        const int bar_width = win32ui::Scale(kSplitterWidth, dpi);
+        const int tree_width = ClampValue(win32ui::Scale(settings_.tree_width, dpi), minimum, std::max(minimum, width - win32ui::Scale(kMinValueListWidth, dpi) - bar_width));
         place(tree_header_, left, top, tree_width, header_height);
         place(tree_close_btn_, left + tree_width - close_inset - close_size, top + (header_height - close_size) / 2, close_size, close_size);
         place(browse_.tree().hwnd(), left, top + header_height - kPanelBorderOverlap, tree_width, std::max(0, content_height - header_height) + kPanelBorderOverlap);
@@ -141,14 +139,14 @@ void MainWindow::Impl::ResizePane(HWND splitter, int size, bool done)
     const bool moved = size != (tree ? tree_shown_width_ : history_shown_height_);
     if (moved && tree)
     {
-        const int minimum = win32ui::ScaleForDpi(kMinTreeWidth, dpi);
-        const int maximum = content_rect_.right - content_rect_.left - win32ui::ScaleForDpi(kMinValueListWidth, dpi) - win32ui::ScaleForDpi(kSplitterWidth, dpi);
+        const int minimum = win32ui::Scale(kMinTreeWidth, dpi);
+        const int maximum = content_rect_.right - content_rect_.left - win32ui::Scale(kMinValueListWidth, dpi) - win32ui::Scale(kSplitterWidth, dpi);
         settings_.tree_width = win32ui::Unscale(ClampValue(size, minimum, std::max(minimum, maximum)), dpi);
     }
     else if (moved)
     {
-        const int minimum = win32ui::ScaleForDpi(kMinHistoryHeight, dpi);
-        const int maximum = content_rect_.bottom - content_rect_.top - win32ui::ScaleForDpi(kHistoryMaxPadding, dpi);
+        const int minimum = win32ui::Scale(kMinHistoryHeight, dpi);
+        const int maximum = content_rect_.bottom - content_rect_.top - win32ui::Scale(kHistoryMaxPadding, dpi);
         settings_.history_height = win32ui::Unscale(ClampValue(size, minimum, std::max(minimum, maximum)), dpi);
     }
     splitter_dragging_ = !done;
@@ -435,13 +433,15 @@ int MainWindow::Impl::KeyIconIndex(const RegistryNode& node, bool* is_link, bool
 
 std::wstring MainWindow::Impl::ResolveIconDir(bool use_light) const
 {
-    if (IsIconSetName(settings_.icon_set, kIconSetCustom))
+    if (util::EqualsInsensitive(settings_.icon_set, kIconSetCustom))
     {
-        std::wstring root = util::JoinPath(util::GetAppDataFolder(), L"icons");
-        if (root.empty())
+        // JoinPath of an empty folder would give a path relative to the current directory
+        const std::wstring folder = util::GetAppDataFolder();
+        if (folder.empty())
         {
             return L"";
         }
+        std::wstring root = util::JoinPath(folder, L"icons");
         std::wstring dark_dir = util::JoinPath(root, L"dark");
         std::wstring light_dir = util::JoinPath(root, L"light");
         if (util::IsDirectory(dark_dir.c_str()) && util::IsDirectory(light_dir.c_str()))
@@ -451,7 +451,7 @@ std::wstring MainWindow::Impl::ResolveIconDir(bool use_light) const
         return util::IsDirectory(root.c_str()) ? root : L"";
     }
     const std::wstring base = AssetsIconsRoot();
-    if (!IsIconSetName(settings_.icon_set, kIconSetClassic) || base.empty())
+    if (!util::EqualsInsensitive(settings_.icon_set, kIconSetClassic) || base.empty())
     {
         return L"";
     }
@@ -567,16 +567,16 @@ void MainWindow::Impl::LayoutControls(int width, int height)
     }
 
     UINT dpi = win32ui::DpiForWindow(hwnd_);
-    const int padding = win32ui::ScaleForDpi(8, dpi);
-    const int gap = win32ui::ScaleForDpi(kMainVerticalGap, dpi);
+    const int padding = win32ui::Scale(8, dpi);
+    const int gap = win32ui::Scale(kMainVerticalGap, dpi);
     const int address_height = TextRowHeight(win32ui::metrics::kControlHeight);
-    const int address_btn_width = std::max(win32ui::ScaleForDpi(18, dpi), address_height);
-    const int tabs_height = std::max(win32ui::ScaleForDpi(20, dpi), tab_height_);
+    const int address_btn_width = std::max(win32ui::Scale(18, dpi), address_height);
+    const int tabs_height = std::max(win32ui::Scale(20, dpi), tab_height_);
     const int filter_height = address_height;
-    const int filter_min_width = win32ui::ScaleForDpi(160, dpi);
-    const int filter_max_width = win32ui::ScaleForDpi(260, dpi);
-    const int filter_gap = win32ui::ScaleForDpi(6, dpi);
-    const int tab_min_width = win32ui::ScaleForDpi(win32ui::kTabMinWidthDip, dpi);
+    const int filter_min_width = win32ui::Scale(160, dpi);
+    const int filter_max_width = win32ui::Scale(260, dpi);
+    const int filter_gap = win32ui::Scale(6, dpi);
+    const int tab_min_width = win32ui::Scale(win32ui::kTabMinWidthDip, dpi);
     int status_height = 0;
     if (status_bar_ && settings_.show_status_bar)
     {
@@ -585,7 +585,7 @@ void MainWindow::Impl::LayoutControls(int width, int height)
         status_height = sb_rect.bottom - sb_rect.top;
         if (status_height <= 0)
         {
-            status_height = 20;
+            status_height = win32ui::Scale(20, dpi);
         }
     }
     const bool show_search = IsSearchTabSelected();
@@ -615,11 +615,7 @@ void MainWindow::Impl::LayoutControls(int width, int height)
     }
     if (settings_.show_address_bar)
     {
-        int address_width = width - padding * 2 - address_btn_width - 2;
-        if (address_width < 120)
-        {
-            address_width = 120;
-        }
+        const int address_width = std::max(width - padding * 2 - address_btn_width - win32ui::Scale(2, dpi), win32ui::Scale(120, dpi));
         place(browse_.address(), padding, y, address_width, address_height);
         place(browse_.go_button(), padding + address_width, y, address_btn_width, address_height);
         win32ui::SetEditPadding(browse_.address(), 6, 2);
@@ -630,8 +626,7 @@ void MainWindow::Impl::LayoutControls(int width, int height)
     bool show_tabs = settings_.show_tab_control && tab_;
     bool show_filter = show_value && settings_.show_filter_bar && browse_.filter();
     bool show_tab_row = show_tabs || show_filter;
-    // tabs wrap beside the filter until they exceed a quarter of the window
-    // then use one scrolling row to preserve pane space
+    // tabs wrap beside the filter up to a quarter of the window, then scroll in one row
     int rows_height = tabs_height;
     const int max_tabs_height = std::max(tabs_height, height / 4);
     if (show_tab_row)

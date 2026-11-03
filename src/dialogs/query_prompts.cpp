@@ -152,9 +152,10 @@ class BrowseKeyDialog final : public win32ui::DialogWindow
             return 0;
         case TVN_SELCHANGEDW:
             *handled = true;
-            if (RegistryNode* node = tree_.OnSelectionChanged(reinterpret_cast<NMTREEVIEWW*>(header)))
             {
-                selected_path_ = registry_path::Build(*node);
+                // a group node has no key, OK then asks for one
+                const RegistryNode* node = tree_.OnSelectionChanged(reinterpret_cast<NMTREEVIEWW*>(header));
+                selected_path_ = node ? registry_path::Build(*node) : std::wstring();
             }
             return 0;
         default:

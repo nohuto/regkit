@@ -151,7 +151,7 @@ constexpr int kValueColDate = 6;
 constexpr int kValueColDetails = 7;
 constexpr int kValueColComment = 8;
 
-struct TraceParseBatch : win32ui::PostedPayload
+struct ParseBatch : win32ui::PostedPayload
 {
     uint64_t generation = 0;
     std::wstring source_lower;
@@ -159,18 +159,6 @@ struct TraceParseBatch : win32ui::PostedPayload
     std::unordered_set<std::wstring> affected_keys;
     std::wstring error;
     bool done = false;
-    bool cancelled = false;
-};
-
-struct DefaultParseBatch : win32ui::PostedPayload
-{
-    uint64_t generation = 0;
-    std::wstring source_lower;
-    std::vector<KeyValueDialogEntry> entries;
-    std::unordered_set<std::wstring> affected_keys;
-    std::wstring error;
-    bool done = false;
-    bool cancelled = false;
 };
 
 struct ValueListPayload : win32ui::PostedPayload
