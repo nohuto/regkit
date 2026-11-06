@@ -8,7 +8,7 @@ set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT ProgramDatabase)
 include(FetchContent)
 FetchContent_Declare(win32ui
     GIT_REPOSITORY https://github.com/nohuto/win32-ui.git
-    GIT_TAG 27d27a6c1160927a4fb60456ebf0dda8a77ec013
+    GIT_TAG dc83962d3650d8328f5477a307dec3d2ed2b37f1
     EXCLUDE_FROM_ALL
 )
 FetchContent_MakeAvailable(win32ui)
