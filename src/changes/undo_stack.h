@@ -5,6 +5,9 @@
 
 #include "changes/key_snapshot.h"
 
+#include <win32ui/handle_owner.h>
+
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -34,7 +37,10 @@ struct UndoOperation
     RegistryValue old_value;
     RegistryValue new_value;
     KeySnapshot key_snapshot;
-    KeySnapshot new_key_snapshot;
+    // kReplaceKey hive copies before and after, the files go away with the last handle
+    std::shared_ptr<win32ui::UniqueFile> hive_before;
+    std::shared_ptr<win32ui::UniqueFile> hive_after;
+    std::vector<std::pair<RegistryNode, KeySnapshot>> volatile_keys;
     std::vector<UndoOperation> steps;
 };
 

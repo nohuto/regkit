@@ -5,6 +5,7 @@
 
 #include "win32/registry_view.h"
 
+#include <win32ui/handle_owner.h>
 #include <win32ui/windows_config.h>
 
 #include <windows.h>
@@ -20,6 +21,9 @@ bool ImportRegFileFromPath(const std::wstring& path, std::wstring* error, REGSAM
 bool IsMountedHive(HKEY root, const std::wstring& subkey);
 LONG SaveKeyToHive(HKEY root, const std::wstring& subkey, REGSAM view, const std::wstring& path);
 LONG RestoreKeyFromHive(HKEY root, const std::wstring& subkey, REGSAM view, const std::wstring& path);
+// hive copy in a temp file that goes away with its handle, restored by the kernel in one step
+LONG SaveKeyCopy(HKEY root, const std::wstring& subkey, REGSAM view, win32ui::UniqueFile* file);
+LONG RestoreKeyCopy(HKEY root, const std::wstring& subkey, REGSAM view, HANDLE file);
 std::wstring HiveTransferError(LONG status, const std::wstring& path);
 
 }

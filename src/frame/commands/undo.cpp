@@ -3,6 +3,7 @@
 
 #include "frame/window_detail.h"
 #include "frame/window_impl.h"
+#include "regfile/registry_transfer.h"
 #include "win32/translation.h"
 
 namespace regkit
@@ -71,7 +72,17 @@ bool ReplayStep(const changes::UndoOperation& operation, bool redo, bool* rename
             return RegistryStore::SetValue(operation.node, value.name, value.type, value.data);
         }
     case Type::kReplaceKey:
-        return changes::ReplaceKey(operation.node, redo ? operation.new_key_snapshot : operation.key_snapshot);
+        {
+            const auto& copy = redo ? operation.hive_after : operation.hive_before;
+            if (!copy || RestoreKeyCopy(operation.node.root, operation.node.subkey, ViewOf(operation.node), copy->get()) != ERROR_SUCCESS)
+            {
+                return false;
+            }
+            // the restored content had no volatile keys, the earlier content gets them back
+            return redo || std::all_of(operation.volatile_keys.begin(), operation.volatile_keys.end(), [](const auto& entry) {
+                       return changes::RestoreKey(entry.first, entry.second);
+                   });
+        }
     case Type::kRenameValue:
         return RegistryStore::RenameValue(operation.node, redo ? operation.name : operation.new_name, redo ? operation.new_name : operation.name, rename_left_both_names);
     case Type::kGroup:

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegKit\n"
 "Report-Msgid-Bugs-To: https://github.com/nohuto/regkit/issues\n"
-"POT-Creation-Date: 2026-11-02 18:22+0100\n"
+"POT-Creation-Date: 2026-11-06 04:34+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -455,6 +455,14 @@ msgstr ""
 msgid "Registry File (.reg)"
 msgstr ""
 
+#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
+msgid "Batch File"
+msgstr ""
+
+#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
+msgid "PowerShell Script"
+msgstr ""
+
 #: dialogs/export_dialog.cpp
 msgid "Registry Hive File"
 msgstr ""
@@ -614,6 +622,10 @@ msgstr ""
 msgid "This key and subkeys"
 msgstr ""
 
+#: dialogs/security_dialog.cpp frame/tools/launch_bridge.cpp
+msgid "The key's permissions couldn't be read."
+msgstr ""
+
 #: dialogs/trace_dialog.cpp frame/views/value_loading.cpp
 msgid "Keys"
 msgstr ""
@@ -635,11 +647,12 @@ msgstr ""
 msgid "Export supports the standard root keys only."
 msgstr ""
 
-#: dialogs/transfer_dialogs.cpp
+#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
 msgid "Failed to write the exported registry file."
 msgstr ""
 
-#: dialogs/transfer_dialogs.cpp frame/window/menu_bar.cpp
+#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
+#: frame/window/menu_bar.cpp
 msgid "Export"
 msgstr ""
 
@@ -736,16 +749,16 @@ msgstr ""
 msgid "Failed to read value."
 msgstr ""
 
-#: frame/commands/clipboard_commands.cpp frame/tools/launch_bridge.cpp
-msgid "The key information couldn't be read."
-msgstr ""
-
 #: frame/commands/clipboard_commands.cpp
 msgid "The source key couldn't be opened."
 msgstr ""
 
 #: frame/commands/clipboard_commands.cpp
 msgid "Failed to paste value."
+msgstr ""
+
+#: frame/commands/clipboard_commands.cpp frame/tools/launch_bridge.cpp
+msgid "The key information couldn't be read."
 msgstr ""
 
 #: frame/commands/clipboard_commands.cpp
@@ -990,7 +1003,7 @@ msgid "Replace all contents of this key with the hive file?"
 msgstr ""
 
 #: frame/commands/file_view_commands.cpp
-msgid "Replace all contents of this key with the hive file? This key is too large to undo the restore."
+msgid "Replace all contents of this key with the hive file? The restore can't be undone."
 msgstr ""
 
 #: frame/commands/file_view_commands.cpp
@@ -1192,6 +1205,7 @@ msgstr ""
 
 #: frame/search/compare_command.cpp frame/search/compare_dialog.cpp
 #: frame/sources/regfile_commands.cpp regfile/registry_transfer.cpp
+#: regfile/reg_file.cpp
 msgid "Failed to read registry file."
 msgstr ""
 
@@ -1284,6 +1298,11 @@ msgstr ""
 #: frame/search/search_window.cpp
 #, c-format
 msgid "Searching... Results: ~%llu"
+msgstr ""
+
+#: frame/search/search_window.cpp
+#, c-format
+msgid "Results: %llu (stopped)"
 msgstr ""
 
 #: frame/search/search_window.cpp
@@ -1425,14 +1444,6 @@ msgstr ""
 
 #: frame/tools/convert_dialog.cpp
 msgid "The output file couldn't be written."
-msgstr ""
-
-#: frame/tools/convert_dialog.cpp
-msgid "Batch File"
-msgstr ""
-
-#: frame/tools/convert_dialog.cpp
-msgid "PowerShell Script"
 msgstr ""
 
 #: frame/tools/key_handles_window.cpp
@@ -1770,10 +1781,6 @@ msgstr ""
 
 #: frame/tools/launch_bridge.cpp ui/feedback.cpp
 msgid "Error"
-msgstr ""
-
-#: frame/tools/launch_bridge.cpp
-msgid "The key's permissions couldn't be read."
 msgstr ""
 
 #: frame/tools/launch_bridge.cpp
@@ -2474,15 +2481,15 @@ msgid "&Go To..."
 msgstr ""
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Other View"
+msgid "Go to Other View"
 msgstr ""
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Virtual Store Copy"
+msgid "Go to Virtual Store Copy"
 msgstr ""
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Global Key"
+msgid "Go to Global Key"
 msgstr ""
 
 #: frame/window/menu_bar.cpp
@@ -2854,23 +2861,23 @@ msgid "&Open Default File..."
 msgstr ""
 
 #: frame/window/menu_bar.cpp
-msgid "Edit &Active Defaults..."
+msgid "&Edit Active Defaults..."
 msgstr ""
 
 #: frame/window/menu_bar.cpp
-msgid "&Clear Active Defaults"
+msgid "Clear &Active Defaults"
 msgstr ""
 
 #: frame/window/menu_bar.cpp
-msgid "Edit Recent &Defaults..."
+msgid "Edit &Recent Defaults..."
 msgstr ""
 
 #: frame/window/menu_bar.cpp
-msgid "Clear &Recent Defaults"
+msgid "&Clear Recent Defaults"
 msgstr ""
 
 #: frame/window/menu_bar.cpp
-msgid "&Enable Context Menu (risky)"
+msgid "E&nable Context Menu (risky)"
 msgstr ""
 
 #: frame/window/menu_bar.cpp
@@ -3141,6 +3148,10 @@ msgid "Invalid RegKit.Native call."
 msgstr ""
 
 #: regfile/powershell_script.cpp
+msgid "Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."
+msgstr ""
+
+#: regfile/powershell_script.cpp
 msgid "Unsupported member"
 msgstr ""
 
@@ -3194,10 +3205,6 @@ msgstr ""
 
 #: regfile/powershell_script.cpp
 msgid "Only registry drives are supported."
-msgstr ""
-
-#: regfile/powershell_script.cpp
-msgid "Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."
 msgstr ""
 
 #: regfile/powershell_script.cpp
@@ -3256,16 +3263,16 @@ msgstr ""
 msgid "The file contains an entry RegKit can't parse."
 msgstr ""
 
+#: regfile/reg_file.cpp regfile/script_convert.cpp
+msgid "The file has no registry changes."
+msgstr ""
+
 #: regfile/script_convert.cpp
 msgid "Unsupported file type, use .reg, .bat, .cmd or .ps1."
 msgstr ""
 
 #: regfile/script_convert.cpp
 msgid "Unsupported root key."
-msgstr ""
-
-#: regfile/script_convert.cpp
-msgid "The file has no registry changes."
 msgstr ""
 
 #: regfile/script_convert.cpp
@@ -3873,6 +3880,14 @@ msgid "The background task couldn't be started."
 msgstr ""
 
 #: ui/feedback.cpp
+msgid "RegKit couldn't save this file."
+msgstr ""
+
+#: ui/feedback.cpp
+msgid "The text couldn't be copied to the clipboard."
+msgstr ""
+
+#: ui/feedback.cpp
 msgid "Warning"
 msgstr ""
 
@@ -3992,14 +4007,6 @@ msgstr ""
 msgid "The file dialog failed."
 msgstr ""
 
-#: win32/file_text.cpp
-msgid "The file is too large."
-msgstr ""
-
-#: win32/file_text.cpp
-msgid "The file isn't valid text."
-msgstr ""
-
 #: win32ui/dialog/check_list.cpp
 msgid "Select All"
 msgstr ""
@@ -4111,6 +4118,14 @@ msgstr ""
 
 #: win32ui/system/error_text.cpp
 msgid "Unknown error."
+msgstr ""
+
+#: win32ui/system/file_io.cpp
+msgid "The file is too large."
+msgstr ""
+
+#: win32ui/system/file_io.cpp
+msgid "The file isn't valid text."
 msgstr ""
 
 #: win32ui/system/strings.cpp
@@ -4849,20 +4864,14 @@ msgstr ""
 msgid "JSON files (*.jsonc;*.json)"
 msgstr ""
 
-#: dialogs/transfer_dialogs.cpp frame/tools/convert_dialog.cpp
-#: regfile/script_convert.h ui/feedback.h
-msgid "Registry Files (*.reg)"
-msgstr ""
-
-#: dialogs/transfer_dialogs.cpp frame/commands/clipboard_commands.cpp
-#: frame/commands/file_view_commands.cpp frame/detail/file_detail.h
-#: frame/sources/trace_commands.cpp frame/window/appearance.cpp
-#: regfile/script_convert.h ui/feedback.h
-msgid "All Files (*.*)"
-msgstr ""
-
 #: frame/commands/clipboard_commands.cpp
 msgid "Favorites Files (*.txt)"
+msgstr ""
+
+#: frame/commands/clipboard_commands.cpp frame/commands/file_view_commands.cpp
+#: frame/detail/file_detail.h frame/sources/trace_commands.cpp
+#: frame/window/appearance.cpp regfile/script_convert.h ui/feedback.h
+msgid "All Files (*.*)"
 msgstr ""
 
 #: frame/commands/file_view_commands.cpp
@@ -4877,16 +4886,20 @@ msgstr ""
 msgid "Trace Files (*.txt)"
 msgstr ""
 
-#: frame/tools/convert_dialog.cpp regfile/script_convert.h
+#: frame/window/appearance.cpp
+msgid "RegKit Theme Presets (*.rktheme)"
+msgstr ""
+
+#: regfile/script_convert.h ui/feedback.h
+msgid "Registry Files (*.reg)"
+msgstr ""
+
+#: regfile/script_convert.h
 msgid "Batch Files (*.bat;*.cmd)"
 msgstr ""
 
-#: frame/tools/convert_dialog.cpp regfile/script_convert.h
+#: regfile/script_convert.h
 msgid "PowerShell Scripts (*.ps1)"
-msgstr ""
-
-#: frame/window/appearance.cpp
-msgid "RegKit Theme Presets (*.rktheme)"
 msgstr ""
 
 #: regfile/script_convert.h

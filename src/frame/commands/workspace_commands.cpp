@@ -220,6 +220,27 @@ bool MainWindow::Impl::HandleLaunchHelpCommand(int command_id)
         SaveSettings();
         return true;
     case cmd::kOptionsHkcuFollowsUser:
+        // running workers would read or change part of HKCU as the other user
+        if (util::ShellUserDiffers())
+        {
+            key_copy_session_.CancelAndJoin();
+            StopReplace();
+            if (compare_session_.running())
+            {
+                compare_session_.CancelAndJoin();
+                SetStatusMessage(L"");
+            }
+            for (SearchTab& tab : search_tabs_)
+            {
+                if (tab.run)
+                {
+                    // results found so far stay, the status says the search was stopped
+                    tab.run->Stop();
+                    tab.stopped = true;
+                    FinishSearch(&tab);
+                }
+            }
+        }
         settings_.hkcu_follows_shell_user = !settings_.hkcu_follows_shell_user;
         util::SetCurrentUserFollowsShell(settings_.hkcu_follows_shell_user);
         SaveSettings();

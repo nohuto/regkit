@@ -286,10 +286,10 @@ void MainWindow::Impl::BuildMenus()
     append_menu(edit_menu, MF_STRING, cmd::kEditGoTo, util::Tr(L"&Go To..."));
     if (win32::HasAlternateView())
     {
-        append_menu(edit_menu, MF_STRING, cmd::kRegistryOtherView, util::Tr(L"&Go to Other View"));
+        append_menu(edit_menu, MF_STRING, cmd::kRegistryOtherView, util::Tr(L"Go to Other View"));
     }
-    append_menu(edit_menu, MF_STRING, cmd::kEditGoToVirtualStore, util::Tr(L"&Go to Virtual Store Copy"));
-    append_menu(edit_menu, MF_STRING, cmd::kEditGoToGlobalKey, util::Tr(L"&Go to Global Key"));
+    append_menu(edit_menu, MF_STRING, cmd::kEditGoToVirtualStore, util::Tr(L"Go to Virtual Store Copy"));
+    append_menu(edit_menu, MF_STRING, cmd::kEditGoToGlobalKey, util::Tr(L"Go to Global Key"));
     separator(edit_menu);
     append_menu(edit_menu, MF_STRING, cmd::kEditPermissions, util::Tr(L"Perm&issions..."));
     append_menu(edit_menu, MF_STRING, cmd::kEditKeyInfo, util::Tr(L"&Key Information..."));
@@ -455,13 +455,13 @@ void MainWindow::Impl::BuildMenus()
     separator(default_menu);
     append_menu(default_menu, MF_STRING, cmd::kDefaultLoadCustom, util::Tr(L"&Open Default File..."));
     separator(default_menu);
-    append_menu(default_menu, MF_STRING, cmd::kDefaultEditActive, util::Tr(L"Edit &Active Defaults..."));
-    append_menu(default_menu, MF_STRING, cmd::kDefaultClear, util::Tr(L"&Clear Active Defaults"));
+    append_menu(default_menu, MF_STRING, cmd::kDefaultEditActive, util::Tr(L"&Edit Active Defaults..."));
+    append_menu(default_menu, MF_STRING, cmd::kDefaultClear, util::Tr(L"Clear &Active Defaults"));
     separator(default_menu);
-    append_menu(default_menu, MF_STRING, cmd::kDefaultEditRecent, util::Tr(L"Edit Recent &Defaults..."));
-    append_menu(default_menu, MF_STRING, cmd::kDefaultClearRecent, util::Tr(L"Clear &Recent Defaults"));
+    append_menu(default_menu, MF_STRING, cmd::kDefaultEditRecent, util::Tr(L"Edit &Recent Defaults..."));
+    append_menu(default_menu, MF_STRING, cmd::kDefaultClearRecent, util::Tr(L"&Clear Recent Defaults"));
     separator(default_menu);
-    append_menu(default_menu, MF_STRING, cmd::kDefaultResetEnable, util::Tr(L"&Enable Context Menu (risky)"));
+    append_menu(default_menu, MF_STRING, cmd::kDefaultResetEnable, util::Tr(L"E&nable Context Menu (risky)"));
 
     HMENU help_menu = CreatePopupMenu();
     append_menu(help_menu, MF_STRING, cmd::kHelpContents, util::Tr(L"D&ocumentation"));
@@ -556,6 +556,7 @@ bool MainWindow::Impl::CommandEnabled(int command, CommandState* state)
     switch (command)
     {
     case cmd::kEditPermissions:
+        return node != nullptr && !RegistryStore::IsVirtualRoot(node->root);
     case cmd::kEditKeyInfo:
         return node != nullptr;
     case cmd::kEditModifyComment:

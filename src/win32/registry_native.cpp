@@ -41,6 +41,8 @@ using NtSetInformationKeyFn = NTSTATUS(NTAPI*)(HANDLE, ULONG, PVOID, ULONG);
 using NtQueryValueKeyFn = NTSTATUS(NTAPI*)(HANDLE, PUNICODE_STRING, ULONG, PVOID, ULONG, PULONG);
 using NtSetValueKeyFn = NTSTATUS(NTAPI*)(HANDLE, PUNICODE_STRING, ULONG, ULONG, PVOID, ULONG);
 using NtDeleteValueKeyFn = NTSTATUS(NTAPI*)(HANDLE, PUNICODE_STRING);
+using NtSaveKeyExFn = NTSTATUS(NTAPI*)(HANDLE, HANDLE, ULONG);
+using NtRestoreKeyFn = NTSTATUS(NTAPI*)(HANDLE, HANDLE, ULONG);
 
 constexpr REGSAM kViewFlags = KEY_WOW64_32KEY | KEY_WOW64_64KEY;
 constexpr NTSTATUS kBufferOverflow = static_cast<NTSTATUS>(0x80000005L);
@@ -249,6 +251,21 @@ LONG RenameRegistryKey(HKEY parent, const std::wstring& old_name, const std::wst
         result = ERROR_INVALID_PARAMETER;
     }
     return result == ERROR_SUCCESS ? win32ui::Win32FromNtStatus(rename_key(RootHandle(key.get()), &counted)) : result;
+}
+
+// file handles instead of paths, RegSaveKeyEx and RegRestoreKey only open files themselves
+LONG SaveKeyToFile(HKEY key, HANDLE file)
+{
+    static const auto save_key = win32ui::ImportProc<NtSaveKeyExFn>(L"ntdll.dll", "NtSaveKeyEx");
+    const HANDLE handle = RootHandle(key);
+    return save_key && handle ? win32ui::Win32FromNtStatus(save_key(handle, file, REG_LATEST_FORMAT)) : ERROR_INVALID_HANDLE;
+}
+
+LONG RestoreKeyFromFile(HKEY key, HANDLE file, DWORD flags)
+{
+    static const auto restore_key = win32ui::ImportProc<NtRestoreKeyFn>(L"ntdll.dll", "NtRestoreKey");
+    const HANDLE handle = RootHandle(key);
+    return restore_key && handle ? win32ui::Win32FromNtStatus(restore_key(handle, file, flags)) : ERROR_INVALID_HANDLE;
 }
 
 LONG DeleteRegistryTree(HKEY key)

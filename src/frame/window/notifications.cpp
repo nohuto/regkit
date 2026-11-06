@@ -365,6 +365,8 @@ LRESULT MainWindow::Impl::HandleTreeNotification(NMHDR* header, LPARAM lparam)
             if (!EqualsInsensitive(new_name, old_name) && KeyNameExists(rename_parent, new_name))
             {
                 ReportNameTaken(hwnd_, util::Tr(L"A key with this name already exists:"), util::Tr(L"Rename Key"), new_name);
+                retry_rename_key_ = *node;
+                RetryRename(browse_.tree().hwnd(), disp->item.pszText);
                 return FALSE;
             }
             if (!RegistryStore::RenameKey(*node, new_name))
@@ -532,6 +534,8 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam)
             if (!case_only && KeyNameExists(*browse_.current_node(), new_name))
             {
                 ReportNameTaken(hwnd_, util::Tr(L"A key with this name already exists:"), util::Tr(L"Rename Key"), new_name);
+                ScheduleValueListRename(rowkind::kKey, old_name);
+                RetryRename(browse_.values().hwnd(), disp->item.pszText);
                 return FALSE;
             }
             if (!RegistryStore::RenameKey(child, new_name))
@@ -554,6 +558,8 @@ LRESULT MainWindow::Impl::HandleValueNotification(NMHDR* header, LPARAM lparam)
         if (!case_only && ValueNameExists(*browse_.current_node(), new_name))
         {
             ReportNameTaken(hwnd_, util::Tr(L"A value with this name already exists:"), util::Tr(L"Rename Value"), new_name);
+            ScheduleValueListRename(rowkind::kValue, old_name);
+            RetryRename(browse_.values().hwnd(), disp->item.pszText);
             return FALSE;
         }
         bool both_names_left = false;

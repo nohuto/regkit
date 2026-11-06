@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegKit\n"
 "Report-Msgid-Bugs-To: https://github.com/nohuto/regkit/issues\n"
-"POT-Creation-Date: 2026-11-02 18:21+0100\n"
-"PO-Revision-Date: 2026-10-09 20:51+0200\n"
+"POT-Creation-Date: 2026-11-06 04:34+0100\n"
+"PO-Revision-Date: 2026-11-06 04:35+0100\n"
 "Last-Translator: nohuto contact@noverse.dev\n"
 "Language-Team: none\n"
 "Language: ja\n"
@@ -455,6 +455,14 @@ msgstr "RegKit"
 msgid "Registry File (.reg)"
 msgstr "レジストリ ファイル (.reg)"
 
+#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
+msgid "Batch File"
+msgstr "バッチ ファイル"
+
+#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
+msgid "PowerShell Script"
+msgstr "PowerShell スクリプト"
+
 #: dialogs/export_dialog.cpp
 msgid "Registry Hive File"
 msgstr "レジストリ ハイブ ファイル"
@@ -485,7 +493,7 @@ msgstr "リンク名にバックスラッシュは使用できません。"
 
 #: dialogs/query_dialog.cpp frame/views/history_workspace.cpp
 msgid "RegKit couldn't read this file and didn't use it."
-msgstr ""
+msgstr "RegKit はこのファイルを読み取れなかったため、使用しませんでした。"
 
 #: dialogs/query_dialog.cpp
 msgid "No top level keys"
@@ -620,6 +628,10 @@ msgstr "このキーのみ"
 msgid "This key and subkeys"
 msgstr "このキーとサブキー"
 
+#: dialogs/security_dialog.cpp frame/tools/launch_bridge.cpp
+msgid "The key's permissions couldn't be read."
+msgstr "キーのアクセス許可を読み取れませんでした。"
+
 #: dialogs/trace_dialog.cpp frame/views/value_loading.cpp
 msgid "Keys"
 msgstr "キー"
@@ -641,11 +653,12 @@ msgstr "キーまたは値を少なくとも 1 つ選択してください。"
 msgid "Export supports the standard root keys only."
 msgstr "エクスポートは標準のルート キーのみサポートしています。"
 
-#: dialogs/transfer_dialogs.cpp
+#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
 msgid "Failed to write the exported registry file."
 msgstr "エクスポートしたレジストリ ファイルを書き込めませんでした。"
 
-#: dialogs/transfer_dialogs.cpp frame/window/menu_bar.cpp
+#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
+#: frame/window/menu_bar.cpp
 msgid "Export"
 msgstr "エクスポート"
 
@@ -742,10 +755,6 @@ msgstr "お気に入りをエクスポートできませんでした。"
 msgid "Failed to read value."
 msgstr "値を読み取れませんでした。"
 
-#: frame/commands/clipboard_commands.cpp frame/tools/launch_bridge.cpp
-msgid "The key information couldn't be read."
-msgstr "キーの情報を読み取れませんでした。"
-
 #: frame/commands/clipboard_commands.cpp
 msgid "The source key couldn't be opened."
 msgstr "コピー元のキーを開けませんでした。"
@@ -753,6 +762,10 @@ msgstr "コピー元のキーを開けませんでした。"
 #: frame/commands/clipboard_commands.cpp
 msgid "Failed to paste value."
 msgstr "値を貼り付けられませんでした。"
+
+#: frame/commands/clipboard_commands.cpp frame/tools/launch_bridge.cpp
+msgid "The key information couldn't be read."
+msgstr "キーの情報を読み取れませんでした。"
 
 #: frame/commands/clipboard_commands.cpp
 msgid "Failed to paste key."
@@ -996,8 +1009,8 @@ msgid "Replace all contents of this key with the hive file?"
 msgstr "このキーの内容をすべてハイブ ファイルの内容で置き換えますか?"
 
 #: frame/commands/file_view_commands.cpp
-msgid "Replace all contents of this key with the hive file? This key is too large to undo the restore."
-msgstr "このキーの内容をすべてハイブ ファイルの内容で置き換えますか? このキーは大きすぎるため、復元を元に戻せません。"
+msgid "Replace all contents of this key with the hive file? The restore can't be undone."
+msgstr "このキーの内容をすべてハイブ ファイルの内容で置き換えますか? この復元は元に戻せません。"
 
 #: frame/commands/file_view_commands.cpp
 msgid "Restore Key"
@@ -1081,7 +1094,7 @@ msgstr "リンク先は、標準のルートの下にある完全なレジスト
 
 #: frame/commands/mutation_commands.cpp
 msgid "Windows doesn't follow a link from a user hive into another user's hive or HKEY_LOCAL_MACHINE, so this link may not open. Create it anyway?"
-msgstr ""
+msgstr "Windows はユーザー ハイブから別のユーザーのハイブまたは HKEY_LOCAL_MACHINE へのリンクをたどらないため、このリンクは開けない可能性があります。それでも作成しますか?"
 
 #: frame/commands/mutation_commands.cpp
 msgid "New Symbolic Link"
@@ -1168,9 +1181,8 @@ msgid "Later"
 msgstr "後で"
 
 #: frame/commands/workspace_commands.cpp
-#, fuzzy
 msgid "A new RegKit window couldn't be opened."
-msgstr "RegKit を再起動できませんでした。"
+msgstr "新しい RegKit ウィンドウを開けませんでした。"
 
 #: frame/commands/workspace_commands.cpp
 msgid "Backup/restore mode needs the backup and restore privileges. Run RegKit elevated."
@@ -1199,6 +1211,7 @@ msgstr "レジストリ パスが見つかりません。"
 
 #: frame/search/compare_command.cpp frame/search/compare_dialog.cpp
 #: frame/sources/regfile_commands.cpp regfile/registry_transfer.cpp
+#: regfile/reg_file.cpp
 msgid "Failed to read registry file."
 msgstr "レジストリ ファイルを読み取れませんでした。"
 
@@ -1295,6 +1308,11 @@ msgstr "検索中... 結果: ~%llu"
 
 #: frame/search/search_window.cpp
 #, c-format
+msgid "Results: %llu (stopped)"
+msgstr "結果: %llu (検索を中止)"
+
+#: frame/search/search_window.cpp
+#, c-format
 msgid "Results: %llu (%.2fs)"
 msgstr "結果: %llu (%.2f 秒)"
 
@@ -1303,9 +1321,8 @@ msgid "Loading"
 msgstr "読み込み中"
 
 #: frame/search/search_window.cpp
-#, fuzzy
 msgid "The contents of this key couldn't be read."
-msgstr "定義ファイルを読み取れませんでした。"
+msgstr "このキーの内容を読み取れませんでした。"
 
 #: frame/search/search_window.cpp
 msgid "HKCU"
@@ -1434,14 +1451,6 @@ msgstr "出力ファイルを入力ファイルと同じにすることはでき
 #: frame/tools/convert_dialog.cpp
 msgid "The output file couldn't be written."
 msgstr "出力ファイルを書き込めませんでした。"
-
-#: frame/tools/convert_dialog.cpp
-msgid "Batch File"
-msgstr "バッチ ファイル"
-
-#: frame/tools/convert_dialog.cpp
-msgid "PowerShell Script"
-msgstr "PowerShell スクリプト"
 
 #: frame/tools/key_handles_window.cpp
 msgid "Scanning handles..."
@@ -1782,11 +1791,6 @@ msgstr "書き込み可能"
 #: frame/tools/launch_bridge.cpp ui/feedback.cpp
 msgid "Error"
 msgstr "エラー"
-
-#: frame/tools/launch_bridge.cpp
-#, fuzzy
-msgid "The key's permissions couldn't be read."
-msgstr "キーの情報を読み取れませんでした。"
 
 #: frame/tools/launch_bridge.cpp
 msgid "The resource data is malformed."
@@ -2324,9 +2328,8 @@ msgid "Key Tree"
 msgstr "キー ツリー"
 
 #: frame/window/lifetime.cpp
-#, fuzzy
 msgid "Clear Filter"
-msgstr "履歴のクリア(&H)"
+msgstr "フィルターをクリア"
 
 #: frame/window/lifetime.cpp
 msgid "History"
@@ -2501,16 +2504,16 @@ msgid "&Go To..."
 msgstr "移動(&G)..."
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Other View"
-msgstr "他のビューへ移動(&G)"
+msgid "Go to Other View"
+msgstr "他のビューへ移動"
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Virtual Store Copy"
-msgstr "仮想ストア内のコピーへ移動(&G)"
+msgid "Go to Virtual Store Copy"
+msgstr "仮想ストア内のコピーへ移動"
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Global Key"
-msgstr "グローバル キーへ移動(&G)"
+msgid "Go to Global Key"
+msgstr "グローバル キーへ移動"
 
 #: frame/window/menu_bar.cpp
 msgid "&Edit"
@@ -2881,24 +2884,24 @@ msgid "&Open Default File..."
 msgstr "既定値ファイルを開く(&O)..."
 
 #: frame/window/menu_bar.cpp
-msgid "Edit &Active Defaults..."
-msgstr "使用中の既定値の編集(&A)..."
+msgid "&Edit Active Defaults..."
+msgstr "使用中の既定値の編集(&E)..."
 
 #: frame/window/menu_bar.cpp
-msgid "&Clear Active Defaults"
-msgstr "使用中の既定値をクリア(&C)"
+msgid "Clear &Active Defaults"
+msgstr "使用中の既定値をクリア(&A)"
 
 #: frame/window/menu_bar.cpp
-msgid "Edit Recent &Defaults..."
-msgstr "最近使った既定値の編集(&D)..."
+msgid "Edit &Recent Defaults..."
+msgstr "最近使った既定値の編集(&R)..."
 
 #: frame/window/menu_bar.cpp
-msgid "Clear &Recent Defaults"
-msgstr "最近使った既定値をクリア(&R)"
+msgid "&Clear Recent Defaults"
+msgstr "最近使った既定値をクリア(&C)"
 
 #: frame/window/menu_bar.cpp
-msgid "&Enable Context Menu (risky)"
-msgstr "コンテキスト メニューを有効化 (危険)(&E)"
+msgid "E&nable Context Menu (risky)"
+msgstr "コンテキスト メニューを有効化 (危険)(&N)"
 
 #: frame/window/menu_bar.cpp
 msgid "D&ocumentation"
@@ -3171,6 +3174,10 @@ msgid "Invalid RegKit.Native call."
 msgstr "RegKit.Native の呼び出しが無効です。"
 
 #: regfile/powershell_script.cpp
+msgid "Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."
+msgstr "if (-not (Test-Path)) の後に記述できるのは New-Item のみ、if (Test-Path) の後に記述できるのは削除操作のみです。"
+
+#: regfile/powershell_script.cpp
 msgid "Unsupported member"
 msgstr "サポートされていないメンバー"
 
@@ -3225,10 +3232,6 @@ msgstr "-Path が必要です。"
 #: regfile/powershell_script.cpp
 msgid "Only registry drives are supported."
 msgstr "レジストリ ドライブのみサポートしています。"
-
-#: regfile/powershell_script.cpp
-msgid "Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."
-msgstr "if (-not (Test-Path)) の後に記述できるのは New-Item のみ、if (Test-Path) の後に記述できるのは削除操作のみです。"
 
 #: regfile/powershell_script.cpp
 msgid "-Name and -Value are required."
@@ -3286,6 +3289,10 @@ msgstr "名前に null 文字が含まれる"
 msgid "The file contains an entry RegKit can't parse."
 msgstr "ファイルに RegKit で解析できない項目があります。"
 
+#: regfile/reg_file.cpp regfile/script_convert.cpp
+msgid "The file has no registry changes."
+msgstr "ファイルにレジストリの変更がありません。"
+
 #: regfile/script_convert.cpp
 msgid "Unsupported file type, use .reg, .bat, .cmd or .ps1."
 msgstr "サポートされていないファイルの種類なので、.reg、.bat、.cmd、.ps1 を使用してください。"
@@ -3293,10 +3300,6 @@ msgstr "サポートされていないファイルの種類なので、.reg、.b
 #: regfile/script_convert.cpp
 msgid "Unsupported root key."
 msgstr "サポートされていないルート キーです。"
-
-#: regfile/script_convert.cpp
-msgid "The file has no registry changes."
-msgstr "ファイルにレジストリの変更がありません。"
 
 #: regfile/script_convert.cpp
 msgid "Enter a key under HKLM, HKCU, HKCR, HKU or HKCC."
@@ -3899,9 +3902,16 @@ msgid "Trace file contains no usable entries."
 msgstr "Trace ファイルに使用できる項目がありません。"
 
 #: ui/feedback.cpp
-#, fuzzy
 msgid "The background task couldn't be started."
-msgstr "セットアップを起動できませんでした。"
+msgstr "バックグラウンド タスクを開始できませんでした。"
+
+#: ui/feedback.cpp
+msgid "RegKit couldn't save this file."
+msgstr "RegKit はこのファイルを保存できませんでした。"
+
+#: ui/feedback.cpp
+msgid "The text couldn't be copied to the clipboard."
+msgstr "テキストをクリップボードにコピーできませんでした。"
 
 #: ui/feedback.cpp
 msgid "Warning"
@@ -3912,9 +3922,8 @@ msgid "Information"
 msgstr "情報"
 
 #: ui/feedback.cpp
-#, fuzzy
 msgid "The file couldn't be shown in Explorer."
-msgstr "レジストリ ファイルをインポートできませんでした。"
+msgstr "エクスプローラーでファイルを表示できませんでした。"
 
 #: ui/feedback.cpp
 msgid "About RegKit"
@@ -4032,16 +4041,6 @@ msgstr "保存後に開く:"
 msgid "The file dialog failed."
 msgstr "ファイル ダイアログでエラーが発生しました。"
 
-#: win32/file_text.cpp
-#, fuzzy
-msgid "The file is too large."
-msgstr "ファイルの入れ子が深すぎます。"
-
-#: win32/file_text.cpp
-#, fuzzy
-msgid "The file isn't valid text."
-msgstr "ファイルが有効な JSON ではありません。"
-
 #: win32ui/dialog/check_list.cpp
 msgid "Select All"
 msgstr "すべて選択"
@@ -4059,23 +4058,21 @@ msgid "Browse..."
 msgstr "参照..."
 
 #: win32ui/json/reader.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Expected '%c'."
-msgstr "'}' が必要です。"
+msgstr "'%c' が必要です。"
 
 #: win32ui/json/reader.cpp
 msgid "The file is nested too deeply."
 msgstr "ファイルの入れ子が深すぎます。"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "An unterminated block comment is not allowed."
-msgstr "ブロック コメントが閉じられていません。"
+msgstr "閉じられていないブロック コメントは使用できません。"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "Unexpected token."
-msgstr "予期しないトークン"
+msgstr "予期しないトークンです。"
 
 #: win32ui/json/reader.cpp
 msgid "A text member is longer than the format allows."
@@ -4110,24 +4107,20 @@ msgid "A number is out of range."
 msgstr "数値が範囲外です。"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "Only integers are supported."
-msgstr "符号なし整数のみサポートしています。"
+msgstr "整数のみがサポートされています。"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A boolean was expected."
-msgstr "符号なしの数値が必要です。"
+msgstr "ブール値が必要です。"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A number has an empty fraction."
-msgstr "数値に先行ゼロがあります。"
+msgstr "数値の小数部が空です。"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A number has an empty exponent."
-msgstr "コメントのキーが空です。"
+msgstr "数値の指数部が空です。"
 
 #: win32ui/json/reader.cpp
 msgid "The file contains trailing content."
@@ -4139,7 +4132,7 @@ msgstr "ファイルが有効な JSON ではありません。"
 
 #: win32ui/json/reader.cpp
 msgid "Column"
-msgstr ""
+msgstr "列"
 
 #: win32ui/list_view/list_view.cpp
 msgid "Size column to fit"
@@ -4160,6 +4153,14 @@ msgstr "グリッド線"
 #: win32ui/system/error_text.cpp
 msgid "Unknown error."
 msgstr "不明なエラーです。"
+
+#: win32ui/system/file_io.cpp
+msgid "The file is too large."
+msgstr "ファイルが大きすぎます。"
+
+#: win32ui/system/file_io.cpp
+msgid "The file isn't valid text."
+msgstr "ファイルが有効なテキストではありません。"
 
 #: win32ui/system/strings.cpp
 msgid "Invalid Base64 character."
@@ -4278,24 +4279,20 @@ msgid "Rename Preset"
 msgstr "プリセット名の変更"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "The file could not be read."
-msgstr "定義ファイルを読み取れませんでした。"
+msgstr "ファイルを読み取れませんでした。"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "A preset has no name."
-msgstr "プリセット名:"
+msgstr "名前のないプリセットがあります。"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "A line is not a valid entry."
-msgstr "ファイルが有効な JSON ではありません。"
+msgstr "有効なエントリではない行があります。"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "The file could not be written."
-msgstr "出力ファイルを書き込めませんでした。"
+msgstr "ファイルを書き込めませんでした。"
 
 #: win32ui/theme/theme_presets_internal.h
 msgid "Background"
@@ -4494,9 +4491,8 @@ msgid "REG_NONE"
 msgstr ""
 
 #: ../resources/editor_dialogs.rc
-#, fuzzy
 msgid "RegKit"
-msgstr "RegKit"
+msgstr ""
 
 #: ../resources/editor_dialogs.rc
 msgid "Export to:"
@@ -4902,21 +4898,15 @@ msgstr "RegKit ビット フィールド定義 (*.regkit-bitfield.jsonc)"
 msgid "JSON files (*.jsonc;*.json)"
 msgstr "JSON ファイル (*.jsonc;*.json)"
 
-#: dialogs/transfer_dialogs.cpp frame/tools/convert_dialog.cpp
-#: regfile/script_convert.h ui/feedback.h
-msgid "Registry Files (*.reg)"
-msgstr "レジストリ ファイル (*.reg)"
-
-#: dialogs/transfer_dialogs.cpp frame/commands/clipboard_commands.cpp
-#: frame/commands/file_view_commands.cpp frame/detail/file_detail.h
-#: frame/sources/trace_commands.cpp frame/window/appearance.cpp
-#: regfile/script_convert.h ui/feedback.h
-msgid "All Files (*.*)"
-msgstr "すべてのファイル (*.*)"
-
 #: frame/commands/clipboard_commands.cpp
 msgid "Favorites Files (*.txt)"
 msgstr "お気に入りファイル (*.txt)"
+
+#: frame/commands/clipboard_commands.cpp frame/commands/file_view_commands.cpp
+#: frame/detail/file_detail.h frame/sources/trace_commands.cpp
+#: frame/window/appearance.cpp regfile/script_convert.h ui/feedback.h
+msgid "All Files (*.*)"
+msgstr "すべてのファイル (*.*)"
 
 #: frame/commands/file_view_commands.cpp
 msgid "RegKit Comment Files (*.jsonc)"
@@ -4930,17 +4920,21 @@ msgstr "レジストリ ハイブ ファイル"
 msgid "Trace Files (*.txt)"
 msgstr "Trace ファイル (*.txt)"
 
-#: frame/tools/convert_dialog.cpp regfile/script_convert.h
-msgid "Batch Files (*.bat;*.cmd)"
-msgstr "バッチ ファイル (*.bat;*.cmd)"
-
-#: frame/tools/convert_dialog.cpp regfile/script_convert.h
-msgid "PowerShell Scripts (*.ps1)"
-msgstr "PowerShell スクリプト (*.ps1)"
-
 #: frame/window/appearance.cpp
 msgid "RegKit Theme Presets (*.rktheme)"
 msgstr "RegKit テーマ プリセット (*.rktheme)"
+
+#: regfile/script_convert.h ui/feedback.h
+msgid "Registry Files (*.reg)"
+msgstr "レジストリ ファイル (*.reg)"
+
+#: regfile/script_convert.h
+msgid "Batch Files (*.bat;*.cmd)"
+msgstr "バッチ ファイル (*.bat;*.cmd)"
+
+#: regfile/script_convert.h
+msgid "PowerShell Scripts (*.ps1)"
+msgstr "PowerShell スクリプト (*.ps1)"
 
 #: regfile/script_convert.h
 msgid "Registry Scripts (*.reg;*.bat;*.cmd;*.ps1)"

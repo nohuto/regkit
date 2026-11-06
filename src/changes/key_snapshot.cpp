@@ -6,6 +6,8 @@
 #include "registry/registry_path.h"
 #include "win32/process_rights.h"
 
+#include <algorithm>
+
 namespace regkit::changes
 {
 namespace
@@ -14,8 +16,13 @@ namespace
 constexpr SECURITY_INFORMATION kExactSecurity =
     OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION;
 
-KeySnapshot Capture(const RegistryNode& node, SECURITY_INFORMATION parts)
+KeySnapshot Capture(const RegistryNode& node, SECURITY_INFORMATION parts, const std::atomic_bool* cancel)
 {
+    const auto cancelled = [cancel] { return cancel && cancel->load(); };
+    if (cancelled())
+    {
+        return {.complete = false};
+    }
     KeySnapshot snapshot;
     snapshot.name = registry_path::Leaf(node.subkey);
     snapshot.security_parts = parts;
@@ -51,11 +58,11 @@ KeySnapshot Capture(const RegistryNode& node, SECURITY_INFORMATION parts)
                                     value.data.assign(data, data + size);
                                 }
                                 snapshot.values.push_back(std::move(value));
-                                return true;
+                                return !cancelled();
                             },
                             [&](const std::wstring& name) {
                                 children.push_back(name);
-                                return true;
+                                return !cancelled();
                             },
                             MAXDWORD,
                             nullptr,
@@ -70,16 +77,19 @@ KeySnapshot Capture(const RegistryNode& node, SECURITY_INFORMATION parts)
     {
         snapshot.last_write = result.info.last_write;
     }
+    // partial snapshots are never restored, stop at the first unreadable part
     snapshot.children.reserve(children.size());
     for (const std::wstring& name : children)
     {
-        snapshot.children.push_back(Capture(registry_path::ChildNode(node, name), parts));
-        if (!snapshot.children.back().complete)
+        if (!snapshot.complete)
         {
-            snapshot.complete = false;
+            return snapshot;
         }
+        snapshot.children.push_back(Capture(registry_path::ChildNode(node, name), parts, cancel));
+        snapshot.complete = snapshot.children.back().complete;
     }
-    if (!link && result.info_valid && result.info.subkey_count != children.size())
+    // a value or subkey deleted during the enumeration ends it early without an error
+    if (!link && result.info_valid && (result.info.subkey_count != children.size() || result.info.value_count != snapshot.values.size()))
     {
         snapshot.complete = false;
     }
@@ -135,55 +145,66 @@ bool Restore(const RegistryNode& parent, const KeySnapshot& snapshot, bool* crea
     return (link || Fill(node, snapshot)) && WriteAttributes(node, snapshot);
 }
 
+// links stay unfollowed
+bool ListChildren(const RegistryNode& node, std::vector<std::wstring>* children, bool* is_volatile)
+{
+    RegistryStore::KeyEnumResult result;
+    result.want_options = is_volatile != nullptr;
+    const bool enumerated = RegistryStore::EnumKeyStreaming(
+        node,
+        false,
+        false,
+        true,
+        &result,
+        {},
+        [children](const std::wstring& name) {
+            children->push_back(name);
+            return true;
+        },
+        MAXDWORD,
+        nullptr,
+        false,
+        true
+    );
+    if (is_volatile)
+    {
+        *is_volatile = result.options.is_volatile;
+    }
+    return enumerated && result.error == ERROR_SUCCESS;
 }
 
-bool ReplaceKey(const RegistryNode& node, const KeySnapshot& snapshot)
+// children of a volatile key are volatile too and ride in its snapshot
+bool CollectVolatile(const RegistryNode& parent, const RegistryNode& node, std::vector<std::pair<RegistryNode, KeySnapshot>>* keys)
 {
-    const util::PrivilegeScope owner({SE_RESTORE_NAME});
-    const util::PrivilegeScope audit({SE_SECURITY_NAME});
-    std::vector<std::wstring> values;
     std::vector<std::wstring> children;
-    RegistryStore::KeyEnumResult result;
-    if (!RegistryStore::EnumKeyStreaming(
-            node,
-            true,
-            false,
-            true,
-            &result,
-            [&](const ValueInfo& info, const BYTE*, DWORD) {
-                values.push_back(info.name);
-                return true;
-            },
-            [&](const std::wstring& name) {
-                children.push_back(name);
-                return true;
-            }
-        ) ||
-        result.error != ERROR_SUCCESS)
+    bool is_volatile = false;
+    if (!ListChildren(node, &children, &is_volatile))
     {
         return false;
     }
-    for (const std::wstring& name : values)
+    if (is_volatile)
     {
-        if (!RegistryStore::DeleteValue(node, name))
-        {
-            return false;
-        }
+        keys->emplace_back(parent, CaptureKey(node));
+        return keys->back().second.complete;
     }
-    for (const std::wstring& name : children)
-    {
-        if (!RegistryStore::DeleteKey(registry_path::ChildNode(node, name)))
-        {
-            return false;
-        }
-    }
-    return Fill(node, snapshot) && WriteAttributes(node, snapshot);
+    return std::all_of(children.begin(), children.end(), [&](const std::wstring& name) { return CollectVolatile(node, registry_path::ChildNode(node, name), keys); });
 }
 
-KeySnapshot CaptureKey(const RegistryNode& node, bool exact)
+}
+
+bool CaptureVolatileKeys(const RegistryNode& node, std::vector<std::pair<RegistryNode, KeySnapshot>>* keys)
+{
+    std::vector<std::wstring> children;
+    return ListChildren(node, &children, nullptr) && std::all_of(children.begin(), children.end(), [&](const std::wstring& name) {
+               return CollectVolatile(node, registry_path::ChildNode(node, name), keys);
+           });
+}
+
+KeySnapshot CaptureKey(const RegistryNode& node, bool exact, const std::atomic_bool* cancel)
 {
     const util::PrivilegeScope audit({SE_SECURITY_NAME});
-    return Capture(node, exact ? kExactSecurity | (audit.held() ? SACL_SECURITY_INFORMATION : 0) : 0);
+    KeySnapshot snapshot = Capture(node, exact ? kExactSecurity | (audit.held() ? SACL_SECURITY_INFORMATION : 0) : 0, cancel);
+    return snapshot.complete ? std::move(snapshot) : KeySnapshot{.complete = false};
 }
 
 bool RestoreKey(const RegistryNode& parent, const KeySnapshot& snapshot)

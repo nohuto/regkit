@@ -58,10 +58,20 @@ bool ReadOperations(const std::wstring& path, std::vector<Operation>* operations
 bool ReadOperations(const std::wstring& path, Format format, std::vector<Operation>* operations, std::wstring* error)
 {
     std::wstring content;
-    if (!ReadText(path, &content, error))
+    if (!ReadText(path, &content, error) || !ParseText(content, format, operations, error))
     {
         return false;
     }
+    if (operations->empty())
+    {
+        *error = util::TrDetail(L"The file has no registry changes.", path);
+        return false;
+    }
+    return true;
+}
+
+bool ParseText(std::wstring_view content, Format format, std::vector<Operation>* operations, std::wstring* error)
+{
     const bool parsed = format == Format::kReg     ? ParseOperations(content, operations, nullptr, nullptr, error)
                         : format == Format::kBatch ? ParseBatch(content, operations, error)
                                                    : ParsePowerShell(content, operations, error);
@@ -74,11 +84,6 @@ bool ReadOperations(const std::wstring& path, Format format, std::vector<Operati
             return false;
         }
         (*operations)[index].path = std::move(normalized);
-    }
-    if (parsed && operations->empty())
-    {
-        *error = util::TrDetail(L"The file has no registry changes.", path);
-        return false;
     }
     return parsed;
 }

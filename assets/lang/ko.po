@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegKit\n"
 "Report-Msgid-Bugs-To: https://github.com/nohuto/regkit/issues\n"
-"POT-Creation-Date: 2026-11-02 18:21+0100\n"
-"PO-Revision-Date: 2026-10-09 20:51+0200\n"
+"POT-Creation-Date: 2026-11-06 04:34+0100\n"
+"PO-Revision-Date: 2026-11-06 04:35+0100\n"
 "Last-Translator: nohuto contact@noverse.dev\n"
 "Language-Team: none\n"
 "Language: ko\n"
@@ -455,6 +455,14 @@ msgstr "RegKit에서"
 msgid "Registry File (.reg)"
 msgstr "레지스트리 파일 (.reg)"
 
+#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
+msgid "Batch File"
+msgstr "배치 파일"
+
+#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
+msgid "PowerShell Script"
+msgstr "PowerShell 스크립트"
+
 #: dialogs/export_dialog.cpp
 msgid "Registry Hive File"
 msgstr "레지스트리 하이브 파일"
@@ -485,7 +493,7 @@ msgstr "링크 이름에는 백슬래시를 사용할 수 없습니다."
 
 #: dialogs/query_dialog.cpp frame/views/history_workspace.cpp
 msgid "RegKit couldn't read this file and didn't use it."
-msgstr ""
+msgstr "RegKit에서 이 파일을 읽지 못해 사용하지 않았습니다."
 
 #: dialogs/query_dialog.cpp
 msgid "No top level keys"
@@ -620,6 +628,10 @@ msgstr "이 키만"
 msgid "This key and subkeys"
 msgstr "이 키와 하위 키"
 
+#: dialogs/security_dialog.cpp frame/tools/launch_bridge.cpp
+msgid "The key's permissions couldn't be read."
+msgstr "키의 사용 권한을 읽지 못했습니다."
+
 #: dialogs/trace_dialog.cpp frame/views/value_loading.cpp
 msgid "Keys"
 msgstr "키"
@@ -641,11 +653,12 @@ msgstr "키 또는 값을 하나 이상 선택하세요."
 msgid "Export supports the standard root keys only."
 msgstr "내보내기는 표준 루트 키만 지원합니다."
 
-#: dialogs/transfer_dialogs.cpp
+#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
 msgid "Failed to write the exported registry file."
 msgstr "내보낸 레지스트리 파일을 쓰지 못했습니다."
 
-#: dialogs/transfer_dialogs.cpp frame/window/menu_bar.cpp
+#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
+#: frame/window/menu_bar.cpp
 msgid "Export"
 msgstr "내보내기"
 
@@ -742,10 +755,6 @@ msgstr "즐겨찾기를 내보내지 못했습니다."
 msgid "Failed to read value."
 msgstr "값을 읽지 못했습니다."
 
-#: frame/commands/clipboard_commands.cpp frame/tools/launch_bridge.cpp
-msgid "The key information couldn't be read."
-msgstr "키 정보를 읽지 못했습니다."
-
 #: frame/commands/clipboard_commands.cpp
 msgid "The source key couldn't be opened."
 msgstr "원본 키를 열지 못했습니다."
@@ -753,6 +762,10 @@ msgstr "원본 키를 열지 못했습니다."
 #: frame/commands/clipboard_commands.cpp
 msgid "Failed to paste value."
 msgstr "값을 붙여넣지 못했습니다."
+
+#: frame/commands/clipboard_commands.cpp frame/tools/launch_bridge.cpp
+msgid "The key information couldn't be read."
+msgstr "키 정보를 읽지 못했습니다."
 
 #: frame/commands/clipboard_commands.cpp
 msgid "Failed to paste key."
@@ -996,8 +1009,8 @@ msgid "Replace all contents of this key with the hive file?"
 msgstr "이 키의 모든 내용을 하이브 파일로 바꾸시겠습니까?"
 
 #: frame/commands/file_view_commands.cpp
-msgid "Replace all contents of this key with the hive file? This key is too large to undo the restore."
-msgstr "이 키의 모든 내용을 하이브 파일로 바꾸시겠습니까? 이 키는 너무 커서 복원을 실행 취소할 수 없습니다."
+msgid "Replace all contents of this key with the hive file? The restore can't be undone."
+msgstr "이 키의 모든 내용을 하이브 파일로 바꾸시겠습니까? 복원을 실행 취소할 수 없습니다."
 
 #: frame/commands/file_view_commands.cpp
 msgid "Restore Key"
@@ -1081,7 +1094,7 @@ msgstr "대상은 표준 루트 아래의 전체 레지스트리 경로여야 �
 
 #: frame/commands/mutation_commands.cpp
 msgid "Windows doesn't follow a link from a user hive into another user's hive or HKEY_LOCAL_MACHINE, so this link may not open. Create it anyway?"
-msgstr ""
+msgstr "Windows는 사용자 하이브에서 다른 사용자의 하이브나 HKEY_LOCAL_MACHINE으로 이어지는 링크를 따라가지 않으므로 이 링크가 열리지 않을 수 있습니다. 그래도 만드시겠습니까?"
 
 #: frame/commands/mutation_commands.cpp
 msgid "New Symbolic Link"
@@ -1168,9 +1181,8 @@ msgid "Later"
 msgstr "나중에"
 
 #: frame/commands/workspace_commands.cpp
-#, fuzzy
 msgid "A new RegKit window couldn't be opened."
-msgstr "RegKit을 다시 시작하지 못했습니다."
+msgstr "새 RegKit 창을 열지 못했습니다."
 
 #: frame/commands/workspace_commands.cpp
 msgid "Backup/restore mode needs the backup and restore privileges. Run RegKit elevated."
@@ -1199,6 +1211,7 @@ msgstr "레지스트리 경로를 찾지 못했습니다."
 
 #: frame/search/compare_command.cpp frame/search/compare_dialog.cpp
 #: frame/sources/regfile_commands.cpp regfile/registry_transfer.cpp
+#: regfile/reg_file.cpp
 msgid "Failed to read registry file."
 msgstr "레지스트리 파일을 읽지 못했습니다."
 
@@ -1295,6 +1308,11 @@ msgstr "검색 중... 결과: ~%llu"
 
 #: frame/search/search_window.cpp
 #, c-format
+msgid "Results: %llu (stopped)"
+msgstr "결과: %llu (검색 중지됨)"
+
+#: frame/search/search_window.cpp
+#, c-format
 msgid "Results: %llu (%.2fs)"
 msgstr "결과: %llu (%.2f초)"
 
@@ -1303,9 +1321,8 @@ msgid "Loading"
 msgstr "로드 중"
 
 #: frame/search/search_window.cpp
-#, fuzzy
 msgid "The contents of this key couldn't be read."
-msgstr "정의 파일을 읽지 못했습니다."
+msgstr "이 키의 내용을 읽지 못했습니다."
 
 #: frame/search/search_window.cpp
 msgid "HKCU"
@@ -1434,14 +1451,6 @@ msgstr "출력 파일은 입력 파일과 같을 수 없습니다."
 #: frame/tools/convert_dialog.cpp
 msgid "The output file couldn't be written."
 msgstr "출력 파일을 쓰지 못했습니다."
-
-#: frame/tools/convert_dialog.cpp
-msgid "Batch File"
-msgstr "배치 파일"
-
-#: frame/tools/convert_dialog.cpp
-msgid "PowerShell Script"
-msgstr "PowerShell 스크립트"
 
 #: frame/tools/key_handles_window.cpp
 msgid "Scanning handles..."
@@ -1782,11 +1791,6 @@ msgstr "쓰기 가능"
 #: frame/tools/launch_bridge.cpp ui/feedback.cpp
 msgid "Error"
 msgstr "오류"
-
-#: frame/tools/launch_bridge.cpp
-#, fuzzy
-msgid "The key's permissions couldn't be read."
-msgstr "키 정보를 읽지 못했습니다."
 
 #: frame/tools/launch_bridge.cpp
 msgid "The resource data is malformed."
@@ -2324,9 +2328,8 @@ msgid "Key Tree"
 msgstr "키 트리"
 
 #: frame/window/lifetime.cpp
-#, fuzzy
 msgid "Clear Filter"
-msgstr "기록 지우기(&H)"
+msgstr "필터 지우기"
 
 #: frame/window/lifetime.cpp
 msgid "History"
@@ -2501,16 +2504,16 @@ msgid "&Go To..."
 msgstr "이동(&G)..."
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Other View"
-msgstr "다른 보기로 이동(&G)"
+msgid "Go to Other View"
+msgstr "다른 보기로 이동"
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Virtual Store Copy"
-msgstr "가상 저장소 복사본으로 이동(&G)"
+msgid "Go to Virtual Store Copy"
+msgstr "가상 저장소 복사본으로 이동"
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Global Key"
-msgstr "전역 키로 이동(&G)"
+msgid "Go to Global Key"
+msgstr "전역 키로 이동"
 
 #: frame/window/menu_bar.cpp
 msgid "&Edit"
@@ -2881,24 +2884,24 @@ msgid "&Open Default File..."
 msgstr "기본값 파일 열기(&O)..."
 
 #: frame/window/menu_bar.cpp
-msgid "Edit &Active Defaults..."
-msgstr "활성 기본값 편집(&A)..."
+msgid "&Edit Active Defaults..."
+msgstr "활성 기본값 편집(&E)..."
 
 #: frame/window/menu_bar.cpp
-msgid "&Clear Active Defaults"
-msgstr "활성 기본값 지우기(&C)"
+msgid "Clear &Active Defaults"
+msgstr "활성 기본값 지우기(&A)"
 
 #: frame/window/menu_bar.cpp
-msgid "Edit Recent &Defaults..."
-msgstr "최근 기본값 편집(&D)..."
+msgid "Edit &Recent Defaults..."
+msgstr "최근 기본값 편집(&R)..."
 
 #: frame/window/menu_bar.cpp
-msgid "Clear &Recent Defaults"
-msgstr "최근 기본값 지우기(&R)"
+msgid "&Clear Recent Defaults"
+msgstr "최근 기본값 지우기(&C)"
 
 #: frame/window/menu_bar.cpp
-msgid "&Enable Context Menu (risky)"
-msgstr "상황에 맞는 메뉴 사용 (위험)(&E)"
+msgid "E&nable Context Menu (risky)"
+msgstr "상황에 맞는 메뉴 사용 (위험)(&N)"
 
 #: frame/window/menu_bar.cpp
 msgid "D&ocumentation"
@@ -3171,6 +3174,10 @@ msgid "Invalid RegKit.Native call."
 msgstr "잘못된 RegKit.Native 호출입니다."
 
 #: regfile/powershell_script.cpp
+msgid "Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."
+msgstr "if (-not (Test-Path)) 뒤에는 New-Item만 올 수 있으며 if (Test-Path) 뒤에는 제거 작업만 올 수 있습니다."
+
+#: regfile/powershell_script.cpp
 msgid "Unsupported member"
 msgstr "지원되지 않는 멤버"
 
@@ -3225,10 +3232,6 @@ msgstr "-Path가 필요합니다."
 #: regfile/powershell_script.cpp
 msgid "Only registry drives are supported."
 msgstr "레지스트리 드라이브만 지원됩니다."
-
-#: regfile/powershell_script.cpp
-msgid "Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."
-msgstr "if (-not (Test-Path)) 뒤에는 New-Item만 올 수 있으며 if (Test-Path) 뒤에는 제거 작업만 올 수 있습니다."
 
 #: regfile/powershell_script.cpp
 msgid "-Name and -Value are required."
@@ -3286,6 +3289,10 @@ msgstr "이름에 null 문자 포함"
 msgid "The file contains an entry RegKit can't parse."
 msgstr "파일에 RegKit이 구문 분석할 수 없는 항목이 있습니다."
 
+#: regfile/reg_file.cpp regfile/script_convert.cpp
+msgid "The file has no registry changes."
+msgstr "파일에 레지스트리 변경 내용이 없습니다."
+
 #: regfile/script_convert.cpp
 msgid "Unsupported file type, use .reg, .bat, .cmd or .ps1."
 msgstr "지원되지 않는 파일 형식입니다, .reg, .bat, .cmd 또는 .ps1을 사용하세요."
@@ -3293,10 +3300,6 @@ msgstr "지원되지 않는 파일 형식입니다, .reg, .bat, .cmd 또는 .ps1
 #: regfile/script_convert.cpp
 msgid "Unsupported root key."
 msgstr "지원되지 않는 루트 키입니다."
-
-#: regfile/script_convert.cpp
-msgid "The file has no registry changes."
-msgstr "파일에 레지스트리 변경 내용이 없습니다."
 
 #: regfile/script_convert.cpp
 msgid "Enter a key under HKLM, HKCU, HKCR, HKU or HKCC."
@@ -3899,9 +3902,16 @@ msgid "Trace file contains no usable entries."
 msgstr "Trace 파일에 사용할 수 있는 항목이 없습니다."
 
 #: ui/feedback.cpp
-#, fuzzy
 msgid "The background task couldn't be started."
-msgstr "설치 프로그램을 시작하지 못했습니다."
+msgstr "백그라운드 작업을 시작하지 못했습니다."
+
+#: ui/feedback.cpp
+msgid "RegKit couldn't save this file."
+msgstr "RegKit에서 이 파일을 저장하지 못했습니다."
+
+#: ui/feedback.cpp
+msgid "The text couldn't be copied to the clipboard."
+msgstr "텍스트를 클립보드에 복사하지 못했습니다."
 
 #: ui/feedback.cpp
 msgid "Warning"
@@ -3912,9 +3922,8 @@ msgid "Information"
 msgstr "정보"
 
 #: ui/feedback.cpp
-#, fuzzy
 msgid "The file couldn't be shown in Explorer."
-msgstr "레지스트리 파일을 가져오지 못했습니다."
+msgstr "파일 탐색기에서 파일을 표시하지 못했습니다."
 
 #: ui/feedback.cpp
 msgid "About RegKit"
@@ -4032,16 +4041,6 @@ msgstr "저장 후 열기:"
 msgid "The file dialog failed."
 msgstr "파일 대화 상자가 실패했습니다."
 
-#: win32/file_text.cpp
-#, fuzzy
-msgid "The file is too large."
-msgstr "파일의 중첩 수준이 너무 깊습니다."
-
-#: win32/file_text.cpp
-#, fuzzy
-msgid "The file isn't valid text."
-msgstr "파일이 올바른 JSON이 아닙니다."
-
 #: win32ui/dialog/check_list.cpp
 msgid "Select All"
 msgstr "모두 선택"
@@ -4059,23 +4058,21 @@ msgid "Browse..."
 msgstr "찾아보기..."
 
 #: win32ui/json/reader.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Expected '%c'."
-msgstr "'}'가 필요합니다."
+msgstr "'%c'가 필요합니다."
 
 #: win32ui/json/reader.cpp
 msgid "The file is nested too deeply."
 msgstr "파일의 중첩 수준이 너무 깊습니다."
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "An unterminated block comment is not allowed."
-msgstr "블록 주석이 끝나지 않았습니다."
+msgstr "닫히지 않은 블록 주석은 허용되지 않습니다."
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "Unexpected token."
-msgstr "예기치 않은 토큰"
+msgstr "예기치 않은 토큰입니다."
 
 #: win32ui/json/reader.cpp
 msgid "A text member is longer than the format allows."
@@ -4110,24 +4107,20 @@ msgid "A number is out of range."
 msgstr "숫자가 범위를 벗어났습니다."
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "Only integers are supported."
-msgstr "부호 없는 정수만 지원됩니다."
+msgstr "정수만 지원됩니다."
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A boolean was expected."
-msgstr "부호 없는 숫자가 필요합니다."
+msgstr "부울 값이 필요합니다."
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A number has an empty fraction."
-msgstr "숫자 앞에 0이 있습니다."
+msgstr "숫자의 소수 부분이 비어 있습니다."
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A number has an empty exponent."
-msgstr "메모의 키가 비어 있습니다."
+msgstr "숫자의 지수 부분이 비어 있습니다."
 
 #: win32ui/json/reader.cpp
 msgid "The file contains trailing content."
@@ -4139,7 +4132,7 @@ msgstr "파일이 올바른 JSON이 아닙니다."
 
 #: win32ui/json/reader.cpp
 msgid "Column"
-msgstr ""
+msgstr "열"
 
 #: win32ui/list_view/list_view.cpp
 msgid "Size column to fit"
@@ -4160,6 +4153,14 @@ msgstr "눈금선"
 #: win32ui/system/error_text.cpp
 msgid "Unknown error."
 msgstr "알 수 없는 오류입니다."
+
+#: win32ui/system/file_io.cpp
+msgid "The file is too large."
+msgstr "파일이 너무 큽니다."
+
+#: win32ui/system/file_io.cpp
+msgid "The file isn't valid text."
+msgstr "파일이 올바른 텍스트가 아닙니다."
 
 #: win32ui/system/strings.cpp
 msgid "Invalid Base64 character."
@@ -4278,24 +4279,20 @@ msgid "Rename Preset"
 msgstr "프리셋 이름 바꾸기"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "The file could not be read."
-msgstr "정의 파일을 읽지 못했습니다."
+msgstr "파일을 읽지 못했습니다."
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "A preset has no name."
-msgstr "프리셋 이름:"
+msgstr "이름이 없는 프리셋이 있습니다."
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "A line is not a valid entry."
-msgstr "파일이 올바른 JSON이 아닙니다."
+msgstr "올바른 항목이 아닌 줄이 있습니다."
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "The file could not be written."
-msgstr "출력 파일을 쓰지 못했습니다."
+msgstr "파일을 쓰지 못했습니다."
 
 #: win32ui/theme/theme_presets_internal.h
 msgid "Background"
@@ -4494,9 +4491,8 @@ msgid "REG_NONE"
 msgstr ""
 
 #: ../resources/editor_dialogs.rc
-#, fuzzy
 msgid "RegKit"
-msgstr "RegKit에서"
+msgstr ""
 
 #: ../resources/editor_dialogs.rc
 msgid "Export to:"
@@ -4902,21 +4898,15 @@ msgstr "RegKit 비트 필드 정의 (*.regkit-bitfield.jsonc)"
 msgid "JSON files (*.jsonc;*.json)"
 msgstr "JSON 파일 (*.jsonc;*.json)"
 
-#: dialogs/transfer_dialogs.cpp frame/tools/convert_dialog.cpp
-#: regfile/script_convert.h ui/feedback.h
-msgid "Registry Files (*.reg)"
-msgstr "레지스트리 파일 (*.reg)"
-
-#: dialogs/transfer_dialogs.cpp frame/commands/clipboard_commands.cpp
-#: frame/commands/file_view_commands.cpp frame/detail/file_detail.h
-#: frame/sources/trace_commands.cpp frame/window/appearance.cpp
-#: regfile/script_convert.h ui/feedback.h
-msgid "All Files (*.*)"
-msgstr "모든 파일 (*.*)"
-
 #: frame/commands/clipboard_commands.cpp
 msgid "Favorites Files (*.txt)"
 msgstr "즐겨찾기 파일 (*.txt)"
+
+#: frame/commands/clipboard_commands.cpp frame/commands/file_view_commands.cpp
+#: frame/detail/file_detail.h frame/sources/trace_commands.cpp
+#: frame/window/appearance.cpp regfile/script_convert.h ui/feedback.h
+msgid "All Files (*.*)"
+msgstr "모든 파일 (*.*)"
 
 #: frame/commands/file_view_commands.cpp
 msgid "RegKit Comment Files (*.jsonc)"
@@ -4930,17 +4920,21 @@ msgstr "레지스트리 하이브 파일"
 msgid "Trace Files (*.txt)"
 msgstr "Trace 파일 (*.txt)"
 
-#: frame/tools/convert_dialog.cpp regfile/script_convert.h
-msgid "Batch Files (*.bat;*.cmd)"
-msgstr "배치 파일 (*.bat;*.cmd)"
-
-#: frame/tools/convert_dialog.cpp regfile/script_convert.h
-msgid "PowerShell Scripts (*.ps1)"
-msgstr "PowerShell 스크립트 (*.ps1)"
-
 #: frame/window/appearance.cpp
 msgid "RegKit Theme Presets (*.rktheme)"
 msgstr "RegKit 테마 프리셋 (*.rktheme)"
+
+#: regfile/script_convert.h ui/feedback.h
+msgid "Registry Files (*.reg)"
+msgstr "레지스트리 파일 (*.reg)"
+
+#: regfile/script_convert.h
+msgid "Batch Files (*.bat;*.cmd)"
+msgstr "배치 파일 (*.bat;*.cmd)"
+
+#: regfile/script_convert.h
+msgid "PowerShell Scripts (*.ps1)"
+msgstr "PowerShell 스크립트 (*.ps1)"
 
 #: regfile/script_convert.h
 msgid "Registry Scripts (*.reg;*.bat;*.cmd;*.ps1)"

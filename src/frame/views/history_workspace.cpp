@@ -4,6 +4,7 @@
 #include "frame/window_detail.h"
 #include "frame/window_impl.h"
 
+#include "registry/value_format.h"
 #include "win32/translation.h"
 
 #include <win32ui/dialog/autocomplete.h>
@@ -243,7 +244,12 @@ bool MainWindow::Impl::RevertHistoryEntry(const HistoryEntry& entry)
         return false;
     }
 
+    const auto data_text = [](const RegistryValue& value) {
+        return value_format::Data(value.type, value.data.data(), static_cast<DWORD>(value.data.size()));
+    };
     bool ok = false;
+    HistoryEntry revert_entry;
+    RegistryValue current;
     is_replaying_ = true;
     switch (prepared.revert_kind)
     {
@@ -252,7 +258,10 @@ bool MainWindow::Impl::RevertHistoryEntry(const HistoryEntry& entry)
             RegistryNode node;
             if (ResolvePathToNode(prepared.key_path, &node))
             {
+                // a value that can be set but not queried also logs empty old data, QueryValue gives no error to tell it from a missing one
+                revert_entry.old_data = RegistryStore::QueryValue(node, prepared.revert_value.name, &current) ? data_text(current) : std::wstring();
                 ok = RegistryStore::SetValue(node, prepared.revert_value.name, prepared.revert_value.type, prepared.revert_value.data);
+                revert_entry.new_data = data_text(prepared.revert_value);
             }
             break;
         }
@@ -261,6 +270,7 @@ bool MainWindow::Impl::RevertHistoryEntry(const HistoryEntry& entry)
             RegistryNode node;
             if (ResolvePathToNode(prepared.key_path, &node))
             {
+                revert_entry.old_data = RegistryStore::QueryValue(node, prepared.value_name, &current) ? data_text(current) : std::wstring();
                 ok = RegistryStore::DeleteValue(node, prepared.value_name);
             }
             break;
@@ -274,6 +284,7 @@ bool MainWindow::Impl::RevertHistoryEntry(const HistoryEntry& entry)
                 if (!name.empty() && ui::ConfirmDelete(hwnd_, util::Tr(L"Revert Key Creation"), registry_path::DisplayName(name)))
                 {
                     ok = RegistryStore::DeleteKey(node);
+                    revert_entry.old_data = std::move(name);
                 }
             }
             break;
@@ -290,7 +301,6 @@ bool MainWindow::Impl::RevertHistoryEntry(const HistoryEntry& entry)
     }
 
     MarkOfflineDirty();
-    HistoryEntry revert_entry;
     revert_entry.action = L"Revert: " + entry.action;
     revert_entry.key_path = prepared.key_path;
     revert_entry.value_name = prepared.value_name;

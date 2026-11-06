@@ -3,6 +3,7 @@
 
 #include "frame/window_detail.h"
 #include "frame/window_impl.h"
+#include "regfile/script_convert.h"
 #include "registry/hive_files.h"
 #include "win32/shell_paths.h"
 #include "win32/text_transform.h"
@@ -43,13 +44,13 @@ bool MainWindow::Impl::SaveRegFileTab(int tab_index)
     return true;
 }
 
-bool MainWindow::Impl::ExportRegFileTab(int tab_index, const std::wstring& path)
+bool MainWindow::Impl::ExportRegFileTab(int tab_index, std::wstring* path, win32::OpenAfter* open_after)
 {
     if (!IsRegFileTabIndex(tab_index) || static_cast<size_t>(tab_index) >= tabs_.size())
     {
         return false;
     }
-    if (path.empty())
+    if (path->empty())
     {
         return false;
     }
@@ -58,10 +59,41 @@ bool MainWindow::Impl::ExportRegFileTab(int tab_index, const std::wstring& path)
     {
         return false;
     }
-    std::wstring target = util::EnsureFileExtension(path, L".reg");
-    if (win32ui::WriteTextFileAtomic(target.c_str(), content, win32ui::TextEncoding::utf16) != ERROR_SUCCESS)
+    regfile::Format format = regfile::Format::kReg;
+    if (!regfile::FormatFromPath(*path, &format))
     {
-        ui::ShowError(hwnd_, util::Tr(L"Failed to export registry file."));
+        *path = util::EnsureFileExtension(*path, L".reg");
+    }
+    if (format == regfile::Format::kReg)
+    {
+        if (win32ui::WriteTextFileAtomic(path->c_str(), content, win32ui::TextEncoding::utf16) != ERROR_SUCCESS)
+        {
+            ui::ShowError(hwnd_, util::Tr(L"Failed to export registry file."));
+            return false;
+        }
+        return true;
+    }
+    // scripts have no RegKit view
+    if (*open_after == win32::OpenAfter::kRegKit)
+    {
+        *open_after = win32::OpenAfter::kEditor;
+    }
+    std::vector<regfile::Operation> operations;
+    std::vector<std::wstring> skipped;
+    std::wstring error;
+    if (!regfile::ParseText(content, regfile::Format::kReg, &operations, &error))
+    {
+        ui::ShowError(hwnd_, error);
+        return false;
+    }
+    const std::wstring text = regfile::RenderOperations(format, operations, true, &skipped);
+    if (!skipped.empty() && !ui::ConfirmConversionSkips(hwnd_, skipped, util::Tr(L"Export")))
+    {
+        return false;
+    }
+    if (!regfile::SaveRendered(*path, format, text))
+    {
+        ui::ShowError(hwnd_, util::TrDetail(L"Failed to write the exported registry file.", *path));
         return false;
     }
     return true;

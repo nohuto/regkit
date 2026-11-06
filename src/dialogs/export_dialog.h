@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "regfile/script_convert.h"
 #include "win32/file_dialog.h"
 
 #include <windows.h>
@@ -18,6 +19,7 @@ struct ExportRequest
     bool include_subkeys = true;
     bool allow_hive = false;
     bool hive = false;
+    regfile::Format format = regfile::Format::kReg;
     win32::OpenAfter open_after = win32::OpenAfter::kNone;
 };
 

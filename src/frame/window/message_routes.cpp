@@ -1040,21 +1040,18 @@ std::optional<LRESULT> MainWindow::Impl::HandleValueWorkerMessage(UINT message, 
                 SelectValueByName(pending_value_name_);
                 pending_value_name_.clear();
             }
-            if (!pending_external_value_name_.empty() && browse_.current_node())
+            // a later load is another key or view, the pending command never runs there
+            if (owned->generation == pending_external_value_generation_ && browse_.current_node())
             {
-                std::wstring current_path = registry_path::Build(*browse_.current_node());
-                if (EqualsInsensitive(current_path, pending_external_value_key_path_))
+                const bool selected = SelectValueByName(pending_external_value_name_);
+                pending_external_value_generation_ = 0;
+                pending_external_value_name_.clear();
+                const int command = pending_value_command_;
+                pending_value_command_ = 0;
+                if (selected && command != 0)
                 {
-                    const bool selected = SelectValueByName(pending_external_value_name_);
-                    pending_external_value_key_path_.clear();
-                    pending_external_value_name_.clear();
-                    const int command = pending_value_command_;
-                    pending_value_command_ = 0;
-                    if (selected && command != 0)
-                    {
-                        FocusPane(browse_.values().hwnd());
-                        PostMessageW(hwnd_, WM_COMMAND, MAKEWPARAM(command, 0), 0);
-                    }
+                    FocusPane(browse_.values().hwnd());
+                    PostMessageW(hwnd_, WM_COMMAND, MAKEWPARAM(command, 0), 0);
                 }
             }
             return 0;
@@ -1196,6 +1193,33 @@ std::optional<LRESULT> MainWindow::Impl::HandleExternalMessage(UINT message, WPA
     case frame::message_id::kFocusAddressBar:
         FocusAddressBarForExternalJump(false);
         return 0;
+    case frame::message_id::kRetryRename:
+        {
+            const HWND control = reinterpret_cast<HWND>(wparam);
+            HWND edit = nullptr;
+            if (control == browse_.tree().hwnd())
+            {
+                const HTREEITEM item = TreeView_GetSelection(control);
+                const RegistryNode* node = item ? browse_.tree().NodeFromItem(item) : nullptr;
+                if (node && SameNode(*node, retry_rename_key_))
+                {
+                    SetFocus(control);
+                    edit = TreeView_EditLabel(control, item);
+                }
+            }
+            else if (control == browse_.values().hwnd())
+            {
+                StartPendingValueListRename();
+                edit = ListView_GetEditControl(control);
+            }
+            if (edit)
+            {
+                SetWindowTextW(edit, retry_rename_text_.c_str());
+                SendMessageW(edit, EM_SETSEL, 0, -1);
+            }
+            retry_rename_text_.clear();
+            return 0;
+        }
     default:
         return std::nullopt;
     }

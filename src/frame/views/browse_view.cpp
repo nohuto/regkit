@@ -453,6 +453,13 @@ void MainWindow::Impl::ScheduleValueListRename(LPARAM kind, const std::wstring& 
     pending_value_list_name_ = name;
 }
 
+void MainWindow::Impl::RetryRename(HWND control, const wchar_t* text)
+{
+    // the control ends this edit after the notification returns, a new one starts afterwards
+    retry_rename_text_ = text;
+    PostMessageW(hwnd_, frame::message_id::kRetryRename, reinterpret_cast<WPARAM>(control), 0);
+}
+
 void MainWindow::Impl::StartPendingValueListRename()
 {
     if (pending_value_list_name_.empty() || !browse_.values().hwnd())

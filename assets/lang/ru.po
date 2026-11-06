@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegKit\n"
 "Report-Msgid-Bugs-To: https://github.com/nohuto/regkit/issues\n"
-"POT-Creation-Date: 2026-11-02 18:21+0100\n"
-"PO-Revision-Date: 2026-10-11 22:09+0300\n"
+"POT-Creation-Date: 2026-11-06 04:34+0100\n"
+"PO-Revision-Date: 2026-11-06 04:35+0100\n"
 "Last-Translator: Restorer, restorer@mail2k.ru\n"
 "Language-Team: Russian\n"
 "Language: ru\n"
@@ -458,6 +458,14 @@ msgstr "в программе RegKit"
 msgid "Registry File (.reg)"
 msgstr "Файлы реестра (*.reg)"
 
+#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
+msgid "Batch File"
+msgstr "Пакетный файл"
+
+#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
+msgid "PowerShell Script"
+msgstr "Файл PowerShell"
+
 #: dialogs/export_dialog.cpp
 msgid "Registry Hive File"
 msgstr "Файлы кустов реестра"
@@ -488,7 +496,7 @@ msgstr "В наименовании ссылки не допускается о�
 
 #: dialogs/query_dialog.cpp frame/views/history_workspace.cpp
 msgid "RegKit couldn't read this file and didn't use it."
-msgstr ""
+msgstr "Программе RegKit не удалось прочитать этот файл, поэтому он не использовался"
 
 #: dialogs/query_dialog.cpp
 msgid "No top level keys"
@@ -623,6 +631,10 @@ msgstr "Только этот раздел"
 msgid "This key and subkeys"
 msgstr "Этот раздел и подразделы"
 
+#: dialogs/security_dialog.cpp frame/tools/launch_bridge.cpp
+msgid "The key's permissions couldn't be read."
+msgstr "Не удалось прочитать разрешения раздела"
+
 #: dialogs/trace_dialog.cpp frame/views/value_loading.cpp
 msgid "Keys"
 msgstr "Разделов"
@@ -644,11 +656,12 @@ msgstr "Требуется указать как минимум один раз�
 msgid "Export supports the standard root keys only."
 msgstr "Экспорт поддерживается только для стандартных корневых разделов"
 
-#: dialogs/transfer_dialogs.cpp
+#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
 msgid "Failed to write the exported registry file."
 msgstr "Не удалось записать экспортируемый файл реестра"
 
-#: dialogs/transfer_dialogs.cpp frame/window/menu_bar.cpp
+#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
+#: frame/window/menu_bar.cpp
 msgid "Export"
 msgstr "Экспорт"
 
@@ -745,10 +758,6 @@ msgstr "Не удалось экспортировать избранное"
 msgid "Failed to read value."
 msgstr "Не удалось прочитать данные параметра"
 
-#: frame/commands/clipboard_commands.cpp frame/tools/launch_bridge.cpp
-msgid "The key information couldn't be read."
-msgstr "Не удалось получить свойства раздела"
-
 #: frame/commands/clipboard_commands.cpp
 msgid "The source key couldn't be opened."
 msgstr "Не удалось открыть исходный раздел"
@@ -756,6 +765,10 @@ msgstr "Не удалось открыть исходный раздел"
 #: frame/commands/clipboard_commands.cpp
 msgid "Failed to paste value."
 msgstr "Не удалось добавить параметр"
+
+#: frame/commands/clipboard_commands.cpp frame/tools/launch_bridge.cpp
+msgid "The key information couldn't be read."
+msgstr "Не удалось получить свойства раздела"
 
 #: frame/commands/clipboard_commands.cpp
 msgid "Failed to paste key."
@@ -1000,8 +1013,8 @@ msgid "Replace all contents of this key with the hive file?"
 msgstr "Заменить всё содержимое этого раздела содержимым файла куста?"
 
 #: frame/commands/file_view_commands.cpp
-msgid "Replace all contents of this key with the hive file? This key is too large to undo the restore."
-msgstr "Заменить всё содержимое этого раздела содержимым файла куста? Эти изменения нельзя будет отменить из‐за большого размер раздела"
+msgid "Replace all contents of this key with the hive file? The restore can't be undone."
+msgstr "Заменить всё содержимое этого раздела содержимым файла куста? Восстановление нельзя будет отменить."
 
 #: frame/commands/file_view_commands.cpp
 msgid "Restore Key"
@@ -1085,7 +1098,7 @@ msgstr "В качестве цели должен быть указан полн
 
 #: frame/commands/mutation_commands.cpp
 msgid "Windows doesn't follow a link from a user hive into another user's hive or HKEY_LOCAL_MACHINE, so this link may not open. Create it anyway?"
-msgstr ""
+msgstr "Windows не переходит по ссылке из пользовательского куста в куст другого пользователя или в HKEY_LOCAL_MACHINE, поэтому эта ссылка может не открыться. Всё равно создать?"
 
 #: frame/commands/mutation_commands.cpp
 msgid "New Symbolic Link"
@@ -1172,9 +1185,8 @@ msgid "Later"
 msgstr "Позже"
 
 #: frame/commands/workspace_commands.cpp
-#, fuzzy
 msgid "A new RegKit window couldn't be opened."
-msgstr "Не удалось перезапустить программу RegKit"
+msgstr "Не удалось открыть новое окно RegKit"
 
 # Restorer: Check
 #: frame/commands/workspace_commands.cpp
@@ -1204,6 +1216,7 @@ msgstr "Не удалось найти указанный раздел реес�
 
 #: frame/search/compare_command.cpp frame/search/compare_dialog.cpp
 #: frame/sources/regfile_commands.cpp regfile/registry_transfer.cpp
+#: regfile/reg_file.cpp
 msgid "Failed to read registry file."
 msgstr "Не удалось прочитать файл реестра"
 
@@ -1300,6 +1313,11 @@ msgstr "Поиск... Найдено: ~%llu"
 
 #: frame/search/search_window.cpp
 #, c-format
+msgid "Results: %llu (stopped)"
+msgstr "Найдено: %llu (поиск остановлен)"
+
+#: frame/search/search_window.cpp
+#, c-format
 msgid "Results: %llu (%.2fs)"
 msgstr "Найдено: %llu (%.2f сек.)"
 
@@ -1308,9 +1326,8 @@ msgid "Loading"
 msgstr "Загрузка"
 
 #: frame/search/search_window.cpp
-#, fuzzy
 msgid "The contents of this key couldn't be read."
-msgstr "Не удалось прочитать файл описания битовых полей"
+msgstr "Не удалось прочитать содержимое этого раздела"
 
 #: frame/search/search_window.cpp
 msgid "HKCU"
@@ -1439,14 +1456,6 @@ msgstr "Выходной файл не может совпадать с исхо
 #: frame/tools/convert_dialog.cpp
 msgid "The output file couldn't be written."
 msgstr "Не удалось записать выходной файл"
-
-#: frame/tools/convert_dialog.cpp
-msgid "Batch File"
-msgstr "Пакетный файл"
-
-#: frame/tools/convert_dialog.cpp
-msgid "PowerShell Script"
-msgstr "Файл PowerShell"
 
 #: frame/tools/key_handles_window.cpp
 msgid "Scanning handles..."
@@ -1787,11 +1796,6 @@ msgstr "Разрешена запись"
 #: frame/tools/launch_bridge.cpp ui/feedback.cpp
 msgid "Error"
 msgstr "Ошибка"
-
-#: frame/tools/launch_bridge.cpp
-#, fuzzy
-msgid "The key's permissions couldn't be read."
-msgstr "Не удалось получить свойства раздела"
 
 #: frame/tools/launch_bridge.cpp
 msgid "The resource data is malformed."
@@ -2329,9 +2333,8 @@ msgid "Key Tree"
 msgstr "Дерево разделов"
 
 #: frame/window/lifetime.cpp
-#, fuzzy
 msgid "Clear Filter"
-msgstr "&Очистить журнал"
+msgstr "Сбросить фильтр"
 
 #: frame/window/lifetime.cpp
 msgid "History"
@@ -2506,16 +2509,16 @@ msgid "&Go To..."
 msgstr "&Перейти..."
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Other View"
-msgstr "Перейти к дру&гой разрядности"
+msgid "Go to Other View"
+msgstr "Перейти к другой разрядности"
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Virtual Store Copy"
-msgstr "Перейти &к виртуальной копии"
+msgid "Go to Virtual Store Copy"
+msgstr "Перейти к виртуальной копии"
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Global Key"
-msgstr "Перейти к исходному &разделу"
+msgid "Go to Global Key"
+msgstr "Перейти к исходному разделу"
 
 #: frame/window/menu_bar.cpp
 msgid "&Edit"
@@ -2886,23 +2889,23 @@ msgid "&Open Default File..."
 msgstr "Открыть &файл предустановок..."
 
 #: frame/window/menu_bar.cpp
-msgid "Edit &Active Defaults..."
+msgid "&Edit Active Defaults..."
 msgstr "&Изменить действующие предустановки..."
 
 #: frame/window/menu_bar.cpp
-msgid "&Clear Active Defaults"
+msgid "Clear &Active Defaults"
 msgstr "&Сбросить действующие предустановки"
 
 #: frame/window/menu_bar.cpp
-msgid "Edit Recent &Defaults..."
+msgid "Edit &Recent Defaults..."
 msgstr "Изменить &недавние предустановки..."
 
 #: frame/window/menu_bar.cpp
-msgid "Clear &Recent Defaults"
+msgid "&Clear Recent Defaults"
 msgstr "&Очистить список недавних предустановок"
 
 #: frame/window/menu_bar.cpp
-msgid "&Enable Context Menu (risky)"
+msgid "E&nable Context Menu (risky)"
 msgstr "&Включить контекстное меню (опасно)"
 
 #: frame/window/menu_bar.cpp
@@ -2923,7 +2926,7 @@ msgstr "&О программе"
 
 #: frame/window/menu_bar.cpp
 msgid "T&race"
-msgstr "&Трассировки"
+msgstr "Т&рассировки"
 
 # Restorer: Think about what sounds better
 #: frame/window/menu_bar.cpp
@@ -3177,6 +3180,10 @@ msgid "Invalid RegKit.Native call."
 msgstr "Недопустимый вызов RegKit.Native"
 
 #: regfile/powershell_script.cpp
+msgid "Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."
+msgstr "После if (-not (Test-Path)) может следовать только New-Item, а после if (Test-Path) — только удаление"
+
+#: regfile/powershell_script.cpp
 msgid "Unsupported member"
 msgstr "Неподдерживаемый член"
 
@@ -3231,10 +3238,6 @@ msgstr "Необходимо указать -Path"
 #: regfile/powershell_script.cpp
 msgid "Only registry drives are supported."
 msgstr "Поддерживаются только хранилища реестра"
-
-#: regfile/powershell_script.cpp
-msgid "Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."
-msgstr "После if (-not (Test-Path)) может следовать только New-Item, а после if (Test-Path) — только удаление"
 
 #: regfile/powershell_script.cpp
 msgid "-Name and -Value are required."
@@ -3292,6 +3295,10 @@ msgstr "наименование содержит символ null"
 msgid "The file contains an entry RegKit can't parse."
 msgstr "Файл содержит запись, которую не удалось обработать"
 
+#: regfile/reg_file.cpp regfile/script_convert.cpp
+msgid "The file has no registry changes."
+msgstr "В файле нет изменений реестра"
+
 #: regfile/script_convert.cpp
 msgid "Unsupported file type, use .reg, .bat, .cmd or .ps1."
 msgstr "Неподдерживаемый тип файла, допустимыми являются .reg, .bat, .cmd или .ps1"
@@ -3299,10 +3306,6 @@ msgstr "Неподдерживаемый тип файла, допустимым
 #: regfile/script_convert.cpp
 msgid "Unsupported root key."
 msgstr "Неподдерживаемый корневой раздел"
-
-#: regfile/script_convert.cpp
-msgid "The file has no registry changes."
-msgstr "В файле нет изменений реестра"
 
 #: regfile/script_convert.cpp
 msgid "Enter a key under HKLM, HKCU, HKCR, HKU or HKCC."
@@ -3905,9 +3908,16 @@ msgid "Trace file contains no usable entries."
 msgstr "В файле трассировки нет соответствующих записей"
 
 #: ui/feedback.cpp
-#, fuzzy
 msgid "The background task couldn't be started."
-msgstr "Не удалось запустить установщик"
+msgstr "Не удалось запустить фоновую задачу"
+
+#: ui/feedback.cpp
+msgid "RegKit couldn't save this file."
+msgstr "Программе RegKit не удалось сохранить этот файл"
+
+#: ui/feedback.cpp
+msgid "The text couldn't be copied to the clipboard."
+msgstr "Не удалось скопировать текст в буфер обмена"
 
 #: ui/feedback.cpp
 msgid "Warning"
@@ -3918,9 +3928,8 @@ msgid "Information"
 msgstr "Информация"
 
 #: ui/feedback.cpp
-#, fuzzy
 msgid "The file couldn't be shown in Explorer."
-msgstr "Не удалось импортировать файл реестра"
+msgstr "Не удалось показать файл в проводнике"
 
 #: ui/feedback.cpp
 msgid "About RegKit"
@@ -4038,16 +4047,6 @@ msgstr "Открыть после сохранения:"
 msgid "The file dialog failed."
 msgstr "Ошибка диалога работы с файлами"
 
-#: win32/file_text.cpp
-#, fuzzy
-msgid "The file is too large."
-msgstr "Слишком большая вложенности объектов"
-
-#: win32/file_text.cpp
-#, fuzzy
-msgid "The file isn't valid text."
-msgstr "Файл содержит недопустимые данные JSON"
-
 #: win32ui/dialog/check_list.cpp
 msgid "Select All"
 msgstr "Выделить все"
@@ -4065,23 +4064,21 @@ msgid "Browse..."
 msgstr "Обзор..."
 
 #: win32ui/json/reader.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Expected '%c'."
-msgstr "Ожидалось '}'"
+msgstr "Ожидалось '%c'"
 
 #: win32ui/json/reader.cpp
 msgid "The file is nested too deeply."
 msgstr "Слишком большая вложенности объектов"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "An unterminated block comment is not allowed."
-msgstr "Незавершённый блочный комментарий"
+msgstr "Незавершённый блочный комментарий недопустим"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "Unexpected token."
-msgstr "Неожиданный токен"
+msgstr "Неожиданная лексема"
 
 #: win32ui/json/reader.cpp
 msgid "A text member is longer than the format allows."
@@ -4116,24 +4113,20 @@ msgid "A number is out of range."
 msgstr "Число вне допустимого диапазона"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "Only integers are supported."
-msgstr "Поддерживаются только целые числа без знака"
+msgstr "Поддерживаются только целые числа"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A boolean was expected."
-msgstr "Ожидалось число без знака."
+msgstr "Ожидалось логическое значение"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A number has an empty fraction."
-msgstr "Число содержит ведущий ноль"
+msgstr "У числа пустая дробная часть"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A number has an empty exponent."
-msgstr "В файле комментария указан пустой раздел"
+msgstr "У числа пустой показатель степени"
 
 #: win32ui/json/reader.cpp
 msgid "The file contains trailing content."
@@ -4145,7 +4138,7 @@ msgstr "Файл содержит недопустимые данные JSON"
 
 #: win32ui/json/reader.cpp
 msgid "Column"
-msgstr ""
+msgstr "Столбец"
 
 #: win32ui/list_view/list_view.cpp
 msgid "Size column to fit"
@@ -4166,6 +4159,14 @@ msgstr "Сетка"
 #: win32ui/system/error_text.cpp
 msgid "Unknown error."
 msgstr "Нераспознанная ошибка"
+
+#: win32ui/system/file_io.cpp
+msgid "The file is too large."
+msgstr "Файл слишком большой"
+
+#: win32ui/system/file_io.cpp
+msgid "The file isn't valid text."
+msgstr "Файл не содержит допустимого текста"
 
 #: win32ui/system/strings.cpp
 msgid "Invalid Base64 character."
@@ -4284,24 +4285,20 @@ msgid "Rename Preset"
 msgstr "Переименование настройки темы"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "The file could not be read."
-msgstr "Не удалось прочитать файл описания битовых полей"
+msgstr "Не удалось прочитать файл"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "A preset has no name."
-msgstr "Название настройки темы:"
+msgstr "У настройки темы нет названия"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "A line is not a valid entry."
-msgstr "Файл содержит недопустимые данные JSON"
+msgstr "Строка не является допустимой записью"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "The file could not be written."
-msgstr "Не удалось записать выходной файл"
+msgstr "Не удалось записать файл"
 
 #: win32ui/theme/theme_presets_internal.h
 msgid "Background"
@@ -4500,9 +4497,8 @@ msgid "REG_NONE"
 msgstr ""
 
 #: ../resources/editor_dialogs.rc
-#, fuzzy
 msgid "RegKit"
-msgstr "в программе RegKit"
+msgstr ""
 
 #: ../resources/editor_dialogs.rc
 msgid "Export to:"
@@ -4908,21 +4904,15 @@ msgstr "Описание битовых полей RegKit (*.regkit-bitfield.jso
 msgid "JSON files (*.jsonc;*.json)"
 msgstr "Файлы JSON (*.jsonc;*.json)"
 
-#: dialogs/transfer_dialogs.cpp frame/tools/convert_dialog.cpp
-#: regfile/script_convert.h ui/feedback.h
-msgid "Registry Files (*.reg)"
-msgstr "Файлы реестра (*.reg)"
-
-#: dialogs/transfer_dialogs.cpp frame/commands/clipboard_commands.cpp
-#: frame/commands/file_view_commands.cpp frame/detail/file_detail.h
-#: frame/sources/trace_commands.cpp frame/window/appearance.cpp
-#: regfile/script_convert.h ui/feedback.h
-msgid "All Files (*.*)"
-msgstr "Все файлы (*.*)"
-
 #: frame/commands/clipboard_commands.cpp
 msgid "Favorites Files (*.txt)"
 msgstr "Файлы избранного (*.txt)"
+
+#: frame/commands/clipboard_commands.cpp frame/commands/file_view_commands.cpp
+#: frame/detail/file_detail.h frame/sources/trace_commands.cpp
+#: frame/window/appearance.cpp regfile/script_convert.h ui/feedback.h
+msgid "All Files (*.*)"
+msgstr "Все файлы (*.*)"
 
 #: frame/commands/file_view_commands.cpp
 msgid "RegKit Comment Files (*.jsonc)"
@@ -4936,17 +4926,21 @@ msgstr "Файлы кустов реестра"
 msgid "Trace Files (*.txt)"
 msgstr "Файлы трассировки (*.txt)"
 
-#: frame/tools/convert_dialog.cpp regfile/script_convert.h
-msgid "Batch Files (*.bat;*.cmd)"
-msgstr "Пакетные файлы (*.bat;*.cmd)"
-
-#: frame/tools/convert_dialog.cpp regfile/script_convert.h
-msgid "PowerShell Scripts (*.ps1)"
-msgstr "Командные файлы PowerShell (*.ps1)"
-
 #: frame/window/appearance.cpp
 msgid "RegKit Theme Presets (*.rktheme)"
 msgstr "Темы RegKit (*.rktheme)"
+
+#: regfile/script_convert.h ui/feedback.h
+msgid "Registry Files (*.reg)"
+msgstr "Файлы реестра (*.reg)"
+
+#: regfile/script_convert.h
+msgid "Batch Files (*.bat;*.cmd)"
+msgstr "Пакетные файлы (*.bat;*.cmd)"
+
+#: regfile/script_convert.h
+msgid "PowerShell Scripts (*.ps1)"
+msgstr "Командные файлы PowerShell (*.ps1)"
 
 #: regfile/script_convert.h
 msgid "Registry Scripts (*.reg;*.bat;*.cmd;*.ps1)"

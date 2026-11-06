@@ -48,6 +48,7 @@ struct BinaryGroupState
 struct TraceValueDialogState
 {
     std::wstring value_name;
+    std::wstring key_path;
     DWORD type = REG_SZ;
     std::vector<BYTE> data;
     std::wstring shown_text;
@@ -66,6 +67,7 @@ struct ExtendedValueDialogState
 {
     DWORD base_type = REG_SZ;
     std::wstring value_name;
+    std::wstring key_path;
     std::wstring initial_text;
     std::vector<BYTE> initial_data;
     std::vector<BYTE> data;
@@ -85,7 +87,7 @@ void ConfigureReadOnlyNameField(HWND dlg, const std::wstring& name)
     {
         return;
     }
-    SetWindowTextW(name_value, registry_path::DisplayName(name).c_str());
+    SetWindowTextW(name_value, name.empty() ? util::Tr(L"(Default)") : registry_path::DisplayName(name).c_str());
     ShowWindow(name_value, SW_SHOW);
     SendMessageW(name_value, EM_SETREADONLY, TRUE, 0);
     LONG_PTR style = GetWindowLongPtrW(name_value, GWL_STYLE);
@@ -400,7 +402,7 @@ unsigned long long ReadNumberWithFallback(HWND dlg, int edit_id, int base, unsig
     return win32ui::ParseUnsigned(util::DialogItemText(dlg, edit_id), base, true).value_or(fallback);
 }
 
-void RunBitfieldEditor(HWND dlg, const std::wstring& value_name, int edit_id, int base, unsigned bit_count, bool read_only)
+void RunBitfieldEditor(HWND dlg, const std::wstring& value_name, const std::wstring& key_path, int edit_id, int base, unsigned bit_count, bool read_only)
 {
     const std::optional<uint64_t> value = win32ui::ParseUnsigned(util::DialogItemText(dlg, edit_id), base, true);
     if (!value)
@@ -410,6 +412,7 @@ void RunBitfieldEditor(HWND dlg, const std::wstring& value_name, int edit_id, in
     }
     BitfieldRequest request;
     request.value_name = value_name;
+    request.key_path = key_path;
     request.value = *value;
     request.bit_count = bit_count;
     request.read_only = read_only;
@@ -733,8 +736,7 @@ INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM
             PopulateTraceTypeCombo(dlg);
             if (state)
             {
-                std::wstring name = state->value_name.empty() ? util::Tr(L"(Default)") : state->value_name;
-                ConfigureReadOnlyNameField(dlg, name);
+                ConfigureReadOnlyNameField(dlg, state->value_name);
                 SelectTraceType(dlg, state, state->type);
                 PopulateTraceValueEditors(dlg, state);
             }
@@ -895,13 +897,13 @@ INT_PTR CALLBACK CustomValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPARAM
                 case IDC_REG_DWORD_BITS:
                     if (state)
                     {
-                        RunBitfieldEditor(dlg, state->value_name, IDC_REG_DWORD_EDIT, state->dword_base, 32u, state->read_only);
+                        RunBitfieldEditor(dlg, state->value_name, state->key_path, IDC_REG_DWORD_EDIT, state->dword_base, 32u, state->read_only);
                     }
                     return TRUE;
                 case IDC_REG_QWORD_BITS:
                     if (state)
                     {
-                        RunBitfieldEditor(dlg, state->value_name, IDC_REG_QWORD_EDIT, state->qword_base, 64u, state->read_only);
+                        RunBitfieldEditor(dlg, state->value_name, state->key_path, IDC_REG_QWORD_EDIT, state->qword_base, 64u, state->read_only);
                     }
                     return TRUE;
                 case IDC_REG_DWORD_HEX:
@@ -1089,7 +1091,7 @@ INT_PTR CALLBACK ExtendedValueDialogProc(HWND dlg, UINT msg, WPARAM wparam, LPAR
                 case IDC_BITS:
                     if (state)
                     {
-                        RunBitfieldEditor(dlg, state->value_name, IDC_EDIT, state->number_base, state->base_type == REG_QWORD ? 64u : 32u, state->read_only);
+                        RunBitfieldEditor(dlg, state->value_name, state->key_path, IDC_EDIT, state->number_base, state->base_type == REG_QWORD ? 64u : 32u, state->read_only);
                     }
                     return TRUE;
                 case IDC_HEX:
@@ -1303,6 +1305,7 @@ bool EditCustomValue(HWND owner, const CustomValueRequest& request, CustomValueR
     }
     TraceValueDialogState state;
     state.value_name = request.value_name;
+    state.key_path = request.key_path;
     state.type = request.type;
     state.data = request.data;
     state.read_only = request.read_only;
@@ -1324,7 +1327,8 @@ bool EditFlaggedValue(HWND owner, const FlaggedValueRequest& request, FlaggedVal
     }
     ExtendedValueDialogState state;
     state.base_type = request.base_type;
-    state.value_name = request.value_name.empty() ? L"(Default)" : request.value_name;
+    state.value_name = request.value_name;
+    state.key_path = request.key_path;
     state.initial_data.assign(request.data.begin(), request.data.end());
     state.read_only = request.read_only;
     state.number_base = 16;

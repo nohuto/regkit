@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegKit\n"
 "Report-Msgid-Bugs-To: https://github.com/nohuto/regkit/issues\n"
-"POT-Creation-Date: 2026-11-02 18:21+0100\n"
-"PO-Revision-Date: 2026-10-09 20:51+0200\n"
+"POT-Creation-Date: 2026-11-06 04:34+0100\n"
+"PO-Revision-Date: 2026-11-06 04:35+0100\n"
 "Last-Translator: nohuto contact@noverse.dev\n"
 "Language-Team: none\n"
 "Language: es\n"
@@ -455,6 +455,14 @@ msgstr "En RegKit"
 msgid "Registry File (.reg)"
 msgstr "Archivo del Registro (.reg)"
 
+#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
+msgid "Batch File"
+msgstr "Archivo por lotes"
+
+#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
+msgid "PowerShell Script"
+msgstr "Script de PowerShell"
+
 #: dialogs/export_dialog.cpp
 msgid "Registry Hive File"
 msgstr "Archivo de subárbol del Registro"
@@ -485,7 +493,7 @@ msgstr "El nombre del vínculo no puede contener una barra diagonal inversa."
 
 #: dialogs/query_dialog.cpp frame/views/history_workspace.cpp
 msgid "RegKit couldn't read this file and didn't use it."
-msgstr ""
+msgstr "RegKit no pudo leer este archivo y no lo usó."
 
 #: dialogs/query_dialog.cpp
 msgid "No top level keys"
@@ -620,6 +628,10 @@ msgstr "Solo esta clave"
 msgid "This key and subkeys"
 msgstr "Esta clave y sus subclaves"
 
+#: dialogs/security_dialog.cpp frame/tools/launch_bridge.cpp
+msgid "The key's permissions couldn't be read."
+msgstr "No se pudieron leer los permisos de la clave."
+
 #: dialogs/trace_dialog.cpp frame/views/value_loading.cpp
 msgid "Keys"
 msgstr "Claves"
@@ -641,11 +653,12 @@ msgstr "Selecciona al menos una clave o un valor."
 msgid "Export supports the standard root keys only."
 msgstr "La exportación solo admite las claves raíz estándar."
 
-#: dialogs/transfer_dialogs.cpp
+#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
 msgid "Failed to write the exported registry file."
 msgstr "No se pudo escribir el archivo del Registro exportado."
 
-#: dialogs/transfer_dialogs.cpp frame/window/menu_bar.cpp
+#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
+#: frame/window/menu_bar.cpp
 msgid "Export"
 msgstr "Exportar"
 
@@ -742,10 +755,6 @@ msgstr "No se pudieron exportar los favoritos."
 msgid "Failed to read value."
 msgstr "No se pudo leer el valor."
 
-#: frame/commands/clipboard_commands.cpp frame/tools/launch_bridge.cpp
-msgid "The key information couldn't be read."
-msgstr "No se pudo leer la información de la clave."
-
 #: frame/commands/clipboard_commands.cpp
 msgid "The source key couldn't be opened."
 msgstr "No se pudo abrir la clave de origen."
@@ -753,6 +762,10 @@ msgstr "No se pudo abrir la clave de origen."
 #: frame/commands/clipboard_commands.cpp
 msgid "Failed to paste value."
 msgstr "No se pudo pegar el valor."
+
+#: frame/commands/clipboard_commands.cpp frame/tools/launch_bridge.cpp
+msgid "The key information couldn't be read."
+msgstr "No se pudo leer la información de la clave."
 
 #: frame/commands/clipboard_commands.cpp
 msgid "Failed to paste key."
@@ -996,8 +1009,8 @@ msgid "Replace all contents of this key with the hive file?"
 msgstr "¿Reemplazar todo el contenido de esta clave por el archivo de subárbol?"
 
 #: frame/commands/file_view_commands.cpp
-msgid "Replace all contents of this key with the hive file? This key is too large to undo the restore."
-msgstr "¿Reemplazar todo el contenido de esta clave por el archivo de subárbol? Esta clave es demasiado grande para deshacer la restauración."
+msgid "Replace all contents of this key with the hive file? The restore can't be undone."
+msgstr "¿Reemplazar todo el contenido de esta clave por el archivo de subárbol? La restauración no se puede deshacer."
 
 #: frame/commands/file_view_commands.cpp
 msgid "Restore Key"
@@ -1081,7 +1094,7 @@ msgstr "El destino debe ser una ruta completa del Registro bajo una raíz están
 
 #: frame/commands/mutation_commands.cpp
 msgid "Windows doesn't follow a link from a user hive into another user's hive or HKEY_LOCAL_MACHINE, so this link may not open. Create it anyway?"
-msgstr ""
+msgstr "Windows no sigue un vínculo desde un subárbol de usuario hacia el subárbol de otro usuario o HKEY_LOCAL_MACHINE, por lo que es posible que este vínculo no se abra. ¿Crearlo de todos modos?"
 
 #: frame/commands/mutation_commands.cpp
 msgid "New Symbolic Link"
@@ -1168,9 +1181,8 @@ msgid "Later"
 msgstr "Más tarde"
 
 #: frame/commands/workspace_commands.cpp
-#, fuzzy
 msgid "A new RegKit window couldn't be opened."
-msgstr "No se pudo reiniciar RegKit."
+msgstr "No se pudo abrir una nueva ventana de RegKit."
 
 #: frame/commands/workspace_commands.cpp
 msgid "Backup/restore mode needs the backup and restore privileges. Run RegKit elevated."
@@ -1199,6 +1211,7 @@ msgstr "No se encontró la ruta del Registro."
 
 #: frame/search/compare_command.cpp frame/search/compare_dialog.cpp
 #: frame/sources/regfile_commands.cpp regfile/registry_transfer.cpp
+#: regfile/reg_file.cpp
 msgid "Failed to read registry file."
 msgstr "No se pudo leer el archivo del Registro."
 
@@ -1295,6 +1308,11 @@ msgstr "Buscando... Resultados: ~%llu"
 
 #: frame/search/search_window.cpp
 #, c-format
+msgid "Results: %llu (stopped)"
+msgstr "Resultados: %llu (búsqueda detenida)"
+
+#: frame/search/search_window.cpp
+#, c-format
 msgid "Results: %llu (%.2fs)"
 msgstr "Resultados: %llu (%.2fs)"
 
@@ -1303,9 +1321,8 @@ msgid "Loading"
 msgstr "Cargando"
 
 #: frame/search/search_window.cpp
-#, fuzzy
 msgid "The contents of this key couldn't be read."
-msgstr "No se pudo leer el archivo de definiciones."
+msgstr "No se pudo leer el contenido de esta clave."
 
 #: frame/search/search_window.cpp
 msgid "HKCU"
@@ -1434,14 +1451,6 @@ msgstr "El archivo de salida no puede ser el de entrada."
 #: frame/tools/convert_dialog.cpp
 msgid "The output file couldn't be written."
 msgstr "No se pudo escribir el archivo de salida."
-
-#: frame/tools/convert_dialog.cpp
-msgid "Batch File"
-msgstr "Archivo por lotes"
-
-#: frame/tools/convert_dialog.cpp
-msgid "PowerShell Script"
-msgstr "Script de PowerShell"
 
 #: frame/tools/key_handles_window.cpp
 msgid "Scanning handles..."
@@ -1782,11 +1791,6 @@ msgstr "Puede escribir"
 #: frame/tools/launch_bridge.cpp ui/feedback.cpp
 msgid "Error"
 msgstr "Error"
-
-#: frame/tools/launch_bridge.cpp
-#, fuzzy
-msgid "The key's permissions couldn't be read."
-msgstr "No se pudo leer la información de la clave."
 
 #: frame/tools/launch_bridge.cpp
 msgid "The resource data is malformed."
@@ -2324,9 +2328,8 @@ msgid "Key Tree"
 msgstr "Árbol de claves"
 
 #: frame/window/lifetime.cpp
-#, fuzzy
 msgid "Clear Filter"
-msgstr "&Borrar historial"
+msgstr "Borrar filtro"
 
 #: frame/window/lifetime.cpp
 msgid "History"
@@ -2501,16 +2504,16 @@ msgid "&Go To..."
 msgstr "Ir &a..."
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Other View"
-msgstr "Ir a la &otra vista"
+msgid "Go to Other View"
+msgstr "Ir a la otra vista"
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Virtual Store Copy"
-msgstr "Ir a la copia en el almac&én virtual"
+msgid "Go to Virtual Store Copy"
+msgstr "Ir a la copia en el almacén virtual"
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Global Key"
-msgstr "Ir a la clave &global"
+msgid "Go to Global Key"
+msgstr "Ir a la clave global"
 
 #: frame/window/menu_bar.cpp
 msgid "&Edit"
@@ -2881,23 +2884,23 @@ msgid "&Open Default File..."
 msgstr "&Abrir archivo de valores predeterminados..."
 
 #: frame/window/menu_bar.cpp
-msgid "Edit &Active Defaults..."
+msgid "&Edit Active Defaults..."
 msgstr "&Editar valores predeterminados activos..."
 
 #: frame/window/menu_bar.cpp
-msgid "&Clear Active Defaults"
-msgstr "Borrar valores &predeterminados activos"
+msgid "Clear &Active Defaults"
+msgstr "Borrar &valores predeterminados activos"
 
 #: frame/window/menu_bar.cpp
-msgid "Edit Recent &Defaults..."
-msgstr "Editar &valores predeterminados recientes..."
+msgid "Edit &Recent Defaults..."
+msgstr "Editar valores predeterminados &recientes..."
 
 #: frame/window/menu_bar.cpp
-msgid "Clear &Recent Defaults"
+msgid "&Clear Recent Defaults"
 msgstr "&Borrar valores predeterminados recientes"
 
 #: frame/window/menu_bar.cpp
-msgid "&Enable Context Menu (risky)"
+msgid "E&nable Context Menu (risky)"
 msgstr "Activar &menú contextual (arriesgado)"
 
 #: frame/window/menu_bar.cpp
@@ -3171,6 +3174,10 @@ msgid "Invalid RegKit.Native call."
 msgstr "Llamada a RegKit.Native no válida."
 
 #: regfile/powershell_script.cpp
+msgid "Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."
+msgstr "Solo New-Item puede seguir a if (-not (Test-Path)), y solo las eliminaciones pueden seguir a if (Test-Path)."
+
+#: regfile/powershell_script.cpp
 msgid "Unsupported member"
 msgstr "Miembro no admitido"
 
@@ -3225,10 +3232,6 @@ msgstr "Se necesita -Path."
 #: regfile/powershell_script.cpp
 msgid "Only registry drives are supported."
 msgstr "Solo se admiten unidades del Registro."
-
-#: regfile/powershell_script.cpp
-msgid "Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."
-msgstr "Solo New-Item puede seguir a if (-not (Test-Path)), y solo las eliminaciones pueden seguir a if (Test-Path)."
 
 #: regfile/powershell_script.cpp
 msgid "-Name and -Value are required."
@@ -3286,6 +3289,10 @@ msgstr "el nombre contiene un carácter nulo"
 msgid "The file contains an entry RegKit can't parse."
 msgstr "El archivo contiene una entrada que RegKit no puede analizar."
 
+#: regfile/reg_file.cpp regfile/script_convert.cpp
+msgid "The file has no registry changes."
+msgstr "El archivo no contiene cambios del Registro."
+
 #: regfile/script_convert.cpp
 msgid "Unsupported file type, use .reg, .bat, .cmd or .ps1."
 msgstr "Tipo de archivo no admitido, usa .reg, .bat, .cmd o .ps1."
@@ -3293,10 +3300,6 @@ msgstr "Tipo de archivo no admitido, usa .reg, .bat, .cmd o .ps1."
 #: regfile/script_convert.cpp
 msgid "Unsupported root key."
 msgstr "Clave raíz no admitida."
-
-#: regfile/script_convert.cpp
-msgid "The file has no registry changes."
-msgstr "El archivo no contiene cambios del Registro."
 
 #: regfile/script_convert.cpp
 msgid "Enter a key under HKLM, HKCU, HKCR, HKU or HKCC."
@@ -3899,9 +3902,16 @@ msgid "Trace file contains no usable entries."
 msgstr "El archivo de Trace no contiene entradas utilizables."
 
 #: ui/feedback.cpp
-#, fuzzy
 msgid "The background task couldn't be started."
-msgstr "No se pudo iniciar el instalador."
+msgstr "No se pudo iniciar la tarea en segundo plano."
+
+#: ui/feedback.cpp
+msgid "RegKit couldn't save this file."
+msgstr "RegKit no pudo guardar este archivo."
+
+#: ui/feedback.cpp
+msgid "The text couldn't be copied to the clipboard."
+msgstr "No se pudo copiar el texto al Portapapeles."
 
 #: ui/feedback.cpp
 msgid "Warning"
@@ -3912,9 +3922,8 @@ msgid "Information"
 msgstr "Información"
 
 #: ui/feedback.cpp
-#, fuzzy
 msgid "The file couldn't be shown in Explorer."
-msgstr "No se pudo importar el archivo del Registro."
+msgstr "No se pudo mostrar el archivo en el Explorador de archivos."
 
 #: ui/feedback.cpp
 msgid "About RegKit"
@@ -4032,16 +4041,6 @@ msgstr "Abrir después de guardar:"
 msgid "The file dialog failed."
 msgstr "Error en el cuadro de diálogo de archivos."
 
-#: win32/file_text.cpp
-#, fuzzy
-msgid "The file is too large."
-msgstr "El archivo tiene demasiados niveles de anidamiento."
-
-#: win32/file_text.cpp
-#, fuzzy
-msgid "The file isn't valid text."
-msgstr "El archivo no es JSON válido."
-
 #: win32ui/dialog/check_list.cpp
 msgid "Select All"
 msgstr "Seleccionar todo"
@@ -4059,23 +4058,21 @@ msgid "Browse..."
 msgstr "Examinar..."
 
 #: win32ui/json/reader.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Expected '%c'."
-msgstr "Se esperaba '}'."
+msgstr "Se esperaba '%c'."
 
 #: win32ui/json/reader.cpp
 msgid "The file is nested too deeply."
 msgstr "El archivo tiene demasiados niveles de anidamiento."
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "An unterminated block comment is not allowed."
-msgstr "Comentario de bloque sin terminar."
+msgstr "No se permite un comentario de bloque sin cerrar."
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "Unexpected token."
-msgstr "Token inesperado"
+msgstr "Token inesperado."
 
 #: win32ui/json/reader.cpp
 msgid "A text member is longer than the format allows."
@@ -4110,24 +4107,20 @@ msgid "A number is out of range."
 msgstr "Un número está fuera del intervalo."
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "Only integers are supported."
-msgstr "Solo se admiten enteros sin signo."
+msgstr "Solo se admiten números enteros."
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A boolean was expected."
-msgstr "Se esperaba un número sin signo."
+msgstr "Se esperaba un valor booleano."
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A number has an empty fraction."
-msgstr "Un número tiene un cero inicial."
+msgstr "Un número tiene una parte fraccionaria vacía."
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A number has an empty exponent."
-msgstr "Un comentario tiene una clave vacía."
+msgstr "Un número tiene un exponente vacío."
 
 #: win32ui/json/reader.cpp
 msgid "The file contains trailing content."
@@ -4139,7 +4132,7 @@ msgstr "El archivo no es JSON válido."
 
 #: win32ui/json/reader.cpp
 msgid "Column"
-msgstr ""
+msgstr "Columna"
 
 #: win32ui/list_view/list_view.cpp
 msgid "Size column to fit"
@@ -4160,6 +4153,14 @@ msgstr "Líneas de cuadrícula"
 #: win32ui/system/error_text.cpp
 msgid "Unknown error."
 msgstr "Error desconocido."
+
+#: win32ui/system/file_io.cpp
+msgid "The file is too large."
+msgstr "El archivo es demasiado grande."
+
+#: win32ui/system/file_io.cpp
+msgid "The file isn't valid text."
+msgstr "El archivo no es texto válido."
 
 #: win32ui/system/strings.cpp
 msgid "Invalid Base64 character."
@@ -4278,24 +4279,20 @@ msgid "Rename Preset"
 msgstr "Cambiar nombre del preajuste"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "The file could not be read."
-msgstr "No se pudo leer el archivo de definiciones."
+msgstr "No se pudo leer el archivo."
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "A preset has no name."
-msgstr "Nombre del preajuste:"
+msgstr "Un preajuste no tiene nombre."
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "A line is not a valid entry."
-msgstr "El archivo no es JSON válido."
+msgstr "Una línea no es una entrada válida."
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "The file could not be written."
-msgstr "No se pudo escribir el archivo de salida."
+msgstr "No se pudo escribir el archivo."
 
 #: win32ui/theme/theme_presets_internal.h
 msgid "Background"
@@ -4494,9 +4491,8 @@ msgid "REG_NONE"
 msgstr ""
 
 #: ../resources/editor_dialogs.rc
-#, fuzzy
 msgid "RegKit"
-msgstr "En RegKit"
+msgstr ""
 
 #: ../resources/editor_dialogs.rc
 msgid "Export to:"
@@ -4902,21 +4898,15 @@ msgstr "Definiciones de campos de bits de RegKit (*.regkit-bitfield.jsonc)"
 msgid "JSON files (*.jsonc;*.json)"
 msgstr "Archivos JSON (*.jsonc;*.json)"
 
-#: dialogs/transfer_dialogs.cpp frame/tools/convert_dialog.cpp
-#: regfile/script_convert.h ui/feedback.h
-msgid "Registry Files (*.reg)"
-msgstr "Archivos del Registro (*.reg)"
-
-#: dialogs/transfer_dialogs.cpp frame/commands/clipboard_commands.cpp
-#: frame/commands/file_view_commands.cpp frame/detail/file_detail.h
-#: frame/sources/trace_commands.cpp frame/window/appearance.cpp
-#: regfile/script_convert.h ui/feedback.h
-msgid "All Files (*.*)"
-msgstr "Todos los archivos (*.*)"
-
 #: frame/commands/clipboard_commands.cpp
 msgid "Favorites Files (*.txt)"
 msgstr "Archivos de favoritos (*.txt)"
+
+#: frame/commands/clipboard_commands.cpp frame/commands/file_view_commands.cpp
+#: frame/detail/file_detail.h frame/sources/trace_commands.cpp
+#: frame/window/appearance.cpp regfile/script_convert.h ui/feedback.h
+msgid "All Files (*.*)"
+msgstr "Todos los archivos (*.*)"
 
 #: frame/commands/file_view_commands.cpp
 msgid "RegKit Comment Files (*.jsonc)"
@@ -4930,17 +4920,21 @@ msgstr "Archivos de subárbol del Registro"
 msgid "Trace Files (*.txt)"
 msgstr "Archivos de Trace (*.txt)"
 
-#: frame/tools/convert_dialog.cpp regfile/script_convert.h
-msgid "Batch Files (*.bat;*.cmd)"
-msgstr "Archivos por lotes (*.bat;*.cmd)"
-
-#: frame/tools/convert_dialog.cpp regfile/script_convert.h
-msgid "PowerShell Scripts (*.ps1)"
-msgstr "Scripts de PowerShell (*.ps1)"
-
 #: frame/window/appearance.cpp
 msgid "RegKit Theme Presets (*.rktheme)"
 msgstr "Preajustes de tema de RegKit (*.rktheme)"
+
+#: regfile/script_convert.h ui/feedback.h
+msgid "Registry Files (*.reg)"
+msgstr "Archivos del Registro (*.reg)"
+
+#: regfile/script_convert.h
+msgid "Batch Files (*.bat;*.cmd)"
+msgstr "Archivos por lotes (*.bat;*.cmd)"
+
+#: regfile/script_convert.h
+msgid "PowerShell Scripts (*.ps1)"
+msgstr "Scripts de PowerShell (*.ps1)"
 
 #: regfile/script_convert.h
 msgid "Registry Scripts (*.reg;*.bat;*.cmd;*.ps1)"

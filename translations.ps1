@@ -19,7 +19,7 @@ function invokeTool([string]$tool, [string[]]$arguments) {
 }
 
 function addText($texts, [string]$text, [string]$reference) {
-    if (!$texts.Contains($text)) { $texts[$text] = [Collections.Generic.List[string]]::new() }
+    if (!$texts.Contains($text)) { $texts[$text] = New-Object Collections.Generic.List[string] }
     if (!$texts[$text].Contains($reference)) { $texts[$text].Add($reference) }
 }
 
@@ -47,7 +47,7 @@ function addFilterTexts($texts, $files) {
     foreach ($file in $files) {
         $content = [IO.File]::ReadAllText($file)
         if (!$content.Contains('\0')) { continue }
-        $groups = [Collections.Generic.List[object]]::new()
+        $groups = New-Object Collections.Generic.List[object]
         $end = -1
         foreach ($match in [regex]::Matches($content, 'L"((?:[^"\\\r\n]|\\.)*)"')) {
             if ($groups.Count -and [string]::IsNullOrWhiteSpace($content.Substring($end, $match.Index - $end))) { $groups[$groups.Count - 1].text += $match.Groups[1].Value }

@@ -1205,16 +1205,17 @@ bool MainWindow::Impl::NavigateToResolvedExternalJump(const std::wstring& key_pa
     ApplyTreeSelectionEffects(browse_.current_node());
     EndJumpUiBatch();
 
-    pending_external_value_key_path_.clear();
+    pending_external_value_generation_ = 0;
     pending_external_value_name_.clear();
+    pending_value_command_ = 0;
     if (!value_name.empty())
     {
-        pending_external_value_key_path_ = key_path;
         pending_external_value_name_ = value_name;
         if (!SelectValueByName(value_name) && browse_.current_node() && !value_list_loading_)
         {
             UpdateValueListForNode(browse_.current_node());
         }
+        pending_external_value_generation_ = value_list_generation_.load();
     }
     return true;
 }

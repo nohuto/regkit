@@ -30,12 +30,6 @@ namespace regkit
 namespace
 {
 
-constexpr const wchar_t* kFormatFilters[] = {
-    L"Registry Files (*.reg)\0*.reg\0",
-    L"Batch Files (*.bat;*.cmd)\0*.bat;*.cmd\0",
-    L"PowerShell Scripts (*.ps1)\0*.ps1\0",
-};
-
 struct State
 {
     ConvertSettings* settings = nullptr;
@@ -176,7 +170,7 @@ void Browse(HWND dialog, State* state, bool input)
 {
     std::wstring path = win32ui::DialogItemText(dialog, input ? IDC_CONVERT_INPUT : IDC_CONVERT_OUTPUT);
     const DWORD error = input ? win32ui::ChooseFileToOpen(dialog, {.filter = regfile::kConvertFilter}, &path)
-                              : win32::ChooseFileToSave(dialog, kFormatFilters[static_cast<int>(FormatAt(dialog))], path.empty() ? nullptr : path.c_str(), &path);
+                              : win32::ChooseFileToSave(dialog, regfile::kFormatFilters[static_cast<int>(FormatAt(dialog))], path.empty() ? nullptr : path.c_str(), &path);
     if (!ui::ReportFileDialogResult(dialog, error))
     {
         return;

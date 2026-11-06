@@ -17,6 +17,7 @@ namespace regkit::editors
 struct CustomValueRequest
 {
     std::wstring value_name;
+    std::wstring key_path;
     DWORD type = REG_SZ;
     std::vector<BYTE> data;
     bool read_only = false;
@@ -31,6 +32,7 @@ struct CustomValueResult
 struct FlaggedValueRequest
 {
     std::wstring value_name;
+    std::wstring key_path;
     DWORD base_type = REG_SZ;
     std::span<const BYTE> data;
     bool read_only = false;

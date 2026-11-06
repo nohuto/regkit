@@ -25,7 +25,10 @@ using namespace window_detail;
 
 void MainWindow::Impl::ShowPermissionsDialog(const RegistryNode& node)
 {
-    ShowRegistryPermissions(hwnd_, node);
+    if (ShowRegistryPermissions(hwnd_, node))
+    {
+        MarkOfflineDirty();
+    }
 }
 
 namespace
@@ -79,6 +82,7 @@ struct KeyInfoContext
 {
     RegistryNode node;
     ULONG control_flags = 0;
+    bool security_changed = false;
 };
 
 bool ApplyControlFlag(void* context, HWND dialog, size_t row, bool checked)
@@ -97,7 +101,8 @@ bool ApplyControlFlag(void* context, HWND dialog, size_t row, bool checked)
 
 void OpenKeyPermissions(void* context, HWND owner)
 {
-    ShowRegistryPermissions(owner, static_cast<KeyInfoContext*>(context)->node);
+    auto* key = static_cast<KeyInfoContext*>(context);
+    key->security_changed = ShowRegistryPermissions(owner, key->node) || key->security_changed;
 }
 
 void EditResourceBinary(void* context, HWND dialog)
@@ -267,8 +272,12 @@ void MainWindow::Impl::ShowKeyInfoDialog(const RegistryNode& node)
         tables.push_back({util::Tr(L"Access"), {util::Tr(L"Error")}, {{std::wstring(util::Tr(L"The key's permissions couldn't be read.")) + (detail.empty() ? L"" : L" " + detail)}}});
     }
     spec.tables = tables;
-    spec.action = settings_.read_only ? nullptr : OpenKeyPermissions;
+    spec.action = settings_.read_only || RegistryStore::IsVirtualRoot(node.root) ? nullptr : OpenKeyPermissions;
     win32ui::ShowTables(hwnd_, spec);
+    if (context.security_changed)
+    {
+        MarkOfflineDirty();
+    }
 }
 
 bool MainWindow::Impl::ShowResourceList(const RegistryValue& value)

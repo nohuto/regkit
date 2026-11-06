@@ -53,6 +53,7 @@ struct KeyMenu
     bool has_node = true;
     bool simulated = false;
     bool can_modify = true;
+    bool has_security = true;
     bool can_comment = true;
     bool can_rename = false;
     bool source_hive = false;
@@ -98,7 +99,7 @@ void AppendKeyMenu(HMENU menu, const KeyMenu& key)
     frame::AppendCommand(menu, flags(key.can_rename && key.can_modify), cmd::kEditRename, util::Tr(L"Re&name"));
     frame::AppendCommand(menu, flags(key.can_rename && key.can_modify), cmd::kEditDelete, util::Tr(L"&Delete"));
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-    frame::AppendCommand(menu, flags(writable), cmd::kEditPermissions, util::Tr(L"Perm&issions..."));
+    frame::AppendCommand(menu, flags(writable && key.has_security), cmd::kEditPermissions, util::Tr(L"Perm&issions..."));
     frame::AppendCommand(menu, MF_STRING, cmd::kEditKeyInfo, util::Tr(L"&Key Information..."));
 }
 
@@ -166,6 +167,7 @@ void MainWindow::Impl::ShowTreeContextMenu(HTREEITEM item, POINT screen_pt)
     key.has_node = node != nullptr;
     key.simulated = key.has_node && node->simulated;
     key.can_modify = !settings_.read_only;
+    key.has_security = key.has_node && !RegistryStore::IsVirtualRoot(node->root);
     key.can_comment = key.has_node;
     key.can_rename = key.has_node && !node->subkey.empty();
     key.source_hive = key.has_node && !key.simulated && node->root == HKEY_CLASSES_ROOT && !node->subkey.empty();
@@ -224,6 +226,7 @@ void MainWindow::Impl::ShowValueContextMenu(int index, POINT screen_pt)
         KeyMenu key;
         key.simulated = row->simulated;
         key.can_modify = !settings_.read_only;
+        key.has_security = browse_.current_node() && !RegistryStore::IsVirtualRoot(browse_.current_node()->root);
         key.can_comment = !row->extra.empty();
         key.can_rename = !row->extra.empty();
         key.expand_label = util::Tr(L"E&xpand Key");
@@ -326,7 +329,8 @@ void MainWindow::Impl::ShowValueContextMenu(int index, POINT screen_pt)
         if (!is_simulated)
         {
             AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-            frame::AppendCommand(menu, modify_flags, cmd::kEditPermissions, util::Tr(L"Perm&issions..."));
+            const bool has_security = browse_.current_node() && !RegistryStore::IsVirtualRoot(browse_.current_node()->root);
+            frame::AppendCommand(menu, modify_flags | (has_security ? 0 : MF_GRAYED), cmd::kEditPermissions, util::Tr(L"Perm&issions..."));
             frame::AppendCommand(menu, MF_STRING, cmd::kEditKeyInfo, util::Tr(L"&Key Information..."));
         }
     }
@@ -475,16 +479,26 @@ void MainWindow::Impl::ShowSearchResultContextMenu(int index, POINT screen_pt)
     {
         return;
     }
+    search::Source target_source = row_source;
+    std::wstring target_path = key_path;
+    if (compare_row)
+    {
+        // a compare row acts on its first entry, or on the second when only that side has it
+        const bool second_side = first_key_path.empty();
+        target_source = second_side ? second_source : first_source;
+        target_path = second_side ? second_key_path : first_key_path;
+    }
 
     RegistryNode node;
     bool node_ok = ResolvePathToNode(key_path, &node);
     KeyInfo info = {};
-    bool key_exists = node_ok && RegistryStore::QueryKeyInfo(node, &info);
+    // commands select the entry in its source tab first
+    bool key_exists = FindSourceTab(target_source) >= 0 && node_ok && RegistryStore::QueryKeyInfo(node, &info);
     bool can_modify = !settings_.read_only;
     bool can_rename = key_exists && can_modify && (is_key_row ? !node.subkey.empty() : !row_value_name.empty());
     bool can_delete = key_exists && can_modify && (!is_key_row || !node.subkey.empty());
     bool can_export = key_exists;
-    bool can_permissions = key_exists && can_modify;
+    bool can_permissions = key_exists && can_modify && target_source.kind != search::Source::Kind::kRegFile;
     bool can_open_hive = key_exists && CanOpenHiveFile(node);
 
     enum
@@ -558,27 +572,26 @@ void MainWindow::Impl::ShowSearchResultContextMenu(int index, POINT screen_pt)
     }
 
     auto open_key = [&](bool new_tab) {
-        if (compare_row)
-        {
-            OpenSourceEntry(first_source, first_key_path, row_value_name, new_tab);
-            return;
-        }
-        OpenSourceEntry(row_source, key_path, row_value_name, new_tab);
+        return OpenSourceEntry(target_source, target_path, row_value_name, new_tab);
     };
     auto focus_key = [&]() {
-        open_key(false);
+        if (!open_key(false))
+        {
+            return false;
+        }
         if (browse_.tree().hwnd())
         {
             SetFocus(browse_.tree().hwnd());
         }
+        return true;
     };
     auto run_on_value = [&](int command) {
-        if (is_key_row)
+        if (is_key_row || !open_key(false))
         {
             return;
         }
-        open_key(false);
-        if (SelectValueByName(result->value_name))
+        // results may have grown during the menu loop, only copies taken before it are safe
+        if (SelectValueByName(row_value_name))
         {
             if (browse_.values().hwnd())
             {
@@ -587,13 +600,15 @@ void MainWindow::Impl::ShowSearchResultContextMenu(int index, POINT screen_pt)
             HandleMenuCommand(command);
             return;
         }
-        pending_external_value_key_path_ = key_path;
-        pending_external_value_name_ = result->value_name;
+        pending_external_value_generation_ = value_list_generation_.load();
+        pending_external_value_name_ = row_value_name;
         pending_value_command_ = command;
     };
     auto run_on_key = [&](int command) {
-        focus_key();
-        HandleMenuCommand(command);
+        if (focus_key())
+        {
+            HandleMenuCommand(command);
+        }
     };
     auto run_on_target = [&](int command) {
         if (is_key_row)
@@ -667,15 +682,14 @@ void MainWindow::Impl::ShowSearchResultContextMenu(int index, POINT screen_pt)
         CopyKeyPathAs(command, node, key_path);
         return;
     case kSearchPermissions:
-        if (node_ok && key_exists)
+        if (can_permissions)
         {
-            ShowPermissionsDialog(node);
+            run_on_key(cmd::kEditPermissions);
         }
         return;
     case kSearchOpenHive:
-        if (can_open_hive)
+        if (can_open_hive && focus_key())
         {
-            focus_key();
             HandleMenuCommand(cmd::kOptionsHiveFileDir);
         }
         return;

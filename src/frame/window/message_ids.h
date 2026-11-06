@@ -39,6 +39,7 @@ constexpr UINT kTreeRedraw = WM_APP + 46;
 constexpr UINT kStatusUpdate = WM_APP + 47;
 constexpr UINT kCompareReady = WM_APP + 48;
 constexpr UINT kShowFileErrors = WM_APP + 49;
+constexpr UINT kRetryRename = WM_APP + 50;
 constexpr ULONG_PTR kExternalJumpCopyDataId = 0x52474A54;
 constexpr ULONG_PTR kEditRegFileCopyDataId = 0x5247464F;
 constexpr DWORD kExternalMessageMaxBytes = 64u * 1024u;

@@ -173,6 +173,21 @@ bool MainWindow::Impl::HandleNavigateClipboardCommand(int command_id)
     }
 }
 
+void MainWindow::Impl::CaptureKeyForPaste(const RegistryNode& node)
+{
+    auto hold = std::make_shared<SourceHold>();
+    hold->sessions.push_back(session_);
+    RegistryNode source = node;
+    source.root = hold->Hold(source.root);
+    // stays incomplete when the capture never ends, a failed start or a throwing capture
+    auto snapshot = std::make_shared<changes::KeySnapshot>(changes::KeySnapshot{.complete = false});
+    key_copy_session_.StartOrRun(L"KeyCopyThread", [source, hold, snapshot](uint64_t, std::atomic_bool& cancel) {
+        *snapshot = changes::CaptureKey(source, false, &cancel);
+    });
+    clipboard_.kind = ClipboardItem::Kind::kKey;
+    clipboard_.key_snapshot = std::move(snapshot);
+}
+
 bool MainWindow::Impl::HandleClipboardCommand(int command_id)
 {
     switch (command_id)
@@ -259,20 +274,13 @@ bool MainWindow::Impl::HandleClipboardCommand(int command_id)
         }
     case cmd::kEditCopy:
         {
-            // partial key copies would paste without unreadable data
-            const auto capture_key = [this](const RegistryNode& key) {
-                changes::KeySnapshot snapshot = changes::CaptureKey(key, false);
-                if (!snapshot.complete)
-                {
-                    ui::ShowError(hwnd_, util::Tr(L"The key information couldn't be read."));
-                    return false;
-                }
-                clipboard_.key_snapshot = std::move(snapshot);
-                return true;
+            const auto clear_clipboard = [this] {
+                key_copy_session_.Cancel();
+                clipboard_ = {};
             };
-            const auto capture_row = [this, &capture_key](const ListRow* row) {
+            const auto capture_row = [this, &clear_clipboard](const ListRow* row) {
                 const RegistryNode& node = *browse_.current_node();
-                clipboard_.kind = ClipboardItem::Kind::kNone;
+                clear_clipboard();
                 if (row && row->kind == rowkind::kValue)
                 {
                     if (!GetValueEntry(node, row->extra, &clipboard_.value))
@@ -284,11 +292,7 @@ bool MainWindow::Impl::HandleClipboardCommand(int command_id)
                 }
                 else if (row && row->kind == rowkind::kKey)
                 {
-                    if (!capture_key(ChildNode(node, row->extra)))
-                    {
-                        return true;
-                    }
-                    clipboard_.kind = ClipboardItem::Kind::kKey;
+                    CaptureKeyForPaste(ChildNode(node, row->extra));
                     clipboard_.name = row->extra;
                 }
                 clipboard_.source_parent = node;
@@ -300,7 +304,7 @@ bool MainWindow::Impl::HandleClipboardCommand(int command_id)
                 const RegistryNode& node = *browse_.current_node();
                 RegistryNode parent = node;
                 parent.subkey = registry_path::Parent(node.subkey);
-                clipboard_.kind = capture_key(node) ? ClipboardItem::Kind::kKey : ClipboardItem::Kind::kNone;
+                CaptureKeyForPaste(node);
                 clipboard_.source_parent = parent;
                 clipboard_.name = LeafName(node);
                 ui::CopyText(hwnd_, registry_path::Build(node));
@@ -319,7 +323,7 @@ bool MainWindow::Impl::HandleClipboardCommand(int command_id)
                     }
                     if (list == browse_.values().hwnd())
                     {
-                        clipboard_.kind = ClipboardItem::Kind::kNone;
+                        clear_clipboard();
                         if (selected == 1 && browse_.current_node())
                         {
                             capture_row(SelectedValueRow(browse_.values(), nullptr));
@@ -474,6 +478,13 @@ bool MainWindow::Impl::HandleChangeHistoryCommand(int command_id)
             }
             if (clipboard_.kind == ClipboardItem::Kind::kKey)
             {
+                key_copy_session_.Join();
+                // partial key copies would paste without unreadable data
+                if (!clipboard_.key_snapshot->complete)
+                {
+                    ui::ShowError(hwnd_, util::TrDetail(L"The key information couldn't be read.", registry_path::Build(ChildNode(clipboard_.source_parent, clipboard_.name))));
+                    return true;
+                }
                 bool same_parent = SameNode(*browse_.current_node(), clipboard_.source_parent);
                 std::wstring base_name = clipboard_.name;
                 if (same_parent && !base_name.empty())
@@ -481,7 +492,7 @@ bool MainWindow::Impl::HandleChangeHistoryCommand(int command_id)
                     base_name += L" - Copy";
                 }
                 std::wstring unique = MakeUniqueKeyName(*browse_.current_node(), base_name);
-                changes::KeySnapshot snapshot = clipboard_.key_snapshot;
+                changes::KeySnapshot snapshot = *clipboard_.key_snapshot;
                 snapshot.name = unique;
                 if (!changes::RestoreKey(*browse_.current_node(), snapshot))
                 {
@@ -497,7 +508,7 @@ bool MainWindow::Impl::HandleChangeHistoryCommand(int command_id)
                     op.type = changes::UndoOperation::Type::kCreateKey;
                     op.node = *browse_.current_node();
                     op.name = unique;
-                    op.key_snapshot = snapshot;
+                    op.key_snapshot = std::move(snapshot);
                     PushUndo(std::move(op));
                     RefreshTreeSelection();
                     UpdateValueListForNode(browse_.current_node());

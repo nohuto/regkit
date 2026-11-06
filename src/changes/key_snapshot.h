@@ -5,7 +5,9 @@
 
 #include "registry/registry_store.h"
 
+#include <atomic>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace regkit::changes
@@ -25,8 +27,9 @@ struct KeySnapshot
     bool complete = true;
 };
 
-KeySnapshot CaptureKey(const RegistryNode& node, bool exact = true);
+KeySnapshot CaptureKey(const RegistryNode& node, bool exact = true, const std::atomic_bool* cancel = nullptr);
 bool RestoreKey(const RegistryNode& parent, const KeySnapshot& snapshot);
-bool ReplaceKey(const RegistryNode& node, const KeySnapshot& snapshot);
+// volatile subtrees below node with the key to recreate each under, hive files never hold them
+bool CaptureVolatileKeys(const RegistryNode& node, std::vector<std::pair<RegistryNode, KeySnapshot>>* keys);
 
 }

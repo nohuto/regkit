@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegKit\n"
 "Report-Msgid-Bugs-To: https://github.com/nohuto/regkit/issues\n"
-"POT-Creation-Date: 2026-11-02 18:21+0100\n"
-"PO-Revision-Date: 2026-10-09 20:51+0200\n"
+"POT-Creation-Date: 2026-11-06 04:34+0100\n"
+"PO-Revision-Date: 2026-11-06 04:35+0100\n"
 "Last-Translator: nohuto contact@noverse.dev\n"
 "Language-Team: none\n"
 "Language: zh-CN\n"
@@ -455,6 +455,14 @@ msgstr "在 RegKit 中打开"
 msgid "Registry File (.reg)"
 msgstr "注册表文件 (.reg)"
 
+#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
+msgid "Batch File"
+msgstr "批处理文件"
+
+#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
+msgid "PowerShell Script"
+msgstr "PowerShell 脚本"
+
 #: dialogs/export_dialog.cpp
 msgid "Registry Hive File"
 msgstr "注册表配置单元文件"
@@ -485,7 +493,7 @@ msgstr "链接名称不能包含反斜杠。"
 
 #: dialogs/query_dialog.cpp frame/views/history_workspace.cpp
 msgid "RegKit couldn't read this file and didn't use it."
-msgstr ""
+msgstr "RegKit 无法读取此文件，因此未使用它。"
 
 #: dialogs/query_dialog.cpp
 msgid "No top level keys"
@@ -620,6 +628,10 @@ msgstr "仅此项"
 msgid "This key and subkeys"
 msgstr "此项及其子项"
 
+#: dialogs/security_dialog.cpp frame/tools/launch_bridge.cpp
+msgid "The key's permissions couldn't be read."
+msgstr "无法读取该项的权限。"
+
 #: dialogs/trace_dialog.cpp frame/views/value_loading.cpp
 msgid "Keys"
 msgstr "项"
@@ -641,11 +653,12 @@ msgstr "选择至少一个项或值。"
 msgid "Export supports the standard root keys only."
 msgstr "导出仅支持标准根项。"
 
-#: dialogs/transfer_dialogs.cpp
+#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
 msgid "Failed to write the exported registry file."
 msgstr "无法写入导出的注册表文件。"
 
-#: dialogs/transfer_dialogs.cpp frame/window/menu_bar.cpp
+#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
+#: frame/window/menu_bar.cpp
 msgid "Export"
 msgstr "导出"
 
@@ -742,10 +755,6 @@ msgstr "无法导出收藏夹。"
 msgid "Failed to read value."
 msgstr "无法读取值。"
 
-#: frame/commands/clipboard_commands.cpp frame/tools/launch_bridge.cpp
-msgid "The key information couldn't be read."
-msgstr "无法读取项信息。"
-
 #: frame/commands/clipboard_commands.cpp
 msgid "The source key couldn't be opened."
 msgstr "无法打开源项。"
@@ -753,6 +762,10 @@ msgstr "无法打开源项。"
 #: frame/commands/clipboard_commands.cpp
 msgid "Failed to paste value."
 msgstr "无法粘贴值。"
+
+#: frame/commands/clipboard_commands.cpp frame/tools/launch_bridge.cpp
+msgid "The key information couldn't be read."
+msgstr "无法读取项信息。"
 
 #: frame/commands/clipboard_commands.cpp
 msgid "Failed to paste key."
@@ -996,8 +1009,8 @@ msgid "Replace all contents of this key with the hive file?"
 msgstr "要用配置单元文件替换此项的全部内容吗?"
 
 #: frame/commands/file_view_commands.cpp
-msgid "Replace all contents of this key with the hive file? This key is too large to undo the restore."
-msgstr "要用配置单元文件替换此项的全部内容吗? 此项过大，无法撤消还原操作。"
+msgid "Replace all contents of this key with the hive file? The restore can't be undone."
+msgstr "要用配置单元文件替换此项的全部内容吗? 无法撤消还原操作。"
 
 #: frame/commands/file_view_commands.cpp
 msgid "Restore Key"
@@ -1081,7 +1094,7 @@ msgstr "目标必须是标准根项下的完整注册表路径。"
 
 #: frame/commands/mutation_commands.cpp
 msgid "Windows doesn't follow a link from a user hive into another user's hive or HKEY_LOCAL_MACHINE, so this link may not open. Create it anyway?"
-msgstr ""
+msgstr "Windows 不会跟随从用户配置单元指向其他用户的配置单元或 HKEY_LOCAL_MACHINE 的链接，因此此链接可能无法打开。仍要创建吗?"
 
 #: frame/commands/mutation_commands.cpp
 msgid "New Symbolic Link"
@@ -1168,9 +1181,8 @@ msgid "Later"
 msgstr "稍后"
 
 #: frame/commands/workspace_commands.cpp
-#, fuzzy
 msgid "A new RegKit window couldn't be opened."
-msgstr "无法重启 RegKit。"
+msgstr "无法打开新的 RegKit 窗口。"
 
 #: frame/commands/workspace_commands.cpp
 msgid "Backup/restore mode needs the backup and restore privileges. Run RegKit elevated."
@@ -1199,6 +1211,7 @@ msgstr "找不到注册表路径。"
 
 #: frame/search/compare_command.cpp frame/search/compare_dialog.cpp
 #: frame/sources/regfile_commands.cpp regfile/registry_transfer.cpp
+#: regfile/reg_file.cpp
 msgid "Failed to read registry file."
 msgstr "无法读取注册表文件。"
 
@@ -1295,6 +1308,11 @@ msgstr "正在搜索... 结果: ~%llu"
 
 #: frame/search/search_window.cpp
 #, c-format
+msgid "Results: %llu (stopped)"
+msgstr "结果: %llu (搜索已停止)"
+
+#: frame/search/search_window.cpp
+#, c-format
 msgid "Results: %llu (%.2fs)"
 msgstr "结果: %llu (%.2f秒)"
 
@@ -1303,9 +1321,8 @@ msgid "Loading"
 msgstr "正在加载"
 
 #: frame/search/search_window.cpp
-#, fuzzy
 msgid "The contents of this key couldn't be read."
-msgstr "无法读取定义文件。"
+msgstr "无法读取此项的内容。"
 
 #: frame/search/search_window.cpp
 msgid "HKCU"
@@ -1434,14 +1451,6 @@ msgstr "输出文件不能与输入文件相同。"
 #: frame/tools/convert_dialog.cpp
 msgid "The output file couldn't be written."
 msgstr "无法写入输出文件。"
-
-#: frame/tools/convert_dialog.cpp
-msgid "Batch File"
-msgstr "批处理文件"
-
-#: frame/tools/convert_dialog.cpp
-msgid "PowerShell Script"
-msgstr "PowerShell 脚本"
 
 #: frame/tools/key_handles_window.cpp
 msgid "Scanning handles..."
@@ -1782,11 +1791,6 @@ msgstr "可写入"
 #: frame/tools/launch_bridge.cpp ui/feedback.cpp
 msgid "Error"
 msgstr "错误"
-
-#: frame/tools/launch_bridge.cpp
-#, fuzzy
-msgid "The key's permissions couldn't be read."
-msgstr "无法读取项信息。"
 
 #: frame/tools/launch_bridge.cpp
 msgid "The resource data is malformed."
@@ -2324,9 +2328,8 @@ msgid "Key Tree"
 msgstr "项树"
 
 #: frame/window/lifetime.cpp
-#, fuzzy
 msgid "Clear Filter"
-msgstr "清除历史记录(&H)"
+msgstr "清除筛选"
 
 #: frame/window/lifetime.cpp
 msgid "History"
@@ -2501,16 +2504,16 @@ msgid "&Go To..."
 msgstr "转到(&G)..."
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Other View"
-msgstr "转到另一视图(&G)"
+msgid "Go to Other View"
+msgstr "转到另一视图"
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Virtual Store Copy"
-msgstr "转到虚拟存储副本(&G)"
+msgid "Go to Virtual Store Copy"
+msgstr "转到虚拟存储副本"
 
 #: frame/window/menu_bar.cpp
-msgid "&Go to Global Key"
-msgstr "转到全局项(&G)"
+msgid "Go to Global Key"
+msgstr "转到全局项"
 
 #: frame/window/menu_bar.cpp
 msgid "&Edit"
@@ -2881,24 +2884,24 @@ msgid "&Open Default File..."
 msgstr "打开默认值文件(&O)..."
 
 #: frame/window/menu_bar.cpp
-msgid "Edit &Active Defaults..."
-msgstr "编辑活动默认值(&A)..."
+msgid "&Edit Active Defaults..."
+msgstr "编辑活动默认值(&E)..."
 
 #: frame/window/menu_bar.cpp
-msgid "&Clear Active Defaults"
-msgstr "清除活动默认值(&C)"
+msgid "Clear &Active Defaults"
+msgstr "清除活动默认值(&A)"
 
 #: frame/window/menu_bar.cpp
-msgid "Edit Recent &Defaults..."
-msgstr "编辑最近的默认值(&D)..."
+msgid "Edit &Recent Defaults..."
+msgstr "编辑最近的默认值(&R)..."
 
 #: frame/window/menu_bar.cpp
-msgid "Clear &Recent Defaults"
-msgstr "清除最近的默认值(&R)"
+msgid "&Clear Recent Defaults"
+msgstr "清除最近的默认值(&C)"
 
 #: frame/window/menu_bar.cpp
-msgid "&Enable Context Menu (risky)"
-msgstr "启用上下文菜单 (有风险)(&E)"
+msgid "E&nable Context Menu (risky)"
+msgstr "启用上下文菜单 (有风险)(&N)"
 
 #: frame/window/menu_bar.cpp
 msgid "D&ocumentation"
@@ -3171,6 +3174,10 @@ msgid "Invalid RegKit.Native call."
 msgstr "RegKit.Native 调用无效。"
 
 #: regfile/powershell_script.cpp
+msgid "Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."
+msgstr "if (-not (Test-Path)) 后只能接 New-Item，if (Test-Path) 后只能接删除操作。"
+
+#: regfile/powershell_script.cpp
 msgid "Unsupported member"
 msgstr "不支持的成员"
 
@@ -3225,10 +3232,6 @@ msgstr "必须指定 -Path。"
 #: regfile/powershell_script.cpp
 msgid "Only registry drives are supported."
 msgstr "仅支持注册表驱动器。"
-
-#: regfile/powershell_script.cpp
-msgid "Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."
-msgstr "if (-not (Test-Path)) 后只能接 New-Item，if (Test-Path) 后只能接删除操作。"
 
 #: regfile/powershell_script.cpp
 msgid "-Name and -Value are required."
@@ -3286,6 +3289,10 @@ msgstr "名称包含空字符"
 msgid "The file contains an entry RegKit can't parse."
 msgstr "文件中有 RegKit 无法解析的条目。"
 
+#: regfile/reg_file.cpp regfile/script_convert.cpp
+msgid "The file has no registry changes."
+msgstr "文件中没有注册表更改。"
+
 #: regfile/script_convert.cpp
 msgid "Unsupported file type, use .reg, .bat, .cmd or .ps1."
 msgstr "不支持此文件类型，请使用 .reg、.bat、.cmd 或 .ps1。"
@@ -3293,10 +3300,6 @@ msgstr "不支持此文件类型，请使用 .reg、.bat、.cmd 或 .ps1。"
 #: regfile/script_convert.cpp
 msgid "Unsupported root key."
 msgstr "不支持此根项。"
-
-#: regfile/script_convert.cpp
-msgid "The file has no registry changes."
-msgstr "文件中没有注册表更改。"
 
 #: regfile/script_convert.cpp
 msgid "Enter a key under HKLM, HKCU, HKCR, HKU or HKCC."
@@ -3899,9 +3902,16 @@ msgid "Trace file contains no usable entries."
 msgstr "Trace 文件中没有可用的条目。"
 
 #: ui/feedback.cpp
-#, fuzzy
 msgid "The background task couldn't be started."
-msgstr "无法启动安装程序。"
+msgstr "无法启动后台任务。"
+
+#: ui/feedback.cpp
+msgid "RegKit couldn't save this file."
+msgstr "RegKit 无法保存此文件。"
+
+#: ui/feedback.cpp
+msgid "The text couldn't be copied to the clipboard."
+msgstr "无法将文本复制到剪贴板。"
 
 #: ui/feedback.cpp
 msgid "Warning"
@@ -3912,9 +3922,8 @@ msgid "Information"
 msgstr "信息"
 
 #: ui/feedback.cpp
-#, fuzzy
 msgid "The file couldn't be shown in Explorer."
-msgstr "无法导入注册表文件。"
+msgstr "无法在文件资源管理器中显示该文件。"
 
 #: ui/feedback.cpp
 msgid "About RegKit"
@@ -4032,16 +4041,6 @@ msgstr "保存后打开:"
 msgid "The file dialog failed."
 msgstr "文件对话框失败。"
 
-#: win32/file_text.cpp
-#, fuzzy
-msgid "The file is too large."
-msgstr "文件嵌套过深。"
-
-#: win32/file_text.cpp
-#, fuzzy
-msgid "The file isn't valid text."
-msgstr "此文件不是有效的 JSON。"
-
 #: win32ui/dialog/check_list.cpp
 msgid "Select All"
 msgstr "全选"
@@ -4059,23 +4058,21 @@ msgid "Browse..."
 msgstr "浏览..."
 
 #: win32ui/json/reader.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Expected '%c'."
-msgstr "应为 '}'。"
+msgstr "应为 '%c'。"
 
 #: win32ui/json/reader.cpp
 msgid "The file is nested too deeply."
 msgstr "文件嵌套过深。"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "An unterminated block comment is not allowed."
-msgstr "块注释未终止。"
+msgstr "不允许未结束的块注释。"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "Unexpected token."
-msgstr "意外的标记"
+msgstr "意外的标记。"
 
 #: win32ui/json/reader.cpp
 msgid "A text member is longer than the format allows."
@@ -4110,24 +4107,20 @@ msgid "A number is out of range."
 msgstr "数字超出范围。"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "Only integers are supported."
-msgstr "仅支持无符号整数。"
+msgstr "仅支持整数。"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A boolean was expected."
-msgstr "应为无符号数字。"
+msgstr "应为布尔值。"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A number has an empty fraction."
-msgstr "数字有前导零。"
+msgstr "数字的小数部分为空。"
 
 #: win32ui/json/reader.cpp
-#, fuzzy
 msgid "A number has an empty exponent."
-msgstr "注释的项路径为空。"
+msgstr "数字的指数部分为空。"
 
 #: win32ui/json/reader.cpp
 msgid "The file contains trailing content."
@@ -4139,7 +4132,7 @@ msgstr "此文件不是有效的 JSON。"
 
 #: win32ui/json/reader.cpp
 msgid "Column"
-msgstr ""
+msgstr "列"
 
 #: win32ui/list_view/list_view.cpp
 msgid "Size column to fit"
@@ -4160,6 +4153,14 @@ msgstr "网格线"
 #: win32ui/system/error_text.cpp
 msgid "Unknown error."
 msgstr "未知错误。"
+
+#: win32ui/system/file_io.cpp
+msgid "The file is too large."
+msgstr "文件过大。"
+
+#: win32ui/system/file_io.cpp
+msgid "The file isn't valid text."
+msgstr "文件不是有效的文本。"
 
 #: win32ui/system/strings.cpp
 msgid "Invalid Base64 character."
@@ -4278,24 +4279,20 @@ msgid "Rename Preset"
 msgstr "重命名预设"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "The file could not be read."
-msgstr "无法读取定义文件。"
+msgstr "无法读取文件。"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "A preset has no name."
-msgstr "预设名称:"
+msgstr "有预设没有名称。"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "A line is not a valid entry."
-msgstr "此文件不是有效的 JSON。"
+msgstr "有一行不是有效的条目。"
 
 #: win32ui/theme/theme_presets.cpp
-#, fuzzy
 msgid "The file could not be written."
-msgstr "无法写入输出文件。"
+msgstr "无法写入文件。"
 
 #: win32ui/theme/theme_presets_internal.h
 msgid "Background"
@@ -4494,9 +4491,8 @@ msgid "REG_NONE"
 msgstr ""
 
 #: ../resources/editor_dialogs.rc
-#, fuzzy
 msgid "RegKit"
-msgstr "在 RegKit 中打开"
+msgstr ""
 
 #: ../resources/editor_dialogs.rc
 msgid "Export to:"
@@ -4902,21 +4898,15 @@ msgstr "RegKit 位字段定义 (*.regkit-bitfield.jsonc)"
 msgid "JSON files (*.jsonc;*.json)"
 msgstr "JSON 文件 (*.jsonc;*.json)"
 
-#: dialogs/transfer_dialogs.cpp frame/tools/convert_dialog.cpp
-#: regfile/script_convert.h ui/feedback.h
-msgid "Registry Files (*.reg)"
-msgstr "注册表文件 (*.reg)"
-
-#: dialogs/transfer_dialogs.cpp frame/commands/clipboard_commands.cpp
-#: frame/commands/file_view_commands.cpp frame/detail/file_detail.h
-#: frame/sources/trace_commands.cpp frame/window/appearance.cpp
-#: regfile/script_convert.h ui/feedback.h
-msgid "All Files (*.*)"
-msgstr "所有文件 (*.*)"
-
 #: frame/commands/clipboard_commands.cpp
 msgid "Favorites Files (*.txt)"
 msgstr "收藏夹文件 (*.txt)"
+
+#: frame/commands/clipboard_commands.cpp frame/commands/file_view_commands.cpp
+#: frame/detail/file_detail.h frame/sources/trace_commands.cpp
+#: frame/window/appearance.cpp regfile/script_convert.h ui/feedback.h
+msgid "All Files (*.*)"
+msgstr "所有文件 (*.*)"
 
 #: frame/commands/file_view_commands.cpp
 msgid "RegKit Comment Files (*.jsonc)"
@@ -4930,17 +4920,21 @@ msgstr "注册表配置单元文件"
 msgid "Trace Files (*.txt)"
 msgstr "Trace 文件 (*.txt)"
 
-#: frame/tools/convert_dialog.cpp regfile/script_convert.h
-msgid "Batch Files (*.bat;*.cmd)"
-msgstr "批处理文件 (*.bat;*.cmd)"
-
-#: frame/tools/convert_dialog.cpp regfile/script_convert.h
-msgid "PowerShell Scripts (*.ps1)"
-msgstr "PowerShell 脚本 (*.ps1)"
-
 #: frame/window/appearance.cpp
 msgid "RegKit Theme Presets (*.rktheme)"
 msgstr "RegKit 主题预设 (*.rktheme)"
+
+#: regfile/script_convert.h ui/feedback.h
+msgid "Registry Files (*.reg)"
+msgstr "注册表文件 (*.reg)"
+
+#: regfile/script_convert.h
+msgid "Batch Files (*.bat;*.cmd)"
+msgstr "批处理文件 (*.bat;*.cmd)"
+
+#: regfile/script_convert.h
+msgid "PowerShell Scripts (*.ps1)"
+msgstr "PowerShell 脚本 (*.ps1)"
 
 #: regfile/script_convert.h
 msgid "Registry Scripts (*.reg;*.bat;*.cmd;*.ps1)"

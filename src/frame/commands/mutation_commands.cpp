@@ -434,6 +434,7 @@ bool MainWindow::Impl::HandleModifyCommand(int command_id)
             }
             editors::CustomValueRequest request;
             request.value_name = entry.name;
+            request.key_path = registry_path::Build(*browse_.current_node());
             request.type = entry.type;
             request.data = entry.data;
             request.read_only = settings_.read_only;
@@ -500,6 +501,7 @@ bool MainWindow::Impl::HandleModifyCommand(int command_id)
                     bool needs_create = browse_.current_node()->simulated;
                     editors::CustomValueRequest request;
                     request.value_name = row->extra;
+                    request.key_path = registry_path::Build(*browse_.current_node());
                     request.type = command_id == cmd::kEditModifyBinary ? REG_BINARY : REG_SZ;
                     editors::CustomValueResult result;
                     if (!editors::EditCustomValue(hwnd_, request, &result))
@@ -556,11 +558,12 @@ bool MainWindow::Impl::HandleModifyCommand(int command_id)
             {
                 return true;
             }
+            const std::wstring key_path = registry_path::Build(*browse_.current_node());
             if (command_id == cmd::kEditBits)
             {
                 editors::BitsRequest request;
                 request.value_name = entry.name;
-                request.key_path = registry_path::Build(*browse_.current_node());
+                request.key_path = key_path;
                 request.base_type = base_type;
                 request.data = entry.data;
                 request.read_only = settings_.read_only;
@@ -573,6 +576,7 @@ bool MainWindow::Impl::HandleModifyCommand(int command_id)
             {
                 editors::BinaryRequest request;
                 request.value_name = entry.name;
+                request.key_path = key_path;
                 request.data = entry.data;
                 request.read_only = settings_.read_only;
                 editors::BinaryResult result;
@@ -586,6 +590,7 @@ bool MainWindow::Impl::HandleModifyCommand(int command_id)
             {
                 editors::FlaggedValueRequest request;
                 request.value_name = entry.name;
+                request.key_path = key_path;
                 request.base_type = base_type;
                 request.data = entry.data;
                 request.read_only = settings_.read_only;
@@ -600,6 +605,7 @@ bool MainWindow::Impl::HandleModifyCommand(int command_id)
             {
                 editors::BinaryRequest request;
                 request.value_name = entry.name;
+                request.key_path = key_path;
                 request.data = entry.data;
                 request.read_only = settings_.read_only;
                 editors::BinaryResult result;

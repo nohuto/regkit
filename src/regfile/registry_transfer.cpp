@@ -246,6 +246,51 @@ LONG RestoreKeyFromHive(HKEY root, const std::wstring& subkey, REGSAM view, cons
     return status == ERROR_SUCCESS ? RegRestoreKeyW(handle.get(), path.c_str(), REG_FORCE_RESTORE) : status;
 }
 
+LONG SaveKeyCopy(HKEY root, const std::wstring& subkey, REGSAM view, win32ui::UniqueFile* file)
+{
+    const util::PrivilegeScope privileges({SE_BACKUP_NAME});
+    if (!privileges.held())
+    {
+        return ERROR_PRIVILEGE_NOT_HELD;
+    }
+    win32ui::UniqueHKey handle;
+    std::wstring path;
+    LONG status = util::OpenRegistryPath(root, subkey, KEY_READ | view, false, &handle);
+    if (status == ERROR_SUCCESS)
+    {
+        status = static_cast<LONG>(win32ui::TempDirectory(&path));
+    }
+    if (status != ERROR_SUCCESS)
+    {
+        return status;
+    }
+    // exclusive and deleted with its last handle, nothing can swap the content before a restore
+    path = util::JoinPath(path, L"regkit-undo" + util::RandomFileSuffix(L".hiv"));
+    win32ui::UniqueFile created(CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE | DELETE, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, nullptr));
+    if (!created)
+    {
+        return static_cast<LONG>(GetLastError());
+    }
+    status = util::SaveKeyToFile(handle.get(), created.get());
+    if (status == ERROR_SUCCESS)
+    {
+        *file = std::move(created);
+    }
+    return status;
+}
+
+LONG RestoreKeyCopy(HKEY root, const std::wstring& subkey, REGSAM view, HANDLE file)
+{
+    const util::PrivilegeScope privileges({SE_RESTORE_NAME, SE_BACKUP_NAME});
+    if (!privileges.held())
+    {
+        return ERROR_PRIVILEGE_NOT_HELD;
+    }
+    win32ui::UniqueHKey handle;
+    const LONG status = util::OpenRegistryPath(root, subkey, KEY_WRITE | view, false, &handle);
+    return status == ERROR_SUCCESS ? util::RestoreKeyFromFile(handle.get(), file, REG_FORCE_RESTORE) : status;
+}
+
 std::wstring HiveTransferError(LONG status, const std::wstring& path)
 {
     if (status == ERROR_PRIVILEGE_NOT_HELD)

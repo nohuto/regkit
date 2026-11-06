@@ -166,6 +166,10 @@ void MainWindow::Impl::UpdateStatus()
                 swprintf_s(buffer, util::Tr(L"Searching... Results: ~%llu"), count_value);
             }
         }
+        else if (shown && shown->stopped)
+        {
+            swprintf_s(buffer, util::Tr(L"Results: %llu (stopped)"), count_value);
+        }
         else if (shown && shown->duration_ms > 0)
         {
             double seconds = static_cast<double>(shown->duration_ms) / 1000.0;
@@ -897,6 +901,7 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options)
     started.run = run;
     started.generation = generation;
     started.duration_ms = 0;
+    started.stopped = false;
 
     ApplyViewVisibility();
     UpdateSearchResultsView();

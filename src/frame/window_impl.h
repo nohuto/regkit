@@ -300,6 +300,7 @@ class MainWindow::Impl
     void RebuildHistoryList();
     void RefreshHistory();
     void ScheduleValueListRename(LPARAM kind, const std::wstring& name);
+    void RetryRename(HWND control, const wchar_t* text);
     void StartPendingValueListRename();
     bool CollectSearchStartNodes(const SearchDialogResult& options, const std::wstring& registry_scope_path, std::vector<search::StartNode>* out_nodes, std::vector<search::Source>* out_sources, bool* out_remote);
     void StartSearch(const SearchDialogResult& options);
@@ -423,6 +424,7 @@ class MainWindow::Impl
     bool HandleFavoritesCommand(int command_id);
     bool HandleNavigateClipboardCommand(int command_id);
     bool HandleClipboardCommand(int command_id);
+    void CaptureKeyForPaste(const RegistryNode& node);
     bool HandleEditToolsCommand(int command_id);
     bool HandleChangeHistoryCommand(int command_id);
     bool HandleRegistryNavigationCommand(int command_id);
@@ -499,7 +501,7 @@ class MainWindow::Impl
     bool IsCompareTabSelected() const;
     void StartCompareRegistries();
     void ApplyComparePayload(std::unique_ptr<ComparePayload> payload);
-    void OpenSourceEntry(const search::Source& source, const std::wstring& path, const std::wstring& value_name, bool new_tab);
+    bool OpenSourceEntry(const search::Source& source, const std::wstring& path, const std::wstring& value_name, bool new_tab);
     int FindSourceTab(const search::Source& source) const;
     bool AppendHistoryCache(const std::vector<HistoryEntry>& entries);
     bool HistoryStaysInMemory() const;
@@ -558,7 +560,7 @@ class MainWindow::Impl
     bool HasActiveTraces() const;
     bool AddDefaultFromFile(const std::wstring& label, const std::wstring& path, bool show_error = true, bool prompt_for_selection = false, bool update_ui = true);
     bool SaveRegFileTab(int tab_index);
-    bool ExportRegFileTab(int tab_index, const std::wstring& path);
+    bool ExportRegFileTab(int tab_index, std::wstring* path, win32::OpenAfter* open_after);
     bool BuildRegFileContent(const TabEntry& entry, std::wstring* out) const;
     void ReleaseRegFileRoots(TabEntry* entry);
     bool RemoveDefaultByPath(const std::wstring& path);
@@ -611,7 +613,7 @@ class MainWindow::Impl
         RegistryNode source_parent;
         std::wstring name;
         RegistryValue value;
-        changes::KeySnapshot key_snapshot;
+        std::shared_ptr<changes::KeySnapshot> key_snapshot;
     };
 
     void PushUndo(changes::UndoOperation operation);
@@ -719,6 +721,9 @@ class MainWindow::Impl
     std::vector<ThemePreset> theme_presets_;
     LPARAM pending_value_list_kind_ = 0;
     std::wstring pending_value_list_name_;
+    // a rejected rename reopens label editing with this text, a tree retry needs this key still selected
+    std::wstring retry_rename_text_;
+    RegistryNode retry_rename_key_;
     std::wstring appended_value_name_;
     HWND last_focus_ = nullptr;
     int pending_value_command_ = 0;
@@ -740,7 +745,8 @@ class MainWindow::Impl
     int pending_show_cmd_ = SW_SHOWNORMAL;
     std::wstring pending_compare_key_path_;
     std::wstring pending_compare_value_name_;
-    std::wstring pending_external_value_key_path_;
+    // value list load the pending value selection and command wait for, an empty name is the default value
+    uint64_t pending_external_value_generation_ = 0;
     std::wstring pending_external_value_name_;
     std::unordered_map<std::wstring, std::wstring> hive_list_;
     std::shared_ptr<const std::unordered_set<std::wstring>> hive_roots_;
@@ -750,10 +756,15 @@ class MainWindow::Impl
     bool applying_startup_tree_restore_ = false;
     bool window_placement_loaded_ = false;
     ClipboardItem clipboard_;
+    win32ui::Session key_copy_session_;
 
     struct SearchRun
     {
         ~SearchRun()
+        {
+            Stop();
+        }
+        void Stop()
         {
             session.Cancel();
             {
@@ -793,6 +804,7 @@ class MainWindow::Impl
         uint64_t max_results = 0;
         std::shared_ptr<SearchRun> run;
         uint64_t duration_ms = 0;
+        bool stopped = false;
         int sort_column = -1;
         bool sort_ascending = true;
         util::SortKeys sort_earlier;

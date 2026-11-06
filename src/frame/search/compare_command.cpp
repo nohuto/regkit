@@ -397,17 +397,18 @@ int MainWindow::Impl::FindSourceTab(const search::Source& source) const
     return -1;
 }
 
-void MainWindow::Impl::OpenSourceEntry(const search::Source& source, const std::wstring& path, const std::wstring& value_name, bool new_tab)
+bool MainWindow::Impl::OpenSourceEntry(const search::Source& source, const std::wstring& path, const std::wstring& value_name, bool new_tab)
 {
     if (!tab_ || path.empty())
     {
-        return;
+        return false;
     }
     const int existing = FindSourceTab(source);
     if (!new_tab && existing < 0)
     {
-        return;
+        return false;
     }
+    bool selected = false;
     switch (source.kind)
     {
     case search::Source::Kind::kRegFile:
@@ -419,7 +420,7 @@ void MainWindow::Impl::OpenSourceEntry(const search::Source& source, const std::
             {
                 pending_compare_key_path_.clear();
                 pending_compare_value_name_.clear();
-                return;
+                return false;
             }
         }
         else if (existing == TabCtrl_GetCurSel(tab_))
@@ -430,6 +431,8 @@ void MainWindow::Impl::OpenSourceEntry(const search::Source& source, const std::
         {
             ActivateTabIndex(existing);
         }
+        // a tab still parsing selects the key once its roots exist
+        selected = pending_compare_key_path_.empty() && SelectTreePath(path);
         break;
     case search::Source::Kind::kOffline:
         {
@@ -438,7 +441,7 @@ void MainWindow::Impl::OpenSourceEntry(const search::Source& source, const std::
                 OpenLocalRegistryTab();
                 if (!LoadOfflineRegistryFromPath(source.name, false))
                 {
-                    return;
+                    return false;
                 }
             }
             else
@@ -448,7 +451,9 @@ void MainWindow::Impl::OpenSourceEntry(const search::Source& source, const std::
             std::wstring target = path;
             if (!session_->offline_mount.empty())
             {
-                for (const std::wstring& prefix : {session_->offline_mount, util::FileName(source.name)})
+                // paths start with the full mount, the bare mount or the hive file name
+                const std::wstring mount = session_->offline_root_name + L"\\" + session_->offline_mount;
+                for (const std::wstring& prefix : {mount, session_->offline_mount, util::FileName(source.name)})
                 {
                     if (prefix.empty())
                     {
@@ -465,10 +470,9 @@ void MainWindow::Impl::OpenSourceEntry(const search::Source& source, const std::
                         break;
                     }
                 }
-                const std::wstring mount = session_->offline_root_name + L"\\" + session_->offline_mount;
                 target = target.empty() ? mount : mount + L"\\" + target;
             }
-            SelectTreePath(target);
+            selected = SelectTreePath(target);
             break;
         }
     case search::Source::Kind::kRemote:
@@ -477,14 +481,14 @@ void MainWindow::Impl::OpenSourceEntry(const search::Source& source, const std::
             OpenLocalRegistryTab();
             if (!ConnectRemoteRegistry(source.name))
             {
-                return;
+                return false;
             }
         }
         else
         {
             ActivateTabIndex(existing);
         }
-        SelectTreePath(path);
+        selected = SelectTreePath(path);
         break;
     case search::Source::Kind::kLocal:
     default:
@@ -496,7 +500,7 @@ void MainWindow::Impl::OpenSourceEntry(const search::Source& source, const std::
         {
             ActivateTabIndex(existing);
         }
-        SelectTreePath(path);
+        selected = SelectTreePath(path);
         break;
     }
     ApplyViewVisibility();
@@ -505,6 +509,7 @@ void MainWindow::Impl::OpenSourceEntry(const search::Source& source, const std::
     {
         SelectValueWhenReady(value_name);
     }
+    return selected;
 }
 
 }

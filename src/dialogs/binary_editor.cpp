@@ -156,6 +156,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wparam, LPARAM lpa
             }
             BitfieldRequest request;
             request.value_name = state->request->value_name;
+            request.key_path = state->request->key_path;
             request.data = bytes;
             request.read_only = state->request->read_only;
             BitfieldResult result;

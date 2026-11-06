@@ -5,14 +5,18 @@
 
 #include "registry/key_access.h"
 #include "registry/registry_path.h"
+#include "ui/feedback.h"
 #include "win32/process_rights.h"
 #include "win32/registry_native.h"
 #include "win32/registry_view.h"
 #include "win32/translation.h"
 
 #include <win32ui/handle_owner.h>
+#include <win32ui/system/error_text.h>
 
+#include <cstring>
 #include <string>
+#include <vector>
 
 #include <accctrl.h>
 #include <aclapi.h>
@@ -24,12 +28,39 @@ namespace regkit
 namespace
 {
 
+// aclui may pass an absolute descriptor
+bool SelfRelativeCopy(PSECURITY_DESCRIPTOR descriptor, std::vector<BYTE>* copy)
+{
+    SECURITY_DESCRIPTOR_CONTROL control = 0;
+    DWORD revision = 0;
+    if (!GetSecurityDescriptorControl(descriptor, &control, &revision))
+    {
+        return false;
+    }
+    if (control & SE_SELF_RELATIVE)
+    {
+        const auto* bytes = static_cast<const BYTE*>(descriptor);
+        copy->assign(bytes, bytes + GetSecurityDescriptorLength(descriptor));
+        return true;
+    }
+    DWORD size = 0;
+    MakeSelfRelativeSD(descriptor, nullptr, &size);
+    copy->resize(size);
+    return size != 0 && MakeSelfRelativeSD(descriptor, copy->data(), &size);
+}
+
+// null key is an offline hive, read and written through RegistryStore
 class RegistrySecurityInformation : public ISecurityInformation, public IEffectivePermission
 {
   public:
-    RegistrySecurityInformation(HKEY key, std::wstring object_name, REGSAM granted, bool audits)
-        : key_(key), object_name_(std::move(object_name)), granted_(granted), audits_(audits)
+    RegistrySecurityInformation(const RegistryNode& node, HKEY key, std::wstring object_name, REGSAM granted, bool audits)
+        : node_(node), key_(key), object_name_(std::move(object_name)), granted_(granted), audits_(audits)
     {
+    }
+
+    bool changed() const noexcept
+    {
+        return changed_;
     }
 
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv) override
@@ -95,6 +126,23 @@ class RegistrySecurityInformation : public ISecurityInformation, public IEffecti
             return E_POINTER;
         }
         *out_sd = nullptr;
+        if (!key_)
+        {
+            SECURITY_INFORMATION parts = security_info;
+            std::vector<BYTE> stored;
+            LONG error = ERROR_ACCESS_DENIED;
+            if (!RegistryStore::ReadKeySecurity(node_, &parts, &stored, &error) || parts != security_info)
+            {
+                return HRESULT_FROM_WIN32(error);
+            }
+            *out_sd = LocalAlloc(LMEM_FIXED, stored.size());
+            if (!*out_sd)
+            {
+                return E_OUTOFMEMORY;
+            }
+            std::memcpy(*out_sd, stored.data(), stored.size());
+            return S_OK;
+        }
         DWORD size = 0;
         LSTATUS status = RegGetKeySecurity(key_, security_info, nullptr, &size);
         if (status != ERROR_INSUFFICIENT_BUFFER || size == 0)
@@ -122,7 +170,22 @@ class RegistrySecurityInformation : public ISecurityInformation, public IEffecti
         {
             return E_POINTER;
         }
+        if (!key_)
+        {
+            std::vector<BYTE> descriptor;
+            if (!SelfRelativeCopy(sd, &descriptor))
+            {
+                return HRESULT_FROM_WIN32(GetLastError());
+            }
+            if (!RegistryStore::WriteKeySecurity(node_, security_info, descriptor))
+            {
+                return E_FAIL;
+            }
+            changed_ = true;
+            return S_OK;
+        }
         const LSTATUS status = RegSetKeySecurity(key_, security_info, sd);
+        changed_ = changed_ || status == ERROR_SUCCESS;
         return status == ERROR_SUCCESS ? S_OK : HRESULT_FROM_WIN32(status);
     }
 
@@ -211,10 +274,12 @@ class RegistrySecurityInformation : public ISecurityInformation, public IEffecti
     }
 
   private:
+    RegistryNode node_;
     HKEY key_ = nullptr;
     std::wstring object_name_;
     REGSAM granted_ = 0;
     bool audits_ = false;
+    bool changed_ = false;
     LONG references_ = 1;
 };
 
@@ -233,26 +298,40 @@ bool ShowRegistryPermissions(HWND owner, const RegistryNode& node)
     // auditing needs SACL access, available only with the security privilege
     const util::PrivilegeScope audit({SE_SECURITY_NAME});
     const REGSAM audits = audit.held() ? ACCESS_SYSTEM_SECURITY : 0;
+    const bool offline = RegistryStore::IsOfflineRoot(node.root);
     win32ui::UniqueHKey key;
-    LONG result = ERROR_ACCESS_DENIED;
-    REGSAM granted = 0;
-    for (const REGSAM access : {READ_CONTROL | WRITE_DAC | WRITE_OWNER | audits, REGSAM(READ_CONTROL | WRITE_DAC | WRITE_OWNER), READ_CONTROL | WRITE_DAC | audits, REGSAM(READ_CONTROL | WRITE_DAC), READ_CONTROL | WRITE_OWNER | audits, REGSAM(READ_CONTROL | WRITE_OWNER), READ_CONTROL | audits, REGSAM(READ_CONTROL), REGSAM(MAXIMUM_ALLOWED)})
-    {
-        result = util::OpenRegistryPath(node.root, node.subkey, access | ViewOf(node), true, &key);
-        if (result != ERROR_ACCESS_DENIED && result != ERROR_PRIVILEGE_NOT_HELD)
+    REGSAM granted = READ_CONTROL | WRITE_DAC | WRITE_OWNER;
+    // without read access aclui still lets the owner rights or a granted WRITE_DAC replace the settings
+    const auto open = [&] {
+        for (const REGSAM rights : {REGSAM(READ_CONTROL | WRITE_DAC | WRITE_OWNER), REGSAM(READ_CONTROL | WRITE_DAC), REGSAM(READ_CONTROL | WRITE_OWNER), REGSAM(READ_CONTROL), REGSAM(WRITE_DAC | WRITE_OWNER), REGSAM(WRITE_DAC), REGSAM(WRITE_OWNER)})
         {
-            granted = access;
-            break;
+            for (const REGSAM access : {rights | audits, rights})
+            {
+                const LONG status = util::OpenRegistryPath(node.root, node.subkey, access | ViewOf(node), true, &key);
+                if (status != ERROR_ACCESS_DENIED && status != ERROR_PRIVILEGE_NOT_HELD)
+                {
+                    granted = access;
+                    return status;
+                }
+            }
         }
-    }
+        return static_cast<LONG>(ERROR_ACCESS_DENIED);
+    };
+    const LONG result = offline ? ERROR_SUCCESS : open();
 
-    bool ok = false;
-    if (result == ERROR_SUCCESS && key.get())
+    DWORD error = static_cast<DWORD>(result);
+    bool changed = false;
+    if (result == ERROR_SUCCESS)
     {
-        RegistrySecurityInformation info(key.get(), path, granted, audits && (granted & ACCESS_SYSTEM_SECURITY));
-        ok = SUCCEEDED(EditSecurity(owner, &info));
+        RegistrySecurityInformation info(node, key.get(), path, granted, offline || (audits && (granted & ACCESS_SYSTEM_SECURITY)));
+        error = EditSecurity(owner, &info) ? ERROR_SUCCESS : GetLastError();
+        changed = info.changed();
     }
-    return ok;
+    if (error != ERROR_SUCCESS)
+    {
+        ui::ShowError(owner, util::TrDetail(L"The key's permissions couldn't be read.", path + L"\n" + win32ui::FormatWin32Error(error)));
+    }
+    return changed;
 }
 
 }

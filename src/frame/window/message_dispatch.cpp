@@ -38,6 +38,7 @@ MessageArea ClassifyMessage(UINT message) noexcept
         return MessageArea::kWorker;
     case message_id::kAddressEnter:
     case message_id::kFocusAddressBar:
+    case message_id::kRetryRename:
     case WM_DROPFILES:
     case WM_TIMER:
     case message_id::kRegistryChanged:

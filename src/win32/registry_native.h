@@ -37,6 +37,8 @@ LONG OpenRegistryPath(HKEY root, const std::wstring& subkey, REGSAM access, bool
 void SetBackupRestoreMode(bool enable);
 LONG CreateRegistryKey(HKEY parent, const std::wstring& name, REGSAM access, DWORD options, win32ui::UniqueHKey* key, DWORD* disposition, const std::wstring& class_name = {});
 LONG RenameRegistryKey(HKEY parent, const std::wstring& old_name, const std::wstring& new_name);
+LONG SaveKeyToFile(HKEY key, HANDLE file);
+LONG RestoreKeyFromFile(HKEY key, HANDLE file, DWORD flags);
 LONG DeleteRegistryTree(HKEY key);
 bool DeleteNativeRegistryKey(HKEY key);
 std::optional<ULONG> QueryKeyFlags(HKEY key);

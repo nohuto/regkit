@@ -3,6 +3,7 @@
 
 #include "frame/commands/command_detail.h"
 #include "frame/window_impl.h"
+#include "regfile/script_convert.h"
 #include "win32/registry_view.h"
 #include "win32/translation.h"
 
@@ -13,27 +14,6 @@
 namespace regkit
 {
 using namespace command_detail;
-
-namespace
-{
-
-constexpr size_t kRestoreUndoLimit = 10000;
-
-size_t CountKeys(const RegistryNode& node, size_t limit)
-{
-    size_t count = 1;
-    for (const std::wstring& name : RegistryStore::EnumSubKeyNames(node, false))
-    {
-        if (count > limit)
-        {
-            break;
-        }
-        count += CountKeys(registry_path::ChildNode(node, name), limit - count);
-    }
-    return count;
-}
-
-}
 
 void MainWindow::Impl::RestoreHiveFile(const std::wstring& path)
 {
@@ -47,10 +27,12 @@ void MainWindow::Impl::RestoreHiveFile(const std::wstring& path)
         ui::ShowError(hwnd_, util::Tr(L"Hive files can only be restored into the local registry, outside HKEY_CLASSES_ROOT."));
         return;
     }
-    changes::KeySnapshot before;
-    const bool can_undo = CountKeys(node, kRestoreUndoLimit) <= kRestoreUndoLimit && (before = changes::CaptureKey(node)).complete;
+    // undo and redo restore these copies in one kernel step like the restore itself
+    auto before = std::make_shared<win32ui::UniqueFile>();
+    std::vector<std::pair<RegistryNode, changes::KeySnapshot>> volatile_keys;
+    const bool can_undo = SaveKeyCopy(node.root, node.subkey, ViewOf(node), before.get()) == ERROR_SUCCESS && changes::CaptureVolatileKeys(node, &volatile_keys);
     const std::wstring message = can_undo ? util::Tr(L"Replace all contents of this key with the hive file?")
-                                          : util::Tr(L"Replace all contents of this key with the hive file? This key is too large to undo the restore.");
+                                          : util::Tr(L"Replace all contents of this key with the hive file? The restore can't be undone.");
     if (ui::PromptKeyChoice(hwnd_, message, registry_path::Build(node) + L"\r\n" + path, util::Tr(L"Restore Key"), util::Tr(L"Restore"), L"", util::Tr(L"Cancel")) != IDYES)
     {
         return;
@@ -62,13 +44,15 @@ void MainWindow::Impl::RestoreHiveFile(const std::wstring& path)
         return;
     }
     AppendHistoryEntry(L"Restore key from hive file " + util::FileName(path), L"", path);
-    if (can_undo)
+    auto after = std::make_shared<win32ui::UniqueFile>();
+    if (can_undo && SaveKeyCopy(node.root, node.subkey, ViewOf(node), after.get()) == ERROR_SUCCESS)
     {
         changes::UndoOperation op;
         op.type = changes::UndoOperation::Type::kReplaceKey;
         op.node = node;
-        op.key_snapshot = std::move(before);
-        op.new_key_snapshot = changes::CaptureKey(node);
+        op.hive_before = std::move(before);
+        op.hive_after = std::move(after);
+        op.volatile_keys = std::move(volatile_keys);
         PushUndo(std::move(op));
     }
     RefreshTreeSelection();
@@ -246,11 +230,11 @@ bool MainWindow::Impl::HandleFileCommand(int command_id)
                 int tab_index = TabCtrl_GetCurSel(tab_);
                 std::wstring path;
                 win32::OpenAfter open_after = win32::OpenAfter::kNone;
-                if (!ui::PromptSaveFile(hwnd_, ui::kRegFileFilter, &path, &open_after, true))
+                if (!ui::PromptSaveFile(hwnd_, regfile::kConvertFilter, &path, &open_after, true))
                 {
                     return true;
                 }
-                if (ExportRegFileTab(tab_index, path))
+                if (ExportRegFileTab(tab_index, &path, &open_after))
                 {
                     AppendHistoryEntry(L"Export .reg tab " + util::FileName(path), L"", path);
                     OpenSavedFile(path, open_after);

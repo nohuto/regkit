@@ -8,6 +8,7 @@
 #include "dialogs/value_editor.h"
 #include "regfile/reg_file.h"
 #include "regfile/registry_transfer.h"
+#include "regfile/script_convert.h"
 #include "registry/key_algorithms.h"
 #include "registry/registry_path.h"
 #include "registry/registry_store.h"
@@ -33,8 +34,6 @@ namespace
 
 using win32ui::FormatWin32Error;
 
-constexpr wchar_t kRegFileFilter[] = L"Registry Files (*.reg)\0*.reg\0All Files (*.*)\0*.*\0";
-
 bool ResolveExportKey(const std::wstring& key_path, REGSAM view, RegistryNode* node, std::wstring* display, std::wstring* error)
 {
     *display = registry_path::Normalize(key_path, util::GetCurrentUserSidString());
@@ -50,9 +49,9 @@ bool ResolveExportKey(const std::wstring& key_path, REGSAM view, RegistryNode* n
     return true;
 }
 
-bool WriteRegFile(const std::wstring& path, regfile::Writer&& writer, std::wstring* error)
+bool SaveExport(const std::wstring& path, regfile::Format format, const std::wstring& text, std::wstring* error)
 {
-    if (win32ui::WriteTextFileAtomic(path.c_str(), std::move(writer).Finish(), win32ui::TextEncoding::utf16) == ERROR_SUCCESS)
+    if (regfile::SaveRendered(path, format, text))
     {
         return true;
     }
@@ -105,14 +104,15 @@ bool ExportRegFile(HWND owner, const std::wstring& key_path, REGSAM view, bool a
         return true;
     }
     last_open_after = options.open_after;
-    regfile::Writer writer;
+    std::vector<regfile::Operation> operations;
     std::vector<std::wstring> skipped;
-    const LONG status = regfile::AppendRegistryTree(&writer, node.root, node.subkey, display, ViewOf(node), options.include_subkeys, &skipped, &skipped);
+    const LONG status = regfile::ReadRegistryOperations(node.root, node.subkey, display, ViewOf(node), options.include_subkeys, &operations, &skipped, &skipped);
     if (status != ERROR_SUCCESS)
     {
         return ReportUnreadableKey(status, display, error);
     }
-    if ((!skipped.empty() && !ui::ConfirmConversionSkips(owner, skipped, util::Tr(L"Export"))) || !WriteRegFile(options.path, std::move(writer), error))
+    const std::wstring text = regfile::RenderOperations(options.format, operations, true, &skipped);
+    if ((!skipped.empty() && !ui::ConfirmConversionSkips(owner, skipped, util::Tr(L"Export"))) || !SaveExport(options.path, options.format, text, error))
     {
         return false;
     }
@@ -136,14 +136,23 @@ bool ExportRegFileSelection(HWND owner, const std::wstring& base_key_path, REGSA
     std::wstring path;
     if (!ui::ReportFileDialogResult(
             owner,
-            win32::ChooseFileToSave(owner, kRegFileFilter, ExportFileName(first_name, L".reg").c_str(), &path, open_after, true)
+            win32::ChooseFileToSave(owner, regfile::kConvertFilter, ExportFileName(first_name, L".reg").c_str(), &path, open_after, true)
         ))
     {
         return false;
     }
-    path = util::EnsureFileExtension(path, L".reg");
+    regfile::Format format = regfile::Format::kReg;
+    if (!regfile::FormatFromPath(path, &format))
+    {
+        path = util::EnsureFileExtension(path, L".reg");
+    }
+    // scripts have no RegKit view
+    if (format != regfile::Format::kReg && open_after && *open_after == win32::OpenAfter::kRegKit)
+    {
+        *open_after = win32::OpenAfter::kEditor;
+    }
 
-    regfile::Writer writer;
+    std::vector<regfile::Operation> operations;
     std::vector<std::wstring> skipped;
     if (!value_names.empty())
     {
@@ -164,11 +173,6 @@ bool ExportRegFileSelection(HWND owner, const std::wstring& base_key_path, REGSA
         });
         const bool found = !contents.values.empty();
         regfile::SkipNullNames(display, &contents.values, nullptr, &skipped);
-        std::vector<const regfile::Value*> selected;
-        for (const RegistryValue& value : contents.values)
-        {
-            selected.push_back(&value);
-        }
         if (!found)
         {
             if (error)
@@ -177,7 +181,11 @@ bool ExportRegFileSelection(HWND owner, const std::wstring& base_key_path, REGSA
             }
             return false;
         }
-        writer.AppendKey(display, std::move(selected), false);
+        operations.push_back({regfile::Operation::Kind::kKey, display});
+        for (RegistryValue& value : contents.values)
+        {
+            operations.push_back({regfile::Operation::Kind::kValue, display, std::move(value)});
+        }
     }
     for (const auto& subkey : subkey_names)
     {
@@ -191,18 +199,19 @@ bool ExportRegFileSelection(HWND owner, const std::wstring& base_key_path, REGSA
         {
             return false;
         }
-        const LONG status = regfile::AppendRegistryTree(&writer, node.root, node.subkey, display, ViewOf(node), true, &skipped, &skipped);
+        const LONG status = regfile::ReadRegistryOperations(node.root, node.subkey, display, ViewOf(node), true, &operations, &skipped, &skipped);
         if (status != ERROR_SUCCESS)
         {
             return ReportUnreadableKey(status, display, error);
         }
     }
+    const std::wstring text = regfile::RenderOperations(format, operations, true, &skipped);
     if (!skipped.empty() && !ui::ConfirmConversionSkips(owner, skipped, util::Tr(L"Export")))
     {
         return false;
     }
     *saved_path = path;
-    return WriteRegFile(path, std::move(writer), error);
+    return SaveExport(path, format, text, error);
 }
 
 bool LoadHive(HWND owner, HKEY* root, std::wstring* error)

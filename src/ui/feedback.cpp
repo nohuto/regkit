@@ -35,6 +35,7 @@ int ShowChoiceDialog(HWND owner, const std::wstring& title, const std::wstring& 
     spec.title = title.empty() ? kAppTitle : title;
     spec.message = message;
     spec.details = detail;
+    spec.wrap_details = true;
     spec.icon = icon_id;
     spec.copy_text = util::Tr(L"Copy");
     const std::pair<const std::wstring*, int> labels[] = {
