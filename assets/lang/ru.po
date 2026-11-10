@@ -8,2106 +8,1688 @@ msgstr ""
 "Project-Id-Version: RegKit\n"
 "Report-Msgid-Bugs-To: https://github.com/nohuto/regkit/issues\n"
 "POT-Creation-Date: 2026-11-06 04:34+0100\n"
-"PO-Revision-Date: 2026-11-06 04:35+0100\n"
+"PO-Revision-Date: 2026-11-11 00:27+0300\n"
 "Last-Translator: Restorer, restorer@mail2k.ru\n"
 "Language-Team: Russian\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 # Restorer
-#: changes/value_comments.cpp
 msgid "A comment has an unknown registry type."
-msgstr "В файле комментария указан неизвестный тип данных"
+msgstr "Нераспознанный тип данных"
 
 # Restorer
-#: changes/value_comments.cpp
 msgid "A comment type is out of range."
-msgstr "Указанный в файле комментария тип выходит за границы диапазона"
+msgstr "Тип данных выходит за границы диапазона"
 
-#: changes/value_comments.cpp
 msgid "A comment contains a duplicate member."
-msgstr "Файл комментария содержит несколько одинаковых свойств"
+msgstr "Обнаружено несколько повторов свойства"
 
-#: changes/value_comments.cpp
 msgid "A comment has an empty key."
-msgstr "В файле комментария указан пустой раздел"
+msgstr "Отсутствуют данные в свойстве key"
 
-#: changes/value_comments.cpp
 msgid "A comment contains an unknown member."
-msgstr "В файле комментария обнаружено неизвестное свойство"
+msgstr "Нераспознанное свойство"
 
-#: changes/value_comments.cpp
 msgid "A comment is missing its text."
-msgstr "В комментарии отсутствует текст"
+msgstr "Отсутствует свойство text"
 
-#: changes/value_comments.cpp
+# Restorer:
 msgid "A key comment needs a key and can't have a name, type, size or tree."
-msgstr "Комментарий к разделу должен содержать раздел и не должен содержать праметр, тип, размер или дерево"
+msgstr "В комментарии раздела допустимы только свойства key и text"
 
-#: changes/value_comments.cpp
 msgid "The file isn't a RegKit comments file."
-msgstr "Файл не является файлом комментариев RegKit"
+msgstr "Это не файл комментариев программы RegKit."
 
-#: changes/value_comments.cpp
 msgid "The file contains an unknown member."
-msgstr "Файл содержит неизвестное свойство"
+msgstr "Нераспознанное свойство в файле комментариев"
 
-#: defaults/default_loader.cpp
 msgid "Default file contains no usable entries."
-msgstr "Файл предустановок не содержит допустимых записей"
+msgstr "Файл предустановок содержит недопустимые записи."
 
-#: dialogs/binary_editor.cpp dialogs/value_editor.cpp
 msgid "Invalid hex input."
-msgstr "Недопустимые шестнадцатеричные данные"
+msgstr "Недопустимые шестнадцатеричные данные."
 
-#: dialogs/binary_editor.cpp
 msgid "Invalid"
 msgstr "Недействительно"
 
-#: dialogs/binary_editor.cpp dialogs/bitfield_editor.cpp
-#: dialogs/decoder_dialog.cpp dialogs/trace_dialog.cpp dialogs/value_editor.cpp
-#: frame/detail/control_detail.cpp frame/search/search_window.cpp
-#: frame/tools/launch_bridge.cpp frame/views/history_workspace.cpp
-#: frame/views/value_loading.cpp frame/window/notifications.cpp
-#: regfile/script_convert.cpp search/search.cpp ui/feedback.cpp
 msgid "(Default)"
 msgstr "(по умолчанию)"
 
-#: dialogs/bitfield_definition.cpp
 msgid "An object contains an unknown member."
-msgstr "Объект содержит неизвестное свойство"
+msgstr "Объект содержит неизвестное свойство."
 
-#: dialogs/bitfield_definition.cpp
 msgid "An object contains a duplicate member."
-msgstr "Объект содержит повторяющееся свойство"
+msgstr "Объект содержит повторяющиеся свойство."
 
-#: dialogs/bitfield_definition.cpp
 msgid "A state is missing its value or name."
-msgstr "В состоянии отсутствует значение или имя"
+msgstr "Отсутствует свойство value или name в поле состояния"
 
-#: dialogs/bitfield_definition.cpp
 msgid "A field uses a bit outside the declared width."
-msgstr "Поле использует бит за пределами заданной разрядности"
+msgstr "В битовом поле номер бита вне заданной разрядности"
 
-#: dialogs/bitfield_definition.cpp
 msgid "Field bits must be unique and in ascending order."
-msgstr "Биты поля не должны повторяться и должны идти по возрастанию"
+msgstr ""
+"В битовом поле номера битов указываются по возрастанию и не должны "
+"повторяться"
 
-#: dialogs/bitfield_definition.cpp
 msgid "A field lists no bits."
-msgstr "В поле не указаны биты"
+msgstr "В битовом поле не указаны номера битов"
 
-#: dialogs/bitfield_definition.cpp dialogs/bitfield_definition_editor.cpp
 msgid "A field lists more than 256 states."
-msgstr "В поле указано более 256 состояний"
+msgstr "В битовом поле указано более 256 состояний"
 
-#: dialogs/bitfield_definition.cpp
 msgid "A field is missing its name or bits."
-msgstr "В поле отсутствует наименование или биты"
+msgstr "Отсутствует свойство name или bits в битовом поле"
 
-#: dialogs/bitfield_definition.cpp
 msgid "A definition lists too many key paths."
-msgstr "В описании указано слишком много маршрутов к разделам"
+msgstr "Превышено допустимое количество разделов реестра."
 
-#: dialogs/bitfield_definition.cpp
 msgid "The bit width must be 8, 16, 32, or 64."
-msgstr "Разрядность должна быть 8, 16, 32 или 64"
+msgstr "Допустимой является разрядность 8, 16, 32 или 64 бит."
 
-#: dialogs/bitfield_definition.cpp
 msgid "The byte offset is out of range."
-msgstr "Смещение в байтах вне допустимого диапазона"
+msgstr "Смещение в байтах выходит за границы диапазона"
 
-#: dialogs/bitfield_definition.cpp
 msgid "A definition contains more than 64 fields."
-msgstr "Описание содержит более 64 полей"
+msgstr "Определение содержит более 64 битовых полей"
 
-#: dialogs/bitfield_definition.cpp
 msgid "A definition is missing its value name or bit width."
-msgstr "В описании отсутствует наименование параметра или разрядность"
+msgstr "Не указано наименование параметра или разрядность"
 
-#: dialogs/bitfield_definition.cpp
 msgid "The file isn't a RegKit bitfield definition."
-msgstr "Файл не является описанием битовых полей RegKit"
+msgstr "Файл не является определением битовых полей программы RegKit."
 
-#: dialogs/bitfield_definition.cpp
 msgid "The file contains no definitions."
-msgstr "Файл не содержит описаний"
+msgstr "Файл не содержит определений битовых полей"
 
-#: dialogs/bitfield_definition.cpp
 msgid "The file is missing a required member."
 msgstr "В файле отсутствует обязательное свойство"
 
-#: dialogs/bitfield_definition.cpp
 msgid "Unnamed definition"
-msgstr "Безымянное описание"
+msgstr "Безымянный"
 
-#: dialogs/bitfield_definition.cpp
 msgid "A name is longer than the format allows."
 msgstr "Длина наименования превышает допустимый размер"
 
-#: dialogs/bitfield_definition.cpp
 msgid "A comment is longer than the format allows."
-msgstr "Длина комментария превышает допустимый размер"
+msgstr "Длина текста комментария превышает допустимый размер"
 
-#: dialogs/bitfield_definition.cpp
 msgid "A key path is empty or longer than the format allows."
-msgstr "Пустой маршрут к разделу или его длина превышает допустимый размер"
+msgstr ""
+"Не указан раздел реестра или длина его наименования превышает допустимый "
+"размер."
 
-#: dialogs/bitfield_definition.cpp
 msgid "Every field needs a name of at most 256 characters."
-msgstr "Для каждого поля должно быть указано наименование не более 256 символов"
+msgstr ""
+"Для битового поля должно быть указано наименование длиной не более 256 "
+"символов."
 
-#: dialogs/bitfield_definition.cpp
 msgid "A field meaning is longer than the format allows."
-msgstr "Данные в поле \"назначение\" превышают допустимый размер"
+msgstr ""
+"В битовом поле превышен допустимый размер текста свойства meaning."
 
-#: dialogs/bitfield_definition.cpp
 msgid "Every field needs at least one bit."
-msgstr "Каждое поле должно содержать хотя бы один бит"
+msgstr "Битовое поле должно содержать номер бита."
 
-#: dialogs/bitfield_definition.cpp
 msgid "Two fields claim the same bit."
-msgstr "Для двух полей указан один и тот же бит"
+msgstr "Два битовых поля содержат одинаковый номер бита."
 
-#: dialogs/bitfield_definition.cpp dialogs/bitfield_definition_editor.cpp
 msgid "Every state needs a name of at most 256 characters."
-msgstr "Для каждого поля \"состояние\" должно быть указано наименование не более 256 символов"
+msgstr ""
+"Для поля состояние должно быть указано наименование длиной не более 256 "
+"символов."
 
-#: dialogs/bitfield_definition.cpp dialogs/bitfield_definition_editor.cpp
 msgid "A state meaning is longer than the format allows."
-msgstr "Данные в поле \"состояние\" превышают допустимый размер"
+msgstr ""
+"В поле состояния превышен допустимый размер текста свойства meaning."
 
-#: dialogs/bitfield_definition.cpp dialogs/bitfield_definition_editor.cpp
 msgid "A state value doesn't fit the bits of its field."
-msgstr "Значение поля \"состояние\" выходит за пределы битового поля"
+msgstr "Значение поля состояние выходит за пределы заданных бит в битовом поле"
 
-#: dialogs/bitfield_definition.cpp dialogs/bitfield_definition_editor.cpp
 msgid "Two states of one field share the same value."
-msgstr "Два состояния одного битового поля имеют одинаковое значение"
+msgstr "Два поля состояние одного битового поля имеют одинаковое значение"
 
-#: dialogs/bitfield_definition.cpp
 msgid "Two fields share the same name."
-msgstr "Два поля имеют одинаковое наименование"
+msgstr "Два битовых поля содержат одинаковое наименование"
 
-#: dialogs/bitfield_definition.cpp
 msgid "A file name or comment is longer than the format allows."
-msgstr "Длина наименования файла или комментария превышает допустимый размер"
+msgstr "Превышен допустимый размер наименования файла или текста комментария."
 
-#: dialogs/bitfield_definition.cpp
 msgid "The definition file isn't valid UTF-8."
-msgstr "Файл описания содержит недопустимые данные UTF-8"
+msgstr "Файл определений содержит недопустимые данные UTF-8"
 
-#: dialogs/bitfield_definition.cpp
 msgid "The definition file isn't valid JSON."
-msgstr "Файл описания содержит недопустимые данные JSON"
+msgstr "Файл определений содержит недопустимые данные JSON"
 
-#: dialogs/bitfield_definition.cpp
 msgid "The definition file couldn't be read."
-msgstr "Не удалось прочитать файл описания битовых полей"
+msgstr "Не удалось получить данные файла определений битовых полей."
 
-#: dialogs/bitfield_definition.cpp regfile/reg_file.cpp
 msgid "The file is larger than RegKit can load."
-msgstr "Размер файла превышает допустимый предел"
+msgstr "Превышен допустимый размер файла."
 
-#: dialogs/bitfield_definition.cpp
 msgid "The definition file couldn't be written."
-msgstr "Не удалось записать файл описания битовых полей"
+msgstr "Не удалось записать файл определений битовых полей."
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "Add &Field..."
-msgstr "&Добавить поле..."
+msgstr "До&бавить поле..."
 
-#: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
 msgid "&Edit Field..."
 msgstr "&Изменить поле..."
 
-#: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
 msgid "&Remove Field"
-msgstr "Удалить &поле"
+msgstr "&Удалить поле"
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "Add &State..."
-msgstr "&Добавить состояние..."
+msgstr "До&бавить состояние..."
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "&Edit State..."
 msgstr "&Изменить состояние..."
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "&Remove State"
 msgstr "&Удалить состояние"
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "Add State"
-msgstr "Добавление состояния"
+msgstr "Добавление поля состояние"
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "Edit State"
-msgstr "Редактирование состояния"
+msgstr "Редактирование поля состояние"
 
-#: dialogs/bitfield_definition_editor.cpp dialogs/value_editor.cpp
 msgid "Invalid number."
 msgstr "Недопустимое числовое значение"
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "Select at least one bit."
-msgstr "Должен быть указан как минимум один бит"
+msgstr "Должен быть указан как минимум один бит."
 
-#: dialogs/bitfield_definition_editor.cpp
+# Restorer:
 msgid "Check All &Bits"
 msgstr "&Отметить все биты"
 
-#: dialogs/bitfield_definition_editor.cpp
+# Restorer:
 msgid "&Uncheck All Bits"
-msgstr "&Снять отметки со всех битов"
+msgstr "&Снять со всех битов"
 
-#: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
 msgid "Copy &Mask"
-msgstr "&Копировать маску"
+msgstr "Копировать &маску"
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "Add Field"
-msgstr "Добавление поля"
+msgstr "Добавление битового поля"
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "Edit Field"
-msgstr "Редактирование поля"
+msgstr "Редактирование битового поля"
 
-#: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
 msgid "Bit"
 msgstr "Бит"
 
-#: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
 msgid "Mask"
 msgstr "Маска"
 
-#: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
 msgid "Field"
 msgstr "Поле"
 
-#: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
-#: dialogs/decoder_dialog.cpp frame/tools/launch_bridge.cpp
-#: frame/views/browse_view.cpp search/search.cpp
 msgid "Value"
 msgstr "Значение"
 
-#: dialogs/bitfield_definition_editor.cpp frame/tools/launch_bridge.cpp
-#: frame/views/browse_view.cpp
 msgid "Name"
 msgstr "Наименование"
 
-#: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
 msgid "Meaning"
 msgstr "Назначение"
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "Enter a field name."
-msgstr "Введите наименование поля"
+msgstr "Введите наименование битового поля."
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "Another field already uses that name."
-msgstr "Это наименование уже используется в другом поле"
+msgstr "Это наименование используется в другом битовом поле."
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "This definition file has unsaved changes."
-msgstr "В файле описания битовых полей есть несохранённые изменения"
+msgstr "В файле определений битовых полей есть несохранённые изменения."
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "Bit Definitions"
 msgstr "Определения битовых полей"
 
-#: dialogs/bitfield_definition_editor.cpp frame/views/tab_lists.cpp
-#: frame/window/menu_bar.cpp
 msgid "Save"
 msgstr "Сохранить"
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "Discard"
 msgstr "Не сохранять"
 
-#: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
-#: dialogs/value_editor.cpp frame/commands/file_view_commands.cpp
-#: frame/commands/mutation_commands.cpp frame/commands/workspace_commands.cpp
-#: frame/tools/key_handles_window.cpp frame/tools/launch_bridge.cpp
-#: frame/views/history_workspace.cpp frame/views/registry_sessions.cpp
-#: frame/views/tab_lists.cpp frame/window/lifetime.cpp
-#: frame/window/message_routes.cpp ui/feedback.cpp
 msgid "Cancel"
 msgstr "Отмена"
 
-#: dialogs/bitfield_definition_editor.cpp dialogs/bitfield_editor.cpp
 msgid "The definition was made for a different value width."
-msgstr "Описание битовых полей создано для параметра другой разрядности"
+msgstr ""
+"Определение битовых полей создано для параметра реестра другой разрядности."
 
-#: dialogs/bitfield_definition_editor.cpp
-msgid "Some fields use bits outside the new width. Remove those bits and any states or fields that no longer fit?"
-msgstr "Некоторые поля содержат биты за пределами новой разрядности. Удалить эти биты, а также состояния и поля, которые больше не помещаются?"
+# Restorer:
+msgid ""
+"Some fields use bits outside the new width. Remove those bits and any states "
+"or fields that no longer fit?"
+msgstr ""
+"Битовые поля содержат биты за пределами новой разрядности. Удалить биты и "
+"любые состояния или поля, которые не соответствуют этой разрядности?"
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "Remove"
 msgstr "Удалить"
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "Bits"
 msgstr "Биты"
 
-#: dialogs/bitfield_definition_editor.cpp
 msgid "States"
-msgstr "Состояние"
+msgstr "Состояния"
 
-#: dialogs/bitfield_editor.cpp
 msgid "(none)"
 msgstr "(нет)"
 
-#: dialogs/bitfield_editor.cpp
 msgid "The definition describes bytes outside this value."
-msgstr "В описании битовых полей присутствуют байты за пределами этого параметра"
+msgstr ""
+"В определении битовых полей присутствуют байты за пределами разрядности "
+"этого параметра."
 
-#: dialogs/bitfield_editor.cpp
 msgid "This definition was made for a different value. Use it anyway?"
-msgstr "Описание битовых полей создано для другого параметра. Все равно использовать?"
+msgstr ""
+"Определение битовых полей создано для другого параметра. Всё равно "
+"использовать?"
 
-#: dialogs/bitfield_editor.cpp
 msgid "Definition"
-msgstr "Описание битовых полей"
+msgstr "Определение для"
 
-#: dialogs/bitfield_editor.cpp
 msgid "This value"
 msgstr "Этот параметр"
 
-#: dialogs/bitfield_editor.cpp
 msgid "Bit Definition"
-msgstr "Описание битов"
+msgstr "Определение битовых полей"
 
-#: dialogs/bitfield_editor.cpp
 msgid "Use"
 msgstr "Использовать"
 
-#: dialogs/bitfield_editor.cpp
 msgid "No definition in that file fits this value."
-msgstr "Ни одно из описаний битовых полей в этом файле не подходит к этому параметру"
+msgstr ""
+"В файле отсутствуют определения битовых полей соответствующих этому параметру."
 
-#: dialogs/bitfield_editor.cpp
 msgid "No definition in that file was made for this value width."
-msgstr "Ни одно из описаний битовых полей в этом файле не соответствует разрядности параметра"
+msgstr ""
+"В файле отсутствуют определения битовых полей соответствующих разрядности "
+"этого параметра."
 
-#: dialogs/bitfield_editor.cpp
 msgid "Enable &Bit"
-msgstr "&Установить бит"
+msgstr "Ус&тановить бит"
 
-#: dialogs/bitfield_editor.cpp
 msgid "&Disable Bit"
-msgstr "Сбросить &бит"
+msgstr "С&бросить бит"
 
-#: dialogs/bitfield_editor.cpp
 msgid "Set &Field To"
 msgstr "&Задать значение поля"
 
-#: dialogs/bitfield_editor.cpp
 msgid "&Set All Bits"
 msgstr "Установить &все биты"
 
-#: dialogs/bitfield_editor.cpp
 msgid "C&lear All Bits"
 msgstr "&Сбросить все биты"
 
-#: dialogs/bitfield_editor.cpp
 msgid "Describe Bit..."
 msgstr "Описать бит..."
 
-#: dialogs/bitfield_editor.cpp
 msgid "State"
 msgstr "Состояние"
 
-#: dialogs/comment_editor.cpp
 msgid "Selected values only"
 msgstr "К отмеченным параметрам"
 
-#: dialogs/comment_editor.cpp
 msgid "Values with the selected names"
 msgstr "К параметрам с такими же наименованиями"
 
-#: dialogs/comment_editor.cpp
 msgid "Values named"
 msgstr "К параметрам"
 
-#: dialogs/decoder_dialog.cpp
 msgid "Bytes shown"
 msgstr "Показано байт"
 
-#: dialogs/decoder_dialog.cpp frame/tools/launch_bridge.cpp
 msgid "Property"
 msgstr "Свойство"
 
-#: dialogs/export_dialog.cpp win32/file_dialog.cpp
 msgid "Don't open"
 msgstr "не открывать"
 
-#: dialogs/export_dialog.cpp win32/file_dialog.cpp
 msgid "In text editor"
 msgstr "в текстовом редакторе"
 
-#: dialogs/export_dialog.cpp win32/file_dialog.cpp
 msgid "In RegKit"
 msgstr "в программе RegKit"
 
-#: dialogs/export_dialog.cpp
 msgid "Registry File (.reg)"
-msgstr "Файлы реестра (*.reg)"
+msgstr "reg-файл реестра"
 
-#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
 msgid "Batch File"
-msgstr "Пакетный файл"
+msgstr "пакетный файл"
 
-#: dialogs/export_dialog.cpp frame/tools/convert_dialog.cpp
 msgid "PowerShell Script"
-msgstr "Файл PowerShell"
+msgstr "файл PowerShell"
 
-#: dialogs/export_dialog.cpp
 msgid "Registry Hive File"
-msgstr "Файлы кустов реестра"
+msgstr "файл куста реестра"
 
-#: dialogs/export_dialog.cpp
 msgid "Select a destination file."
-msgstr "Выберите файл назначения"
+msgstr "Укажите целевой файл."
 
-#: dialogs/hive_dialog.cpp
 msgid "Select a hive file."
-msgstr "Выберите файл куста реестра"
+msgstr "Укажите файл куста реестра."
 
-#: dialogs/hive_dialog.cpp
 msgid "Enter a key name for the loaded hive."
-msgstr "Введите наименование раздела для загружаемого куста"
+msgstr "Введите наименование раздела для загружаемого куста."
 
-#: dialogs/hive_dialog.cpp
 msgid "The key name can't contain a backslash."
-msgstr "В наименовании раздела не допускается обратная наклонная черта"
+msgstr "В наименовании раздела не допускается обратная наклонная черта."
 
-#: dialogs/hive_dialog.cpp
 msgid "Enter a link name and a target key."
-msgstr "Введите наименование ссылки и целевой раздел"
+msgstr "Введите наименование ссылки и целевой раздел."
 
-#: dialogs/hive_dialog.cpp
 msgid "The link name can't contain a backslash."
-msgstr "В наименовании ссылки не допускается обратная наклонная черта"
+msgstr "В наименовании ссылки не допускается обратная наклонная черта."
 
-#: dialogs/query_dialog.cpp frame/views/history_workspace.cpp
 msgid "RegKit couldn't read this file and didn't use it."
-msgstr "Программе RegKit не удалось прочитать этот файл, поэтому он не использовался"
+msgstr ""
+"Файл не был использован, так как программе RegKit не удалось получить его "
+"содержимое."
 
-#: dialogs/query_dialog.cpp
 msgid "No top level keys"
 msgstr "Нет разделов верхнего уровня"
 
-#: dialogs/query_dialog.cpp
 msgid "All top level keys"
 msgstr "Все разделы верхнего уровня"
 
-#: dialogs/query_dialog.cpp
 msgid "Multiple keys"
 msgstr "Несколько разделов"
 
-#: dialogs/query_dialog.cpp
 msgid "Enter a search term."
-msgstr "Введите текст для поиска"
+msgstr "Введите текст для поиска."
 
-#: dialogs/query_dialog.cpp
 msgid "The regular expression is too long."
-msgstr "Регулярное выражение слишком длинное"
+msgstr "Регулярное выражение слишком длинное."
 
-#: dialogs/query_dialog.cpp
 msgid "Select at least one search option."
-msgstr "Требуется указать как минимум один параметр поиска"
+msgstr "Требуется указать как минимум один параметр поиска."
 
-#: dialogs/query_dialog.cpp
 msgid "Select at least one search source."
-msgstr "Требуется указать как минимум один источник поиска"
+msgstr "Требуется указать как минимум один источник поиска."
 
-#: dialogs/query_dialog.cpp
 msgid "Enter a valid minimum data size."
-msgstr "Введите допустимый минимальный размер данных"
+msgstr "Введите допустимый минимальный размер данных."
 
-#: dialogs/query_dialog.cpp
 msgid "Enter a valid maximum data size."
-msgstr "Введите допустимый максимальный размер данных"
+msgstr "Введите допустимый максимальный размер данных."
 
-#: dialogs/query_dialog.cpp
 msgid "Minimum data size can't exceed maximum data size."
-msgstr "Минимальный размер данных не может быть больше максимального размера данных"
+msgstr ""
+"Минимальный размер данных не может быть больше максимального размера данных."
 
-#: dialogs/query_dialog.cpp
 msgid "Modified date range is invalid."
-msgstr "Недопустимый диапазон даты изменения"
+msgstr "Недопустимый диапазон даты изменения."
 
-#: dialogs/query_dialog.cpp
 msgid "Enter a valid result limit."
-msgstr "Укажите допустимое число ограничения результатов"
+msgstr "Укажите допустимое число ограничения результатов."
 
-#: dialogs/query_dialog.cpp
 msgid "Select at least one top level key."
-msgstr "Требуется указать как минимум один раздел верхнего уровня"
+msgstr "Требуется указать как минимум один раздел верхнего уровня."
 
-#: dialogs/query_dialog.cpp
 msgid ""
-"PCRE syntax: ^ $ anchors, character classes, greedy, lazy (*?) and possessive (*+) quantifiers,\n"
-"(?<name>...) groups, lookaround (?=...) (?<=...), backreferences \\1 and Unicode classes \\p{L}, \\w, \\X.\n"
+"PCRE syntax: ^ $ anchors, character classes, greedy, lazy (*?) and "
+"possessive (*+) quantifiers,\n"
+"(?<name>...) groups, lookaround (?=...) (?<=...), backreferences \\1 and "
+"Unicode classes \\p{L}, \\w, \\X.\n"
 "Matching is unicode aware and ignores case unless 'Match case' is set."
 msgstr ""
-"Синтаксис PCRE: якоря ^ $, классы символов, жадные, ленивые (*?) и квантификаторы без возврата (*+),\n"
-"группы (?<name>...), проверки (?=...) (?<=...), обратные ссылки \\1 и классы Unicode \\p{L}, \\w, \\X.\n"
-"Поиск учитывает Unicode и не учитывает регистр, если не задано \"Учитывать регистр\"."
+"Синтаксис PCRE: якоря ^ $, классы символов, жадные, ленивые (*?) и "
+"квантификаторы без возврата (*+),\n"
+"группы (?<name>...), проверки (?=...) (?<=...), обратные ссылки \\1 и классы "
+"Unicode \\p{L}, \\w, \\X.\n"
+"Поиск учитывает Unicode и не учитывает регистр, если не задано «Учитывать "
+"регистр»."
 
-#: dialogs/query_dialog.cpp
 msgid "Exclude Keys"
 msgstr "Исключаемые разделы"
 
-#: dialogs/query_dialog.cpp frame/commands/clipboard_commands.cpp
 msgid "Each line should include one key."
 msgstr "В каждой строке указывается по одному разделу"
 
-#: dialogs/query_prompts.cpp
 msgid "Select at least one data type."
-msgstr "Требуется указать как минимум один тип данных"
+msgstr "Требуется указать как минимум один тип данных."
 
-#: dialogs/query_prompts.cpp
 msgid "Data Types"
 msgstr "Типы данных"
 
-#: dialogs/query_prompts.cpp
 msgid "Select a key."
-msgstr "Выберите раздел"
+msgstr "Выберите раздел."
 
-#: dialogs/replace_dialog.cpp frame/search/search_window.cpp
 msgid "Enter text to find."
-msgstr "Введите текст для поиска"
+msgstr "Введите текст для поиска."
 
-#: dialogs/replace_dialog.cpp
 msgid "Select what should be replaced."
-msgstr "Укажите в чём требуется выполнить замену"
+msgstr "Укажите, что требуется заменить."
 
-#: dialogs/replace_dialog.cpp
 msgid ""
-"PCRE syntax: ^ $ anchors, character classes, greedy, lazy (*?) and possessive (*+) quantifiers,\n"
-"(?<name>...) groups, lookaround (?=...) (?<=...), backreferences \\1 and Unicode classes \\p{L}, \\w, \\X.\n"
-"Replace with: $1 or ${1} for a group, $<name> or ${name} for a named group, $& for the whole match, $$ for a dollar."
+"PCRE syntax: ^ $ anchors, character classes, greedy, lazy (*?) and "
+"possessive (*+) quantifiers,\n"
+"(?<name>...) groups, lookaround (?=...) (?<=...), backreferences \\1 and "
+"Unicode classes \\p{L}, \\w, \\X.\n"
+"Replace with: $1 or ${1} for a group, $<name> or ${name} for a named group, "
+"$& for the whole match, $$ for a dollar."
 msgstr ""
-"Синтаксис PCRE: якоря ^ $, классы символов, жадные, ленивые (*?) и квантификаторы без возврата (*+),\n"
-"группы (?<name>...), проверки (?=...) (?<=...), обратные ссылки \\1 и классы Unicode \\p{L}, \\w, \\X.\n"
-"Замена: $1 или ${1} для группы, $<name> или ${name} для именованной группы, $& для всего совпадения, $$ это символ доллара."
+"Синтаксис PCRE: якоря ^ $, классы символов, жадные, ленивые (*?) и "
+"квантификаторы без возврата (*+),\n"
+"группы (?<name>...), проверки (?=...) (?<=...), обратные ссылки \\1 и классы "
+"Unicode \\p{L}, \\w, \\X.\n"
+"Замена: $1 или ${1} для группы, $<name> или ${name} для именованной группы, "
+"$& для всего совпадения, $$ — символ доллара"
 
-#: dialogs/security_dialog.cpp frame/commands/mutation_commands.cpp
-#: frame/window/lifetime.cpp
 msgid "Create"
 msgstr "Создание"
 
-#: dialogs/security_dialog.cpp
 msgid "Enumerate"
 msgstr "Перечисление"
 
-#: dialogs/security_dialog.cpp
 msgid "Set Value"
 msgstr "Установка значения"
 
-#: dialogs/security_dialog.cpp
 msgid "Query Value"
 msgstr "Запрос значение"
 
-#: dialogs/security_dialog.cpp registry/key_access.cpp
 msgid "Write"
 msgstr "Запись"
 
-#: dialogs/security_dialog.cpp registry/key_access.cpp
 msgid "Read"
 msgstr "Чтение"
 
-#: dialogs/security_dialog.cpp
 msgid "This key only"
 msgstr "Только этот раздел"
 
-#: dialogs/security_dialog.cpp
 msgid "This key and subkeys"
 msgstr "Этот раздел и подразделы"
 
-#: dialogs/security_dialog.cpp frame/tools/launch_bridge.cpp
 msgid "The key's permissions couldn't be read."
-msgstr "Не удалось прочитать разрешения раздела"
+msgstr "Невозможно получить разрешения этого раздела."
 
-#: dialogs/trace_dialog.cpp frame/views/value_loading.cpp
 msgid "Keys"
 msgstr "Разделов"
 
-#: dialogs/trace_dialog.cpp frame/tools/launch_bridge.cpp
-#: frame/views/value_loading.cpp
 msgid "Values"
 msgstr "Параметров"
 
-#: dialogs/trace_dialog.cpp
 msgid "loading..."
 msgstr "загрузка..."
 
-#: dialogs/trace_dialog.cpp
 msgid "Select at least one key or value."
-msgstr "Требуется указать как минимум один раздел или параметр"
+msgstr "Требуется указать как минимум один раздел или параметр."
 
-#: dialogs/transfer_dialogs.cpp
 msgid "Export supports the standard root keys only."
-msgstr "Экспорт поддерживается только для стандартных корневых разделов"
+msgstr "Экспорт поддерживается только для стандартных корневых разделов."
 
-#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
 msgid "Failed to write the exported registry file."
-msgstr "Не удалось записать экспортируемый файл реестра"
+msgstr "Не удалось записать экспортируемый файл реестра."
 
-#: dialogs/transfer_dialogs.cpp frame/sources/regfile_commands.cpp
-#: frame/window/menu_bar.cpp
 msgid "Export"
 msgstr "Экспорт"
 
-#: dialogs/transfer_dialogs.cpp
 msgid "No data to export."
-msgstr "Отсутствуют данные для экспорта"
+msgstr "Отсутствуют данные для экспорта."
 
-#: dialogs/transfer_dialogs.cpp
 msgid "No selected values were found in the export."
-msgstr "В экспортируемых данных не найдены указанные параметры"
+msgstr "В экспортируемых данных не найдены указанные параметры."
 
-#: dialogs/transfer_dialogs.cpp
-msgid "Loading a hive needs the backup and restore privileges. Run RegKit elevated."
-msgstr "Для загрузки куста требуются привилегии резервного копирования и восстановления. Запустите RegKit с повышенными правами"
+msgid ""
+"Loading a hive needs the backup and restore privileges. Run RegKit elevated."
+msgstr ""
+"Для загрузки куста требуются привилегии резервного копирования и "
+"восстановления. Запустите программу RegKit с повышенными правами."
 
-#: dialogs/transfer_dialogs.cpp frame/commands/file_view_commands.cpp
 msgid "Unload Hive"
 msgstr "Выгрузка куста"
 
-#: dialogs/transfer_dialogs.cpp
 msgid "Key name:"
 msgstr "Наименование раздела:"
 
-#: dialogs/transfer_dialogs.cpp
 msgid "Key name is required."
-msgstr "Требуется указать наименование раздела"
+msgstr "Требуется указать наименование раздела."
 
-#: dialogs/transfer_dialogs.cpp
-msgid "Unloading a hive needs the backup and restore privileges. Run RegKit elevated."
-msgstr "Для выгрузки куста требуются привилегии резервного копирования и восстановления. Запустите RegKit с повышенными правами"
+msgid ""
+"Unloading a hive needs the backup and restore privileges. Run RegKit "
+"elevated."
+msgstr ""
+"Для выгрузки куста требуются привилегии резервного копирования и "
+"восстановления. Запустите программу RegKit с повышенными правами."
 
-#: dialogs/value_editor.cpp
 msgid "Enter a valid number before editing its bits."
-msgstr "Чтобы изменить биты, требуется задать допустимое числовое значение"
+msgstr "Чтобы изменить биты, требуется задать допустимое числовое значение."
 
-#: dialogs/value_editor.cpp
 msgid "The current data isn't valid, so the type can't be changed."
-msgstr "Тип не может быть изменён, так как текущие данные недопустимы"
+msgstr "Тип не может быть изменён, так как текущие данные недопустимы."
 
-#: dialogs/value_editor.cpp
-msgid "The current data can't be represented in this type. Continue and start with an empty value?"
-msgstr "Текущие данные неприменимы к этому типу данных. Сбросить данные и продолжить?"
+msgid ""
+"The current data can't be represented in this type. Continue and start with "
+"an empty value?"
+msgstr ""
+"Текущие данные неприменимы к этому типу данных. Сбросить данные и продолжить?"
 
-#: dialogs/value_editor.cpp
 msgid "Change Data Type"
 msgstr "Изменение типа данных"
 
-#: dialogs/value_editor.cpp
 msgid "Continue"
 msgstr "Продолжить"
 
-#: dialogs/value_editor.cpp
 msgid "Invalid value data."
-msgstr "Недопустимое значение параметра"
+msgstr "Недопустимое значение параметра."
 
-#: dialogs/value_editor.cpp
 msgid "Number is out of range."
-msgstr "Числовое значение вне допустимого диапазона"
+msgstr "Числовое значение вне допустимого диапазона."
 
-#: dialogs/value_editor.cpp
 msgid "This value has no data to edit as bits."
-msgstr "В данном параметре отсутствуют данные для изменения битовых полей"
+msgstr "В данном параметре отсутствуют данные для изменения битовых полей."
 
-#: frame/commands/clipboard_commands.cpp
 msgid "New favorites imported"
-msgstr "Импортировано новых записей избранного"
+msgstr "Импортировано записей избранного"
 
-#: frame/commands/clipboard_commands.cpp
 msgid "There are no new favorites to import."
-msgstr "Отсутствуют новые записи избранного для импорта"
+msgstr "Отсутствуют новые записи избранного для импорта."
 
-#: frame/commands/clipboard_commands.cpp
 msgid "Edit Favorites"
 msgstr "Редактирование избранного"
 
-#: frame/commands/clipboard_commands.cpp workspace/favorites.cpp
 msgid "Failed to save favorites."
-msgstr "Не удалось сохранить избранное"
+msgstr "Не удалось сохранить избранное."
 
-#: frame/commands/clipboard_commands.cpp
 msgid "Failed to import favorites."
-msgstr "Не удалось импортировать избранное"
+msgstr "Не удалось импортировать избранное."
 
-#: frame/commands/clipboard_commands.cpp workspace/favorites.cpp
 msgid "Failed to import RegEdit favorites."
-msgstr "Не удалось импортировать избранное из RegEdit"
+msgstr "Не удалось импортировать избранное из программы RegEdit."
 
-#: frame/commands/clipboard_commands.cpp
 msgid "Failed to export favorites."
 msgstr "Не удалось экспортировать избранное"
 
-#: frame/commands/clipboard_commands.cpp frame/commands/mutation_commands.cpp
-#: frame/commands/tools_commands.cpp
 msgid "Failed to read value."
-msgstr "Не удалось прочитать данные параметра"
+msgstr "Не удалось получить данные параметра."
 
-#: frame/commands/clipboard_commands.cpp
 msgid "The source key couldn't be opened."
-msgstr "Не удалось открыть исходный раздел"
+msgstr "Не удалось открыть исходный раздел."
 
-#: frame/commands/clipboard_commands.cpp
 msgid "Failed to paste value."
-msgstr "Не удалось добавить параметр"
+msgstr "Не удалось добавить параметр."
 
-#: frame/commands/clipboard_commands.cpp frame/tools/launch_bridge.cpp
 msgid "The key information couldn't be read."
-msgstr "Не удалось получить свойства раздела"
+msgstr "Не удалось получить свойства раздела."
 
-#: frame/commands/clipboard_commands.cpp
 msgid "Failed to paste key."
-msgstr "Не удалось добавить раздел"
+msgstr "Не удалось добавить раздел."
 
-#: frame/commands/clipboard_commands.cpp frame/commands/undo.cpp
 msgid "The change couldn't be undone."
-msgstr "Внесённые изменения не могут быть отменены"
+msgstr "Изменения не могут быть отменены."
 
-#: frame/commands/clipboard_commands.cpp frame/commands/undo.cpp
 msgid "The change couldn't be redone."
-msgstr "Внесённые изменения не могут быть возвращены"
+msgstr "Изменения не могут быть возвращены."
 
-#: frame/commands/command_detail.h
 msgid "&Abbreviated (HKLM)"
 msgstr "&Сокращение (HKLM)"
 
-#: frame/commands/command_detail.h
 msgid "RegEdit Address &Bar"
 msgstr "&Адресная строка RegEdit"
 
-#: frame/commands/command_detail.h
 msgid ".reg &File Header"
-msgstr "&Оглавление файла .reg"
+msgstr "&Оглавление reg-файла"
 
-#: frame/commands/command_detail.h
 msgid "PowerShell &Drive"
 msgstr "&Хранилище PowerShell"
 
-#: frame/commands/command_detail.h
 msgid "&PowerShell Provider"
 msgstr "&Поставщик PowerShell"
 
-#: frame/commands/command_detail.h
 msgid "&Escaped Backslashes"
 msgstr "&Экранированный маршрут"
 
-#: frame/commands/command_detail.h
 msgid "&Native"
 msgstr "&Маршрут в формате NT"
 
-#: frame/commands/command_detail.h
 msgid "Native (&Resolved)"
 msgstr "&Формат NT (исходный)"
 
-#: frame/commands/command_detail.h
 msgid "&Key"
 msgstr "&Раздел"
 
-#: frame/commands/command_detail.h
 msgid "&Volatile Key"
 msgstr "&Временный раздел"
 
-#: frame/commands/command_detail.h
 msgid "&String Value"
-msgstr "Строковый &параметр"
+msgstr "&Строковый параметр"
 
-#: frame/commands/command_detail.h
 msgid "&Binary Value"
-msgstr "&Двоичный параметр"
+msgstr "Двои&чный параметр"
 
-#: frame/commands/command_detail.h
 msgid "&DWORD (32-bit) Value"
-msgstr "Параметр &DWORD (32 бита)"
+msgstr "&Параметр DWORD (32 бита)"
 
-#: frame/commands/command_detail.h
 msgid "&QWORD (64-bit) Value"
-msgstr "Параметр &QWORD (64 бита)"
+msgstr "П&араметр QWORD (64 бита)"
 
-#: frame/commands/command_detail.h
 msgid "&Multi-String Value"
 msgstr "&Многостроковый параметр"
 
-#: frame/commands/command_detail.h
 msgid "&Expandable String Value"
-msgstr "Р&асширяемый строковый параметр"
+msgstr "Рас&ширяемый строковый параметр"
 
-#: frame/commands/command_detail.h
 msgid "Symbolic &Link"
-msgstr "&Символьную ссылку"
+msgstr "С&имвольную ссылку"
 
-#: frame/commands/context_menus.cpp
 msgid "&Copy Key Name"
-msgstr "Копировать &название раздела"
+msgstr "Копировать наз&вание раздела"
 
-#: frame/commands/context_menus.cpp
 msgid "Copy Key &Path"
-msgstr "&Копировать маршрут раздела"
+msgstr "Копировать &маршрут раздела"
 
-#: frame/commands/context_menus.cpp
 msgid "Copy Key Path &As"
-msgstr "Копировать &маршрут как"
+msgstr "Копировать маршрут к&ак"
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
 msgid "Modif&y Comment..."
-msgstr "&Изменить комментарий..."
+msgstr "Изменит&ь комментарий..."
 
-#: frame/commands/context_menus.cpp
 msgid "&Open in Source Hive"
-msgstr "&Открыть исходный куст"
+msgstr "Показать в ис&ходном разделе"
 
-#: frame/commands/context_menus.cpp
 msgid "On-Disk &Hive File"
-msgstr "&Файл куста на диске"
+msgstr "По&казать файл куста реестра"
 
-#: frame/commands/context_menus.cpp
 msgid "Expand All &Subkeys"
-msgstr "Развернуть все &подразделы"
+msgstr "Развернуть вс&е подразделы"
 
-#: frame/commands/context_menus.cpp
 msgid "Crea&te Key"
 msgstr "Со&здать раздел"
 
-#: frame/commands/context_menus.cpp frame/tools/key_handles_window.cpp
-#: frame/window/menu_bar.cpp
 msgid "&Refresh"
 msgstr "О&бновить"
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
 msgid "Ne&w"
 msgstr "&Создать"
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
 msgid "&Export..."
 msgstr "&Экспорт..."
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
 msgid "Re&name"
 msgstr "П&ереименовать"
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
 msgid "&Delete"
 msgstr "&Удалить"
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
 msgid "Perm&issions..."
 msgstr "Разре&шения..."
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
 msgid "&Key Information..."
 msgstr "Сво&йства раздела..."
 
-#: frame/commands/context_menus.cpp
 msgid "Co&llapse Key"
 msgstr "С&вернуть раздел"
 
-#: frame/commands/context_menus.cpp
 msgid "E&xpand Key"
 msgstr "&Развернуть раздел"
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
 msgid "&Modify..."
-msgstr "Изменит&ь..."
+msgstr "&Изменить..."
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
 msgid "Modify &Binary Data..."
-msgstr "Изменить двоичн&ые данные..."
+msgstr "Изменить двои&чные данные..."
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
 msgid "C&hange Data Type..."
-msgstr "Изменить тип данны&х..."
+msgstr "Изменить &тип данных..."
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
 msgid "Edit Bit&s..."
 msgstr "Изменить &битовые поля..."
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
+# Restorer: Декодировать п&араметр...
 msgid "Decode &Value..."
-msgstr "&Декодировать параметр..."
+msgstr "Декодирование данны&х..."
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
 msgid "Reset &to Default"
 msgstr "Сброс к начальному значени&ю"
 
-#: frame/commands/context_menus.cpp
 msgid "Co&py Value Name"
-msgstr "Копировать &наименование"
+msgstr "Копировать &название параметра"
 
-#: frame/commands/context_menus.cpp
 msgid "&Copy Value Data"
-msgstr "&Копировать значение"
+msgstr "Копировать &значение параметра"
 
-#: frame/commands/context_menus.cpp
 msgid "&Open Link"
 msgstr "&Открыть ссылку"
 
-#: frame/commands/context_menus.cpp
 msgid "&Open Entry"
 msgstr "Открыть &запись"
 
-#: frame/commands/context_menus.cpp
 msgid "R&evert"
 msgstr "&Восстановить"
 
-#: frame/commands/context_menus.cpp frame/window/menu_bar.cpp
 msgid "&Copy"
-msgstr "Копиров&ать"
+msgstr "&Копировать"
 
-#: frame/commands/context_menus.cpp
 msgid "Remove &from History"
 msgstr "&Удалить из журнала"
 
-#: frame/commands/context_menus.cpp
 msgid "Clear &History"
 msgstr "&Очистить журнал"
 
-#: frame/commands/context_menus.cpp
 msgid "Failed to open history target."
-msgstr "Не удалось открыть целевой объект журнала"
+msgstr "Не удалось открыть целевой объект журнала."
 
-#: frame/commands/context_menus.cpp
 msgid "Open &First Entry"
-msgstr "Показать первую &запись"
+msgstr "П&оказать первую запись"
 
-#: frame/commands/context_menus.cpp
 msgid "Open Fi&rst Entry in New Tab"
-msgstr "Пок&азать первую запись в новой вкладке"
+msgstr "&Показать первую запись в новой вкладке"
 
-#: frame/commands/context_menus.cpp
 msgid "&Open Second Entry"
-msgstr "&Показать вторую запись"
+msgstr "Показать в&торую запись"
 
-#: frame/commands/context_menus.cpp
 msgid "Open &Second Entry in New Tab"
 msgstr "Показать &вторую запись в новой вкладке"
 
-#: frame/commands/context_menus.cpp frame/tools/key_handles_window.cpp
 msgid "Open &Key"
 msgstr "О&ткрыть раздел"
 
-#: frame/commands/context_menus.cpp frame/tools/key_handles_window.cpp
 msgid "Open Key in New &Tab"
 msgstr "&Открыть раздел в новой вкладке"
 
 # Restorer: Check
-#: frame/commands/file_view_commands.cpp
-msgid "Hive files can only be restored into the local registry, outside HKEY_CLASSES_ROOT."
-msgstr "Только локальный реестр, за исключением раздела HKEY_CLASSES_ROOT, может быть восстановлен из файлов кустов"
+msgid ""
+"Hive files can only be restored into the local registry, outside "
+"HKEY_CLASSES_ROOT."
+msgstr ""
+"Только локальный реестр, за исключением раздела HKEY_CLASSES_ROOT, может "
+"быть восстановлен из файлов кустов."
 
-#: frame/commands/file_view_commands.cpp
 msgid "Replace all contents of this key with the hive file?"
-msgstr "Заменить всё содержимое этого раздела содержимым файла куста?"
+msgstr "Заменить всё содержимое этого раздела содержимым файла куста реестра?"
 
-#: frame/commands/file_view_commands.cpp
-msgid "Replace all contents of this key with the hive file? The restore can't be undone."
-msgstr "Заменить всё содержимое этого раздела содержимым файла куста? Восстановление нельзя будет отменить."
+msgid ""
+"Replace all contents of this key with the hive file? The restore can't be "
+"undone."
+msgstr ""
+"Заменить всё содержимое этого раздела содержимым файла куста? Эти изменения "
+"нельзя будет отменить."
 
-#: frame/commands/file_view_commands.cpp
 msgid "Restore Key"
-msgstr "Восстановить раздел"
+msgstr "Восстановление раздела"
 
-#: frame/commands/file_view_commands.cpp
 msgid "Restore"
 msgstr "Восстановить"
 
-#: frame/commands/file_view_commands.cpp
 msgid "Comments imported"
-msgstr "Было импортировано комментариев"
+msgstr "Импортировано комментариев"
 
-#: frame/commands/file_view_commands.cpp
 msgid "Failed to import comments."
-msgstr "Не удалось импортировать комментарии"
+msgstr "Не удалось импортировать комментарии."
 
-#: frame/commands/file_view_commands.cpp
 msgid "Failed to export comments."
-msgstr "Не удалось экспортировать комментарии"
+msgstr "Не удалось экспортировать комментарии."
 
-#: frame/commands/file_view_commands.cpp
 msgid "Loading hives isn't supported for remote registries."
-msgstr "Загрузка кустов не поддерживается для удалённых реестров"
+msgstr "Загрузка кустов не поддерживается для удалённых реестров."
 
-#: frame/commands/file_view_commands.cpp
 msgid "Unloading hives isn't supported for remote registries."
-msgstr "Выгрузка кустов не поддерживается для удалённых реестров"
+msgstr "Выгрузка кустов не поддерживается для удалённых реестров."
 
-#: frame/commands/file_view_commands.cpp
 msgid "Select a hive you loaded under HKEY_LOCAL_MACHINE or HKEY_USERS first."
-msgstr "Выберите куст, загруженный в HKEY_LOCAL_MACHINE или HKEY_USERS"
+msgstr "Выберите куст, загруженный в HKEY_LOCAL_MACHINE или HKEY_USERS."
 
-#: frame/commands/file_view_commands.cpp
 msgid "Unload this key and all of its subkeys?"
 msgstr "Выгрузить этот раздел и все его подразделы?"
 
-#: frame/commands/file_view_commands.cpp
 msgid "Unload"
 msgstr "Выгрузить"
 
-#: frame/commands/file_view_commands.cpp
 msgid "Expanded keys"
 msgstr "Развёрнуто разделов"
 
-#: frame/commands/file_view_commands.cpp
 msgid "This key has too many subkeys to expand at once."
-msgstr "Развёрнута только часть подразделов из‐за большого количества подразделов"
+msgstr ""
+"Развёрнута только часть подразделов из‐за большого количества подразделов"
 
-#: frame/commands/file_view_commands.cpp
 msgid "Edit Active Defaults"
 msgstr "Изменение действующих предустановок"
 
-#: frame/commands/file_view_commands.cpp
 msgid "One default path per line."
 msgstr "В каждой строке указывается по одному файлу с предустановками"
 
-#: frame/commands/file_view_commands.cpp
 msgid "Edit Active Traces"
 msgstr "Изменение действующих трассировок"
 
-#: frame/commands/file_view_commands.cpp
 msgid "One trace path per line."
 msgstr "В каждой строке указывается по одному файлу трассировки"
 
-#: frame/commands/file_view_commands.cpp
 msgid "Edit Recent Defaults"
 msgstr "Изменение недавно использованных предустановок"
 
-#: frame/commands/file_view_commands.cpp
 msgid "Edit Recent Traces"
 msgstr "Изменение недавно использованных трассировок"
 
-#: frame/commands/mutation_commands.cpp
 msgid "Symbolic links can only be created in the local registry."
-msgstr "Допускается создание символьных ссылок только для локального реестра"
+msgstr "Разрешено создание символических ссылок только для локального реестра."
 
-#: frame/commands/mutation_commands.cpp
 msgid "The target must be a full registry path under a standard root."
-msgstr "В качестве цели должен быть указан полный маршрут в стандартном корневом разделе"
+msgstr ""
+"В качестве цели должен быть указан полный маршрут в стандартном корневом "
+"разделе."
 
-#: frame/commands/mutation_commands.cpp
-msgid "Windows doesn't follow a link from a user hive into another user's hive or HKEY_LOCAL_MACHINE, so this link may not open. Create it anyway?"
-msgstr "Windows не переходит по ссылке из пользовательского куста в куст другого пользователя или в HKEY_LOCAL_MACHINE, поэтому эта ссылка может не открыться. Всё равно создать?"
+msgid ""
+"Windows doesn't follow a link from a user hive into another user's hive or "
+"HKEY_LOCAL_MACHINE, so this link may not open. Create it anyway?"
+msgstr ""
+"Система Windows не позволяет отслеживать ссылки из раздела пользователя в "
+"разделы других пользователей или раздел HKEY_LOCAL_MACHINE. Всё равно "
+"создать ссылку?"
 
-#: frame/commands/mutation_commands.cpp
 msgid "New Symbolic Link"
-msgstr "Создание символьной ссылки"
+msgstr "Создание символической ссылки"
 
-#: frame/commands/mutation_commands.cpp
 msgid "Failed to create the symbolic link."
-msgstr "Не удалось создать символьную ссылку"
+msgstr "Не удалось создать симвоическую ссылку."
 
-#: frame/commands/mutation_commands.cpp
 msgid "Failed to create the key."
-msgstr "Не удалось создать раздел"
+msgstr "Не удалось создать раздел."
 
-#: frame/commands/mutation_commands.cpp
 msgid "Created a volatile key, because its parent key is volatile."
-msgstr "Создан временный раздел, так как родительский раздел является временным"
+msgstr ""
+"Создан временный раздел, так как его родительский раздел является временным."
 
-#: frame/commands/mutation_commands.cpp
 msgid "Failed to set value."
-msgstr "Не удалось задать значение параметра"
+msgstr "Не удалось задать значение параметра."
 
-#: frame/commands/mutation_commands.cpp
 msgid "Failed to update value."
-msgstr "Не удалось обновить параметр"
+msgstr "Не удалось обновить параметр."
 
-#: frame/commands/mutation_commands.cpp ui/feedback.cpp
 msgid "Delete Value"
 msgstr "Удаление параметра"
 
-#: frame/commands/mutation_commands.cpp
 msgid "Failed to delete value."
-msgstr "Не удалось удалить параметр"
+msgstr "Не удалось удалить параметр."
 
-#: frame/commands/mutation_commands.cpp ui/feedback.cpp
 msgid "Delete Key"
 msgstr "Удаление раздела"
 
-#: frame/commands/mutation_commands.cpp
-msgid "Part of this key couldn't be read, so this delete can't be undone. Delete anyway?"
-msgstr "Часть этого раздела не удалось прочитать, поэтому удаление невозможно будет отменить. Все равно удалить?"
+msgid ""
+"Part of this key couldn't be read, so this delete can't be undone. Delete "
+"anyway?"
+msgstr ""
+"Удаление не может быть отменено, так как не удалось получить часть данных "
+"раздела. Всё равно удалить?"
 
-#: frame/commands/mutation_commands.cpp
 msgid "Failed to delete key."
-msgstr "Не удалось удалить раздел"
+msgstr "Не удалось удалить раздел реестра."
 
-#: frame/commands/mutation_commands.cpp
 msgid "Bulk deletion only supports registry values."
-msgstr "Массовое удаление поддерживается только для параметров реестра"
+msgstr "Массовое удаление поддерживается только для параметров реестра."
 
-#: frame/commands/mutation_commands.cpp
 msgid "Failed to read all selected values."
-msgstr "Не удалось считать все выбранные параметры"
+msgstr "Не удалось считать все выбранные параметры."
 
-#: frame/commands/mutation_commands.cpp ui/feedback.cpp
 msgid "Delete Values"
 msgstr "Удаление параметров"
 
-#: frame/commands/mutation_commands.cpp
 msgid "Some of the selected values couldn't be deleted."
-msgstr "Были удалены не все выбранные параметры"
+msgstr "Не все выбранные параметры были удалены."
 
-#: frame/commands/tools_commands.cpp
 msgid "The key couldn't be found."
-msgstr "Раздел не найден"
+msgstr "Раздел не найден."
 
-#: frame/commands/undo.cpp frame/window/notifications.cpp
-msgid "The value was copied to the new name but the old name couldn't be removed. Both names now exist."
-msgstr "Была создана копия параметра с новым наименованием, но параметр со старым наименованием не удалось удалить. Теперь существуют оба параметра"
+msgid ""
+"The value was copied to the new name but the old name couldn't be removed. "
+"Both names now exist."
+msgstr ""
+"Не удалось удалить параметр со старым наименованием, была создана копия "
+"параметра с новым наименованием. Теперь существуют оба параметра."
 
-#: frame/commands/workspace_commands.cpp
 msgid "Restart RegKit now to apply the language?"
-msgstr "Перезапустить RegKit, чтобы изменить язык?"
+msgstr "Перезапустить программу RegKit, чтобы изменить язык?"
 
-#: frame/commands/workspace_commands.cpp
 msgid "Language"
-msgstr "Изменить язык"
+msgstr "Изменение языка"
 
-#: frame/commands/workspace_commands.cpp
 msgid "Restart"
 msgstr "Перезапустить"
 
-#: frame/commands/workspace_commands.cpp
 msgid "Later"
 msgstr "Позже"
 
-#: frame/commands/workspace_commands.cpp
 msgid "A new RegKit window couldn't be opened."
-msgstr "Не удалось открыть новое окно RegKit"
+msgstr "Не удалось создать новое окно программы RegKit."
 
-# Restorer: Check
-#: frame/commands/workspace_commands.cpp
-msgid "Backup/restore mode needs the backup and restore privileges. Run RegKit elevated."
-msgstr "Для режима резервирования требуются привилегии резервного копирования и восстановления. Запустите RegKit с повышенными правами"
+# Restorer:
+msgid ""
+"Backup/restore mode needs the backup and restore privileges. Run RegKit "
+"elevated."
+msgstr ""
+"Для резервирования требуются привилегии резервного копирования и "
+"восстановления. Запустите программу RegKit с повышенными правами."
 
-#: frame/commands/workspace_commands.cpp
 msgid "Reset all settings and restart RegKit?"
-msgstr "Сбросить все настройки и перезапустить RegKit?"
+msgstr "Сбросить все настройки и перезапустить программу RegKit?"
 
-#: frame/commands/workspace_commands.cpp
 msgid "Reset Settings"
 msgstr "Сброс настроек"
 
-#: frame/commands/workspace_commands.cpp
 msgid "Reset"
 msgstr "Сбросить"
 
-#: frame/search/compare_command.cpp
 msgid "Invalid registry path."
-msgstr "Недопустимый маршрут реестра"
+msgstr "Недопустимый маршрут реестра."
 
-#: frame/search/compare_command.cpp frame/views/registry_sessions.cpp
-#: frame/window/message_routes.cpp launch/program.cpp
 msgid "Registry path not found."
-msgstr "Не удалось найти указанный раздел реестра"
+msgstr "Не удалось найти указанный раздел реестра."
 
-#: frame/search/compare_command.cpp frame/search/compare_dialog.cpp
-#: frame/sources/regfile_commands.cpp regfile/registry_transfer.cpp
-#: regfile/reg_file.cpp
 msgid "Failed to read registry file."
-msgstr "Не удалось прочитать файл реестра"
+msgstr "Не удалось получить данные файла реестра."
 
-#: frame/search/compare_command.cpp
 msgid "Failed to read the hive file."
-msgstr "Не удалось прочитать файл куста реестра"
+msgstr "Не удалось получить данные файла куста реестра."
 
-#: frame/search/compare_command.cpp
 msgid "Select a computer to compare against."
-msgstr "Укажите наименование компьютера для которого будет выполняться сравнение"
+msgstr ""
+"Укажите наименование компьютера, для которого будет выполняться сравнение."
 
-#: frame/search/compare_command.cpp
 msgid "Network registry path not found."
-msgstr "Маршрут к удалённому реестру не найден"
+msgstr "Маршрут к удалённому реестру не найден."
 
-#: frame/search/compare_command.cpp frame/search/search_window.cpp
 msgid "Skipped"
 msgstr "Пропущено"
 
-#: frame/search/compare_command.cpp search/compare.cpp
 msgid "Couldn't read the registry key."
-msgstr "Не удалось получить данные раздела реестра"
+msgstr "Не удалось получить данные раздела реестра."
 
-#: frame/search/compare_command.cpp
 msgid "Compare Registries..."
 msgstr "Сравнение реестров..."
 
-#: frame/search/compare_command.cpp
 msgid "Registry Comparison"
 msgstr "Сравнение реестров"
 
-#: frame/search/compare_dialog.cpp frame/tools/convert_dialog.cpp
 msgid "Reg File"
-msgstr "Файл .reg"
+msgstr "reg-файл"
 
-#: frame/search/compare_dialog.cpp search/search.cpp
 msgid "Network Registry"
 msgstr "Удалённый реестр"
 
-#: frame/search/compare_dialog.cpp
 msgid "Offline Hive"
-msgstr "Автономный куст реестра"
+msgstr "автономный куст реестра"
 
-#: frame/search/compare_dialog.cpp frame/tools/convert_dialog.cpp
 msgid "Registry"
-msgstr "Реестр"
+msgstr "реестр"
 
-#: frame/search/compare_dialog.cpp
 msgid "Computer:"
 msgstr "Компьютер:"
 
-#: frame/search/compare_dialog.cpp
 msgid "File:"
 msgstr "Файл:"
 
-#: frame/search/compare_dialog.cpp search/compare.cpp
 msgid "No registry keys were found in the .reg file."
-msgstr "В файле .reg не найдены разделы реестра"
+msgstr "В reg-файле не найдены разделы реестра."
 
-#: frame/search/compare_dialog.cpp frame/tools/convert_dialog.cpp
 msgid "Registry key is required."
-msgstr "Необходимо указать раздел реестра"
+msgstr "Требуется указать раздел реестра."
 
-#: frame/search/compare_dialog.cpp frame/views/registry_sessions.cpp
 msgid "Computer name is required."
-msgstr "Необходимо указать наименование компьютера"
+msgstr "Требуется указать наименование компьютера."
 
-#: frame/search/compare_dialog.cpp
 msgid "Hive file path is required."
-msgstr "Необходимо указать маршрут к файлу куста реестра"
+msgstr "Требуется указать маршрут к файлу куста реестра."
 
-#: frame/search/compare_dialog.cpp
 msgid "Registry file path is required."
-msgstr "Необходимо указать маршрут к файлу реестра"
+msgstr "Требуется указать маршрут к файлу реестра."
 
-#: frame/search/compare_dialog.cpp
 msgid "The selected key path wasn't found in the .reg file."
-msgstr "Выбранный маршрут к разделу не найден в файле .reg"
+msgstr "Указанный раздел не найден в reg-файле."
 
-#: frame/search/search_window.cpp
 #, c-format
 msgid "Results: %llu"
 msgstr "Результат: %llu"
 
-#: frame/search/search_window.cpp
 #, c-format
 msgid "Searching... Results: ~%llu | Scanned: %llu"
 msgstr "Поиск... Найдено: ~%llu | Просмотрено: %llu"
 
-#: frame/search/search_window.cpp
 #, c-format
 msgid "Searching... Results: ~%llu"
 msgstr "Поиск... Найдено: ~%llu"
 
-#: frame/search/search_window.cpp
 #, c-format
 msgid "Results: %llu (stopped)"
-msgstr "Найдено: %llu (поиск остановлен)"
+msgstr "Найдено: %llu (остановлено)"
 
-#: frame/search/search_window.cpp
 #, c-format
 msgid "Results: %llu (%.2fs)"
 msgstr "Найдено: %llu (%.2f сек.)"
 
-#: frame/search/search_window.cpp
 msgid "Loading"
 msgstr "Загрузка"
 
-#: frame/search/search_window.cpp
 msgid "The contents of this key couldn't be read."
-msgstr "Не удалось прочитать содержимое этого раздела"
+msgstr "Невозможно получить содержимое этого раздела."
 
-#: frame/search/search_window.cpp
 msgid "HKCU"
-msgstr ""
+msgstr "HKCU"
 
-#: frame/search/search_window.cpp
 msgid "HKCR"
-msgstr ""
+msgstr "HKCR"
 
-#: frame/search/search_window.cpp frame/window/notifications.cpp
 msgid "Backup/restore mode"
-msgstr "Резервное копирования/восстановления"
+msgstr "Резервное копирование/восстановление"
 
-#: frame/search/search_window.cpp
 #, c-format
 msgid "Keys: %d"
 msgstr "Разделов: %d"
 
-#: frame/search/search_window.cpp
 #, c-format
 msgid "Values: %d"
 msgstr "Параметров: %d"
 
-#: frame/search/search_window.cpp
 #, c-format
 msgid "Selected: %d"
 msgstr "Выбрано: %d"
 
-#: frame/search/search_window.cpp
 msgid "Starting key path wasn't found."
-msgstr "Не найден начальный раздел маршрута"
+msgstr "Не найден начальный раздел маршрута."
 
-#: frame/search/search_window.cpp
 msgid "Select a starting key first."
-msgstr "Требуется указать начальный раздел"
+msgstr "Требуется указать начальный раздел."
 
-#: frame/search/search_window.cpp
 msgid "No keys to search in the selected sources."
-msgstr "В выбранных источниках нет разделов для поиска"
+msgstr "В выбранных источниках нет разделов для поиска."
 
-#: frame/search/search_window.cpp
 msgid "Anomalies"
 msgstr "Аномалии"
 
-#: frame/search/search_window.cpp frame/views/history_workspace.cpp
-#: frame/window/menu_bar.cpp
 msgid "Find"
 msgstr "Найти"
 
-#: frame/search/search_window.cpp frame/window/menu_bar.cpp
 msgid "Read only mode is enabled."
-msgstr "Включен режим только чтение"
+msgstr "Включен режим «только чтение»."
 
-#: frame/search/search_window.cpp
 msgid "Replace is already running."
-msgstr "Замена уже выполняется"
+msgstr "Замена уже выполняется."
 
-#: frame/search/search_window.cpp
 msgid "Replaced"
 msgstr "Заменено"
 
-#: frame/search/search_window.cpp
 msgid "Failed"
 msgstr "Ошибок"
 
-#: frame/search/search_window.cpp
 msgid "cancelled"
 msgstr "отменено"
 
-#: frame/search/search_window.cpp
 msgid "Replace finished with some failures."
 msgstr "Замена завершена с ошибками"
 
-#: frame/search/search_window.cpp
 msgid "Skipped, the replacement isn't valid for the value type"
-msgstr "Пропущено, замена недопустима для этого типа параметра"
+msgstr "Пропущено, для этого типа параметра замена недопустима"
 
-#: frame/search/search_window.cpp
 msgid "Copied to the new name, the old name couldn't be removed"
-msgstr "Создана копия с новым наименованием, предыдущее наименование не было удалено"
+msgstr ""
+"Не удалось удалить прежнее наименование, создана копия с новым наименованием."
 
-#: frame/sources/default_commands.cpp
 msgid "Default file not found."
-msgstr "Файл значений пердустановок не найден"
+msgstr "Не удалось найти файл предустановок."
 
-#: frame/sources/default_commands.cpp
 msgid "Default entries"
-msgstr "Записи значений предустановок"
+msgstr "Записи предустановок"
 
-#: frame/sources/regfile_commands.cpp
 msgid "Failed to save registry file."
-msgstr "Не удалось сохранить файл реестра"
+msgstr "Не удалось сохранить файл реестра."
 
-#: frame/sources/regfile_commands.cpp
 msgid "Failed to export registry file."
-msgstr "Не удалось экспортировать файл реестра"
+msgstr "Не удалось экспортировать файл реестра."
 
-#: frame/sources/regfile_commands.cpp launch/program.cpp
 msgid "Registry file not found."
-msgstr "Файл реестра не найден"
+msgstr "Файл реестра не найден."
 
-#: frame/sources/regfile_commands.cpp
 msgid "Registry File"
 msgstr "Файл реестра"
 
-#: frame/sources/trace_commands.cpp
 msgid "Trace file not found."
-msgstr "Файл трассировки не найден"
+msgstr "Не удалось найти файл трассировки."
 
-#: frame/sources/trace_commands.cpp
 msgid "Trace entries"
-msgstr "Записи трассировки"
+msgstr "Записи трассировок"
 
-#: frame/tools/convert_dialog.cpp
 msgid "Input file path is required."
-msgstr "Требуется указать исходный файл"
+msgstr "Требуется указать исходный файл."
 
-#: frame/tools/convert_dialog.cpp
 msgid "Output file path is required."
-msgstr "Требуется указать выходной файл"
+msgstr "Требуется указать целевой файл."
 
-#: frame/tools/convert_dialog.cpp
 msgid "The output file can't be the input file."
-msgstr "Выходной файл не может совпадать с исходным"
+msgstr "Целевой файл не может совпадать с исходным."
 
-#: frame/tools/convert_dialog.cpp
 msgid "The output file couldn't be written."
-msgstr "Не удалось записать выходной файл"
+msgstr "Не удалось записать целевой файл."
 
-#: frame/tools/key_handles_window.cpp
 msgid "Scanning handles..."
 msgstr "Поиск дескрипторов..."
 
-#: frame/tools/key_handles_window.cpp
 msgid "Handles couldn't be enumerated."
 msgstr "Не удалось перечислить дескрипторы"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Handles"
 msgstr "Дескрипторов"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Shown"
 msgstr "Показано"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Inaccessible processes"
 msgstr "Недоступных процессов"
 
-#: frame/tools/key_handles_window.cpp
 msgid ""
-"Closing a handle owned by another process can make that process malfunction or crash.\n"
+"Closing a handle owned by another process can make that process malfunction "
+"or crash.\n"
 "\n"
-"Each handle is checked against a fresh snapshot first, but it can still be closed and reused between that check and the close."
+"Each handle is checked against a fresh snapshot first, but it can still be "
+"closed and reused between that check and the close."
 msgstr ""
-"Закрытие дескриптора другого процесса может нарушить работу или вызвать сбой этого процесса\n"
+"Закрытие дескриптора другого процесса может нарушить работу или вызвать сбой "
+"этого процесса.\n"
 "\n"
-"Каждый дескриптор сначала проверяется по свежему снимку, но между проверкой и закрытием он все равно может быть закрыт и использован повторно"
+"Каждый дескриптор сначала проверяется по свежему снимку, но между проверкой "
+"и закрытием он всё равно может быть закрыт и использован повторно."
 
-#: frame/tools/key_handles_window.cpp
 msgid "Close Handle"
 msgstr "Закрытие дескриптора"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Close Handles"
 msgstr "Закрытие дескрипторов"
 
-#: frame/tools/key_handles_window.cpp frame/tools/update_checker.cpp
-#: frame/window/lifetime.cpp
 msgid "Close"
 msgstr "Закрыть"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Not all handles were closed."
-msgstr "Не все дескрипторы были закрыты"
+msgstr "Закрыты не все дескрипторы."
 
-#: frame/tools/key_handles_window.cpp
 msgid "Cop&y Key"
-msgstr "Копировать &раздел"
+msgstr "Копиров&ать раздел"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Copy &Native Name"
-msgstr "Копировать &формат NT"
+msgstr "Коп&ировать формат NT"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Copy &Process"
-msgstr "Копировать &процесс"
+msgstr "К&опировать процесс"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Copy P&ID"
-msgstr "Копировать &PID"
+msgstr "Ко&пировать PID"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Copy &Handle"
-msgstr "Копировать &дескриптор"
+msgstr "Копировать д&ескриптор"
 
-#: frame/tools/key_handles_window.cpp
 msgid "C&opy Access"
-msgstr "&Копировать права доступа"
+msgstr "Копироват&ь права доступа"
 
-#: frame/tools/key_handles_window.cpp
 msgid "C&lose Handle..."
 msgstr "&Закрыть дескриптор..."
 
-#: frame/tools/key_handles_window.cpp
 msgid "Filter"
 msgstr "Фильтр"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Process"
 msgstr "Процесс"
 
-#: frame/tools/key_handles_window.cpp
 msgid "PID"
 msgstr "PID"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Handle"
 msgstr "Дескриптор"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Object Address"
 msgstr "Адрес объекта"
 
-#: frame/tools/key_handles_window.cpp frame/views/value_loading.cpp
-#: frame/window/notifications.cpp search/search.cpp
 msgid "Key"
 msgstr "Раздел"
 
-#: frame/tools/key_handles_window.cpp frame/tools/launch_bridge.cpp
 msgid "Access"
 msgstr "Права доступа"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Attributes"
 msgstr "Атрибуты"
 
-#: frame/tools/key_handles_window.cpp
 msgid "Native Name"
 msgstr "Формат NT"
 
-#: frame/tools/key_handles_window.cpp frame/window/lifetime.cpp
 msgid "Status Bar"
 msgstr "Строка состояния"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Not set (medium)"
 msgstr "Не задан (средний)"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Untrusted"
-msgstr "Недоверенный"
+msgstr "Ненадёжный"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Low"
 msgstr "Низкий"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Medium"
 msgstr "Средний"
 
-#: frame/tools/launch_bridge.cpp
 msgid "High"
 msgstr "Высокий"
 
-#: frame/tools/launch_bridge.cpp
 msgid "System"
-msgstr "Системная"
+msgstr "Системный"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Protected process"
-msgstr "Защищённый процесс"
+msgstr "Защищённый"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Don't virtualize"
 msgstr "Невиртуализируемый"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Don't silent fail"
 msgstr "Без тихой ошибки"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Recurse"
 msgstr "Рекурсивно"
 
-#: frame/tools/launch_bridge.cpp frame/views/value_loading.cpp ui/feedback.cpp
 msgid "Yes"
 msgstr "Да"
 
-#: frame/tools/launch_bridge.cpp frame/views/value_loading.cpp ui/feedback.cpp
 msgid "No"
 msgstr "Нет"
 
-#: frame/tools/launch_bridge.cpp registry/value_decoder.cpp
 msgid "None"
 msgstr "Нет"
 
-#: frame/tools/launch_bridge.cpp
 msgid "General"
 msgstr "Общие"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Contents"
 msgstr "Компоненты"
 
-#: frame/tools/launch_bridge.cpp registry/resource_list.cpp
 msgid "Flags"
 msgstr "Флаги"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Native name"
 msgstr "Формат NT"
 
-#: frame/tools/launch_bridge.cpp frame/views/browse_view.cpp
 msgid "Source"
 msgstr "Источник"
 
-#: frame/tools/launch_bridge.cpp frame/views/value_loading.cpp
 msgid "Machine"
 msgstr "Компьютер"
 
-#: frame/tools/launch_bridge.cpp frame/views/value_loading.cpp
 msgid "User"
 msgstr "Пользователь"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Hive file"
 msgstr "Файл куста"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Hive root"
 msgstr "Корневой раздел"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Class name"
 msgstr "Наименование класса"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Last write time"
 msgstr "Последнее изменение"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Last write time (UTC)"
 msgstr "Последнее изменение (UTC)"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Subkeys"
 msgstr "Подразделов"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Longest subkey name"
-msgstr "Наибольший подраздел"
+msgstr "Наибольшее название подраздела"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Longest class name"
-msgstr "Наибольший класс"
+msgstr "Наибольшее название класса"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Longest value name"
-msgstr "Наибольший параметр"
+msgstr "Наибольшее название параметра"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Largest value data"
 msgstr "Наибольшие данные"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Volatile"
 msgstr "Временный"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Symbolic link"
-msgstr "Символьная ссылка"
+msgstr "Символическая ссылка"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Not in the other view"
 msgstr "Нет в другой разрядности"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Shared by both views"
-msgstr "Общий для обоих разрядностей"
+msgstr "Общий для обеих разрядностей"
 
-#: frame/tools/launch_bridge.cpp
+# Restorer: 32-разрядное представление
 msgid "32-bit view"
-msgstr "32-разрядное представление"
+msgstr "32-разрядный"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Virtualization flags"
 msgstr "Флаги виртуализации"
 
-#: frame/tools/launch_bridge.cpp search/search.cpp
 msgid "Virtual store copy"
 msgstr "Виртуальная копия"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Virtualization state"
 msgstr "Виртуализация"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Candidate"
 msgstr "Кандидат"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Enabled"
 msgstr "Включено"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Virtual target"
 msgstr "Цель виртуализации"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Virtual store"
 msgstr "Виртуальное хранилище"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Virtual source"
 msgstr "Источник виртуализации"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Trusted key"
 msgstr "Доверенный раздел"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Layer"
 msgstr "Слой"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Tombstone"
 msgstr "Метка удаления"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Supersede local"
 msgstr "Заменить локальный слой"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Supersede tree"
 msgstr "Заменить дерево"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Class is inherited"
-msgstr "Класс унаследован"
+msgstr "Унаследованный класс"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Integrity level"
-msgstr "Уровень целостности"
+msgstr "Уровень доверия"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Key Information"
 msgstr "Свойства раздела"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Permissions..."
 msgstr "Разрешения..."
 
-#: frame/tools/launch_bridge.cpp
 msgid "Flag"
 msgstr "Флаг"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Run level"
-msgstr "Уровень запуска"
+msgstr "Запуск с правами"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Can write"
 msgstr "Разрешена запись"
 
-#: frame/tools/launch_bridge.cpp ui/feedback.cpp
 msgid "Error"
 msgstr "Ошибка"
 
-#: frame/tools/launch_bridge.cpp
 msgid "The resource data is malformed."
-msgstr "Данные ресурса повреждены"
+msgstr "Данные ресурса повреждены."
 
-#: frame/tools/launch_bridge.cpp
 msgid "Edit Value"
 msgstr "Редактирование параметра"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Edit Binary..."
 msgstr "Изменить двоичные данные..."
 
-#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to locate the executable path."
-msgstr "Не удалось определить маршрут к исполняемому файлу"
+msgstr "Не удалось определить маршрут к исполняемому файлу."
 
-#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "RegKit couldn't restore its own security context and must close now."
-msgstr "Программа RegKit будет закрыта так как не удалось восстановить собственный контекст безопасности"
+msgstr ""
+"Программа RegKit будет закрыта, так как не удалось восстановить собственный "
+"контекст безопасности."
 
-#: frame/tools/launch_bridge.cpp
 msgid "The current session couldn't be saved for the restart."
-msgstr "Не удалось сохранить текущий сеанс для перезапуска"
+msgstr "Не удалось сохранить текущий сеанс для перезапуска."
 
-#: frame/tools/launch_bridge.cpp
 msgid "RegKit couldn't be restarted."
-msgstr "Не удалось перезапустить программу RegKit"
+msgstr "Не удалось перезапустить программу RegKit."
 
-#: frame/tools/launch_bridge.cpp
 msgid "One or more cache files couldn't be removed."
-msgstr "Не удалось удалить один или несколько файлов кэша"
+msgstr "Не удалось удалить один или несколько сохранённых файлов."
 
-#: frame/tools/launch_bridge.cpp
 msgid "Failed to find the settings file."
-msgstr "Не удалось найти файл настроек"
+msgstr "Не удалось найти файл настроек."
 
-#: frame/tools/launch_bridge.cpp
 msgid "The settings file couldn't be reset."
-msgstr "Не удалось очистить файл настроек"
+msgstr "Не удалось очистить файл настроек."
 
-#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with administrator rights."
-msgstr "Не удалось перезапустить с правами администратора"
+msgstr "Не удалось перезапустить с правами администратора."
 
-#: frame/tools/launch_bridge.cpp
 msgid "Failed to restart as the signed-in user."
-msgstr "Не удалось перезапустить от имени вошедшего пользователя"
+msgstr "Не удалось перезапустить от имени зарегистрированного пользователя."
 
-#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Restart as SYSTEM"
 msgstr "Пользователя SYSTEM"
 
-#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with SYSTEM rights."
-msgstr "Не удалось перезапустить с правами SYSTEM"
+msgstr "Не удалось перезапустить с правами SYSTEM."
 
-#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to request SYSTEM restart."
-msgstr "Не удалось запросить перезапуск от имени пользователя SYSTEM"
+msgstr "Сбой при запросе на перезапуск от имени пользователя SYSTEM."
 
-#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Restart as TrustedInstaller"
 msgstr "Пользователя TrustedInstaller"
 
-#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to restart with TrustedInstaller rights."
 msgstr "Не удалось перезапустить с правами TrustedInstaller"
 
-#: frame/tools/launch_bridge.cpp launch/program.cpp
 msgid "Failed to request TrustedInstaller restart."
-msgstr "Не удалось запросить перезапуск от имени пользователя TrustedInstaller"
+msgstr "Сбой при запросе на перезапуск от имени пользователя TrustedInstaller."
 
-#: frame/tools/launch_bridge.cpp
 msgid ""
-"Replacing RegEdit registers this executable for every account on the machine.\n"
+"Replacing RegEdit registers this executable for every account on the "
+"machine.\n"
 "\n"
-"RegKit is running from a location that non administrators can write to, so a program without administrator rights could replace it and run whenever anyone starts RegEdit. Install RegKit for all users first, or move it somewhere only administrators can write.\n"
+"RegKit is running from a location that non administrators can write to, so a "
+"program without administrator rights could replace it and run whenever "
+"anyone starts RegEdit. Install RegKit for all users first, or move it "
+"somewhere only administrators can write.\n"
 "\n"
 "Replace anyway to apply it from this location."
 msgstr ""
-"При замене RegEdit будет выполнена регистрация указанного исполняемого файла для всех учётных записей на компьютере.\n"
+"При замене программы RegEdit будет выполнена регистрация указанного "
+"исполняемого файла для всех учётных записей в компьютере.\n"
 "\n"
-"Программа RegKit запущена из каталога доступного для записи пользователям без административных привилегий. Это нарушает безопасность системы так как может быть произведена подмена исполняемого файла сторонней программой и она будет выполнятся всякий раз при запуске RegEdit. Переустановите RegKit в каталог \"Program Files\" или переместите в такой каталог, где запись разрешена только администраторам\n"
+"Программа RegKit запущена из каталога, доступного для записи пользователям "
+"без административных привилегий. Это нарушает безопасность системы, так как "
+"может быть произведена подмена исполняемого файла сторонней программой и она "
+"будет выполнятся всякий раз при запуске программы RegEdit. Установите "
+"программу RegKit в каталог «Program Files» или переместите в каталог, где "
+"запись разрешена только администраторам.\n"
 "\n"
-"При нажатии кнопки \"Всё равно заменить\" будет выполнена замена на исполняемый файл из указанного каталога"
+"При нажатии кнопки «Всё равно заменить» будет выполнена замена на "
+"исполняемый файл из указанного каталога."
 
-#: frame/tools/launch_bridge.cpp
 msgid "Replace RegEdit"
-msgstr "Замена RegEdit"
+msgstr "Замена программы RegEdit"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Replace Anyway"
 msgstr "Всё равно заменить"
 
-#: frame/tools/launch_bridge.cpp
 msgid ""
 "RegEdit already has a Debugger entry owned by another program.\n"
 "\n"
 "Override the existing entry?"
 msgstr ""
-"Для RegEdit уже задана запись Debugger, принадлежащая другой программе\n"
+"Для программы RegEdit уже задана запись Debugger, принадлежащая другой "
+"программе.\n"
 "\n"
 "Переопределить существующую запись?"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Override"
 msgstr "Переопределить"
 
-#: frame/tools/launch_bridge.cpp
 msgid "Hive files aren't available for remote registries."
-msgstr "Файлы кустов недоступны для удалённых реестров"
+msgstr "Файлы кустов недоступны для удалённых реестров."
 
-#: frame/tools/launch_bridge.cpp
 msgid "No hive file was found for this key."
-msgstr "Для этого раздела не найден файл куста реестра"
+msgstr "Для этого раздела не найден файл куста реестра."
 
-#: frame/tools/update_checker.cpp
 msgid "The release location isn't a trusted RegKit download address."
-msgstr "Адрес страницы версий программы RegKit не является доверенным адресом загрузки"
+msgstr ""
+"Адрес страницы версий программы RegKit не является доверенным адресом "
+"загрузки."
 
-#: frame/tools/update_checker.cpp
 msgid "The download is larger than RegKit accepts."
-msgstr "Размер загружаемого файла превышает допустимое значение"
+msgstr "Превышен допустимый размер загружаемого файла."
 
-#: frame/tools/update_checker.cpp
 msgid "The release didn't publish a checksum for this download."
-msgstr "Для этого версии программы не опубликована контрольная сумма файла"
+msgstr "Для этой версии программы не опубликована контрольная сумма файла."
 
-#: frame/tools/update_checker.cpp
 msgid "The downloaded file doesn't match the release checksum."
-msgstr "Загруженная версия программы не соответствует контрольной сумме файла"
+msgstr "Загруженная версия программы не соответствует контрольной сумме файла."
 
-#: frame/tools/update_checker.cpp
 msgid "The response didn't contain a release."
-msgstr "В полученном ответе сервера отсутствуют данные о версии программы"
+msgstr "В полученном ответе сервера отсутствуют данные о версии программы."
 
-#: frame/tools/update_checker.cpp
 msgid "Failed to reach the update server."
-msgstr "Не удалось подключиться к серверу обновлений"
+msgstr "Не удалось подключиться к серверу обновлений."
 
-#: frame/tools/update_checker.cpp
 msgid "The update couldn't be downloaded."
-msgstr "Не удалось загрузить обновление"
+msgstr "Не удалось загрузить обновление."
 
-#: frame/tools/update_checker.cpp
 msgid "Downloading"
 msgstr "Загрузка"
 
-#: frame/tools/update_checker.cpp
 msgid "RegKit is up to date."
-msgstr "Установлена последняя версия программы RegKit"
+msgstr "Установлена последняя версия программы RegKit."
 
-#: frame/tools/update_checker.cpp
 msgid "installed"
 msgstr "установлено"
 
-#: frame/tools/update_checker.cpp
 msgid "No download was found for this build. Open the release page?"
-msgstr "Для этой сборки не найден файл для загрузки. Открыть страницу версии?"
+msgstr ""
+"Для этой сборки не найдены доступные загрузки. Открыть страницу с версиями "
+"программы?"
 
-#: frame/tools/update_checker.cpp
-msgid "Download and install it now? RegKit restarts once the update is installed."
-msgstr "Выполнить загрузку и установку? Программа RegKit будет перезапущена после установки обновления"
+msgid ""
+"Download and install it now? RegKit restarts once the update is installed."
+msgstr ""
+"Выполнить загрузку и установку? Программа RegKit будет перезапущена после "
+"установки обновления."
 
-#: frame/tools/update_checker.cpp
 msgid "Download the new portable version?"
-msgstr "Загрузить новую портативную версию?"
+msgstr "Загрузить новую переносимую версию?"
 
-#: frame/tools/update_checker.cpp
 msgid "Update"
 msgstr "Обновить"
 
-#: frame/tools/update_checker.cpp
 msgid "Download Portable"
-msgstr "Загрузить портативную версию"
+msgstr "Загрузить"
 
-#: frame/tools/update_checker.cpp
 msgid "Open Release"
-msgstr "Открыть страницу версии"
+msgstr "Описание версии"
 
-#: frame/tools/update_checker.cpp
 msgid "Update Available"
 msgstr "Обновление программы"
 
-#: frame/tools/update_checker.cpp
-msgid "The downloaded setup changed after RegKit verified it and wasn't started."
-msgstr "Запуск установщика отменён так как он был изменён уже после проверки программой RegKit"
+msgid ""
+"The downloaded setup changed after RegKit verified it and wasn't started."
+msgstr ""
+"Запуск установщика отменён, так как он был изменён уже после проверки "
+"программой RegKit."
 
-#: frame/tools/update_checker.cpp
 msgid "The setup couldn't be started."
-msgstr "Не удалось запустить установщик"
+msgstr "Не удалось запустить установщик."
 
-#: frame/tools/update_checker.cpp
 msgid "Exit code"
 msgstr "Код завершения"
 
-#: frame/tools/update_checker.cpp
 msgid "The update couldn't be installed."
-msgstr "Не удалось установить обновление"
+msgstr "Не удалось установить обновление."
 
-#: frame/views/browse_view.cpp registry/resource_list.cpp
 msgid "Type"
 msgstr "Тип"
 
-#: frame/views/browse_view.cpp registry/resource_list.cpp search/search.cpp
 msgid "Data"
 msgstr "Данные"
 
-#: frame/views/browse_view.cpp frame/window/menu_bar.cpp
-#: registry/resource_list.cpp search/search.cpp
 msgid "Default"
 msgstr "Предустановленные"
 
-#: frame/views/browse_view.cpp
 msgid "Read on boot"
 msgstr "Данные трассировки"
 
-#: frame/views/browse_view.cpp registry/resource_list.cpp
 msgid "Size"
 msgstr "Размер"
 
-#: frame/views/browse_view.cpp
 msgid "Date Modified"
 msgstr "Дата изменения"
 
-#: frame/views/browse_view.cpp
 msgid "Details"
 msgstr "Подробности"
 
-#: frame/views/browse_view.cpp search/search.cpp
 msgid "Comment"
 msgstr "Комментарий"
 
-#: frame/views/browse_view.cpp
 msgid "Time"
-msgstr "Время"
+msgstr "Дата и время события"
 
-#: frame/views/browse_view.cpp
 msgid "Action"
 msgstr "Действие"
 
-#: frame/views/browse_view.cpp
 msgid "Old Data"
 msgstr "Старые данные"
 
-#: frame/views/browse_view.cpp
 msgid "New Data"
 msgstr "Новые данные"
 
-#: frame/views/browse_view.cpp
 msgid "Path"
 msgstr "Маршрут"
 
-#: frame/views/browse_view.cpp
 msgid "First Entry"
 msgstr "Первая запись"
 
-#: frame/views/browse_view.cpp
 msgid "Second Entry"
 msgstr "Вторая запись"
 
-#: frame/views/browse_view.cpp
 msgid "Result"
 msgstr "Результат"
 
-#: frame/views/history_workspace.cpp
 msgid "Revert this change with elevated rights?"
-msgstr "Восстановить это изменение с повышенными правами?"
+msgstr "Восстановить это изменение с повышением прав?"
 
-#: frame/views/history_workspace.cpp
 msgid "Revert"
 msgstr "Восстановить"
 
-#: frame/views/history_workspace.cpp
 msgid "Revert Key Creation"
 msgstr "Отменить создание раздела"
 
-#: frame/views/history_workspace.cpp
 msgid "Failed to revert history entry."
-msgstr "Не удалось восстановить данные на которые ссылается запись журнала"
+msgstr "Не удалось восстановить данные, на которые ссылается запись журнала."
 
-#: frame/views/history_workspace.cpp
-msgid "The history couldn't be written to disk. It is kept for this session only."
-msgstr "Не удалось записать файл журнала на диск. После завершения сеанса записи будут утеряны"
+msgid ""
+"The history couldn't be written to disk. It is kept for this session only."
+msgstr ""
+"Не удалось записать файл журнала на диск. После завершения сеанса записи "
+"будут утеряны."
 
-#: frame/views/history_workspace.cpp frame/views/registry_sessions.cpp
-#: frame/views/tab_lists.cpp frame/window/menu_bar.cpp search/search.cpp
 msgid "Local Registry"
 msgstr "Локальный реестр"
 
-#: frame/views/history_workspace.cpp
 msgid "Comments were imported but couldn't be saved."
-msgstr "Комментарии импортированы, но их не удалось сохранить"
+msgstr "Комментарии импортированы, но их не удалось сохранить."
 
-#: frame/views/history_workspace.cpp
 msgid "Different types"
 msgstr "Различающиеся типы"
 
-#: frame/views/history_workspace.cpp
 msgid "Different lengths"
 msgstr "Различающиеся размеры"
 
-#: frame/views/history_workspace.cpp
 msgid "The comment couldn't be saved."
-msgstr "Не удалось сохранить комментарий"
+msgstr "Не удалось сохранить комментарий."
 
-#: frame/views/registry_sessions.cpp search/search.cpp
 msgid "Local Registry (32-bit)"
 msgstr "Локальный реестр (32-bit)"
 
-#: frame/views/registry_sessions.cpp
 msgid ""
 "The offline registry has unsaved changes.\n"
 "Save before switching?"
@@ -2115,128 +1697,113 @@ msgstr ""
 "В автономном реестре есть несохранённые изменения.\n"
 "Сохранить перед переключением?"
 
-#: frame/views/registry_sessions.cpp
 msgid "Connect to Remote Registry"
 msgstr "Подключиться к удалённому реестру"
 
-#: frame/views/registry_sessions.cpp
 msgid "Computer name (e.g. \\\\MACHINE):"
 msgstr "Наименование компьютера (например, \\\\MACHINE):"
 
-#: frame/views/registry_sessions.cpp frame/window/menu_bar.cpp
 msgid "Remote Registry"
 msgstr "Удалённый реестр"
 
-#: frame/views/registry_sessions.cpp
 msgid "Connected to HKEY_LOCAL_MACHINE, but HKEY_USERS was unavailable."
-msgstr "Подключение к разделу HKEY_LOCAL_MACHINE установлено, но раздел HKEY_USERS недоступен"
+msgstr ""
+"Подключение к разделу HKEY_LOCAL_MACHINE установлено, но раздел HKEY_USERS "
+"недоступен."
 
-#: frame/views/registry_sessions.cpp
-msgid "The Remote Registry service on this computer is disabled. Set it to start manually and start it?"
-msgstr "Служба удалённого реестра на этом компьютере отключена. Задать ручной запуск и запустить её?"
+msgid ""
+"The Remote Registry service on this computer is disabled. Set it to start "
+"manually and start it?"
+msgstr ""
+"Служба удалённого реестра на этом компьютере отключена. Задать ручной запуск "
+"и запустить её?"
 
-#: frame/views/registry_sessions.cpp
 msgid "The Remote Registry service on this computer is stopped. Start it?"
-msgstr "Служба удалённого реестра на этом компьютере остановлена. Запустить её?"
+msgstr ""
+"Служба удалённого реестра на этом компьютере остановлена. Запустить её?"
 
-#: frame/views/registry_sessions.cpp
 msgid "Start"
 msgstr "Запустить"
 
-#: frame/views/registry_sessions.cpp
 msgid "The Remote Registry service couldn't be started."
-msgstr "Не удалось запустить службу удалённого реестра"
+msgstr "Не удалось запустить службу удалённого реестра."
 
-#: frame/views/registry_sessions.cpp
-msgid "RegKit started the Remote Registry service on this computer. Stop it and disable it again?"
-msgstr "Программа RegKit запустила службу удалённого реестра на этом компьютере. Остановить и отключить её?"
+msgid ""
+"RegKit started the Remote Registry service on this computer. Stop it and "
+"disable it again?"
+msgstr ""
+"Программа RegKit запустила службу удалённого реестра на этом компьютере. "
+"Остановить и отключить её?"
 
-#: frame/views/registry_sessions.cpp
-msgid "RegKit started the Remote Registry service on this computer. Stop it again?"
-msgstr "Программа RegKit запустила службу удалённого реестра на этом компьютере. Остановить её?"
+msgid ""
+"RegKit started the Remote Registry service on this computer. Stop it again?"
+msgstr ""
+"Программа RegKit запустила службу удалённого реестра на этом компьютере. "
+"Остановить её?"
 
-#: frame/views/registry_sessions.cpp
 msgid "Stop"
 msgstr "Остановить"
 
-#: frame/views/registry_sessions.cpp
 msgid "Keep Running"
 msgstr "Оставить работающей"
 
-#: frame/views/registry_sessions.cpp
 msgid "The Remote Registry service couldn't be stopped."
-msgstr "Не удалось остановить службу удалённого реестра"
+msgstr "Не удалось остановить службу удалённого реестра."
 
-#: frame/views/registry_sessions.cpp
-msgid "Load the offline registry from a single hive file, or from a folder of hives?"
-msgstr "Загрузить автономный реестр из единичного файла куста или из папки с файлами кустов?"
+msgid ""
+"Load the offline registry from a single hive file, or from a folder of hives?"
+msgstr ""
+"Загрузить автономный реестр из единичного файла куста или из каталога с "
+"файлами кустов?"
 
-#: frame/views/registry_sessions.cpp frame/window/menu_bar.cpp
 msgid "Offline Registry"
 msgstr "Автономный реестр"
 
-#: frame/views/registry_sessions.cpp
 msgid "Hive File"
 msgstr "Файл куста"
 
-#: frame/views/registry_sessions.cpp
 msgid "Folder"
-msgstr "Папка"
+msgstr "Каталог"
 
-#: frame/views/registry_sessions.cpp
 msgid "The selected folder doesn't contain a registry hive file."
-msgstr "Указанный каталог не содержит файлы кустов реестра"
+msgstr "В указанном каталоге отсутствуют файлы кустов реестра."
 
-#: frame/views/registry_sessions.cpp
 msgid "No offline registry is loaded."
-msgstr "Автономный реестр не загружен"
+msgstr "Не удалось загрузить автономный реестр."
 
-#: frame/views/registry_sessions.cpp
 msgid "Failed to resolve offline hive paths for saving."
-msgstr "Не удалось определить маршрут к автономным кустам для сохранения"
+msgstr "Не удалось определить маршрут к автономным кустам для сохранения."
 
-#: frame/views/registry_sessions.cpp
 msgid "Failed to resolve offline hive path for saving."
-msgstr "Не удалось определить маршрут к автономному кусту для сохранения"
+msgstr "Не удалось определить маршрут к автономному кусту для сохранения."
 
-#: frame/views/registry_sessions.cpp
 msgid "Failed to save offline hive."
-msgstr "Не удалось сохранить автономный куст"
+msgstr "Не удалось сохранить автономный куст."
 
-#: frame/views/registry_sessions.cpp
 msgid "The key was opened, but it doesn't contain this value:"
-msgstr "Раздел открыт, но в нем нет этого параметра:"
+msgstr "Раздел открыт, но в нём нет этого параметра:"
 
-#: frame/views/registry_sessions.cpp
 msgid "Value Not Found"
-msgstr "Параметр не найден"
+msgstr "Не найден параметр"
 
-#: frame/views/registry_sessions.cpp frame/window/notifications.cpp
-#: ui/feedback.cpp
 msgid "OK"
 msgstr "ОК"
 
-#: frame/views/registry_sessions.cpp
 msgid "The registry key doesn't exist:"
 msgstr "Раздел реестра не существует:"
 
-#: frame/views/registry_sessions.cpp
 msgid "Registry Path Not Found"
 msgstr "По указанному маршруту не найден раздел реестра"
 
-#: frame/views/registry_sessions.cpp
 msgid "Go to Nearest Key"
 msgstr "Перейти в ближайший раздел"
 
-#: frame/views/registry_sessions.cpp
 msgid "Create Key"
 msgstr "Создать раздел"
 
-#: frame/views/registry_sessions.cpp
 msgid "Failed to create registry key."
-msgstr "Не удалось создать раздел реестра"
+msgstr "Не удалось создать раздел реестра."
 
-#: frame/views/tab_lists.cpp
 msgid ""
 "The registry file has unsaved changes.\n"
 "Save before closing the tab?"
@@ -2244,15 +1811,12 @@ msgstr ""
 "В файле реестра есть несохранённые изменения.\n"
 "Сохранить перед закрытием вкладки?"
 
-#: frame/views/tab_lists.cpp
 msgid "Unsaved Changes"
 msgstr "Несохранённые изменения"
 
-#: frame/views/tab_lists.cpp
 msgid "Don't Save"
 msgstr "Не сохранять"
 
-#: frame/views/tab_lists.cpp
 msgid ""
 "The offline registry has unsaved changes.\n"
 "Save before closing the tab?"
@@ -2260,1694 +1824,1303 @@ msgstr ""
 "В автономном реестре есть несохранённые изменения.\n"
 "Сохранить перед закрытием вкладки?"
 
-#: frame/views/value_loading.cpp frame/window/menu_bar.cpp
 msgid "Trace"
 msgstr "Трассировка"
 
-#: frame/views/value_loading.cpp frame/window/menu_bar.cpp search/compare.cpp
 msgid "(Missing)"
 msgstr "(отсутствует)"
 
-#: frame/views/value_loading.cpp
 msgid "Link"
 msgstr "Ссылка"
 
-#: frame/views/value_loading.cpp
 msgid "Volatile Key"
 msgstr "Временный раздел"
 
-#: frame/views/value_loading.cpp
 msgid "(value not set)"
 msgstr "(значение не задано)"
 
-#: frame/window/appearance.cpp
 msgid "Preset name:"
 msgstr "Название настройки темы:"
 
-#: frame/window/appearance.cpp
 msgid "Preset name can't be empty."
 msgstr "Требуется указать название настройки темы"
 
-#: frame/window/appearance.cpp
 msgid "Delete Preset"
 msgstr "Удаление настройки темы"
 
-#: frame/window/appearance.cpp
 msgid "Failed to import theme presets."
 msgstr "Не удалось импортировать настройки темы"
 
-#: frame/window/appearance.cpp
 msgid "Failed to export theme presets."
 msgstr "Не удалось экспортировать настройки темы"
 
-#: frame/window/events.cpp registry/key_access.cpp
 msgid "Administrator"
 msgstr "Администратор"
 
-#: frame/window/events.cpp
 msgid "Paste and &Go"
 msgstr "Вставить &и перейти"
 
-#: frame/window/lifetime.cpp
-msgid "SYSTEM has no Desktop folder, so Windows reports \"Location is not available\" in file dialogs. Create this folder to prevent the error?"
-msgstr "У SYSTEM нет папки Desktop, поэтому Windows сообщает \"Расположение недоступно\" в диалогах работы с файлами. Создать эту папку, чтобы предотвратить ошибку?"
+msgid ""
+"SYSTEM has no Desktop folder, so Windows reports \"Location is not "
+"available\" in file dialogs. Create this folder to prevent the error?"
+msgstr ""
+"У пользователя SYSTEM нет каталога Desktop, поэтому Windows сообщает "
+"«Расположение недоступно» в диалогах работы с файлами. Создать этот каталог, "
+"чтобы предотвратить ошибку?"
 
-#: frame/window/lifetime.cpp
 msgid "Create Folder"
-msgstr "Создание папки"
+msgstr "Создание каталога"
 
-#: frame/window/lifetime.cpp
 msgid "Toolbar"
 msgstr "Панель инструментов"
 
-#: frame/window/lifetime.cpp
 msgid "Go"
 msgstr "Перейти"
 
-#: frame/window/lifetime.cpp
 msgid "Tabs"
 msgstr "Вкладки"
 
-#: frame/window/lifetime.cpp
 msgid "Key Tree"
 msgstr "Дерево разделов"
 
-#: frame/window/lifetime.cpp
 msgid "Clear Filter"
-msgstr "Сбросить фильтр"
+msgstr "Очистить фильтр"
 
-#: frame/window/lifetime.cpp
 msgid "History"
 msgstr "Журнал"
 
-#: frame/window/lifetime.cpp
 msgid "Key Tree Splitter"
 msgstr "Разделитель дерева разделов"
 
-#: frame/window/lifetime.cpp
 msgid "History Splitter"
 msgstr "Разделитель журнала"
 
-#: frame/window/lifetime.cpp
-msgid "The comments file couldn't be read, so comment changes won't be saved until it is fixed or removed."
-msgstr "Недоступно сохранение комментариев из‐за сбоя при считывании файла комментариев. Требуется исправить или удалить файл"
+msgid ""
+"The comments file couldn't be read, so comment changes won't be saved until "
+"it is fixed or removed."
+msgstr ""
+"Недоступно сохранение комментариев из‐за сбоя при считывании файла "
+"комментариев. Требуется исправить или удалить файл."
 
-#: frame/window/lifetime.cpp
 msgid "The open tabs couldn't be saved for the next session."
-msgstr "Не удалось сохранить открытые вкладки для следующего сеанса"
+msgstr "Не удалось сохранить открытые вкладки для следующего сеанса."
 
-#: frame/window/menu_bar.cpp ui/feedback.cpp
 msgid "Replace"
 msgstr "Заменить"
 
-#: frame/window/menu_bar.cpp
 msgid "Undo"
 msgstr "Отменить"
 
-#: frame/window/menu_bar.cpp
 msgid "Redo"
 msgstr "Вернуть"
 
-#: frame/window/menu_bar.cpp ui/feedback.cpp
 msgid "Copy"
 msgstr "Копировать"
 
-#: frame/window/menu_bar.cpp
 msgid "Paste"
 msgstr "Вставить"
 
-#: frame/window/menu_bar.cpp ui/feedback.cpp
 msgid "Delete"
 msgstr "Удалить"
 
-#: frame/window/menu_bar.cpp
 msgid "Refresh"
 msgstr "Обновить"
 
-#: frame/window/menu_bar.cpp
 msgid "Back"
 msgstr "К предыдущему разделу"
 
-#: frame/window/menu_bar.cpp
 msgid "Forward"
 msgstr "К прежнему разделу"
 
-#: frame/window/menu_bar.cpp
 msgid "Up"
 msgstr "На один уровень вверх"
 
-#: frame/window/menu_bar.cpp
 msgid "Open .reg &File..."
 msgstr "&Открыть файл .reg..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Save"
 msgstr "&Сохранить"
 
-#: frame/window/menu_bar.cpp
 msgid "&Import..."
 msgstr "&Импорт..."
 
-#: frame/window/menu_bar.cpp
 msgid "I&mport Comments..."
 msgstr "И&мпорт комментариев..."
 
-#: frame/window/menu_bar.cpp
 msgid "Export &Comments..."
-msgstr "Экспорт &комментариев..."
+msgstr "Экс&порт комментариев..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Local Registry"
 msgstr "&Локальный реестр"
 
-#: frame/window/menu_bar.cpp
 msgid "Local Registry (&32-bit)"
 msgstr "Локальный реестр (&32-bit)"
 
-#: frame/window/menu_bar.cpp
 msgid "&Remote Registry..."
 msgstr "&Удалённый реестр..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Offline Registry..."
-msgstr "Автономный &реестр..."
+msgstr "&Автономный реестр..."
 
-#: frame/window/menu_bar.cpp
 msgid "S&ave Offline Hive..."
-msgstr "Сохранить &автономный куст..."
+msgstr "Сохранить автономный &куст..."
 
-#: frame/window/menu_bar.cpp
 msgid "Load &Hive..."
 msgstr "&Загрузить куст..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Unload Hive..."
-msgstr "В&ыгрузить куст..."
+msgstr "Вы&грузить куст..."
 
-#: frame/window/menu_bar.cpp
 msgid "E&xit"
-msgstr "&Выход"
+msgstr "В&ыход"
 
-#: frame/window/menu_bar.cpp
 msgid "&File"
 msgstr "&Файл"
 
-#: frame/window/menu_bar.cpp
 msgid "&Undo"
-msgstr "От&менить"
+msgstr "&Отменить"
 
-#: frame/window/menu_bar.cpp
 msgid "&Redo"
-msgstr "&Вернуть"
+msgstr "В&ернуть"
 
-#: frame/window/menu_bar.cpp
 msgid "Key &Name"
-msgstr "&Наименование раздела"
+msgstr "Наз&вание раздела"
 
-#: frame/window/menu_bar.cpp
 msgid "Key &Path"
 msgstr "&Маршрут раздела"
 
-#: frame/window/menu_bar.cpp
 msgid "&Key Path As"
-msgstr "Маршрут &раздела как"
+msgstr "Маршрут раздела к&ак"
 
-#: frame/window/menu_bar.cpp
 msgid "&Value Name"
-msgstr "Название &параметра"
+msgstr "&Название параметра"
 
-#: frame/window/menu_bar.cpp
 msgid "Value &Data"
 msgstr "&Значение параметра"
 
-#: frame/window/menu_bar.cpp
 msgid "Copy &Other"
-msgstr "Про&чее копирование"
+msgstr "Копировать дру&гое"
 
-#: frame/window/menu_bar.cpp
 msgid "&Paste"
-msgstr "Вс&тавить"
+msgstr "&Вставить"
 
-#: frame/window/menu_bar.cpp
 msgid "Select &All"
 msgstr "Выде&лить все"
 
-#: frame/window/menu_bar.cpp
 msgid "Inv&ert Selection"
-msgstr "&Обратить выделение"
+msgstr "Обратить в&ыделение"
 
-#: frame/window/menu_bar.cpp
 msgid "&Find..."
 msgstr "&Найти..."
 
-#: frame/window/menu_bar.cpp
 msgid "Rep&lace..."
 msgstr "&Заменить..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Go To..."
 msgstr "&Перейти..."
 
-#: frame/window/menu_bar.cpp
 msgid "Go to Other View"
 msgstr "Перейти к другой разрядности"
 
-#: frame/window/menu_bar.cpp
 msgid "Go to Virtual Store Copy"
 msgstr "Перейти к виртуальной копии"
 
-#: frame/window/menu_bar.cpp
 msgid "Go to Global Key"
 msgstr "Перейти к исходному разделу"
 
-#: frame/window/menu_bar.cpp
 msgid "&Edit"
 msgstr "&Правка"
 
-#: frame/window/menu_bar.cpp
 msgid "&Auto Refresh"
 msgstr "Авт&ообновление"
 
-#: frame/window/menu_bar.cpp
 msgid "T&oolbar"
 msgstr "Па&нель инструментов"
 
-#: frame/window/menu_bar.cpp
 msgid "A&ddress Bar"
 msgstr "&Адресная строка"
 
-#: frame/window/menu_bar.cpp
 msgid "Filter &Bar"
-msgstr "Панель &фильтра"
+msgstr "Панел&ь фильтра"
 
-#: frame/window/menu_bar.cpp
 msgid "&Tabs"
 msgstr "&Вкладки"
 
-#: frame/window/menu_bar.cpp
 msgid "&Status Bar"
 msgstr "&Строка состояния"
 
-#: frame/window/menu_bar.cpp
 msgid "&Key Tree"
-msgstr "&Дерево разделов"
+msgstr "Д&ерево разделов"
 
-#: frame/window/menu_bar.cpp
 msgid "&History"
 msgstr "&Журнал"
 
-#: frame/window/menu_bar.cpp
 msgid "Keys &in List"
 msgstr "&Разделы в списке"
 
-#: frame/window/menu_bar.cpp
 msgid "&Grid Lines"
-msgstr "С&етка"
+msgstr "Се&тка"
 
-#: frame/window/menu_bar.cpp
 msgid "Sim&ulated Keys"
 msgstr "&Имитируемые разделы"
 
-#: frame/window/menu_bar.cpp
 msgid "Sho&w Extra Root Keys"
-msgstr "Спе&циальные разделы"
+msgstr "С&пециальные разделы"
 
-#: frame/window/menu_bar.cpp
 msgid "&System"
 msgstr "&Системная"
 
-#: frame/window/menu_bar.cpp
 msgid "&Light"
 msgstr "С&ветлая"
 
-#: frame/window/menu_bar.cpp
 msgid "&Dark"
 msgstr "&Тёмная"
 
-#: frame/window/menu_bar.cpp
 msgid "C&ustom"
 msgstr "С&обственные"
 
-#: frame/window/menu_bar.cpp
 msgid "&Theme Presets..."
 msgstr "&Установленные темы..."
 
-#: frame/window/menu_bar.cpp
 msgid "Th&eme"
 msgstr "&Тема"
 
-#: frame/window/menu_bar.cpp
 msgid "&Classic"
 msgstr "&Классические"
 
-#: frame/window/menu_bar.cpp
 msgid "&Phosphor"
-msgstr ""
+msgstr "Phosphor"
 
-#: frame/window/menu_bar.cpp
 msgid "Ico&ns"
 msgstr "&Значки"
 
-#: frame/window/menu_bar.cpp
 msgid "&Automatic"
-msgstr "&Автоматически"
+msgstr "&Автоопределение"
 
-#: frame/window/menu_bar.cpp
 msgid "&Language"
-msgstr "Изменить &язык"
+msgstr "Изменение &языка"
 
-#: frame/window/menu_bar.cpp
 msgid "&Font..."
 msgstr "&Шрифт..."
 
-#: frame/window/menu_bar.cpp
 msgid "Simple &Mode"
-msgstr "&Простой режим"
+msgstr "&Упрощённый режим"
 
-#: frame/window/menu_bar.cpp
 msgid "&View"
-msgstr "В&ид"
+msgstr "&Вид"
 
-#: frame/window/menu_bar.cpp
 msgid "Read Only &Mode"
-msgstr "&Режим только чтение"
+msgstr "&Режим «только чтение»"
 
-#: frame/window/menu_bar.cpp
 msgid "Use &Backup/Restore Privileges"
-msgstr "Права резервного &копирования/восстановления"
+msgstr "Права резервно&го копирования/восстановления"
 
-#: frame/window/menu_bar.cpp
 msgid "&Restart"
 msgstr "&Перезапустить"
 
-#: frame/window/menu_bar.cpp
 msgid "Restart as &User"
 msgstr "&Текущего пользователя"
 
-#: frame/window/menu_bar.cpp
 msgid "R&estart as Admin"
 msgstr "&Администратора"
 
-#: frame/window/menu_bar.cpp
 msgid "Restart as &SYSTEM"
-msgstr "Пользователя &SYSTEM"
+msgstr "Пол&ьзователя SYSTEM"
 
-#: frame/window/menu_bar.cpp
 msgid "Restart as &TrustedInstaller"
-msgstr "Пользователя &TrustedInstaller"
+msgstr "Пользовател&я TrustedInstaller"
 
-#: frame/window/menu_bar.cpp
 msgid "A&lways Run as Admin"
 msgstr "&Всегда запускать с правами администратора"
 
-#: frame/window/menu_bar.cpp
 msgid "&Always Run as SYSTEM"
 msgstr "Всегда запускать &с правами SYSTEM"
 
-#: frame/window/menu_bar.cpp
 msgid "Al&ways Run as TrustedInstaller"
 msgstr "Всегда &запускать с правами TrustedInstaller"
 
-#: frame/window/menu_bar.cpp
 msgid "&HKCU Follows Signed-In User"
 msgstr "&Отображать HKCU текущего пользователя"
 
-#: frame/window/menu_bar.cpp
 msgid "R&un As"
 msgstr "&Перезапуск с правами"
 
-#: frame/window/menu_bar.cpp
 msgid "&Replace RegEdit"
-msgstr "Замена &RegEdit"
+msgstr "З&амена программы RegEdit"
 
-#: frame/window/menu_bar.cpp
 msgid "&Add \"Edit\" Context Menu"
-msgstr "Пункт \"Редактировать\" в контекстном &меню"
+msgstr "Пун&кт «Правка» в контекстном меню"
 
-#: frame/window/menu_bar.cpp
 msgid "Single &Instance"
 msgstr "Только один &экземпляр"
 
-#: frame/window/menu_bar.cpp
 msgid "Autocomplete &Key Paths"
-msgstr "&Автоподстановка в маршрутах разделов"
+msgstr "Автоподстановка в &маршрутах разделов"
 
-#: frame/window/menu_bar.cpp
 msgid "&All Tabs"
 msgstr "&Все вкладки"
 
-#: frame/window/menu_bar.cpp
 msgid "&Local Registry Tabs"
 msgstr "Вкладки &локального реестра"
 
-#: frame/window/menu_bar.cpp
 msgid "&Offline Hive Tabs"
 msgstr "Вкладки &автономных кустов"
 
-#: frame/window/menu_bar.cpp
 msgid "&Remote Registry Tabs"
 msgstr "Вкладки &удалённого реестра"
 
-#: frame/window/menu_bar.cpp
 msgid "&Find Results"
-msgstr "&Результаты поиска"
+msgstr "&Результатов поиска"
 
-#: frame/window/menu_bar.cpp
 msgid "&Comparison Results"
-msgstr "Результаты &сравнения"
+msgstr "Резул&ьтатов сравнения"
 
-#: frame/window/menu_bar.cpp
 msgid ".reg File &Tabs"
-msgstr "Вкладки &файлов .reg"
+msgstr "Вк&ладки reg-файлов"
 
-#: frame/window/menu_bar.cpp
 msgid "Save &Tabs"
-msgstr "&Сохранять вкладки"
+msgstr "&Сохранение вкладок"
 
-#: frame/window/menu_bar.cpp
 msgid "Save &Previous Tree State"
-msgstr "Сохранять состояние &дерева"
+msgstr "Сохранение состояния д&ерева"
 
-#: frame/window/menu_bar.cpp
 msgid "Clear &History on Exit"
-msgstr "Очищать &журнал при выходе"
+msgstr "Очистка &журнала при выходе"
 
-#: frame/window/menu_bar.cpp
 msgid "Clear Tabs &on Exit"
-msgstr "Очищать &вкладки при выходе"
+msgstr "Очистка &вкладок при выходе"
 
-#: frame/window/menu_bar.cpp
 msgid "Clear &All"
 msgstr "&Очистить все"
 
-#: frame/window/menu_bar.cpp
 msgid "Tab &Sessions"
-msgstr "&Вкладки сеанса"
+msgstr "&Вкладок сеанса"
 
-#: frame/window/menu_bar.cpp
 msgid "&Change History"
-msgstr "Журнал &изменений"
+msgstr "&Журнала изменений"
 
-#: frame/window/menu_bar.cpp
 msgid "Search &History"
-msgstr "&Журнал поиска"
+msgstr "Журнала &поиска"
 
-#: frame/window/menu_bar.cpp
 msgid "&Dialog Options"
-msgstr "&Параметры диалогов"
+msgstr "&Состояний диалогов"
 
-#: frame/window/menu_bar.cpp
 msgid "&Tree State"
-msgstr "&Состояние дерева"
+msgstr "Состояний д&ерева"
 
-#: frame/window/menu_bar.cpp
 msgid "Temporary &Files"
-msgstr "Временные &файлы"
+msgstr "Временны&х файлов"
 
-#: frame/window/menu_bar.cpp
 msgid "&Clear Caches"
-msgstr "&Очистить кэш"
+msgstr "&Очистка сохранённых"
 
-#: frame/window/menu_bar.cpp
 msgid "Reset &Settings..."
-msgstr "Сбросить &настройки..."
+msgstr "Сброс &настроек..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Add to Favorites..."
-msgstr "&Добавить в избранное..."
+msgstr "До&бавить в избранное..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Remove Favorite"
 msgstr "&Удалить из избранного"
 
-#: frame/window/menu_bar.cpp
 msgid "Edit &Favorites..."
 msgstr "&Изменить избранное..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Import Favorites..."
 msgstr "И&мпорт избранного..."
 
-#: frame/window/menu_bar.cpp
 msgid "I&mport RegEdit Favorites"
-msgstr "Импорт избранного &RegEdit"
+msgstr "Импорт и&з избранного RegEdit"
 
-#: frame/window/menu_bar.cpp
 msgid "&Export Favorites..."
 msgstr "&Экспорт избранного..."
 
-#: frame/window/menu_bar.cpp
 msgid "F&avorites"
 msgstr "И&збранное"
 
-#: frame/window/menu_bar.cpp
 msgid "&Options"
-msgstr "Парам&етры"
+msgstr "П&араметры"
 
-#: frame/window/menu_bar.cpp
 msgid "&Compare Registries..."
 msgstr "&Сравнение реестров..."
 
-#: frame/window/menu_bar.cpp
 msgid "Convert &File..."
 msgstr "&Преобразование файлов..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Key Handles..."
-msgstr "&Дескрипторы раздела..."
+msgstr "Дес&крипторы раздела..."
 
-#: frame/window/menu_bar.cpp
 msgid "&New Definition File..."
-msgstr "&Новый файл описания..."
+msgstr "&Новый файл определений..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Bit Definitions"
-msgstr "&Определения битовых полей"
+msgstr "&Определение битовых полей"
 
-#: frame/window/menu_bar.cpp
 msgid "&Tools"
-msgstr "Инс&трументы"
+msgstr "&Инструменты"
 
-#: frame/window/menu_bar.cpp
 msgid "&New Window"
 msgstr "&Новое окно"
 
-#: frame/window/menu_bar.cpp
 msgid "&Close Tab"
 msgstr "&Закрыть вкладку"
 
-#: frame/window/menu_bar.cpp
 msgid "Close &Window"
 msgstr "Закрыть &окно"
 
-#: frame/window/menu_bar.cpp
 msgid "&Always on Top"
 msgstr "&Поверх других окон"
 
-#: frame/window/menu_bar.cpp
 msgid "&Window"
-msgstr "О&кно"
+msgstr "&Окно"
 
-#: frame/window/menu_bar.cpp
 msgid "2&3H2"
-msgstr ""
+msgstr "2&3H2"
 
-#: frame/window/menu_bar.cpp
 msgid "2&4H2"
-msgstr ""
+msgstr "2&4H2"
 
-#: frame/window/menu_bar.cpp
 msgid "&25H2"
-msgstr ""
+msgstr "2&5H2"
 
-#: frame/window/menu_bar.cpp
 msgid "&Open Trace File..."
-msgstr "Открыть &файл трассировки..."
+msgstr "&Открыть файл трассировки..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Edit Active Traces..."
-msgstr "&Изменить действующие трассировки..."
+msgstr "&Изменение действующих трассировок..."
 
-#: frame/window/menu_bar.cpp
 msgid "Clear &Active Traces"
-msgstr "&Сбросить действующие трассировки"
+msgstr "&Сброс действующих трассировок"
 
-#: frame/window/menu_bar.cpp
 msgid "Edit &Recent Traces..."
-msgstr "Изменить &недавние трассировки..."
+msgstr "И&зменение списка недавних трассировок..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Clear Recent Traces"
-msgstr "&Очистить список недавних трассировок"
+msgstr "О&чистить список недавних трассировок"
 
-#: frame/window/menu_bar.cpp
 msgid "&Guide"
-msgstr "&Руководство"
+msgstr "Ру&ководство"
 
-#: frame/window/menu_bar.cpp
 msgid "&Open Default File..."
-msgstr "Открыть &файл предустановок..."
+msgstr "&Открыть файл предустановок..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Edit Active Defaults..."
-msgstr "&Изменить действующие предустановки..."
+msgstr "&Изменение действующих предустановок..."
 
-#: frame/window/menu_bar.cpp
 msgid "Clear &Active Defaults"
-msgstr "&Сбросить действующие предустановки"
+msgstr "&Сброс действующих предустановок"
 
-#: frame/window/menu_bar.cpp
 msgid "Edit &Recent Defaults..."
-msgstr "Изменить &недавние предустановки..."
+msgstr "И&зменение списка недавних предустановок..."
 
-#: frame/window/menu_bar.cpp
 msgid "&Clear Recent Defaults"
-msgstr "&Очистить список недавних предустановок"
+msgstr "О&чистить список недавних предустановок"
 
-#: frame/window/menu_bar.cpp
 msgid "E&nable Context Menu (risky)"
 msgstr "&Включить контекстное меню (опасно)"
 
-#: frame/window/menu_bar.cpp
 msgid "D&ocumentation"
-msgstr "&Документация"
+msgstr "Д&окументация"
 
-#: frame/window/menu_bar.cpp
 msgid "Check &for Updates"
-msgstr "&Проверить обновления"
+msgstr "&Проверить доступные обновления"
 
-#: frame/window/menu_bar.cpp
 msgid "&Check for Updates Automatically"
-msgstr "&Автоматическая проверка обновлений"
+msgstr "&Автоматическая проверка доступных обновлений"
 
-#: frame/window/menu_bar.cpp
 msgid "&About RegKit"
 msgstr "&О программе"
 
-#: frame/window/menu_bar.cpp
 msgid "T&race"
-msgstr "Т&рассировки"
+msgstr "&Трассировки"
 
 # Restorer: Think about what sounds better
-#: frame/window/menu_bar.cpp
 msgid "Defa&ult"
-msgstr "Пре&дустановки"
+msgstr "Пр&едустановки"
 
-#: frame/window/menu_bar.cpp
 msgid "Re&search"
-msgstr "&Справочники"
+msgstr "Справо&чники"
 
-#: frame/window/menu_bar.cpp
 msgid "&Help"
-msgstr "Спра&вка"
+msgstr "&Справка"
 
-#: frame/window/message_routes.cpp
-msgid "RegKit is running with elevated rights and only opens local files handed to it by another instance."
-msgstr "Программа RegKit работает с повышенными правами и открывает только локальные файлы, переданные другим экземпляром программы"
+msgid ""
+"RegKit is running with elevated rights and only opens local files handed to "
+"it by another instance."
+msgstr ""
+"Программа RegKit работает с повышенными правами и открывает только локальные "
+"файлы, переданные другим экземпляром программы."
 
-#: frame/window/message_routes.cpp
 msgid ""
 "Another RegKit instance asked this elevated window to open a .reg file.\n"
 "\n"
 "Open it?"
 msgstr ""
-"Другой экземпляр программы RegKit запросил открытие файла .reg в этом окне с повышенными правами\n"
+"Другой экземпляр программы RegKit запросил открытие reg-файла в этом окне с "
+"повышенными правами.\n"
 "\n"
 "Открыть его?"
 
-#: frame/window/message_routes.cpp
 msgid "Open .reg File"
-msgstr "Открытие файла .reg"
+msgstr "Открытие reg-файла"
 
-#: frame/window/message_routes.cpp
 msgid "Open"
 msgstr "Открыть"
 
-#: frame/window/message_routes.cpp search/regex.cpp
 msgid "The find text isn't a valid regular expression."
-msgstr "Поисковый запрос не является допустимым регулярным выражением"
+msgstr "Поисковый запрос не является допустимым регулярным выражением."
 
-#: frame/window/notifications.cpp
 msgid "(Key)"
 msgstr "(раздел)"
 
-#: frame/window/notifications.cpp
 msgid "Same"
 msgstr "Совпадение"
 
-#: frame/window/notifications.cpp
 msgid "Different"
 msgstr "Различие"
 
-#: frame/window/notifications.cpp
 msgid "A key with this name already exists:"
 msgstr "Раздел с таким наименованием уже существует:"
 
-#: frame/window/notifications.cpp
 msgid "Rename Key"
 msgstr "Переименование раздела"
 
-#: frame/window/notifications.cpp
 msgid "Failed to rename key."
-msgstr "Не удалось переименовать раздел"
+msgstr "Не удалось переименовать раздел."
 
-#: frame/window/notifications.cpp
 msgid "A value with this name already exists:"
-msgstr "Параметр с таким названием уже существует:"
+msgstr "Параметр с таким наименованием уже существует:"
 
-#: frame/window/notifications.cpp
 msgid "Rename Value"
 msgstr "Переименование параметра"
 
-#: frame/window/notifications.cpp
 msgid "Failed to rename value."
-msgstr "Не удалось переименовать параметр"
+msgstr "Не удалось переименовать параметр."
 
-#: launch/program.cpp regfile/reg_exe_syntax.cpp
 msgid "Missing argument"
 msgstr "Отсутствует аргумент"
 
-#: launch/program.cpp regfile/reg_exe_syntax.cpp
 msgid "Invalid option"
 msgstr "Недопустимый ключ"
 
-#: launch/program.cpp
 msgid "Invalid argument"
 msgstr "Недопустимый аргумент командной строки"
 
-#: launch/program.cpp
 msgid "Registry paths with spaces must be in quotes."
-msgstr "Требуется заключить в кавычки маршрут реестра содержащий пробелы"
+msgstr "Требуется заключить в кавычки маршрут реестра, содержащий пробелы."
 
-#: launch/program.cpp
 msgid "Message loop failed unexpectedly."
-msgstr "Цикл обработки сообщений неожиданно завершился с ошибкой"
+msgstr "Цикл обработки сообщений неожиданно завершился ошибкой."
 
-#: launch/program.cpp
 msgid "Administrator restart was cancelled."
-msgstr "Не удалось запустить с правами администратора"
+msgstr "Отменён запуск с правами администратора."
 
-#: launch/program.cpp
 msgid "Failed to create the main window."
-msgstr "Произошёл сбой при создании основного окно программы"
+msgstr "Произошёл сбой при создании основного окно программы."
 
-#: regfile/batch_script.cpp
 msgid "Unsupported reg command"
 msgstr "Неподдерживаемая команда программы reg.exe"
 
-#: regfile/batch_script.cpp regfile/script_convert.cpp
 msgid "Invalid key name."
-msgstr "Недопустимое наименование раздела"
+msgstr "Недопустимое наименование раздела."
 
-#: regfile/batch_script.cpp
 msgid "/reg:32 targets the 32-bit view, which can't be converted."
-msgstr "Ключ /reg:32 указывает на 32-разрядное представление, которое невозможно преобразовать"
+msgstr ""
+"Ключ /reg:32 указывает на 32-разрядное представление, которое невозможно "
+"преобразовать."
 
-#: regfile/batch_script.cpp
 msgid "/va isn't supported."
-msgstr "Ключ /va не поддерживается"
+msgstr "Ключ /va не поддерживается."
 
-#: regfile/batch_script.cpp
 msgid "Invalid type"
 msgstr "Недопустимый тип"
 
-#: regfile/batch_script.cpp
 msgid "Pipes aren't supported."
-msgstr "Конвейеры не поддерживаются"
+msgstr "Конвейеры не поддерживаются."
 
-#: regfile/batch_script.cpp
 msgid "Batch arguments can't be resolved."
-msgstr "Не удалось определить аргументы пакетного файла"
+msgstr "Не удалось определить аргументы пакетного файла."
 
-#: regfile/batch_script.cpp regfile/powershell_script.cpp
 msgid "Variable can't be resolved"
 msgstr "Не удалось определить переменную"
 
-#: regfile/batch_script.cpp regfile/powershell_script.cpp win32/file_text.cpp
 msgid "Line"
-msgstr "Строка"
+msgstr "строка"
 
-#: regfile/batch_script.cpp regfile/powershell_script.cpp
 msgid "Unsupported command"
 msgstr "Неподдерживаемая команда"
 
-#: regfile/batch_script.cpp
 msgid "reg query is only supported in the form RegKit writes for empty keys."
-msgstr "Команда reg query поддерживается только в форме, которую RegKit использует для записи пустых разделов."
+msgstr ""
+"Команда reg query поддерживается только в форме, которую RegKit использует "
+"для записи пустых разделов."
 
-#: regfile/batch_script.cpp
 msgid "set /a and set /p aren't supported."
-msgstr "Команды set /a и set /p не поддерживаются"
+msgstr "Команды set /a и set /p не поддерживаются."
 
-#: regfile/batch_script.cpp
 msgid "contains a line break"
 msgstr "содержит перевод строки"
 
-#: regfile/batch_script.cpp
 msgid "reg.exe trims leading and trailing spaces"
 msgstr "программа reg.exe удаляет начальные и конечные пробелы"
 
-#: regfile/batch_script.cpp regfile/powershell_script.cpp
 msgid "a root key can't be deleted"
 msgstr "не допускается удаление корневого раздела"
 
-#: regfile/batch_script.cpp
 msgid "reg.exe can't write this data type"
 msgstr "программа reg.exe не может записать этот тип данных"
 
-#: regfile/batch_script.cpp
 msgid "too long for a batch line"
 msgstr "слишком длинная командная строка пакетного файла"
 
-#: regfile/batch_script.cpp search/regex.cpp
 msgid "The text isn't valid UTF-16."
-msgstr "Текст содержит недопустимые данные UTF-16"
+msgstr "Текст содержит недопустимые данные UTF-16."
 
-#: regfile/powershell_script.cpp
 msgid "Subexpressions aren't supported."
-msgstr "Подвыражения не поддерживаются"
+msgstr "Подвыражения не поддерживаются."
 
-#: regfile/powershell_script.cpp
 msgid "Unterminated variable name."
-msgstr "Незавершённое наименование переменной"
+msgstr "Незавершённое наименование переменной."
 
-#: regfile/powershell_script.cpp
 msgid "Unterminated block comment."
-msgstr "Незавершённый блочный комментарий"
+msgstr "Незавершённый блочный комментарий."
 
-#: regfile/powershell_script.cpp
 msgid "Unterminated here-string."
-msgstr "Незавершённая here-строка"
+msgstr "Незавершённая here-строка."
 
-#: regfile/powershell_script.cpp
 msgid "Unterminated string."
-msgstr "Незавершённая строка"
+msgstr "Незавершённая строка."
 
-#: regfile/powershell_script.cpp
 msgid "Unterminated type name."
-msgstr "Незавершённое наименование типа"
+msgstr "Незавершённое наименование типа."
 
-#: regfile/powershell_script.cpp
 msgid "Unsupported number"
-msgstr "Неподдерживаемое число"
+msgstr "Неподдерживаемое числовое значение"
 
-#: regfile/powershell_script.cpp
 msgid "Unexpected character"
 msgstr "Неожиданный символ"
 
-#: regfile/powershell_script.cpp
 msgid "Unexpected token"
 msgstr "Неожиданный токен"
 
-#: regfile/powershell_script.cpp
 msgid "Expected"
 msgstr "Ожидалось"
 
-#: regfile/powershell_script.cpp
 msgid "Only if conditions on Test-Path are supported."
-msgstr "Поддерживаются только условия if с Test-Path"
+msgstr ""
+"Командлет Test-Path поддерживается только в операторе проверки условия if."
 
-#: regfile/powershell_script.cpp
 msgid "Unsupported parameter"
 msgstr "Неподдерживаемый параметр"
 
-#: regfile/powershell_script.cpp
 msgid "Expected '}'."
 msgstr "Ожидалось '}'"
 
-#: regfile/powershell_script.cpp
 msgid "else blocks aren't supported."
-msgstr "Блоки else не поддерживаются"
+msgstr "Блоки else не поддерживаются."
 
-#: regfile/powershell_script.cpp
 msgid "Only | Out-Null pipelines are supported."
 msgstr "Поддерживаются только конвейеры | Out-Null."
 
-#: regfile/powershell_script.cpp
 msgid "-WhatIf makes no changes and can't be converted."
-msgstr "-WhatIf не вносит изменений и не может быть преобразован"
+msgstr "-WhatIf не вносит изменений и не может быть преобразован."
 
-#: regfile/powershell_script.cpp
 msgid "Expected a member name."
-msgstr "Ожидалось название члена"
+msgstr "Ожидалось название члена."
 
-#: regfile/powershell_script.cpp
 msgid "Unexpected type"
 msgstr "Неожиданный тип"
 
-#: regfile/powershell_script.cpp
 msgid "Invalid RegKit.Native call."
 msgstr "Недопустимый вызов RegKit.Native"
 
-#: regfile/powershell_script.cpp
-msgid "Only New-Item can follow if (-not (Test-Path)), and only removals can follow if (Test-Path)."
-msgstr "После if (-not (Test-Path)) может следовать только New-Item, а после if (Test-Path) — только удаление"
+msgid ""
+"Only New-Item can follow if (-not (Test-Path)), and only removals can follow "
+"if (Test-Path)."
+msgstr ""
+"После if (-not (Test-Path)) может следовать только New-Item, а после if "
+"(Test-Path) — только удаление."
 
-#: regfile/powershell_script.cpp
 msgid "Unsupported member"
 msgstr "Неподдерживаемый член"
 
-#: regfile/powershell_script.cpp
 msgid "Expected text."
-msgstr "Ожидался текст"
+msgstr "Ожидался текст."
 
-#: regfile/powershell_script.cpp
 msgid "Byte values must be numbers from 0 to 255."
-msgstr "Значением байта должно быть число от 0 до 255"
+msgstr "Значением байта должно быть число от 0 до 255."
 
-#: regfile/powershell_script.cpp
 msgid "The number doesn't fit an [int]."
-msgstr "Число выходит за границы [int]"
+msgstr "Число выходит за границы [int]."
 
-#: regfile/powershell_script.cpp
 msgid "Unsupported cast"
 msgstr "Неподдерживаемое приведение типа"
 
-#: regfile/powershell_script.cpp
 msgid "Invalid number"
-msgstr "Недопустимое число"
+msgstr "Недопустимое числовое значение"
 
-#: regfile/powershell_script.cpp
 msgid "Expected a number."
-msgstr "Ожидалось число"
+msgstr "Ожидалось числовое значение."
 
-#: regfile/powershell_script.cpp
 msgid "The number doesn't fit a DWORD."
-msgstr "Число выходит за границы DWORD"
+msgstr "Числовое значение выходит за границы DWORD."
 
-#: regfile/powershell_script.cpp
 msgid "The value type can't be inferred, add -Type."
-msgstr "Невозможно определить тип параметра, добавьте -Type"
+msgstr "Невозможно определить тип параметра, задайте параметр -Type."
 
-#: regfile/powershell_script.cpp
 msgid "Unsupported value type"
 msgstr "Неподдерживаемый тип данных"
 
-#: regfile/powershell_script.cpp
 msgid "Not a registry path"
 msgstr "Не является разделом реестра"
 
-#: regfile/powershell_script.cpp
 msgid "Wildcard paths can't be converted, use -LiteralPath."
-msgstr "Маршрут с подстановочными символами не может быт преобразован, используйте -LiteralPath"
+msgstr ""
+"Маршрут с подстановочными символами не может быт преобразован, используйте "
+"параметр -LiteralPath."
 
-#: regfile/powershell_script.cpp
 msgid "A -Path is required."
-msgstr "Необходимо указать -Path"
+msgstr "Необходимо указать параметр -Path."
 
-#: regfile/powershell_script.cpp
 msgid "Only registry drives are supported."
-msgstr "Поддерживаются только хранилища реестра"
+msgstr "Поддерживаются только хранилища реестра."
 
-#: regfile/powershell_script.cpp
 msgid "-Name and -Value are required."
-msgstr "Необходимо указать -Name и -Value"
+msgstr "Необходимо указать параметры -Name и -Value."
 
-#: regfile/powershell_script.cpp
 msgid "-Name is required."
-msgstr "Необходимо указать -Name"
+msgstr "Необходимо указать параметр -Name."
 
-#: regfile/powershell_script.cpp
 msgid "Wildcard value names can't be converted."
-msgstr "Невозможно преобразовать наименования параметров с подстановочными знаками"
+msgstr ""
+"Невозможно преобразовать наименования параметров с подстановочными символами"
 
-#: regfile/powershell_script.cpp
 msgid "contains control characters"
 msgstr "содержит управляющие символы"
 
-#: regfile/registry_transfer.cpp
 msgid "The system directory couldn't be resolved."
-msgstr "Не удалось определить системный каталог"
+msgstr "Не удалось определить системный каталог."
 
-#: regfile/registry_transfer.cpp
 msgid "reg.exe exited with an error."
-msgstr "программа reg.exe завершилась с ошибкой"
+msgstr "программа reg.exe завершилась с ошибкой."
 
-#: regfile/registry_transfer.cpp
 msgid "Hive files need the backup and restore privileges. Run RegKit elevated."
-msgstr "Для работы с кустами реестра требуются привилегии резервного копирования и восстановления. Запустите программу RegKit с повышенными правами"
+msgstr ""
+"Для работы с кустами реестра требуются привилегии резервного копирования и "
+"восстановления. Запустите программу RegKit с повышенными правами."
 
-#: regfile/reg_exe_syntax.cpp
 msgid "Invalid multi-string data"
-msgstr "Недопустимые многостроковые данные"
+msgstr "Недопустимое многостроковое значение"
 
-#: regfile/reg_exe_syntax.cpp
 msgid "Invalid numeric data"
-msgstr "Недопустимые числовые данные"
+msgstr "Недопустимое числовое значение"
 
-#: regfile/reg_exe_syntax.cpp
 msgid "Numeric data out of range for a DWORD"
-msgstr "Числовые данные вне диапазона DWORD"
+msgstr "Числовое значение вне диапазона DWORD"
 
-#: regfile/reg_exe_syntax.cpp
 msgid "Invalid binary data"
-msgstr "Недопустимые двоичные данные"
+msgstr "Недопустимое двоичное значение"
 
-#: regfile/reg_file.cpp
 msgid "only the volatile flag of it and its subkeys"
 msgstr "признак временного раздела и его подразделов"
 
-#: regfile/reg_file.cpp
 msgid "the name contains a null character"
 msgstr "наименование содержит символ null"
 
-#: regfile/reg_file.cpp
 msgid "The file contains an entry RegKit can't parse."
 msgstr "Файл содержит запись, которую не удалось обработать"
 
-#: regfile/reg_file.cpp regfile/script_convert.cpp
 msgid "The file has no registry changes."
-msgstr "В файле нет изменений реестра"
+msgstr "В файле нет изменений реестра."
 
-#: regfile/script_convert.cpp
 msgid "Unsupported file type, use .reg, .bat, .cmd or .ps1."
-msgstr "Неподдерживаемый тип файла, допустимыми являются .reg, .bat, .cmd или .ps1"
+msgstr ""
+"Неподдерживаемый тип файла, допустимыми являются .reg, .bat, .cmd или .ps1"
 
-#: regfile/script_convert.cpp
 msgid "Unsupported root key."
-msgstr "Неподдерживаемый корневой раздел"
+msgstr "Неподдерживаемый корневой раздел."
 
-#: regfile/script_convert.cpp
 msgid "Enter a key under HKLM, HKCU, HKCR, HKU or HKCC."
-msgstr "Укажите раздел как аббревиатуру HKLM, HKCU, HKCR, HKU или HKCC"
+msgstr "Укажите раздел как аббревиатуру HKLM, HKCU, HKCR, HKU или HKCC."
 
-#: regfile/script_convert.cpp
 msgid "The file has no changes for this key."
-msgstr "В файле нет изменений для этого раздела"
+msgstr "В файле нет изменений для этого раздела."
 
-#: registry/key_access.cpp
 msgid "Current user"
 msgstr "Текущий пользователь"
 
-#: registry/key_access.cpp
 msgid "Full control"
 msgstr "Полный доступ"
 
-#: registry/key_access.cpp
 msgid "Read and write"
 msgstr "Чтение и запись"
 
-#: registry/key_access.cpp
 msgid "No access"
 msgstr "Нет доступа"
 
-#: registry/key_access.cpp
 msgid "can change permissions"
 msgstr "изменение прав доступа"
 
-#: registry/offline_registry.cpp
 msgid "offreg.dll couldn't be loaded."
-msgstr "Не удалось загрузить библиотеку offreg.dll"
+msgstr "Не удалось загрузить библиотеку offreg.dll."
 
-#: registry/resource_list.cpp
 msgid "Undefined"
 msgstr "Не определено"
 
-#: registry/resource_list.cpp
 msgid "Internal"
 msgstr "Внутренний"
 
-#: registry/resource_list.cpp
 msgid "Processor internal"
 msgstr "Аппаратные регистры"
 
-#: registry/resource_list.cpp
 msgid "Internal power bus"
 msgstr "Внутренняя шина питания"
 
-#: registry/resource_list.cpp
 msgid "Null"
-msgstr "Нулевой"
+msgstr "Null"
 
-#: registry/resource_list.cpp
 msgid "Configuration data"
 msgstr "Данные конфигурации"
 
-#: registry/resource_list.cpp
 msgid "Device private"
 msgstr "Частный для устройства"
 
-#: registry/resource_list.cpp
 msgid "PC card configuration"
 msgstr "Конфигурация PC-карты"
 
-#: registry/resource_list.cpp
 msgid "Multifunction card configuration"
 msgstr "Конфигурация многофункциональной карты"
 
-#: registry/resource_list.cpp
 msgid "Connection"
 msgstr "Подключение"
 
-#: registry/resource_list.cpp
 msgid "Undetermined"
 msgstr "Не определено"
 
-#: registry/resource_list.cpp
 msgid "Device exclusive"
-msgstr "Для устройства"
+msgstr "для устройства"
 
-#: registry/resource_list.cpp
 msgid "Driver exclusive"
-msgstr "Для драйвера"
+msgstr "для драйвера"
 
-#: registry/resource_list.cpp
 msgid "Shared"
-msgstr "Общий ресурс"
+msgstr "общий ресурс"
 
-#: registry/resource_list.cpp
 msgid "Ports"
 msgstr "Порт:"
 
-#: registry/resource_list.cpp
 msgid "Interrupts"
 msgstr "Прерывание:"
 
-#: registry/resource_list.cpp
 msgid "Memory"
 msgstr "Память:"
 
-#: registry/resource_list.cpp
 msgid "DMA"
 msgstr "Канал DMA:"
 
-#: registry/resource_list.cpp
 msgid "Bus numbers"
 msgstr "Номера шин"
 
-#: registry/resource_list.cpp
 msgid "Device specific data"
 msgstr "Данные устройства"
 
-#: registry/resource_list.cpp
 msgid "Other resources"
 msgstr "Прочие ресурсы:"
 
-#: registry/resource_list.cpp
 msgid "Start address"
 msgstr "Начальный адрес"
 
-#: registry/resource_list.cpp registry/value_decoder.cpp
 msgid "Length"
 msgstr "Размер"
 
-#: registry/resource_list.cpp
 msgid "Share"
 msgstr "Назначение"
 
-#: registry/resource_list.cpp
 msgid "Messages"
 msgstr "Сообщения"
 
-#: registry/resource_list.cpp
 msgid "Vector"
 msgstr "Вектор"
 
-#: registry/resource_list.cpp
 msgid "Level"
 msgstr "Уровень"
 
-#: registry/resource_list.cpp registry/value_decoder.cpp
 msgid "Group"
 msgstr "Группа"
 
-#: registry/resource_list.cpp
 msgid "Affinity"
 msgstr "Привязка к процессорам"
 
-#: registry/resource_list.cpp
 msgid "Channel"
 msgstr "Канал"
 
-#: registry/resource_list.cpp
 msgid "Port / request line"
 msgstr "Порт / линия запроса"
 
-#: registry/resource_list.cpp
 msgid "Start bus number"
 msgstr "Начальный номер шины"
 
-#: registry/resource_list.cpp
 msgid "Required"
 msgstr "Обязательный"
 
-#: registry/resource_list.cpp
 msgid "Preferred"
 msgstr "Предпочтительный"
 
-#: registry/resource_list.cpp
 msgid "Alternative"
 msgstr "Альтернативный"
 
-#: registry/resource_list.cpp
 msgid "Option"
 msgstr "Параметры"
 
-#: registry/resource_list.cpp
 msgid "Alignment"
 msgstr "Выравнивание"
 
-#: registry/resource_list.cpp
 msgid "Minimum address"
 msgstr "Минимальный адрес"
 
-#: registry/resource_list.cpp
 msgid "Maximum address"
 msgstr "Максимальный адрес"
 
-#: registry/resource_list.cpp
 msgid "Minimum vector"
 msgstr "Минимальный вектор"
 
-#: registry/resource_list.cpp
 msgid "Maximum vector"
 msgstr "Максимальный вектор"
 
-#: registry/resource_list.cpp
 msgid "Targeted processors"
 msgstr "Целевые процессоры"
 
-#: registry/resource_list.cpp
 msgid "Minimum channel"
 msgstr "Минимальный канал"
 
-#: registry/resource_list.cpp
 msgid "Maximum channel"
 msgstr "Максимальный канал"
 
-#: registry/resource_list.cpp
 msgid "Minimum bus number"
 msgstr "Минимальный номер шины"
 
-#: registry/resource_list.cpp
 msgid "Maximum bus number"
 msgstr "Максимальный номер шины"
 
-#: registry/resource_list.cpp
 msgid "Requirements"
 msgstr "Требования"
 
-#: registry/resource_list.cpp
 msgid "Interface"
 msgstr "Тип интерфейса"
 
-#: registry/resource_list.cpp
 msgid "Bus number"
 msgstr "Номер шины"
 
-#: registry/resource_list.cpp
 msgid "Slot number"
 msgstr "Номер слота"
 
-#: registry/resource_list.cpp
 msgid "Alternative lists"
-msgstr "Альтернативные перечень"
+msgstr "Альтернативные списки"
 
-#: registry/resource_list.cpp
 msgid "List"
-msgstr "Перечень"
+msgstr "Список"
 
-#: registry/resource_list.cpp
 msgid "Descriptor"
-msgstr "Описатель"
+msgstr "Дескриптор"
 
-#: registry/resource_list.cpp
 msgid "Descriptors"
-msgstr "Дескрипторы:"
+msgstr "Дескрипторы"
 
-#: registry/resource_list.cpp
 msgid "Version"
 msgstr "Версия"
 
-#: registry/resource_list.cpp
 msgid "Resources"
 msgstr "Ресурсы"
 
-#: registry/value_decoder.cpp
 msgid "Offset"
 msgstr "Смещение"
 
-#: registry/value_decoder.cpp
 msgid "Text value has an odd byte count."
-msgstr "Текстовые данные содержат нечётное число байт"
+msgstr "Текстовые данные содержат нечётное число байт."
 
-#: registry/value_decoder.cpp
 msgid "Text value contains an embedded NUL."
-msgstr "Текстовые данные содержат символ NUL внутри строки"
+msgstr "Текстовые данные содержат символ NUL внутри строки."
 
-#: registry/value_decoder.cpp
 msgid "Binary value isn't ASCII text."
-msgstr "Двоичный значение не является символом в кодировке ASCII"
+msgstr "Двоичное значение не является текстом в кодировке ASCII."
 
-#: registry/value_decoder.cpp
 msgid "This value type has no text form."
-msgstr "Этот тип данных не имеет текстового представления"
+msgstr "Этот тип данных не имеет текстового представления."
 
-#: registry/value_decoder.cpp
 msgid "Incomplete hex byte."
-msgstr "Неполный шестнадцатеричный байт"
+msgstr "Неполный шестнадцатеричный байт."
 
-#: registry/value_decoder.cpp
 msgid "Invalid hex character."
-msgstr "Недопустимый шестнадцатеричный символ"
+msgstr "Недопустимый шестнадцатеричный символ."
 
-#: registry/value_decoder.cpp
 msgid "Invalid FILETIME."
-msgstr "Недопустимые данные FILETIME"
+msgstr "Недопустимые данные FILETIME."
 
-#: registry/value_decoder.cpp
 msgid "Local"
 msgstr "Местное время"
 
-#: registry/value_decoder.cpp
 msgid "Input is too large to decode."
-msgstr "Слишком большой объём входных данных не позволяет выполнить декодирование"
+msgstr ""
+"Слишком большой объём входных данных не позволяет выполнить декодирование."
 
-#: registry/value_decoder.cpp
 msgid "Text"
 msgstr "Текст"
 
-#: registry/value_decoder.cpp
 msgid "Bytes"
 msgstr "Байты"
 
-#: registry/value_decoder.cpp
 msgid "Invalid UTF-8."
-msgstr "Недопустимые данные UTF-8"
+msgstr "Недопустимые данные UTF-8."
 
-#: registry/value_decoder.cpp
 msgid "UTF-16 needs an even byte count."
-msgstr "Данные UTF-16 должны составлять чётное число байт"
+msgstr "Данные UTF-16 должны составлять чётное число байт."
 
-#: registry/value_decoder.cpp
 msgid "Invalid UTF-16 surrogate pair."
-msgstr "Недопустимая суррогатная пара UTF-16"
+msgstr "Недопустимая суррогатная пара UTF-16."
 
-#: registry/value_decoder.cpp
 msgid "Code units"
 msgstr "Кодовых единиц"
 
-#: registry/value_decoder.cpp
 msgid "A byte isn't ASCII."
-msgstr "Байт вне диапазона кодировки ASCII"
+msgstr "Байт вне диапазона кодировки ASCII."
 
-#: registry/value_decoder.cpp
 msgid "A FILETIME needs exactly 8 bytes."
-msgstr "Данные FILETIME должны составлять ровно 8 байт"
+msgstr "Данные FILETIME должны составлять ровно 8 байт."
 
-#: registry/value_decoder.cpp
 msgid "Raw ticks"
-msgstr "Исходные тики"
+msgstr "Исходный счётчик"
 
-#: registry/value_decoder.cpp
 msgid "A SYSTEMTIME needs exactly 16 bytes."
-msgstr "Данные SYSTEMTIME должны составлять ровно 16 байт"
+msgstr "Данные SYSTEMTIME должны составлять ровно 16 байт."
 
-#: registry/value_decoder.cpp
 msgid "Invalid SYSTEMTIME."
-msgstr "Недопустимые данные SYSTEMTIME"
+msgstr "Недопустимые данные SYSTEMTIME."
 
-#: registry/value_decoder.cpp
 msgid "Date and time"
 msgstr "Дата и время"
 
-#: registry/value_decoder.cpp
 msgid "Year"
 msgstr "год"
 
-#: registry/value_decoder.cpp
 msgid "Month"
 msgstr "месяц"
 
-#: registry/value_decoder.cpp
 msgid "Day"
 msgstr "день"
 
-#: registry/value_decoder.cpp
 msgid "Day of week"
 msgstr "день недели"
 
-#: registry/value_decoder.cpp
 msgid "Hour"
 msgstr "час"
 
-#: registry/value_decoder.cpp
 msgid "Minute"
 msgstr "минут"
 
-#: registry/value_decoder.cpp
 msgid "Second"
 msgstr "секунд"
 
-#: registry/value_decoder.cpp
 msgid "Milliseconds"
 msgstr "миллисекунд"
 
-#: registry/value_decoder.cpp
 msgid "Unix time needs exactly 4 or 8 bytes."
-msgstr "Значение Unix‐времени должно составлять ровно 4 или 8 байт"
+msgstr "Значение Unix‐времени должно составлять ровно 4 или 8 байт."
 
-#: registry/value_decoder.cpp
 msgid "Unix time is out of range."
-msgstr "Значение вне допустимого диапазона Unix‐времени"
+msgstr "Значение вне допустимого диапазона Unix‐времени."
 
-#: registry/value_decoder.cpp
 msgid "Seconds"
 msgstr "секунд"
 
-#: registry/value_decoder.cpp
 msgid "A GUID needs exactly 16 bytes."
-msgstr "Значение GUID должно составлять ровно 16 байт"
+msgstr "Значение GUID должно составлять ровно 16 байт."
 
-#: registry/value_decoder.cpp
 msgid "The GUID couldn't be formatted."
-msgstr "Не удалось сформировать GUID"
+msgstr "Не удалось сформировать GUID."
 
-#: registry/value_decoder.cpp
 msgid "Truncated structure."
-msgstr "Усечённые данные структуры"
+msgstr "Усечённые данные структуры."
 
-#: registry/value_decoder.cpp
 msgid "Invalid SID."
-msgstr "Недопустимый SID"
+msgstr "Недопустимый SID."
 
-#: registry/value_decoder.cpp
 msgid "Account"
 msgstr "Учётная запись"
 
-#: registry/value_decoder.cpp
 msgid "Not a self relative security descriptor."
-msgstr "Не является относительным дескриптором безопасности"
+msgstr "Не является относительным дескриптором безопасности."
 
-#: registry/value_decoder.cpp
 msgid "Invalid security descriptor."
-msgstr "Недопустимый дескриптор безопасности"
+msgstr "Недопустимый дескриптор безопасности."
 
-#: registry/value_decoder.cpp
 msgid "The security descriptor couldn't be converted."
-msgstr "Не удалось преобразовать дескриптор безопасности"
+msgstr "Не удалось преобразовать дескриптор безопасности."
 
-#: registry/value_decoder.cpp
 msgid "absent"
-msgstr "нет"
+msgstr "отсутствует"
 
-#: registry/value_decoder.cpp
 msgid "present"
-msgstr "есть"
+msgstr "присутствует"
 
-#: registry/value_decoder.cpp
 msgid "Owner"
 msgstr "Владелец"
 
-#: registry/value_decoder.cpp
 msgid "An IPv6 address needs exactly 16 bytes."
-msgstr "Данные IPv6‐адреса должны составлять ровно 16 байт"
+msgstr "Данные адреса IPv6 должны составлять ровно 16 байт."
 
-#: registry/value_decoder.cpp
 msgid "An IPv4 address needs exactly 4 bytes."
-msgstr "Данные IPv4‐адреса должны составлять ровно 4 байта"
+msgstr "Данные адреса IPv4 должны составлять ровно 4 байта."
 
-#: registry/value_decoder.cpp
 msgid "The address couldn't be formatted."
-msgstr "Не удалось сформировать адрес"
+msgstr "Не удалось сформировать адрес."
 
-#: registry/value_decoder.cpp
 msgid "Address"
 msgstr "Адрес"
 
-#: registry/value_decoder.cpp
 msgid "Hex bytes"
 msgstr "Байты (Hex)"
 
-#: registry/value_decoder.cpp
 msgid "URI percent encoding"
 msgstr "Процентное кодирование URI"
 
-#: registry/value_decoder.cpp
 msgid "Raw bytes"
 msgstr "Исходные байты"
 
-#: registry/value_decoder.cpp
 msgid "UTF-8 text"
-msgstr "Как текст в UTF-8"
+msgstr "Как текст UTF-8"
 
-#: registry/value_decoder.cpp
 msgid "UTF-16 LE text"
-msgstr "Как текст в UTF-16 LE"
+msgstr "Как текст UTF-16 LE"
 
-#: registry/value_decoder.cpp
 msgid "UTF-16 BE text"
-msgstr "Как текст в UTF-16 BE"
+msgstr "Как текст UTF-16 BE"
 
-#: registry/value_decoder.cpp
 msgid "ASCII text"
-msgstr "Как текст в ASCII"
+msgstr "Как текст ASCII"
 
-#: registry/value_decoder.cpp
 msgid "Windows FILETIME"
 msgstr "Как Windows FILETIME"
 
-#: registry/value_decoder.cpp
 msgid "Windows SYSTEMTIME"
 msgstr "Как Windows SYSTEMTIME"
 
-#: registry/value_decoder.cpp
 msgid "Unix time (seconds)"
 msgstr "Как Unix‐время (секунды)"
 
-#: registry/value_decoder.cpp
 msgid "Unix time (milliseconds)"
 msgstr "Как Unix‐время (миллисекунды)"
 
-#: registry/value_decoder.cpp
 msgid "Security descriptor"
 msgstr "Как дескриптор безопасности"
 
-#: registry/value_decoder.cpp
 msgid "IPv4 address"
 msgstr "Как адрес IPv4"
 
-#: registry/value_decoder.cpp
 msgid "IPv6 address"
 msgstr "Как адрес IPv6"
 
-#: registry/value_decoder.cpp
 msgid "Unknown encoding."
-msgstr "Нераспознанное кодирование"
+msgstr "Нераспознанное кодирование."
 
-#: registry/value_decoder.cpp
 msgid "No data."
 msgstr "Нет данных"
 
-#: registry/value_decoder.cpp
 msgid "Unknown interpretation."
-msgstr "Нераспознанная интерпретация"
+msgstr "Нераспознанная интерпретация."
 
-#: registry/value_format.cpp
 msgid "byte"
 msgstr "Б"
 
-#: registry/value_format.cpp
 msgid "bytes"
 msgstr "Б"
 
-#: search/compare.cpp
 msgid "No matching keys were found for the selected path."
-msgstr "Для указанного маршрута не найдены соответствующие разделы"
+msgstr "Для указанного маршрута не найдены соответствующие разделы."
 
-#: search/compare.cpp
 msgid "Present"
 msgstr "(присутствует)"
 
-#: search/regex.cpp
 msgid "The search was cancelled."
-msgstr "Поиск был отменён"
+msgstr "Поиск был отменён."
 
-#: search/regex.cpp
 msgid "The pattern needed too many steps or too much memory."
-msgstr "Выражению требуется слишком много шагов или памяти"
+msgstr "Выражению требуется слишком много шагов или памяти."
 
-#: search/regex.cpp
 msgid "The pattern couldn't be applied."
-msgstr "Не удалось применить выражение"
+msgstr "Не удалось применить выражение."
 
-#: search/regex.cpp
 msgid "Position"
 msgstr "Позиция"
 
-#: search/search.cpp
 msgid "Null character in the name"
 msgstr "Символ null в наименовании"
 
-#: search/search.cpp
 msgid "Edge spaces or control characters in the name"
 msgstr "Концевые пробелы или управляющие символы"
 
-#: search/search.cpp
 msgid "Unknown type"
 msgstr "Нераспознанный тип"
 
-#: search/search.cpp
 msgid "Unexpected size"
 msgstr "Некорректный размер"
 
-#: search/search.cpp
 msgid "Odd size"
 msgstr "Нечётное число байт"
 
-#: search/search.cpp
 msgid "No terminating null"
 msgstr "Нет завершающего символа null"
 
-#: search/search.cpp
 msgid "No final double null"
-msgstr "Нет завершающего двойного символа null"
+msgstr "Нет двойного завершающего символа null"
 
-#: search/search.cpp
 msgid "Empty item"
 msgstr "Пустой элемент"
 
-#: search/search.cpp
 msgid "Link target missing"
 msgstr "Отсутствует целевой объект ссылки"
 
-#: trace/trace_loader.cpp
 msgid "Failed to read trace file."
-msgstr "Не удалось прочитать файл трассировки"
+msgstr "Не удалось получить данные файла трассировки."
 
-#: trace/trace_parser.cpp
 msgid "Trace file is empty or too large to load."
-msgstr "Файл трассировки пуст или слишком большой для загрузки"
+msgstr "Файл трассировки пуст или слишком большой для загрузки."
 
-#: trace/trace_parser.cpp
 msgid "Trace file has no readable entries."
-msgstr "В файле трассировки нет читаемых записей"
+msgstr "В файле трассировки нет читаемых записей."
 
-#: trace/trace_parser.cpp
 msgid "Trace file contains no usable entries."
-msgstr "В файле трассировки нет соответствующих записей"
+msgstr "В файле трассировки нет соответствующих записей."
 
-#: ui/feedback.cpp
 msgid "The background task couldn't be started."
-msgstr "Не удалось запустить фоновую задачу"
+msgstr "Не удалось запустить фоновую задачу."
 
-#: ui/feedback.cpp
 msgid "RegKit couldn't save this file."
-msgstr "Программе RegKit не удалось сохранить этот файл"
+msgstr "Программе RegKit не удалось сохранить этот файл."
 
-#: ui/feedback.cpp
 msgid "The text couldn't be copied to the clipboard."
-msgstr "Не удалось скопировать текст в буфер обмена"
+msgstr "Не удалось скопировать текст в буфер обмена."
 
-#: ui/feedback.cpp
 msgid "Warning"
 msgstr "Предупреждение"
 
-#: ui/feedback.cpp
 msgid "Information"
 msgstr "Информация"
 
-#: ui/feedback.cpp
 msgid "The file couldn't be shown in Explorer."
-msgstr "Не удалось показать файл в проводнике"
+msgstr "Невозможно показать этот файл в Проводнике."
 
-#: ui/feedback.cpp
 msgid "About RegKit"
 msgstr "О программе"
 
-#: ui/feedback.cpp
 msgid "Repository"
 msgstr "Репозиторий"
 
-#: ui/feedback.cpp
 msgid "Website"
 msgstr "Сайт"
 
-#: ui/feedback.cpp
 msgid "Email"
 msgstr "Электронная почта"
 
-#: ui/feedback.cpp
 msgid ""
 "Adding information can unintentionally change or delete values and\n"
 "cause components to stop working correctly. If you don't trust the\n"
@@ -3957,1025 +3130,763 @@ msgid ""
 msgstr ""
 "Добавление этих данных может изменить или удалить параметры реестра\n"
 "и тем самым нарушить работу компонентов системы.\n"
-"Если нет доверия к источнику этих данных, не добавляйте их в реестр\n"
+"Если нет доверия к источнику этих данных, не добавляйте их в реестр.\n"
 "\n"
 "Вы действительно хотите продолжить?"
 
-#: ui/feedback.cpp
 msgid "The keys and values it contains have been added to the registry."
-msgstr "Содержащиеся в файле разделы и параметры были добавлены в реестр"
+msgstr "Содержащиеся в файле разделы и параметры были добавлены в реестр."
 
-#: ui/feedback.cpp
 msgid "The registry file couldn't be imported."
-msgstr "Не удалось импортировать файл реестра"
+msgstr "Не удалось импортировать файл реестра."
 
-#: ui/feedback.cpp
 msgid "Delete these keys and all of their subkeys?"
 msgstr "Удалить эти разделы и все их подразделы?"
 
-#: ui/feedback.cpp
 msgid "Delete this key and all of its subkeys?"
 msgstr "Удалить этот раздел и все его подразделы?"
 
-#: ui/feedback.cpp
 msgid "Delete these values?"
 msgstr "Удалить эти параметры?"
 
-#: ui/feedback.cpp
 msgid "Delete this value?"
 msgstr "Удалить этот параметр?"
 
-#: ui/feedback.cpp
 msgid "Delete these items?"
 msgstr "Удалить эти записи?"
 
-#: ui/feedback.cpp
 msgid "Delete this item?"
 msgstr "Удалить эту запись?"
 
-#: ui/feedback.cpp
 msgid "The file already exists. Replace it?"
 msgstr "Файл уже существует. Заменить его?"
 
-#: ui/feedback.cpp
 msgid "These entries can't be written in this format and will be left out."
-msgstr "Эти записи невозможно сохранить в данном формате, они будут пропущены"
+msgstr "Эти записи невозможно сохранить в данном формате, они будут пропущены."
 
-#: ui/feedback.cpp
 msgid "Convert"
 msgstr "Преобразовать"
 
-#: ui/feedback.cpp
 msgid "The file was converted."
-msgstr "Выполнено преобразование файла"
+msgstr "Выполнено преобразование файла."
 
-#: ui/feedback.cpp
 msgid ""
-"RegKit is running from a location that non administrators can write to, so a program without administrator rights could replace it before it restarts with these rights. Install RegKit for all users first, or move it somewhere only administrators can write.\n"
+"RegKit is running from a location that non administrators can write to, so a "
+"program without administrator rights could replace it before it restarts "
+"with these rights. Install RegKit for all users first, or move it somewhere "
+"only administrators can write.\n"
 "\n"
 "Restart anyway to continue from this location."
 msgstr ""
-"Программа RegKit запущена из каталога, доступного для записи пользователям без административных привилегий, поэтому сторонняя программа без прав администратора может подменить исполняемый файл до его перезапуска с этими правами. Переустановите RegKit для всех пользователей или переместите в каталог, где запись разрешена только администраторам.\n"
+"Программа RegKit запущена из каталога, доступного для записи пользователям "
+"без административных привилегий. Это нарушает безопасность системы, так как "
+"может быть произведена подмена исполняемого файла сторонней программой до "
+"момента перезапуска. Установите программу RegKit в каталог «Program Files» "
+"или переместите в каталог, где запись разрешена только администраторам.\n"
 "\n"
-"При нажатии кнопки \"Всё равно перезапустить\" работа продолжится из указанного каталога."
+"При нажатии кнопки «Всё равно перезапустить» будет выполнен запуск программы "
+"из указанного каталога."
 
-#: ui/feedback.cpp
 msgid "Restart Anyway"
 msgstr "Всё равно перезапустить"
 
-#: ui/presets.cpp
 msgid "The theme preset file contains an entry RegKit can't parse."
-msgstr "Файл насторек темы содержит запись, которую програма RegKit не может разобрать"
+msgstr ""
+"Файл настроек темы содержит запись, которую программа RegKit не может "
+"разобрать."
 
-#: ui/presets.cpp
 msgid "Failed to write the theme preset file."
-msgstr "Не удалось записать файл настроек темы"
+msgstr "Не удалось записать файл настроек темы."
 
-#: ui/presets.cpp
 msgid "No theme presets were found in the file."
-msgstr "В файле не найдены настройки темы"
+msgstr "В файле отсутствуют настройки темы."
 
-#: ui/presets.cpp
 msgid "Failed to open the theme preset file."
-msgstr "Не удалось открыть файл настроек темы"
+msgstr "Не удалось открыть файл настроек темы."
 
-#: win32/file_dialog.cpp
+# Restorer: "По окончанию записи открыть:"
 msgid "Open after saving:"
-msgstr "Открыть после сохранения:"
+msgstr "После записи открыть:"
 
-#: win32/file_dialog.cpp
 msgid "The file dialog failed."
 msgstr "Ошибка диалога работы с файлами"
 
-#: win32ui/dialog/check_list.cpp
 msgid "Select All"
 msgstr "Выделить все"
 
-#: win32ui/dialog/check_list.cpp
 msgid "Clear All"
 msgstr "Очистить все"
 
-#: win32ui/dialog/edit.cpp
 msgid "Cu&t"
-msgstr "&Вырезать"
+msgstr "В&ырезать"
 
-#: win32ui/dialog/text_prompt.cpp
 msgid "Browse..."
 msgstr "Обзор..."
 
-#: win32ui/json/reader.cpp
 #, c-format
 msgid "Expected '%c'."
 msgstr "Ожидалось '%c'"
 
-#: win32ui/json/reader.cpp
 msgid "The file is nested too deeply."
 msgstr "Слишком большая вложенности объектов"
 
-#: win32ui/json/reader.cpp
 msgid "An unterminated block comment is not allowed."
-msgstr "Незавершённый блочный комментарий недопустим"
+msgstr "Не допускается оставлять незакрытый блочный комментарий."
 
-#: win32ui/json/reader.cpp
 msgid "Unexpected token."
-msgstr "Неожиданная лексема"
+msgstr "Неожиданный токен."
 
-#: win32ui/json/reader.cpp
 msgid "A text member is longer than the format allows."
-msgstr "Длина текстового свойства превышает допустимый предел"
+msgstr "Превышен допустимый размер текстового свойства."
 
-#: win32ui/json/reader.cpp
 msgid "The file ends inside a string."
-msgstr "Файл заканчивается внутри строки"
+msgstr "Файл заканчивается внутри строки."
 
-#: win32ui/json/reader.cpp
 msgid "A string contains an unescaped control character."
-msgstr "Строка содержит неэкранированный управляющий символ"
+msgstr "Строка содержит неэкранированный управляющий символ."
 
-#: win32ui/json/reader.cpp
 msgid "A string contains a malformed escape."
-msgstr "Строка содержит недопустимую escape-последовательность"
+msgstr "Строка содержит недопустимые экранирующие знаки."
 
-#: win32ui/json/reader.cpp
 msgid "A string contains an unsupported escape."
-msgstr "Строка содержит неподдерживаемую escape-последовательность"
+msgstr "Строка содержит неподдерживаемые экранирующие знаки."
 
-#: win32ui/json/reader.cpp
 msgid "An unsigned number was expected."
-msgstr "Ожидалось число без знака."
+msgstr "Ожидалось положительное числовое значение."
 
-#: win32ui/json/reader.cpp
 msgid "A number has a leading zero."
-msgstr "Число содержит ведущий ноль"
+msgstr "У числового значения присутствует ведущий ноль."
 
-#: win32ui/json/reader.cpp
 msgid "A number is out of range."
-msgstr "Число вне допустимого диапазона"
+msgstr "Числовое значение вне допустимого диапазона."
 
-#: win32ui/json/reader.cpp
 msgid "Only integers are supported."
-msgstr "Поддерживаются только целые числа"
+msgstr "Поддерживаются только целые числа."
 
-#: win32ui/json/reader.cpp
 msgid "A boolean was expected."
-msgstr "Ожидалось логическое значение"
+msgstr "Ожидалось логическое значение."
 
-#: win32ui/json/reader.cpp
 msgid "A number has an empty fraction."
-msgstr "У числа пустая дробная часть"
+msgstr "У числового значения отсутствует дробная часть."
 
-#: win32ui/json/reader.cpp
 msgid "A number has an empty exponent."
-msgstr "У числа пустой показатель степени"
+msgstr "У числового значения отсутствует показатель степени."
 
-#: win32ui/json/reader.cpp
 msgid "The file contains trailing content."
-msgstr "В конце файла обнаружены посторонние данные"
+msgstr "В конце файла обнаружены посторонние данные."
 
-#: win32ui/json/reader.cpp
 msgid "The file isn't valid JSON."
-msgstr "Файл содержит недопустимые данные JSON"
+msgstr "Файл содержит недопустимые данные JSON."
 
-#: win32ui/json/reader.cpp
 msgid "Column"
-msgstr "Столбец"
+msgstr "колонка"
 
-#: win32ui/list_view/list_view.cpp
 msgid "Size column to fit"
 msgstr "Подобрать ширину столбца"
 
-#: win32ui/list_view/list_view.cpp
 msgid "Size all columns to fit"
 msgstr "Подобрать ширину всех столбцов"
 
-#: win32ui/list_view/list_view.cpp
+# Restorer:
 msgid "Reset columns"
-msgstr "Сбросить столбцы"
+msgstr "Сбросить размер столбцов"
 
-#: win32ui/list_view/list_view.cpp
 msgid "Grid Lines"
 msgstr "Сетка"
 
-#: win32ui/system/error_text.cpp
 msgid "Unknown error."
-msgstr "Нераспознанная ошибка"
+msgstr "Нераспознанная ошибка."
 
-#: win32ui/system/file_io.cpp
 msgid "The file is too large."
-msgstr "Файл слишком большой"
+msgstr "Размер файла слишком большой."
 
-#: win32ui/system/file_io.cpp
 msgid "The file isn't valid text."
-msgstr "Файл не содержит допустимого текста"
+msgstr "Файл содержит недопустимый текст."
 
-#: win32ui/system/strings.cpp
 msgid "Invalid Base64 character."
-msgstr "Недопустимый символ строки Base64"
+msgstr "Недопустимый символ строки Base64."
 
-#: win32ui/system/strings.cpp
 msgid "Invalid Base64 padding bits."
-msgstr "Недопустимые биты дополнения строки Base64"
+msgstr "Недопустимые биты дополнения строки Base64."
 
-#: win32ui/system/strings.cpp
 msgid "The text couldn't be decoded."
-msgstr "Не удалось декодировать текст"
+msgstr "Не удалось декодировать текст."
 
-#: win32ui/system/strings.cpp
 msgid "Base64 length isn't a multiple of four."
 msgstr "Длина строки Base64 должна быть кратна четырём"
 
-#: win32ui/system/strings.cpp
 msgid "Invalid Base64URL character."
-msgstr "Недопустимый символ строки Base64URL"
+msgstr "Недопустимый символ строки Base64URL."
 
-#: win32ui/system/strings.cpp
 msgid "Base64URL padding isn't at the end."
-msgstr "Дополнение строки Base64URL находится не в конце"
+msgstr "Дополнение строки Base64URL находится не в конце строки."
 
-#: win32ui/system/strings.cpp
 msgid "Base64URL length isn't valid."
-msgstr "Недопустимая длина строки Base64URL"
+msgstr "Недопустимая длина строки Base64URL."
 
-#: win32ui/system/strings.cpp
 msgid "Base64URL padding is incomplete."
-msgstr "Неполное дополнение строки Base64URL"
+msgstr "Неполное дополнение строки Base64URL."
 
-#: win32ui/system/strings.cpp
 msgid "Incomplete percent escape."
-msgstr "Неполная последовательность процентного кодирования URI"
+msgstr "Неполная последовательность процентного кодирования URI."
 
-#: win32ui/system/strings.cpp
 msgid "Invalid percent escape."
-msgstr "Недопустимая последовательность процентного кодирования URI"
+msgstr "Недопустимая последовательность процентного кодирования URI."
 
-#: win32ui/system/strings.cpp
 msgid "Percent encoded text must be ASCII."
-msgstr "Текст с процентным кодированием URI должен быть в кодировке ASCII"
+msgstr "Текст с процентным кодированием URI должен быть в кодировке ASCII."
 
-#: win32ui/tab_strip/tab_strip.cpp
 msgid "Close Tab"
 msgstr "Закрыть вкладку"
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Theme Presets"
 msgstr "Установленные темы"
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Presets"
-msgstr "Установленные темы"
+msgstr "Темы"
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Colors"
 msgstr "Цвета"
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Templates"
 msgstr "Шаблоны"
 
-#: win32ui/theme/preset_editor.cpp
 msgid "New..."
 msgstr "Создать..."
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Duplicate"
 msgstr "Скопировать"
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Rename..."
 msgstr "Переименовать..."
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Import..."
 msgstr "Импорт..."
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Export..."
 msgstr "Экспорт..."
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Edit Color..."
 msgstr "Изменить цвет..."
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Treat as dark theme"
 msgstr "Тёмная тема"
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Apply Template"
 msgstr "Применить шаблон"
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Apply"
 msgstr "Применить"
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Color"
 msgstr "Цвет"
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Hex"
-msgstr ""
+msgstr "Hex"
 
-#: win32ui/theme/preset_editor.cpp
 msgid "New Preset"
 msgstr "Новая настройка темы"
 
-#: win32ui/theme/preset_editor.cpp
 msgid "Rename Preset"
 msgstr "Переименование настройки темы"
 
-#: win32ui/theme/theme_presets.cpp
 msgid "The file could not be read."
-msgstr "Не удалось прочитать файл"
+msgstr "Не удалось получить данные файла."
 
-#: win32ui/theme/theme_presets.cpp
 msgid "A preset has no name."
-msgstr "У настройки темы нет названия"
+msgstr "Не задано наименование настройки темы."
 
-#: win32ui/theme/theme_presets.cpp
 msgid "A line is not a valid entry."
-msgstr "Строка не является допустимой записью"
+msgstr "Строка не является допустимой записью."
 
-#: win32ui/theme/theme_presets.cpp
 msgid "The file could not be written."
-msgstr "Не удалось записать файл"
+msgstr "Не удалось записать файл."
 
-#: win32ui/theme/theme_presets_internal.h
 msgid "Background"
 msgstr "Фона"
 
-#: win32ui/theme/theme_presets_internal.h
 msgid "Panel"
 msgstr "Панели"
 
-#: win32ui/theme/theme_presets_internal.h
 msgid "Surface"
 msgstr "Переднего плана"
 
-#: win32ui/theme/theme_presets_internal.h
 msgid "Header"
 msgstr "Заголовка"
 
-#: win32ui/theme/theme_presets_internal.h
 msgid "Border"
 msgstr "Границы"
 
-#: win32ui/theme/theme_presets_internal.h
 msgid "Muted Text"
 msgstr "Неактивного текста"
 
-#: win32ui/theme/theme_presets_internal.h
 msgid "Accent"
 msgstr "Акцента"
 
-#: win32ui/theme/theme_presets_internal.h
 msgid "Selection"
 msgstr "Выделения"
 
-#: win32ui/theme/theme_presets_internal.h
 msgid "Selection Text"
 msgstr "Выделенного текста"
 
-#: win32ui/theme/theme_presets_internal.h
 msgid "Hover"
-msgstr "Элемнта под курсором"
+msgstr "Элемента под курсором"
 
-#: win32ui/theme/theme_presets_internal.h
 msgid "Focus"
 msgstr "Выбранного элемента"
 
-#: ../resources/app.rc
 msgid "Key Handles"
 msgstr "Дескрипторы раздела"
 
-#: ../resources/editor_dialogs.rc
 msgid "Edit Comment"
 msgstr "Редактор комментария"
 
-#: ../resources/editor_dialogs.rc
 msgid "Comment:"
 msgstr "Комментарий:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Apply to"
 msgstr "Применить"
 
-#: ../resources/editor_dialogs.rc
 msgid "This value only"
 msgstr "Только к этому параметру"
 
-#: ../resources/editor_dialogs.rc
 msgid "Match only values with"
 msgstr "К параметрам, имеющим"
 
-#: ../resources/editor_dialogs.rc
 msgid "Same registry type"
 msgstr "Такой же тип данных"
 
-#: ../resources/editor_dialogs.rc
 msgid "Same data length"
 msgstr "Такой же размер данных"
 
-#: ../resources/editor_dialogs.rc
 msgid "In key"
 msgstr "В разделе"
 
-#: ../resources/editor_dialogs.rc
 msgid "Include subkeys"
 msgstr "Включая подразделы"
 
-#: ../resources/editor_dialogs.rc
 msgid "Restore Default"
 msgstr "Вернуть исходный"
 
-#: ../resources/editor_dialogs.rc
 msgid "Name:"
 msgstr "Параметр:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Bytes:"
 msgstr "Байт:"
 
-#: ../resources/editor_dialogs.rc
 msgid "0 bytes"
 msgstr "0 Б"
 
-#: ../resources/editor_dialogs.rc
 msgid "Hex bytes:"
 msgstr "Байты (Hex):"
 
-#: ../resources/editor_dialogs.rc
 msgid "Preview:"
 msgstr "Просмотр:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Format"
 msgstr "Формат"
 
-#: ../resources/editor_dialogs.rc
 msgid "Byte"
-msgstr ""
+msgstr "Byte"
 
-#: ../resources/editor_dialogs.rc
 msgid "Word"
-msgstr ""
+msgstr "Word"
 
-#: ../resources/editor_dialogs.rc
 msgid "DWord"
-msgstr ""
+msgstr "DWord"
 
-#: ../resources/editor_dialogs.rc
 msgid "QWord"
-msgstr ""
+msgstr "QWord"
 
-#: ../resources/editor_dialogs.rc
 msgid "ANSI"
-msgstr ""
+msgstr "ANSI"
 
-#: ../resources/editor_dialogs.rc
 msgid "Unicode"
-msgstr ""
+msgstr "Unicode"
 
-#: ../resources/editor_dialogs.rc
 msgid "Bits..."
 msgstr "Биты..."
 
-#: ../resources/editor_dialogs.rc
 msgid "Value data:"
-msgstr "Значение параметра:"
+msgstr "Значение:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Strings (one per line):"
 msgstr "Строки (каждая с новой строки):"
 
-#: ../resources/editor_dialogs.rc
 msgid "Value:"
 msgstr "Значение:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Base"
 msgstr "Система исчисления"
 
-#: ../resources/editor_dialogs.rc
 msgid "Decimal"
 msgstr "Десятичная"
 
-#: ../resources/editor_dialogs.rc
 msgid "Binary"
 msgstr "Двоичная"
 
-#: ../resources/editor_dialogs.rc
 msgid "Type:"
 msgstr "Тип:"
 
-#: ../resources/editor_dialogs.rc
 msgid "REG_SZ"
-msgstr ""
+msgstr "REG_SZ"
 
-#: ../resources/editor_dialogs.rc
 msgid "REG_EXPAND_SZ"
-msgstr ""
+msgstr "REG_EXPAND_SZ"
 
-#: ../resources/editor_dialogs.rc
 msgid "REG_MULTI_SZ"
-msgstr ""
+msgstr "REG_MULTI_SZ"
 
-#: ../resources/editor_dialogs.rc
 msgid "REG_DWORD"
-msgstr ""
+msgstr "REG_DWORD"
 
-#: ../resources/editor_dialogs.rc
 msgid "REG_QWORD"
-msgstr ""
+msgstr "REG_QWORD"
 
-#: ../resources/editor_dialogs.rc
 msgid "REG_BINARY"
-msgstr ""
+msgstr "REG_BINARY"
 
-#: ../resources/editor_dialogs.rc
 msgid "REG_NONE"
-msgstr ""
+msgstr "REG_NONE"
 
-#: ../resources/editor_dialogs.rc
 msgid "RegKit"
-msgstr ""
+msgstr "Программа RegKit"
 
-#: ../resources/editor_dialogs.rc
 msgid "Export to:"
 msgstr "Экспортировать в:"
 
-#: ../resources/editor_dialogs.rc ../resources/search_dialogs.rc
 msgid "Format:"
 msgstr "Формат:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Export range"
 msgstr "Включить в экспорт"
 
-#: ../resources/editor_dialogs.rc
 msgid "Selected key and subkeys"
-msgstr "Выбранный раздел и подразделы"
+msgstr "Выбранный раздел и его подразделы"
 
-#: ../resources/editor_dialogs.rc
 msgid "Selected key only"
 msgstr "Только выбранный раздел"
 
-#: ../resources/editor_dialogs.rc
+# Restorer: "По окончанию экспорта открыть:"
 msgid "Open after export:"
-msgstr "Открыть после экспорта:"
+msgstr "После экспорта открыть:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Link name:"
 msgstr "Наименование ссылки:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Target key:"
 msgstr "Целевой раздел:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Load Hive"
 msgstr "Загрузка куста реестра"
 
-#: ../resources/editor_dialogs.rc
 msgid "Hive file:"
 msgstr "Файл куста:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Load into"
 msgstr "Подключить к"
 
-#: ../resources/editor_dialogs.rc
 msgid "HKEY_LOCAL_MACHINE"
-msgstr ""
+msgstr "HKEY_LOCAL_MACHINE"
 
-#: ../resources/editor_dialogs.rc
 msgid "HKEY_USERS"
-msgstr ""
+msgstr "HKEY_USERS"
 
-#: ../resources/editor_dialogs.rc
 msgid "Decode Value"
-msgstr "Декодирование параметра"
+msgstr "Декодирование данных параметра"
 
-#: ../resources/editor_dialogs.rc
 msgid "Encoding:"
 msgstr "Кодирование:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Interpret as:"
 msgstr "Интерпретация:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Edit Bits"
 msgstr "Редактирование битов"
 
-#: ../resources/editor_dialogs.rc
 msgid "Definition:"
-msgstr "Описание:"
+msgstr "Определение:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Load..."
 msgstr "Загрузить..."
 
-#: ../resources/editor_dialogs.rc ../resources/search_dialogs.rc
 msgid "Edit..."
 msgstr "Изменить..."
 
-#: ../resources/editor_dialogs.rc
 msgid "Save As..."
 msgstr "Сохранить как..."
 
-#: ../resources/editor_dialogs.rc
 msgid "Set All Bits"
 msgstr "Установить все биты"
 
-#: ../resources/editor_dialogs.rc
 msgid "Clear All Bits"
 msgstr "Сбросить все биты"
 
-#: ../resources/editor_dialogs.rc
 msgid "Add"
 msgstr "Добавить"
 
-#: ../resources/editor_dialogs.rc
 msgid "Registry value:"
 msgstr "Параметр реестра:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Key paths:"
 msgstr "Разделы реестра:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Bit width:"
 msgstr "Разрядность:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Byte offset:"
 msgstr "Смещение в байтах:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Add Field..."
 msgstr "Добавить поле..."
 
-#: ../resources/editor_dialogs.rc
 msgid "Open..."
 msgstr "Открыть..."
 
-#: ../resources/editor_dialogs.rc
 msgid "Field name:"
 msgstr "Название поля:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Meaning:"
 msgstr "Назначение:"
 
-#: ../resources/editor_dialogs.rc
 msgid "States:"
 msgstr "Состояния:"
 
-#: ../resources/editor_dialogs.rc
 msgid "Add State..."
 msgstr "Добавить состояние..."
 
-#: ../resources/editor_dialogs.rc
 msgid "Bits:"
 msgstr "Биты:"
 
-#: ../resources/search_dialogs.rc
 msgid "Compare Registries"
 msgstr "Сравнение реестров"
 
-#: ../resources/search_dialogs.rc
 msgid "Source:"
 msgstr "Источник:"
 
-#: ../resources/search_dialogs.rc
 msgid "Key:"
 msgstr "Раздел:"
 
-#: ../resources/search_dialogs.rc
 msgid "Recursive"
 msgstr "С подразделами"
 
-#: ../resources/search_dialogs.rc
 msgid "Results"
 msgstr "Результаты"
 
-#: ../resources/search_dialogs.rc
 msgid "Both"
 msgstr "Все"
 
-#: ../resources/search_dialogs.rc
 msgid "Only differences"
 msgstr "Только различия"
 
-#: ../resources/search_dialogs.rc
 msgid "Only matching"
 msgstr "Только совпадения"
 
-#: ../resources/search_dialogs.rc
 msgid "Compare"
 msgstr "Сравнить"
 
-#: ../resources/search_dialogs.rc
 msgid "Convert File"
 msgstr "Преобразование файлов"
 
-#: ../resources/search_dialogs.rc
 msgid "Input"
 msgstr "Входной файл"
 
-#: ../resources/search_dialogs.rc
 msgid "Output"
 msgstr "Выходной файл"
 
-#: ../resources/search_dialogs.rc
 msgid "Options"
 msgstr "Параметры"
 
-#: ../resources/search_dialogs.rc
 msgid "Check for administrator rights outside HKCU"
-msgstr "Проверка прав администратора вне раздела HKCU"
+msgstr "Добавить проверку прав администратора вне раздела HKCU"
 
-#: ../resources/search_dialogs.rc
 msgid "Open the converted file in an editor"
 msgstr "Открыть преобразованный файл в редакторе"
 
-#: ../resources/search_dialogs.rc
 msgid "Find what:"
 msgstr "Найти:"
 
-#: ../resources/search_dialogs.rc
 msgid "Replace with:"
 msgstr "Заменить:"
 
-#: ../resources/search_dialogs.rc
 msgid "Where to search"
 msgstr "Область поиска"
 
-#: ../resources/search_dialogs.rc
 msgid "Match whole string"
 msgstr "Строка целиком"
 
-#: ../resources/search_dialogs.rc
 msgid "Match case"
 msgstr "Учитывать регистр"
 
-#: ../resources/search_dialogs.rc
 msgid "Regular expressions"
 msgstr "Регулярные выражения"
 
-#: ../resources/search_dialogs.rc
 msgid "Replace in key names"
 msgstr "В наименованиях разделов"
 
-#: ../resources/search_dialogs.rc
 msgid "Replace in value names"
 msgstr "В наименованиях параметров"
 
-#: ../resources/search_dialogs.rc
 msgid "Replace in value data"
 msgstr "В значениях параметров"
 
-#: ../resources/search_dialogs.rc
 msgid "Value Data"
 msgstr "Значение параметра"
 
-#: ../resources/search_dialogs.rc
 msgid "Numbers as decimal"
 msgstr "Как десятичные числа"
 
-#: ../resources/search_dialogs.rc
 msgid "Numbers as hex"
 msgstr "Как шестнадцатеричные числа"
 
-#: ../resources/search_dialogs.rc
 msgid "Select All Keys"
 msgstr "Все разделы"
 
-#: ../resources/search_dialogs.rc
 msgid "Select"
 msgstr "Выбрать"
 
-#: ../resources/search_dialogs.rc
 msgid "Top level keys"
 msgstr "Разделы верхнего уровня"
 
-#: ../resources/search_dialogs.rc
 msgid "Specific key"
 msgstr "Указанный раздел"
 
-#: ../resources/search_dialogs.rc
 msgid "Search options"
 msgstr "Параметры поиска"
 
-#: ../resources/search_dialogs.rc
 msgid "Search keys"
 msgstr "Поиск разделов"
 
-#: ../resources/search_dialogs.rc
 msgid "Search values"
 msgstr "Поиск параметров"
 
-#: ../resources/search_dialogs.rc
 msgid "Search data"
 msgstr "Поиск данных"
 
-#: ../resources/search_dialogs.rc
 msgid "Search comments"
 msgstr "Поиск комментариев"
 
-#: ../resources/search_dialogs.rc
 msgid "Skip symbolic links"
-msgstr "Пропускать символьные ссылки"
+msgstr "Пропускать символические ссылки"
 
-#: ../resources/search_dialogs.rc
 msgid "Data Types..."
 msgstr "Типы данных..."
 
-#: ../resources/search_dialogs.rc
 msgid "Min data size (bytes):"
 msgstr "Мин. размер (в байтах):"
 
-#: ../resources/search_dialogs.rc
 msgid "Max data size (bytes):"
 msgstr "Макс. размер (в байтах):"
 
-#: ../resources/search_dialogs.rc
 msgid "Sources"
 msgstr "Искать в"
 
-#: ../resources/search_dialogs.rc
 msgid "Root Keys"
 msgstr "Корневых разделах"
 
-#: ../resources/search_dialogs.rc
 msgid "Default Data"
 msgstr "Предустановках"
 
-#: ../resources/search_dialogs.rc
 msgid "REGISTRY"
 msgstr "REGISTRY"
 
-#: ../resources/search_dialogs.rc
 msgid "Offline Hives"
 msgstr "Автономных кустах"
 
-#: ../resources/search_dialogs.rc
 msgid "Trace Values"
 msgstr "Трассировках"
 
-#: ../resources/search_dialogs.rc
 msgid ".reg File Tabs"
-msgstr "Вкладки файлов .reg"
+msgstr "Вкладки reg-файлов"
 
-#: ../resources/search_dialogs.rc
 msgid "Find anomalies"
 msgstr "Поиск аномалий"
 
-#: ../resources/search_dialogs.rc
 msgid "Null characters in names"
-msgstr "Нулевые символы в наименованиях"
+msgstr "Символы Null в наименованиях"
 
-#: ../resources/search_dialogs.rc
 msgid "Wrong DWORD/QWORD size"
 msgstr "Некорректный размер DWORD/QWORD"
 
-#: ../resources/search_dialogs.rc
 msgid "Malformed multi-strings"
 msgstr "Некорректные многостроковые данные"
 
-#: ../resources/search_dialogs.rc
 msgid "Links to missing keys"
 msgstr "Ссылки на отсутствующие разделы"
 
-#: ../resources/search_dialogs.rc
 msgid "Edge spaces, control characters"
 msgstr "Концевые пробелы или управляющие символы"
 
-#: ../resources/search_dialogs.rc
 msgid "Unterminated strings"
-msgstr "Строки без завершающего символа"
+msgstr "Строки без признака конца строки"
 
-#: ../resources/search_dialogs.rc
 msgid "Unknown value types"
 msgstr "Нераспознанные типы данных"
 
-#: ../resources/search_dialogs.rc
 msgid "Virtual store copies"
 msgstr "Копии в виртуальном хранилище"
 
-#: ../resources/search_dialogs.rc
 msgid "Modified in period:"
 msgstr "Изменения за период:"
 
-#: ../resources/search_dialogs.rc
 msgid "Exclude keys"
 msgstr "Исключить разделы"
 
-#: ../resources/search_dialogs.rc
 msgid "Result options"
 msgstr "Настройки результатов"
 
-#: ../resources/search_dialogs.rc
+# Restorer: Результат поиска в предыдущей вкладке результатов
 msgid "Reuse last Find Results window"
-msgstr "Показать в предыдущем окне результатов поиска"
+msgstr "Показать в предыдущей вкладке результатов"
 
-#: ../resources/search_dialogs.rc
+# Restorer: Результат поиска в новой вкладке
 msgid "Open new Find Results window"
-msgstr "Показать в новом окне результатов поиска"
+msgstr "Показать в новой вкладке"
 
-#: ../resources/search_dialogs.rc
 msgid "Open result in new tab"
 msgstr "Открывать разделы в новых вкладках"
 
-#: ../resources/search_dialogs.rc
 msgid "Limit results to"
-msgstr "Ограничить результат до:"
+msgstr "Ограничить результат до"
 
-#: ../resources/search_dialogs.rc
 msgid "Browse Key"
 msgstr "Обзор разделов"
 
-#: dialogs/bitfield_definition.cpp
 msgid "RegKit bitfield definitions (*.regkit-bitfield.jsonc)"
-msgstr "Описание битовых полей RegKit (*.regkit-bitfield.jsonc)"
+msgstr "Определение битовых полей RegKit (*.regkit-bitfield.jsonc)"
 
-#: dialogs/bitfield_definition.cpp
 msgid "JSON files (*.jsonc;*.json)"
 msgstr "Файлы JSON (*.jsonc;*.json)"
 
-#: frame/commands/clipboard_commands.cpp
 msgid "Favorites Files (*.txt)"
 msgstr "Файлы избранного (*.txt)"
 
-#: frame/commands/clipboard_commands.cpp frame/commands/file_view_commands.cpp
-#: frame/detail/file_detail.h frame/sources/trace_commands.cpp
-#: frame/window/appearance.cpp regfile/script_convert.h ui/feedback.h
 msgid "All Files (*.*)"
 msgstr "Все файлы (*.*)"
 
-#: frame/commands/file_view_commands.cpp
 msgid "RegKit Comment Files (*.jsonc)"
 msgstr "Файлы комментариев RegKit (*.jsonc)"
 
-#: frame/detail/file_detail.h frame/search/compare_dialog.cpp ui/feedback.h
 msgid "Registry Hive Files"
 msgstr "Файлы кустов реестра"
 
-#: frame/sources/trace_commands.cpp
 msgid "Trace Files (*.txt)"
 msgstr "Файлы трассировки (*.txt)"
 
-#: frame/window/appearance.cpp
 msgid "RegKit Theme Presets (*.rktheme)"
 msgstr "Темы RegKit (*.rktheme)"
 
-#: regfile/script_convert.h ui/feedback.h
 msgid "Registry Files (*.reg)"
 msgstr "Файлы реестра (*.reg)"
 
-#: regfile/script_convert.h
 msgid "Batch Files (*.bat;*.cmd)"
 msgstr "Пакетные файлы (*.bat;*.cmd)"
 
-#: regfile/script_convert.h
 msgid "PowerShell Scripts (*.ps1)"
 msgstr "Командные файлы PowerShell (*.ps1)"
 
-#: regfile/script_convert.h
 msgid "Registry Scripts (*.reg;*.bat;*.cmd;*.ps1)"
 msgstr "Командные файлы реестра (*.reg;*.bat;*.cmd;*.ps1)"
 
-#: ui/feedback.h
 msgid "Hive Files (*.*)"
 msgstr "Файлы кустов (*.*)"
-
-#~ msgid "Comments"
-#~ msgstr "Комментарии"
-
-#~ msgid "New"
-#~ msgstr "Создать"
-
-#~ msgid "Cut"
-#~ msgstr "Вырезать"
-
-#~ msgid "Exit"
-#~ msgstr "Выход"
-
-#~ msgid "Theme"
-#~ msgstr "Тема"
-
-#~ msgid "Icons"
-#~ msgstr "Значки"
-
-#~ msgid "Copy Row"
-#~ msgstr "Копировать строку"
-
-#~ msgid "Copy Rows"
-#~ msgstr "Копировать строки"
-
-#~ msgid "At least one preset must remain."
-#~ msgstr "Должна остаться хотя бы одна тема"
-
-#~ msgid "Edit Binary Value"
-#~ msgstr "Редактор двоичных данных"
