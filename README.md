@@ -436,8 +436,9 @@ Using `reg` here is optional, means both `regkit reg query` & `regkit query` wor
 | `regkit --uninstall-edit-context-menu` | Remove `Edit with RegKit` context menu entry |
 | `regkit --install-regedit-replacement [--override]` | Replace RegEdit with this RegKit executable, fails if another program owns RegEdits Debugger entry, `--override` replaces it anyway |
 | `regkit --uninstall-regedit-replacement` | Remove this RegKit executable's RegEdit replacement |
+| `regkit --setting key=value` | change a settings.ini entry (repeatable) |
 | `regkit --restart-admin` | Relaunch elevated (UAC prompt) |
-| `regkit --restart-user` | Start without applying the *Always Run as...* options (used by *Restart as User*) |
 | `regkit --restart-system` | Relaunch under the SYSTEM account |
 | `regkit --restart-ti` | Relaunch under TrustedInstaller |
+| `regkit --restart-user` | Start without applying the *Always Run as...* options (used by *Restart as User*) |
 | `regkit --help` | Print usage text |
