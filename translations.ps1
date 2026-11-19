@@ -4,7 +4,7 @@
 param([Parameter(Mandatory)][string]$gettext, [string]$language, [string]$win32ui)
 
 $src = "$PSScriptRoot\src"
-# the shared library's texts are translated through RegKit's catalog too, default is its checkout next to RegKit
+
 if (!$win32ui) { $win32ui = "$PSScriptRoot\..\win32-ui" }
 $librarySrc = [IO.Path]::GetFullPath("$win32ui\src")
 $lang = "$PSScriptRoot\assets\lang"

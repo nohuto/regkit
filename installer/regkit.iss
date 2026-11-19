@@ -47,6 +47,8 @@ ArchitecturesInstallIn64BitMode=x64os
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=dialog
 WizardStyle=modern dynamic
+CloseApplications=yes
+RestartApplications=no
 OutputDir=..\build\dist
 OutputBaseFilename=RegKit-Setup-{#AppVersion}-{#Arch}
 
@@ -98,7 +100,6 @@ Name: "auto_updates"; Description: "Check for updates automatically"; GroupDescr
 Name: "simple_mode"; Description: "Enable simple mode (RegEdit layout)"; GroupDescription: "Options:"; Flags: unchecked; Check: not IsUpgrade
 
 [Files]
-Source: "{#BuildDir}\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "{#BuildDir}\offreg.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "..\redist\pcre2\LICENCE.md"; DestDir: "{app}\licences"; DestName: "PCRE2-LICENCE.md"; Flags: ignoreversion; Components: main
 Source: "{#BuildDir}\assets\icons\classic\*"; DestDir: "{app}\assets\icons\classic"; Flags: ignoreversion; Components: icons
@@ -115,6 +116,10 @@ Source: "{#BuildDir}\assets\lang\pt-BR.po"; DestDir: "{app}\assets\lang"; Flags:
 Source: "{#BuildDir}\assets\lang\zh-CN.po"; DestDir: "{app}\assets\lang"; Flags: ignoreversion; Components: lang\zh_CN lang\zh_CN_other
 Source: "{#BuildDir}\assets\lang\ko.po"; DestDir: "{app}\assets\lang"; Flags: ignoreversion; Components: lang\ko lang\ko_other
 Source: "{#BuildDir}\assets\defaults\*"; DestDir: "{app}\assets\defaults"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: defaults
+Source: "{#BuildDir}\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: main
+
+[InstallDelete]
+Type: files; Name: "{app}\is-*.tmp"
 
 [Icons]
 Name: "{autoprograms}\RegKit\RegKit"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: startmenu
@@ -206,13 +211,41 @@ begin
   end;
 end;
 
+const
+  UninstallKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#AppId}_is1';
+
 var
   Upgrade, Installing: Boolean;
+  DataAside: String;
+
+procedure RemoveEmptyUninstallLogs;
+var
+  Folder: String;
+  Find: TFindRec;
+begin
+  Folder := AddBackslash(ExpandConstant('{app}'));
+  if not FindFirst(Folder + 'unins???.dat', Find) then
+    exit;
+  try
+    repeat
+      if (Find.SizeHigh = 0) and (Find.SizeLow = 0) then begin
+        Log('removing empty uninstall log ' + Find.Name);
+        DeleteFile(Folder + Find.Name);
+        DeleteFile(Folder + ChangeFileExt(Find.Name, '.exe'));
+        DeleteFile(Folder + ChangeFileExt(Find.Name, '.msg'));
+      end;
+    until not FindNext(Find);
+  finally
+    FindClose(Find);
+  end;
+end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
-  if CurStep = ssInstall then
+  if CurStep = ssInstall then begin
     Installing := True;
+    RemoveEmptyUninstallLogs;
+  end;
   if CurStep = ssPostInstall then begin
     InstallRegEditReplacement;
   end;
@@ -226,17 +259,118 @@ begin
     ExecAsOriginalUser(ExpandConstant('{app}\{#AppExeName}'), '--restore-session', '', SW_SHOWNORMAL, ewNoWait, ResultCode);
 end;
 
-procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+function DataFolder: String;
 begin
-  if CurUninstallStep = usUninstall then begin
-    RemoveRegEditReplacement;
+  Result := ExpandConstant('{localappdata}\Noverse\RegKit');
+end;
+
+function IsProgramEntry(const Name: String): Boolean;
+begin
+  Result := False;
+  if CompareText(RemoveBackslash(ExpandConstant('{app}')), DataFolder) <> 0 then
+    exit;
+  Result := (CompareText(Name, '{#AppExeName}') = 0) or (CompareText(Name, 'offreg.dll') = 0) or (CompareText(Name, 'licences') = 0) or
+    (CompareText(Name, 'assets') = 0) or WildcardMatch(Lowercase(Name), 'unins*') or WildcardMatch(Lowercase(Name), 'is-*.tmp');
+end;
+
+function ListEntries(const Folder: String; SkipProgram: Boolean): TStringList;
+var
+  Find: TFindRec;
+begin
+  Result := TStringList.Create;
+  if not FindFirst(AddBackslash(Folder) + '*', Find) then
+    exit;
+  try
+    repeat
+      if (Find.Name <> '.') and (Find.Name <> '..') then
+        if not (SkipProgram and IsProgramEntry(Find.Name)) then
+          Result.Add(Find.Name);
+    until not FindNext(Find);
+  finally
+    FindClose(Find);
   end;
 end;
 
-function InitializeSetup: Boolean;
+procedure MoveEntries(const Source, Dest: String; SkipProgram: Boolean);
+var
+  Names: TStringList;
+  Target: String;
+  I: Integer;
 begin
-  Upgrade := RegValueExists(HKA, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#AppId}_is1', 'UninstallString');
+  Names := ListEntries(Source, SkipProgram);
+  try
+    for I := 0 to Names.Count - 1 do begin
+      Target := AddBackslash(Dest) + Names.Strings[I];
+      if DirExists(Target) then
+        DelTree(Target, True, True, True)
+      else if FileExists(Target) then
+        DeleteFile(Target);
+      if not RenameFile(AddBackslash(Source) + Names.Strings[I], Target) then
+        Log('could not move ' + Names.Strings[I] + ' to ' + Dest);
+    end;
+  finally
+    Names.Free;
+  end;
+end;
+
+procedure SetDataAside;
+var
+  Names: TStringList;
+  Count: Integer;
+begin
+  Names := ListEntries(DataFolder, True);
+  Count := Names.Count;
+  Names.Free;
+  if Count = 0 then
+    exit;
+  if not CreateDir(DataFolder + '.uninstall') then
+    exit;
+  MoveEntries(DataFolder, DataFolder + '.uninstall', True);
+  DataAside := DataFolder + '.uninstall';
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  Remove: Boolean;
+begin
+  if CurUninstallStep = usUninstall then begin
+    RemoveRegEditReplacement;
+    SetDataAside;
+  end;
+  if CurUninstallStep <> usPostUninstall then
+    exit;
+  if DataAside <> '' then begin
+    Remove := False;
+    if not UninstallSilent then
+      Remove := MsgBox('Also remove RegKit''s data? This deletes your settings, favorites, theme presets, custom icons and history.', mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES;
+    if Remove then
+      DelTree(DataAside, True, True, True)
+    else begin
+      ForceDirectories(DataFolder);
+      MoveEntries(DataAside, DataFolder, False);
+      RemoveDir(DataAside);
+    end;
+  end;
+  RemoveDir(DataFolder);
+  RemoveDir(ExpandConstant('{localappdata}\Noverse'));
+end;
+
+function InitializeSetup: Boolean;
+var
+  Installed: String;
+  InstalledVersion, ThisVersion: Int64;
+begin
   Result := True;
+  Upgrade := RegValueExists(HKA, UninstallKey, 'UninstallString');
+  if not RegQueryStringValue(HKA, UninstallKey, 'DisplayVersion', Installed) then
+    exit;
+  if StrToVersion(Installed, InstalledVersion) and StrToVersion('{#AppVersion}', ThisVersion) then
+    if ComparePackedVersion(InstalledVersion, ThisVersion) <= 0 then
+      exit;
+  Log('refused: installed version ' + Installed + ' is newer than {#AppVersion} or unreadable');
+  if not WizardSilent then
+    MsgBox('RegKit ' + Installed + ' is already installed. This setup installs the older version {#AppVersion} and stops.', mbError, MB_OK);
+  Result := False;
 end;
 
 function IsUpgrade: Boolean;
@@ -270,4 +404,7 @@ Filename: "{app}\{#AppExeName}"; Description: "Launch RegKit"; Flags: nowait pos
 Filename: "{app}\{#AppExeName}"; Parameters: "--uninstall-edit-context-menu"; RunOnceId: "RemoveEditContextMenu"; Flags: runhidden
 
 [UninstallDelete]
-Type: filesandordirs; Name: "{localappdata}\Noverse\RegKit"
+Type: files; Name: "{app}\is-*.tmp"
+Type: dirifempty; Name: "{app}"
+Type: dirifempty; Name: "{autopf}\Noverse"
+Type: dirifempty; Name: "{localappdata}\Noverse"
