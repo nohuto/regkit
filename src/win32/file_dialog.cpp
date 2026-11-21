@@ -27,7 +27,7 @@ DWORD ChooseFileToSave(HWND owner, const wchar_t* filter, const wchar_t* suggest
     static const win32ui::FileDialogChoice kChoices[] = {
         {static_cast<DWORD>(OpenAfter::kNone), util::TrNoop(L"Don't open")},
         {static_cast<DWORD>(OpenAfter::kEditor), util::TrNoop(L"In text editor")},
-        {static_cast<DWORD>(OpenAfter::kRegKit), util::TrNoop(L"In RegKit")},
+        {static_cast<DWORD>(OpenAfter::kRegKit), util::TrNoop(L"In RegKit"), L"*.reg"},
     };
     DWORD choice = static_cast<DWORD>(!regkit && g_open_after == OpenAfter::kRegKit ? OpenAfter::kNone : g_open_after);
     win32ui::FileDialogSpec spec;

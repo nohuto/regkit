@@ -860,6 +860,9 @@ void MainWindow::Impl::StartSearch(const SearchDialogResult& options)
         CancelSearch(&tab);
         tab.label = label;
         tab.results.clear();
+        tab.results_loaded = true;
+        tab.load_pending = false;
+        tab.load_generation = 0;
         tab.last_ui_count = 0;
         tab.is_compare = false;
         tab.sort_dirty = false;

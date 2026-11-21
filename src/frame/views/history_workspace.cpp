@@ -642,6 +642,10 @@ void MainWindow::Impl::LoadTabs()
                 item.pszText = search_tabs_.back().label.data();
                 TabCtrl_InsertItem(tab_, TabCtrl_GetItemCount(tab_), &item);
                 tabs_.push_back({TabEntry::Kind::kSearch, search_index});
+                if (!search_tabs_.back().is_compare)
+                {
+                    active_search_tab_index_ = static_cast<int>(tabs_.size()) - 1;
+                }
                 continue;
             }
             if (saved.kind == workspace::PersistedTab::Kind::kRegFile)

@@ -299,14 +299,22 @@ bool MainWindow::Impl::HandleClipboardCommand(int command_id)
                 return true;
             };
             HWND focus = GetFocus();
-            if (focus == browse_.tree().hwnd() && browse_.current_node() && !browse_.current_node()->subkey.empty())
+            if (focus == browse_.tree().hwnd() && browse_.current_node())
             {
                 const RegistryNode& node = *browse_.current_node();
-                RegistryNode parent = node;
-                parent.subkey = registry_path::Parent(node.subkey);
-                CaptureKeyForPaste(node);
-                clipboard_.source_parent = parent;
-                clipboard_.name = LeafName(node);
+                // root cant be pasted as a key
+                if (node.subkey.empty())
+                {
+                    clear_clipboard();
+                }
+                else
+                {
+                    RegistryNode parent = node;
+                    parent.subkey = registry_path::Parent(node.subkey);
+                    CaptureKeyForPaste(node);
+                    clipboard_.source_parent = parent;
+                    clipboard_.name = LeafName(node);
+                }
                 ui::CopyText(hwnd_, registry_path::Build(node));
                 return true;
             }
