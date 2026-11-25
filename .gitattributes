@@ -5,3 +5,5 @@
 *.ico binary
 *.png binary
 *.reg binary
+
+redist/pcre2/** linguist-vendored
